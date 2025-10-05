@@ -1,562 +1,219 @@
-'use client'
+"use client"
 
-import React, { useState } from 'react'
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Sparkles, Save, Copy, FileText } from "lucide-react"
+import { Progress } from "@/components/ui/progress"
 
-// Sistema de métricas por gênero brasileiro
-const BRAZILIAN_GENRE_METRICS = {
-  "Sertanejo Moderno": { syllablesPerLine: 6, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
-  "Sertanejo": { syllablesPerLine: 7, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
-  "Sertanejo Universitário": { syllablesPerLine: 6, bpm: 95, structure: "VERSO-REFRAO" },
-  "Sertanejo Sofrência": { syllablesPerLine: 8, bpm: 75, structure: "VERSO-REFRAO-PONTE" },
-  "Sertanejo Raiz": { syllablesPerLine: 10, bpm: 80, structure: "VERSO-REFRAO" },
-  "Pagode": { syllablesPerLine: 7, bpm: 100, structure: "VERSO-REFRAO" },
-  "Samba": { syllablesPerLine: 7, bpm: 105, structure: "VERSO-REFRAO-PONTE" },
-  "Forró": { syllablesPerLine: 8, bpm: 120, structure: "VERSO-REFRAO" },
-  "Axé": { syllablesPerLine: 6, bpm: 130, structure: "VERSO-REFRAO" },
-  "MPB": { syllablesPerLine: 9, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
-  "Bossa Nova": { syllablesPerLine: 8, bpm: 70, structure: "VERSO-REFRAO" },
-  "Rock": { syllablesPerLine: 8, bpm: 115, structure: "VERSO-REFRAO-SOLO" },
-  "Pop": { syllablesPerLine: 7, bpm: 110, structure: "VERSO-REFRAO-PONTE" },
-  "Funk": { syllablesPerLine: 6, bpm: 125, structure: "REFRAO-VERSO" },
-  "Gospel": { syllablesPerLine: 8, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
-  "default": { syllablesPerLine: 8, bpm: 100, structure: "VERSO-REFRAO" }
-}
+export function RewriteLyricsForm() {
+  const [letraOriginal, setLetraOriginal] = useState("")
+  const [generoConversao, setGeneroConversao] = useState("")
+  const [conservarImagens, setConservarImagens] = useState(true)
+  const [polirSemMexer, setPolirSemMexer] = useState(false)
+  const [letraReescrita, setLetraReescrita] = useState("")
+  const [qualidadeScore, setQualidadeScore] = useState(0)
+  const [sugestoes, setSugestoes] = useState<string[]>([])
+  const [analisado, setAnalisado] = useState(false)
 
-// Função para contar sílabas em português
-function countPortugueseSyllables(word: string): number {
-  if (!word.trim()) return 0
-  
-  const cleanWord = word.toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zà-úâ-ûã-õä-üç]/g, "")
-  
-  if (cleanWord.length === 0) return 0
-  
-  let syllableCount = 0
-  let i = 0
-  
-  while (i < cleanWord.length) {
-    const currentChar = cleanWord[i]
-    
-    if ('aeiouáéíóúâêîôûàèìòùãõ'.includes(currentChar)) {
-      syllableCount++
-      
-      if (i + 1 < cleanWord.length) {
-        const nextChar = cleanWord[i + 1]
-        if (('aeo'.includes(currentChar) && 'iu'.includes(nextChar)) ||
-            ('iu'.includes(currentChar) && 'aeo'.includes(nextChar))) {
-          i++
-        }
-      }
-    }
-    i++
-  }
-  
-  return Math.max(1, syllableCount)
-}
-
-// Mock data
-const mockProjects = [
-  { 
-    id: '1', 
-    title: 'Amor de Verão', 
-    genre: 'Sertanejo Moderno', 
-    lyrics: '[VERSO 1]\nO calor do verão aquece nosso coração de uma forma especial\n\n[REFRAO]\nÉ amor, é paixão nessa estação maravilhosa da vida' 
-  },
-  { 
-    id: '2', 
-    title: 'Noite Estrelada', 
-    genre: 'MPB', 
-    lyrics: '[VERSO 1]\nA noite caiu lentamente sobre a cidade adormecida\n\n[REFRAO]\nSob o céu estrelado meu coração se entregou completamente' 
-  },
-  { 
-    id: '3', 
-    title: 'Caminhos', 
-    genre: 'Rock', 
-    lyrics: '[VERSO 1]\nCaminhos se cruzam em um destino desconhecido\n\n[REFRAO]\nSeguindo em frente sem nunca olhar para trás' 
-  }
-]
-
-const rewriteOptions = [
-  { value: 'melhorar-rimas', label: 'Melhorar Rimas', description: 'Aprimora rimas e fluência poética' },
-  { value: 'otimizar-metrica', label: 'Otimizar Métrica', description: 'Ajusta sílabas e ritmo' },
-  { value: 'simplificar', label: 'Simplificar', description: 'Torna a linguagem mais acessível' },
-  { value: 'enriquecer', label: 'Enriquecer', description: 'Adiciona metáforas e imagens' },
-  { value: 'modernizar', label: 'Modernizar', description: 'Atualiza para linguagem contemporânea' },
-  { value: 'intensificar', label: 'Intensificar', description: 'Aumenta impacto emocional' }
-]
-
-export default function RewritePage() {
-  const [selectedProject, setSelectedProject] = useState<string>('')
-  const [originalLyrics, setOriginalLyrics] = useState('')
-  const [rewrittenLyrics, setRewrittenLyrics] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [rewriteType, setRewriteType] = useState('otimizar-metrica')
-  const [genre, setGenre] = useState('')
-  const [customInstruction, setCustomInstruction] = useState('')
-
-  const handleProjectSelect = (projectId: string) => {
-    const project = mockProjects.find(p => p.id === projectId)
-    if (project) {
-      setSelectedProject(projectId)
-      setOriginalLyrics(project.lyrics)
-      setGenre(project.genre)
-      setRewrittenLyrics('')
-    }
+  const handleAnalisarLetra = () => {
+    // Placeholder para análise
+    setQualidadeScore(7.5)
+    setSugestoes([
+      "Adicionar mais metáforas visuais no segundo verso",
+      "Reforçar a rima no refrão para maior impacto",
+      "Considerar uma ponte melódica entre verso e refrão",
+      "Explorar mais a temática emocional no final",
+    ])
+    setAnalisado(true)
   }
 
-  const handleRewrite = async () => {
-    if (!originalLyrics.trim()) {
-      alert('Cole ou selecione uma letra para reescrever')
-      return
-    }
-
-    setIsLoading(true)
-    setRewrittenLyrics('')
-    
-    try {
-      const metrics = BRAZILIAN_GENRE_METRICS[genre] || BRAZILIAN_GENRE_METRICS.default
-      
-      // Simulação de API
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      let result = originalLyrics
-      
-      switch (rewriteType) {
-        case 'otimizar-metrica':
-          result = originalLyrics + `\n\n[VERSO OTIMIZADO]\nCom métrica perfeita de ${metrics.syllablesPerLine} sílabas\nRitmo ajustado pra ${metrics.bpm} BPM\n\n✅ Métrica otimizada para ${genre}`
-          break
-        case 'melhorar-rimas':
-          result = originalLyrics + `\n\n[VERSO APRIMORADO]\nRimas ricas e bem cuidadas\nFluindo como águas calmas\n\n✅ Rimas aprimoradas`
-          break
-        case 'simplificar':
-          result = originalLyrics + `\n\n[VERSO SIMPLIFICADO]\nPalavras mais leves\nSentimento mais puro\n\n✅ Linguagem simplificada`
-          break
-        case 'custom':
-          result = originalLyrics + `\n\n[VERSO PERSONALIZADO]\n${customInstruction || 'Aplicando suas instruções...'}\n\n✅ Personalização aplicada`
-          break
-        default:
-          result = originalLyrics + `\n\n[VERSO REESCRITO]\nVersão melhorada e refinada\nCom toque especial\n\n✅ Reescrita concluída`
-      }
-      
-      setRewrittenLyrics(result)
-    } catch (error) {
-      console.error('Erro ao reescrever letra:', error)
-      alert('Erro ao processar a letra. Tente novamente.')
-    } finally {
-      setIsLoading(false)
-    }
+  const handleReescreverLetra = () => {
+    // Placeholder para reescrita
+    setLetraReescrita(
+      `[Verso 1 - ${generoConversao}]\nSua letra transformada no novo gênero\nMantendo a essência e emoção original\n\n[Refrão]\nRefrão adaptado ao estilo escolhido\nCom a mesma mensagem, nova roupagem\n\n[Verso 2]\nContinuação da história recontada\nNo ritmo e linguagem do gênero selecionado`,
+    )
   }
 
-  const currentMetrics = genre ? 
-    BRAZILIAN_GENRE_METRICS[genre] : 
-    BRAZILIAN_GENRE_METRICS.default
-
-  // Validar métrica
-  const validateMetrics = (lyrics: string) => {
-    if (!genre || !lyrics) return null
-    
-    const metrics = BRAZILIAN_GENRE_METRICS[genre] || BRAZILIAN_GENRE_METRICS.default
-    const maxSyllables = metrics.syllablesPerLine
-    
-    const lines = lyrics.split('\n').filter(line => {
-      const trimmed = line.trim()
-      return trimmed && 
-             !trimmed.startsWith('[') && 
-             !trimmed.startsWith('(') &&
-             !trimmed.includes('Instrumental:')
-    })
-    
-    const problematicLines = lines
-      .map((line, index) => ({ 
-        line, 
-        syllables: countPortugueseSyllables(line)
-      }))
-      .filter(item => item.syllables > maxSyllables)
-    
-    return problematicLines
+  const handleAplicarMelhorias = () => {
+    // Placeholder para aplicar melhorias
+    setLetraReescrita((prev) => prev + "\n\n[Melhorias aplicadas com sucesso]")
   }
-
-  const originalProblematicLines = validateMetrics(originalLyrics)
-  const rewrittenProblematicLines = validateMetrics(rewrittenLyrics)
-
-  const selectedProjectData = mockProjects.find(p => p.id === selectedProject)
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="p-3 bg-blue-100 rounded-full">
-              <span className="text-2xl">🔄</span>
-            </div>
-            <h1 className="text-4xl font-bold text-gray-900">Reescrever Letra</h1>
-          </div>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Aprimore suas letras com correção automática de métrica e melhorias inteligentes
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Painel de Seleção */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-2">Selecionar Letra</h2>
-            <p className="text-gray-600 mb-6">Escolha um projeto ou cole sua letra</p>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Projetos Salvos
-                </label>
-                <select 
-                  value={selectedProject}
-                  onChange={(e) => handleProjectSelect(e.target.value)}
-                  className="w-full rounded-md border border-gray-300 bg-white py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="">Selecione um projeto</option>
-                  {mockProjects.map(project => (
-                    <option key={project.id} value={project.id}>
-                      {project.title} ({project.genre})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="text-sm text-gray-500 text-center">— OU —</div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Cole sua letra
-                </label>
-                <textarea
-                  value={!selectedProject ? originalLyrics : ''}
-                  onChange={(e) => {
-                    if (!selectedProject) {
-                      setOriginalLyrics(e.target.value)
-                      setRewrittenLyrics('')
-                    }
-                  }}
-                  disabled={!!selectedProject}
-                  placeholder="Cole a letra que deseja reescrever..."
-                  className="w-full rounded-md border border-gray-300 bg-white py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[120px]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Gênero da Letra
-                </label>
-                <select 
-                  value={genre}
-                  onChange={(e) => setGenre(e.target.value)}
-                  className="w-full rounded-md border border-gray-300 bg-white py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="">Selecione o gênero</option>
-                  {Object.keys(BRAZILIAN_GENRE_METRICS)
-                    .filter(g => g !== 'default')
-                    .map(genreName => (
-                    <option key={genreName} value={genreName}>
-                      {genreName} ({BRAZILIAN_GENRE_METRICS[genreName].syllablesPerLine}s)
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {selectedProjectData && (
-                <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-gray-900">{selectedProjectData.title}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
-                          {selectedProjectData.genre}
-                        </span>
-                        <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-800">
-                          {BRAZILIAN_GENRE_METRICS[selectedProjectData.genre]?.syllablesPerLine || 8}s
-                        </span>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => {
-                        setSelectedProject('')
-                        setOriginalLyrics('')
-                        setGenre('')
-                      }}
-                      className="text-gray-500 hover:text-gray-700 text-sm font-medium"
-                    >
-                      Trocar
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Painel de Original */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="mb-4">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-2">Letra Original</h2>
-              <p className="text-gray-600">Sua letra antes das melhorias</p>
-              {genre && (
-                <div className="flex items-center gap-2 mt-3">
-                  <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-800">
-                    {currentMetrics.syllablesPerLine}s/linha
-                  </span>
-                  <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-800">
-                    {currentMetrics.bpm}BPM
-                  </span>
-                </div>
-              )}
-            </div>
-            
-            <div className="space-y-4">
-              <textarea
-                value={originalLyrics}
-                onChange={(e) => setOriginalLyrics(e.target.value)}
-                placeholder="Letra original aparecerá aqui..."
-                className="w-full rounded-md border border-gray-300 bg-white py-2 px-3 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[300px]"
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* SEÇÃO ESQUERDA: Input e Configurações */}
+      <div className="space-y-6">
+        <Card className="bg-card border-border">
+          <CardHeader>
+            <CardTitle className="text-xl font-semibold text-foreground">Letra Original</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="letra-original">Cole sua letra aqui...</Label>
+              <Textarea
+                id="letra-original"
+                placeholder="Cole a letra que deseja reescrever ou melhorar..."
+                className="min-h-[300px] resize-none font-mono text-sm"
+                value={letraOriginal}
+                onChange={(e) => setLetraOriginal(e.target.value)}
               />
-              
-              {originalProblematicLines && originalProblematicLines.length > 0 && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span>⚠️</span>
-                    <span className="font-medium text-yellow-800">
-                      Ajuste de Métrica Recomendado
-                    </span>
-                  </div>
-                  <p className="text-sm text-yellow-700">
-                    <strong>{genre}</strong> recomenda até <strong>{currentMetrics.syllablesPerLine} sílabas</strong> por linha. 
-                    {originalProblematicLines.length} linha(s) precisam de ajuste.
-                  </p>
-                </div>
-              )}
-              
-              <div className="flex gap-2">
-                <button
-                  onClick={() => navigator.clipboard.writeText(originalLyrics)}
-                  disabled={!originalLyrics}
-                  className="bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-md text-sm font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center disabled:opacity-50"
-                >
-                  <span className="mr-2">📋</span>
-                  Copiar
-                </button>
-                
-                {originalProblematicLines && originalProblematicLines.length > 0 && (
-                  <button
-                    onClick={() => {
-                      const fixed = originalLyrics.split('\n').map(line => {
-                        if (countPortugueseSyllables(line) > currentMetrics.syllablesPerLine) {
-                          const words = line.split(' ')
-                          if (words.length > 2) {
-                            const mid = Math.floor(words.length / 2)
-                            return words.slice(0, mid).join(' ') + '\n' + words.slice(mid).join(' ')
-                          }
-                        }
-                        return line
-                      }).join('\n')
-                      setOriginalLyrics(fixed)
-                    }}
-                    className="bg-yellow-100 border border-yellow-300 text-yellow-700 py-2 px-4 rounded-md text-sm font-medium hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 flex items-center"
-                  >
-                    <span className="mr-2">🔄</span>
-                    Corrigir Métrica
-                  </button>
-                )}
-              </div>
             </div>
-          </div>
+          </CardContent>
+        </Card>
 
-          {/* Painel de Resultado */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="mb-4">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-2">Letra Reescrita</h2>
-              <p className="text-gray-600">Versão aprimorada com métrica corrigida</p>
-              {genre && rewrittenLyrics && (
-                <div className="flex items-center gap-2 mt-3">
-                  <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-                    {currentMetrics.syllablesPerLine}s/linha
-                  </span>
-                  <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-                    {currentMetrics.bpm}BPM
-                  </span>
-                  <span>✅</span>
-                </div>
-              )}
+        <Card className="bg-card border-border">
+          <CardHeader>
+            <CardTitle className="text-xl font-semibold text-foreground">Configurações</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="genero-conversao">Gênero para Conversão</Label>
+              <Select value={generoConversao} onValueChange={setGeneroConversao}>
+                <SelectTrigger id="genero-conversao">
+                  <SelectValue placeholder="Selecione o gênero destino" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sertanejo-moderno">Sertanejo Moderno</SelectItem>
+                  <SelectItem value="sertanejo-raiz">Sertanejo Raiz</SelectItem>
+                  <SelectItem value="pagode">Pagode</SelectItem>
+                  <SelectItem value="mpb">MPB</SelectItem>
+                  <SelectItem value="pop">Pop</SelectItem>
+                  <SelectItem value="rock">Rock</SelectItem>
+                  <SelectItem value="funk">Funk</SelectItem>
+                  <SelectItem value="rap">Rap</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            
-            <div className="space-y-4">
-              {isLoading ? (
-                <div className="flex items-center justify-center h-[300px]">
-                  <div className="text-center">
-                    <span className="animate-spin text-4xl mb-4 block">🔄</span>
-                    <p className="text-gray-600">Reescrevendo letra...</p>
-                    {genre && (
-                      <p className="text-sm text-gray-600 mt-2">
-                        Aplicando métrica de {currentMetrics.syllablesPerLine} sílabas
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ) : rewrittenLyrics ? (
-                <>
-                  <textarea
-                    value={rewrittenLyrics}
-                    onChange={(e) => setRewrittenLyrics(e.target.value)}
-                    className="w-full rounded-md border border-gray-300 bg-white py-2 px-3 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[300px]"
-                    placeholder="Letra reescrita aparecerá aqui..."
+
+            <div className="space-y-3">
+              <Label>Opções de Reescrita</Label>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="conservar-imagens"
+                    checked={conservarImagens}
+                    onCheckedChange={(checked) => setConservarImagens(checked as boolean)}
                   />
-                  
-                  {rewrittenProblematicLines && rewrittenProblematicLines.length > 0 && (
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span>⚠️</span>
-                        <span className="font-medium text-yellow-800">
-                          Ajuste de Métrica Recomendado
-                        </span>
-                      </div>
-                      <p className="text-sm text-yellow-700">
-                        <strong>{genre}</strong> recomenda até <strong>{currentMetrics.syllablesPerLine} sílabas</strong> por linha. 
-                        {rewrittenProblematicLines.length} linha(s) precisam de ajuste.
-                      </p>
-                    </div>
-                  )}
-                  
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => navigator.clipboard.writeText(rewrittenLyrics)}
-                      className="bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-md text-sm font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center"
-                    >
-                      <span className="mr-2">📋</span>
-                      Copiar
-                    </button>
-                    
-                    {rewrittenProblematicLines && rewrittenProblematicLines.length > 0 && (
-                      <button
-                        onClick={() => {
-                          const fixed = rewrittenLyrics.split('\n').map(line => {
-                            if (countPortugueseSyllables(line) > currentMetrics.syllablesPerLine) {
-                              const words = line.split(' ')
-                              if (words.length > 2) {
-                                const mid = Math.floor(words.length / 2)
-                                return words.slice(0, mid).join(' ') + '\n' + words.slice(mid).join(' ')
-                              }
-                            }
-                            return line
-                          }).join('\n')
-                          setRewrittenLyrics(fixed)
-                        }}
-                        className="bg-yellow-100 border border-yellow-300 text-yellow-700 py-2 px-4 rounded-md text-sm font-medium hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 flex items-center"
-                      >
-                        <span className="mr-2">🔄</span>
-                        Corrigir Métrica
-                      </button>
-                    )}
-                    
-                    <button className="bg-blue-600 text-white py-2 px-4 rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center ml-auto">
-                      <span className="mr-2">💾</span>
-                      Salvar
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <div className="flex items-center justify-center h-[300px] text-gray-600">
-                  <div className="text-center">
-                    <span className="text-4xl mb-4 block">✨</span>
-                    <p>Reescreva uma letra para ver o resultado</p>
-                    {genre && (
-                      <p className="text-sm mt-2">
-                        Métrica: {currentMetrics.syllablesPerLine} sílabas/linha
-                      </p>
-                    )}
-                  </div>
+                  <Label htmlFor="conservar-imagens" className="text-sm font-normal cursor-pointer">
+                    Conservar imagens originais
+                  </Label>
                 </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Painel de Opções de Reescrita */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mt-6">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-2 flex items-center gap-2">
-            <span>⚡</span>
-            Opções de Reescrita
-          </h2>
-          <p className="text-gray-600 mb-6">Escolha como deseja melhorar sua letra</p>
-          
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-              {rewriteOptions.map(option => (
-                <button
-                  key={option.value}
-                  onClick={() => setRewriteType(option.value)}
-                  className={`py-3 px-4 rounded-md text-sm font-medium flex flex-col items-center gap-2 ${
-                    rewriteType === option.value 
-                      ? 'bg-blue-600 text-white' 
-                      : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <span>🔄</span>
-                  <span className="text-xs text-center">{option.label}</span>
-                </button>
-              ))}
-            </div>
-
-            {rewriteType === 'custom' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Instruções Personalizadas
-                </label>
-                <input
-                  type="text"
-                  value={customInstruction}
-                  onChange={(e) => setCustomInstruction(e.target.value)}
-                  placeholder="Ex: Tornar mais romântico, adicionar metáforas, etc."
-                  className="w-full rounded-md border border-gray-300 bg-white py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="polir-sem-mexer"
+                    checked={polirSemMexer}
+                    onCheckedChange={(checked) => setPolirSemMexer(checked as boolean)}
+                  />
+                  <Label htmlFor="polir-sem-mexer" className="text-sm font-normal cursor-pointer">
+                    Polir sem mexer na estrutura
+                  </Label>
+                </div>
               </div>
-            )}
+            </div>
 
-            <div className="flex gap-3 items-center">
-              <button
-                onClick={handleRewrite}
-                disabled={isLoading || !originalLyrics.trim() || !genre}
-                className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-md font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            <div className="flex flex-col gap-2 pt-2">
+              <Button
+                onClick={handleAnalisarLetra}
+                variant="outline"
+                size="lg"
+                className="w-full bg-transparent"
+                disabled={!letraOriginal}
               >
-                {isLoading ? (
-                  <>
-                    <span className="animate-spin mr-2">🔄</span>
-                    Processando...
-                  </>
-                ) : (
-                  <>
-                    <span className="mr-2">✨</span>
-                    Reescrever com Métrica {currentMetrics.syllablesPerLine}s
-                  </>
-                )}
-              </button>
-              
-              {genre && (
-                <div className="text-sm text-gray-600 text-center min-w-[120px]">
-                  <div>{currentMetrics.syllablesPerLine}s/linha</div>
-                  <div>{currentMetrics.bpm} BPM</div>
-                </div>
-              )}
+                <FileText className="w-4 h-4 mr-2" />
+                Analisar Letra
+              </Button>
+              <Button
+                onClick={handleReescreverLetra}
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                size="lg"
+                disabled={!letraOriginal || !generoConversao}
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                Reescrever Letra
+              </Button>
             </div>
+          </CardContent>
+        </Card>
+      </div>
 
-            <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-              <div className="flex items-start">
-                <span className="text-green-600 mr-2 mt-0.5">🎵</span>
-                <div className="text-sm text-green-800">
-                  <strong>Sistema de Métrica Ativo:</strong> Sua letra será reescrita automaticamente 
-                  com a métrica ideal para <strong>{genre || 'o gênero selecionado'}</strong>. 
-                  Versos longos serão corrigidos automaticamente.
+      {/* SEÇÃO DIREITA: Preview e Análise */}
+      <div className="space-y-6">
+        {analisado && (
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <CardTitle className="text-xl font-semibold text-foreground">Análise de Qualidade</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Score de Qualidade</Label>
+                  <span className="text-2xl font-bold text-primary">{qualidadeScore}/10</span>
+                </div>
+                <Progress value={qualidadeScore * 10} className="h-2" />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Sugestões de Melhoria</Label>
+                <div className="space-y-2">
+                  {sugestoes.map((sugestao, index) => (
+                    <Card key={index} className="bg-muted/50 border-border/50">
+                      <CardContent className="p-3">
+                        <p className="text-sm text-muted-foreground">{sugestao}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        <Card className="bg-card border-border">
+          <CardHeader>
+            <CardTitle className="text-xl font-semibold text-foreground">Letra Reescrita</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="letra-reescrita">Preview</Label>
+              <Textarea
+                id="letra-reescrita"
+                placeholder="A letra reescrita aparecerá aqui..."
+                className="min-h-[400px] resize-none font-mono text-sm"
+                value={letraReescrita}
+                onChange={(e) => setLetraReescrita(e.target.value)}
+              />
             </div>
-          </div>
-        </div>
+
+            <div className="flex flex-col gap-2">
+              {analisado && (
+                <Button
+                  onClick={handleAplicarMelhorias}
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                  size="lg"
+                  disabled={!letraReescrita}
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Aplicar Melhorias
+                </Button>
+              )}
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="outline" size="lg" disabled={!letraReescrita}>
+                  <Save className="w-4 h-4 mr-2" />
+                  Salvar Cópia
+                </Button>
+                <Button variant="outline" size="lg" disabled={!letraReescrita}>
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copiar Letra
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
