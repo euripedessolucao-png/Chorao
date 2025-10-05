@@ -1,40 +1,140 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Button } from '~/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '~/components/ui/card'
-import { Input } from '~/components/ui/input'
-import { Textarea } from '~/components/ui/textarea'
-import { Label } from '~/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select'
-import { Badge } from '~/components/ui/badge'
-import { AlertTriangle, Loader2, Music, Zap, Wand, Search, Copy, Save, RefreshCw } from 'lucide-react'
+
+// Componentes UI básicos - substitua pelos seus componentes reais
+const Button = ({ children, onClick, disabled, className = '', variant = 'default', size = 'default', ...props }: any) => {
+  const baseStyle = "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none"
+  const variants = {
+    default: "bg-blue-600 text-white hover:bg-blue-700",
+    outline: "border border-gray-300 bg-white hover:bg-gray-50 text-gray-900",
+    secondary: "bg-gray-100 text-gray-900 hover:bg-gray-200"
+  }
+  const sizes = {
+    default: "h-10 py-2 px-4",
+    sm: "h-8 px-3 text-xs",
+    lg: "h-11 px-8"
+  }
+  
+  return (
+    <button 
+      className={`${baseStyle} ${variants[variant]} ${sizes[size]} ${className}`}
+      onClick={onClick}
+      disabled={disabled}
+      {...props}
+    >
+      {children}
+    </button>
+  )
+}
+
+const Card = ({ children, className = '' }: any) => (
+  <div className={`rounded-lg border bg-white shadow-sm ${className}`}>
+    {children}
+  </div>
+)
+
+const CardHeader = ({ children, className = '' }: any) => (
+  <div className={`flex flex-col space-y-1.5 p-6 ${className}`}>
+    {children}
+  </div>
+)
+
+const CardTitle = ({ children, className = '' }: any) => (
+  <h3 className={`text-2xl font-semibold leading-none tracking-tight ${className}`}>
+    {children}
+  </h3>
+)
+
+const CardDescription = ({ children, className = '' }: any) => (
+  <p className={`text-sm text-gray-600 ${className}`}>
+    {children}
+  </p>
+)
+
+const CardContent = ({ children, className = '' }: any) => (
+  <div className={`p-6 pt-0 ${className}`}>
+    {children}
+  </div>
+)
+
+const Input = ({ className = '', ...props }: any) => (
+  <input 
+    className={`flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+    {...props}
+  />
+)
+
+const Textarea = ({ className = '', ...props }: any) => (
+  <textarea 
+    className={`flex min-h-[80px] w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+    {...props}
+  />
+)
+
+const Label = ({ children, className = '', ...props }: any) => (
+  <label 
+    className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${className}`}
+    {...props}
+  >
+    {children}
+  </label>
+)
+
+const Select = ({ children, value, onValueChange, ...props }: any) => (
+  <select 
+    value={value}
+    onChange={(e) => onValueChange(e.target.value)}
+    className="flex h-10 w-full items-center justify-between rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+    {...props}
+  >
+    {children}
+  </select>
+)
+
+const SelectTrigger = ({ children, ...props }: any) => <div {...props}>{children}</div>
+const SelectValue = ({ placeholder }: any) => <option value="">{placeholder}</option>
+const SelectContent = ({ children }: any) => <>{children}</>
+
+const SelectItem = ({ children, value }: any) => (
+  <option value={value}>{children}</option>
+)
+
+const Badge = ({ children, variant = 'default', className = '' }: any) => {
+  const variants = {
+    default: "bg-blue-100 text-blue-800",
+    secondary: "bg-gray-100 text-gray-800",
+    outline: "border border-gray-300 text-gray-700"
+  }
+  return (
+    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${variants[variant]} ${className}`}>
+      {children}
+    </span>
+  )
+}
+
+// Ícones (usando emoji como fallback)
+const Loader2 = () => <span>🔄</span>
+const Music = () => <span>🎵</span>
+const Zap = () => <span>⚡</span>
+const Wand = () => <span>✨</span>
+const Search = () => <span>🔍</span>
+const Copy = () => <span>📋</span>
+const Save = () => <span>💾</span>
+const RefreshCw = () => <span>🔄</span>
+const AlertTriangle = () => <span>⚠️</span>
 
 // Sistema de métricas por gênero brasileiro
 const BRAZILIAN_GENRE_METRICS = {
-const genres = [
-  { id: '1', name: 'Sertanejo Moderno' }, // ← ADICIONADO NO TOPO
-  { id: '2', name: 'Sertanejo' },
-  { id: '3', name: 'Sertanejo Universitário' },
-  { id: '4', name: 'Sertanejo Sofrência' },
-  { id: '5', name: 'Sertanejo Raiz' },
-  // ... outros gêneros
-]
-
-// ATUALIZE o objeto BRAZILIAN_GENRE_METRICS:
-const BRAZILIAN_GENRE_METRICS = {
-  // Sertanejo Moderno - NOVO (adicionar no topo)
+  // Sertanejo Moderno
   "Sertanejo Moderno": { syllablesPerLine: 6, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
   
-  // Sertanejo existentes (manter)
+  // Sertanejo Tradicional
   "Sertanejo": { syllablesPerLine: 7, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
   "Sertanejo Universitário": { syllablesPerLine: 6, bpm: 95, structure: "VERSO-REFRAO" },
   "Sertanejo Sofrência": { syllablesPerLine: 8, bpm: 75, structure: "VERSO-REFRAO-PONTE" },
   "Sertanejo Raiz": { syllablesPerLine: 10, bpm: 80, structure: "VERSO-REFRAO" },
-  
-  // ... resto igual
-}
   
   // Pagode e Samba
   "Pagode": { syllablesPerLine: 7, bpm: 100, structure: "VERSO-REFRAO" },
@@ -84,31 +184,26 @@ function countPortugueseSyllables(word: string): number {
   
   if (cleanWord.length === 0) return 0
   
-  // Regras básicas de divisão silábica em português
   let syllableCount = 0
   let i = 0
   
   while (i < cleanWord.length) {
     const currentChar = cleanWord[i]
     
-    // Vogais contam como sílabas
     if ('aeiouáéíóúâêîôûàèìòùãõ'.includes(currentChar)) {
       syllableCount++
       
-      // Verificar ditongos
       if (i + 1 < cleanWord.length) {
         const nextChar = cleanWord[i + 1]
-        // Ditongos crescentes e decrescentes
         if (('aeo'.includes(currentChar) && 'iu'.includes(nextChar)) ||
             ('iu'.includes(currentChar) && 'aeo'.includes(nextChar))) {
-          i++ // Pula próxima vogal do ditongo
+          i++
         }
       }
     }
     i++
   }
   
-  // Mínimo 1 sílaba por palavra
   return Math.max(1, syllableCount)
 }
 
@@ -136,22 +231,22 @@ function MetricValidator({ lyrics, genre }: { lyrics: string; genre: string }) {
   if (problematicLines.length === 0) return null
   
   return (
-    <Card className="border-yellow-200 bg-yellow-50 dark:bg-yellow-900/20">
+    <Card className="border-yellow-200 bg-yellow-50">
       <CardContent className="p-4">
         <div className="flex items-center gap-2 mb-2">
-          <AlertTriangle className="h-4 w-4 text-yellow-600" />
-          <span className="font-medium text-yellow-800 dark:text-yellow-200">
+          <AlertTriangle />
+          <span className="font-medium text-yellow-800">
             Ajuste de Métrica Recomendado
           </span>
         </div>
-        <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-2">
+        <p className="text-sm text-yellow-700 mb-2">
           <strong>{genre}</strong> recomenda até <strong>{maxSyllables} sílabas</strong> por linha. 
           {problematicLines.length} linha(s) precisam de ajuste:
         </p>
         <div className="space-y-1 text-xs max-h-20 overflow-y-auto">
           {problematicLines.slice(0, 5).map((item, idx) => (
             <div key={idx} className="flex justify-between items-start">
-              <span className="text-yellow-800 dark:text-yellow-200 flex-1">
+              <span className="text-yellow-800 flex-1">
                 "{item.line.length > 35 ? item.line.substring(0, 35) + '...' : item.line}"
               </span>
               <span className="text-yellow-600 font-medium ml-2">
@@ -187,7 +282,6 @@ function AutoFixMetrics({ lyrics, genre, onFixed }: {
       
       const lines = lyrics.split('\n')
       const fixedLines = lines.map(line => {
-        // Não modificar seções, instruções ou linhas vazias
         if (!line.trim() || 
             line.trim().startsWith('[') || 
             line.trim().startsWith('(') ||
@@ -198,14 +292,11 @@ function AutoFixMetrics({ lyrics, genre, onFixed }: {
         const syllableCount = countPortugueseSyllables(line)
         if (syllableCount <= maxSyllables) return line
         
-        // Estratégia de correção: dividir linha longa no ponto natural
         const words = line.split(' ')
-        if (words.length <= 2) return line // Não dividir linhas muito curtas
+        if (words.length <= 2) return line
         
-        // Encontrar ponto natural para divisão (após vírgula ou no meio)
         let splitIndex = Math.floor(words.length / 2)
         
-        // Tentar encontrar vírgula para divisão natural
         for (let i = 0; i < words.length - 1; i++) {
           if (words[i].endsWith(',') || words[i].endsWith(';')) {
             splitIndex = i + 1
@@ -244,11 +335,16 @@ function AutoFixMetrics({ lyrics, genre, onFixed }: {
       className="border-yellow-300 text-yellow-700 hover:bg-yellow-100"
     >
       {isFixing ? (
-        <Loader2 className="h-3 w-3 animate-spin mr-1" />
+        <>
+          <Loader2 />
+          Corrigindo...
+        </>
       ) : (
-        <RefreshCw className="h-3 w-3 mr-1" />
+        <>
+          <RefreshCw />
+          Corrigir Métrica
+        </>
       )}
-      Corrigir Métrica
     </Button>
   )
 }
@@ -282,20 +378,21 @@ export default function CreatePage() {
   })
 
   const genres = [
-    { id: '1', name: 'Sertanejo' },
-    { id: '2', name: 'Sertanejo Universitário' },
-    { id: '3', name: 'Sertanejo Sofrência' },
-    { id: '4', name: 'Sertanejo Raiz' },
-    { id: '5', name: 'Pagode' },
-    { id: '6', name: 'Samba' },
-    { id: '7', name: 'Forró' },
-    { id: '8', name: 'Axé' },
-    { id: '9', name: 'MPB' },
-    { id: '10', name: 'Bossa Nova' },
-    { id: '11', name: 'Rock' },
-    { id: '12', name: 'Pop' },
-    { id: '13', name: 'Funk' },
-    { id: '14', name: 'Gospel' },
+    { id: '1', name: 'Sertanejo Moderno' },
+    { id: '2', name: 'Sertanejo' },
+    { id: '3', name: 'Sertanejo Universitário' },
+    { id: '4', name: 'Sertanejo Sofrência' },
+    { id: '5', name: 'Sertanejo Raiz' },
+    { id: '6', name: 'Pagode' },
+    { id: '7', name: 'Samba' },
+    { id: '8', name: 'Forró' },
+    { id: '9', name: 'Axé' },
+    { id: '10', name: 'MPB' },
+    { id: '11', name: 'Bossa Nova' },
+    { id: '12', name: 'Rock' },
+    { id: '13', name: 'Pop' },
+    { id: '14', name: 'Funk' },
+    { id: '15', name: 'Gospel' },
   ]
 
   const handleGenerate = async (e: React.FormEvent) => {
@@ -357,26 +454,22 @@ export default function CreatePage() {
                   value={formData.genre}
                   onValueChange={(value) => setFormData({ ...formData, genre: value })}
                 >
-                  <SelectTrigger id="genre">
-                    <SelectValue placeholder="Escolha o gênero" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {genres.map((genre) => (
-                      <SelectItem key={genre.id} value={genre.name}>
-                        <div className="flex items-center justify-between w-full">
-                          <span>{genre.name}</span>
-                          {BRAZILIAN_GENRE_METRICS[genre.name] && (
-                            <Badge variant="outline" className="text-xs ml-2">
-                              {BRAZILIAN_GENRE_METRICS[genre.name].syllablesPerLine}s
-                            </Badge>
-                          )}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
+                  <SelectValue placeholder="Escolha o gênero" />
+                  {genres.map((genre) => (
+                    <SelectItem key={genre.id} value={genre.name}>
+                      <div className="flex items-center justify-between w-full">
+                        <span>{genre.name}</span>
+                        {BRAZILIAN_GENRE_METRICS[genre.name] && (
+                          <Badge variant="outline" className="text-xs ml-2">
+                            {BRAZILIAN_GENRE_METRICS[genre.name].syllablesPerLine}s
+                          </Badge>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
                 </Select>
                 {formData.genre && (
-                  <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded text-xs">
+                  <div className="mt-2 p-2 bg-blue-50 rounded text-xs">
                     <div className="flex justify-between">
                       <span>Métrica:</span>
                       <span className="font-medium">{currentMetrics.syllablesPerLine} sílabas/linha</span>
@@ -411,14 +504,10 @@ export default function CreatePage() {
                     setFormData({ ...formData, creativityLevel: value })
                   }
                 >
-                  <SelectTrigger id="creativityLevel">
-                    <SelectValue placeholder="Selecione o nível" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Conservador</SelectItem>
-                    <SelectItem value="medium">Equilibrado</SelectItem>
-                    <SelectItem value="high">Ousado</SelectItem>
-                  </SelectContent>
+                  <SelectValue placeholder="Selecione o nível" />
+                  <SelectItem value="low">Conservador</SelectItem>
+                  <SelectItem value="medium">Equilibrado</SelectItem>
+                  <SelectItem value="high">Ousado</SelectItem>
                 </Select>
               </div>
 
@@ -429,21 +518,21 @@ export default function CreatePage() {
               >
                 {isLoading ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 />
                     Gerando...
                   </>
                 ) : (
                   <>
-                    <Music className="mr-2 h-4 w-4" />
+                    <Music />
                     Gerar Letra com Métrica {currentMetrics.syllablesPerLine}s
                   </>
                 )}
               </Button>
 
-              <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+              <div className="p-3 bg-green-50 rounded-lg border border-green-200">
                 <div className="flex items-start gap-2">
-                  <Zap className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
-                  <div className="text-sm text-green-800 dark:text-green-300">
+                  <Zap />
+                  <div className="text-sm text-green-800">
                     <strong>Sistema de Métrica Ativo:</strong> Sua letra será gerada automaticamente 
                     com a métrica ideal para <strong>{formData.genre || 'o gênero selecionado'}</strong>
                   </div>
@@ -472,11 +561,11 @@ export default function CreatePage() {
                 title="Sugerir títulos"
                 disabled={!generatedLyrics}
               >
-                <Wand className="h-5 w-5" />
+                <Wand />
               </Button>
             </div>
             {formData.genre && generatedLyrics && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Badge variant="outline">
                   {currentMetrics.syllablesPerLine}s/linha
                 </Badge>
@@ -494,10 +583,10 @@ export default function CreatePage() {
             {isLoading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
-                  <p className="text-muted-foreground">Criando sua letra...</p>
+                  <Loader2 />
+                  <p className="text-gray-600">Criando sua letra...</p>
                   {formData.genre && (
-                    <p className="text-sm text-muted-foreground mt-2">
+                    <p className="text-sm text-gray-600 mt-2">
                       Aplicando métrica de {currentMetrics.syllablesPerLine} sílabas/linha
                     </p>
                   )}
@@ -522,7 +611,7 @@ export default function CreatePage() {
                       variant="outline"
                       size="sm"
                     >
-                      <Copy className="h-4 w-4 mr-1" />
+                      <Copy />
                       Copiar
                     </Button>
                     <AutoFixMetrics 
@@ -535,15 +624,15 @@ export default function CreatePage() {
                     onClick={() => {/* Salvar projeto */}}
                     size="sm"
                   >
-                    <Save className="h-4 w-4 mr-1" />
+                    <Save />
                     Salvar
                   </Button>
                 </div>
               </div>
             ) : (
-              <div className="flex items-center justify-center h-full text-muted-foreground">
+              <div className="flex items-center justify-center h-full text-gray-600">
                 <div className="text-center">
-                  <Music className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <Music />
                   <p>Preencha os parâmetros e gere sua primeira letra!</p>
                   {formData.genre && (
                     <p className="text-sm mt-2">
@@ -559,16 +648,3 @@ export default function CreatePage() {
     </div>
   )
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

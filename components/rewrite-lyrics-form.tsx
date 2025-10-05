@@ -1,30 +1,140 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { Button } from '~/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '~/components/ui/card'
-import { Textarea } from '~/components/ui/textarea'
-import { Input } from '~/components/ui/input'
-import { Label } from '~/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select'
-import { Badge } from '~/components/ui/badge'
-import { AlertTriangle, Loader2, RefreshCw, Zap, Wand, Copy, Save, Music, CheckCircle } from 'lucide-react'
+import React, { useState } from 'react'
+
+// Componentes UI básicos (os mesmos do CreatePage)
+const Button = ({ children, onClick, disabled, className = '', variant = 'default', size = 'default', ...props }: any) => {
+  const baseStyle = "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none"
+  const variants = {
+    default: "bg-blue-600 text-white hover:bg-blue-700",
+    outline: "border border-gray-300 bg-white hover:bg-gray-50 text-gray-900",
+    secondary: "bg-gray-100 text-gray-900 hover:bg-gray-200"
+  }
+  const sizes = {
+    default: "h-10 py-2 px-4",
+    sm: "h-8 px-3 text-xs",
+    lg: "h-11 px-8"
+  }
+  
+  return (
+    <button 
+      className={`${baseStyle} ${variants[variant]} ${sizes[size]} ${className}`}
+      onClick={onClick}
+      disabled={disabled}
+      {...props}
+    >
+      {children}
+    </button>
+  )
+}
+
+const Card = ({ children, className = '' }: any) => (
+  <div className={`rounded-lg border bg-white shadow-sm ${className}`}>
+    {children}
+  </div>
+)
+
+const CardHeader = ({ children, className = '' }: any) => (
+  <div className={`flex flex-col space-y-1.5 p-6 ${className}`}>
+    {children}
+  </div>
+)
+
+const CardTitle = ({ children, className = '' }: any) => (
+  <h3 className={`text-2xl font-semibold leading-none tracking-tight ${className}`}>
+    {children}
+  </h3>
+)
+
+const CardDescription = ({ children, className = '' }: any) => (
+  <p className={`text-sm text-gray-600 ${className}`}>
+    {children}
+  </p>
+)
+
+const CardContent = ({ children, className = '' }: any) => (
+  <div className={`p-6 pt-0 ${className}`}>
+    {children}
+  </div>
+)
+
+const Input = ({ className = '', ...props }: any) => (
+  <input 
+    className={`flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+    {...props}
+  />
+)
+
+const Textarea = ({ className = '', ...props }: any) => (
+  <textarea 
+    className={`flex min-h-[80px] w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+    {...props}
+  />
+)
+
+const Label = ({ children, className = '', ...props }: any) => (
+  <label 
+    className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${className}`}
+    {...props}
+  >
+    {children}
+  </label>
+)
+
+const Select = ({ children, value, onValueChange, ...props }: any) => (
+  <select 
+    value={value}
+    onChange={(e) => onValueChange(e.target.value)}
+    className="flex h-10 w-full items-center justify-between rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+    {...props}
+  >
+    {children}
+  </select>
+)
+
+const SelectTrigger = ({ children, ...props }: any) => <div {...props}>{children}</div>
+const SelectValue = ({ placeholder }: any) => <option value="">{placeholder}</option>
+const SelectContent = ({ children }: any) => <>{children}</>
+
+const SelectItem = ({ children, value }: any) => (
+  <option value={value}>{children}</option>
+)
+
+const Badge = ({ children, variant = 'default', className = '' }: any) => {
+  const variants = {
+    default: "bg-blue-100 text-blue-800",
+    secondary: "bg-gray-100 text-gray-800",
+    outline: "border border-gray-300 text-gray-700"
+  }
+  return (
+    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${variants[variant]} ${className}`}>
+      {children}
+    </span>
+  )
+}
+
+// Ícones
+const Loader2 = () => <span>🔄</span>
+const Music = () => <span>🎵</span>
+const Zap = () => <span>⚡</span>
+const Wand = () => <span>✨</span>
+const Copy = () => <span>📋</span>
+const Save = () => <span>💾</span>
+const RefreshCw = () => <span>🔄</span>
+const AlertTriangle = () => <span>⚠️</span>
+const CheckCircle = () => <span>✅</span>
 
 // Sistema de métricas por gênero brasileiro (mesmo do CreatePage)
-// ATUALIZE o objeto BRAZILIAN_GENRE_METRICS:
 const BRAZILIAN_GENRE_METRICS = {
-  // Sertanejo Moderno - NOVO (adicionar no topo)
+  // Sertanejo Moderno
   "Sertanejo Moderno": { syllablesPerLine: 6, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
   
-  // Sertanejo existentes (manter)
+  // Sertanejo Tradicional
   "Sertanejo": { syllablesPerLine: 7, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
   "Sertanejo Universitário": { syllablesPerLine: 6, bpm: 95, structure: "VERSO-REFRAO" },
   "Sertanejo Sofrência": { syllablesPerLine: 8, bpm: 75, structure: "VERSO-REFRAO-PONTE" },
   "Sertanejo Raiz": { syllablesPerLine: 10, bpm: 80, structure: "VERSO-REFRAO" },
   
-  // ... resto igual
-}
- 
   // Pagode e Samba
   "Pagode": { syllablesPerLine: 7, bpm: 100, structure: "VERSO-REFRAO" },
   "Samba": { syllablesPerLine: 7, bpm: 105, structure: "VERSO-REFRAO-PONTE" },
@@ -120,22 +230,22 @@ function MetricValidator({ lyrics, genre }: { lyrics: string; genre: string }) {
   if (problematicLines.length === 0) return null
   
   return (
-    <Card className="border-yellow-200 bg-yellow-50 dark:bg-yellow-900/20">
+    <Card className="border-yellow-200 bg-yellow-50">
       <CardContent className="p-4">
         <div className="flex items-center gap-2 mb-2">
-          <AlertTriangle className="h-4 w-4 text-yellow-600" />
-          <span className="font-medium text-yellow-800 dark:text-yellow-200">
+          <AlertTriangle />
+          <span className="font-medium text-yellow-800">
             Ajuste de Métrica Recomendado
           </span>
         </div>
-        <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-2">
+        <p className="text-sm text-yellow-700 mb-2">
           <strong>{genre}</strong> recomenda até <strong>{maxSyllables} sílabas</strong> por linha. 
           {problematicLines.length} linha(s) precisam de ajuste:
         </p>
         <div className="space-y-1 text-xs max-h-20 overflow-y-auto">
           {problematicLines.slice(0, 5).map((item, idx) => (
             <div key={idx} className="flex justify-between items-start">
-              <span className="text-yellow-800 dark:text-yellow-200 flex-1">
+              <span className="text-yellow-800 flex-1">
                 "{item.line.length > 35 ? item.line.substring(0, 35) + '...' : item.line}"
               </span>
               <span className="text-yellow-600 font-medium ml-2">
@@ -224,20 +334,40 @@ function AutoFixMetrics({ lyrics, genre, onFixed }: {
       className="border-yellow-300 text-yellow-700 hover:bg-yellow-100"
     >
       {isFixing ? (
-        <Loader2 className="h-3 w-3 animate-spin mr-1" />
+        <>
+          <Loader2 />
+          Corrigindo...
+        </>
       ) : (
-        <RefreshCw className="h-3 w-3 mr-1" />
+        <>
+          <RefreshCw />
+          Corrigir Métrica
+        </>
       )}
-      Corrigir Métrica
     </Button>
   )
 }
 
 // Mock data
 const mockProjects = [
-  { id: '1', title: 'Amor de Verão', genre: 'Sertanejo', lyrics: '[VERSO 1]\nO calor do verão aquece nosso coração de uma forma especial\n\n[REFRAO]\nÉ amor, é paixão nessa estação maravilhosa da vida' },
-  { id: '2', title: 'Noite Estrelada', genre: 'MPB', lyrics: '[VERSO 1]\nA noite caiu lentamente sobre a cidade adormecida\n\n[REFRAO]\nSob o céu estrelado meu coração se entregou completamente' },
-  { id: '3', title: 'Caminhos', genre: 'Rock', lyrics: '[VERSO 1]\nCaminhos se cruzam em um destino desconhecido\n\n[REFRAO]\nSeguindo em frente sem nunca olhar para trás' }
+  { 
+    id: '1', 
+    title: 'Amor de Verão', 
+    genre: 'Sertanejo Moderno', 
+    lyrics: '[VERSO 1]\nO calor do verão aquece nosso coração de uma forma especial\n\n[REFRAO]\nÉ amor, é paixão nessa estação maravilhosa da vida' 
+  },
+  { 
+    id: '2', 
+    title: 'Noite Estrelada', 
+    genre: 'MPB', 
+    lyrics: '[VERSO 1]\nA noite caiu lentamente sobre a cidade adormecida\n\n[REFRAO]\nSob o céu estrelado meu coração se entregou completamente' 
+  },
+  { 
+    id: '3', 
+    title: 'Caminhos', 
+    genre: 'Rock', 
+    lyrics: '[VERSO 1]\nCaminhos se cruzam em um destino desconhecido\n\n[REFRAO]\nSeguindo em frente sem nunca olhar para trás' 
+  }
 ]
 
 const rewriteOptions = [
@@ -320,12 +450,12 @@ export default function RewritePage() {
     <div className="w-full px-4 sm:px-6 md:px-8 py-8 max-w-none">
       <div className="text-center mb-8">
         <div className="flex items-center justify-center gap-3 mb-4">
-          <div className="p-3 bg-primary/10 rounded-full">
-            <RefreshCw className="h-8 w-8 text-primary" />
+          <div className="p-3 bg-blue-100 rounded-full">
+            <RefreshCw />
           </div>
           <h1 className="text-4xl font-bold">Reescrever Letra</h1>
         </div>
-        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+        <p className="text-xl text-gray-600 max-w-2xl mx-auto">
           Aprimore suas letras com correção automática de métrica e melhorias inteligentes
         </p>
       </div>
@@ -343,32 +473,28 @@ export default function RewritePage() {
             <div>
               <Label htmlFor="project-select">Projetos Salvos</Label>
               <Select value={selectedProject} onValueChange={handleProjectSelect}>
-                <SelectTrigger id="project-select">
-                  <SelectValue placeholder="Selecione um projeto" />
-                </SelectTrigger>
-                <SelectContent>
-                  {mockProjects.map(project => (
-                    <SelectItem key={project.id} value={project.id}>
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-2">
-                          <span>{project.title}</span>
-                          <Badge variant="outline" className="text-xs">
-                            {project.genre}
-                          </Badge>
-                        </div>
-                        {BRAZILIAN_GENRE_METRICS[project.genre] && (
-                          <Badge variant="secondary" className="text-xs">
-                            {BRAZILIAN_GENRE_METRICS[project.genre].syllablesPerLine}s
-                          </Badge>
-                        )}
+                <SelectValue placeholder="Selecione um projeto" />
+                {mockProjects.map(project => (
+                  <SelectItem key={project.id} value={project.id}>
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-2">
+                        <span>{project.title}</span>
+                        <Badge variant="outline" className="text-xs">
+                          {project.genre}
+                        </Badge>
                       </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
+                      {BRAZILIAN_GENRE_METRICS[project.genre] && (
+                        <Badge variant="secondary" className="text-xs">
+                          {BRAZILIAN_GENRE_METRICS[project.genre].syllablesPerLine}s
+                        </Badge>
+                      )}
+                    </div>
+                  </SelectItem>
+                ))}
               </Select>
             </div>
 
-            <div className="text-sm text-muted-foreground text-center">
+            <div className="text-sm text-gray-500 text-center">
               — OU —
             </div>
 
@@ -392,28 +518,24 @@ export default function RewritePage() {
             <div>
               <Label htmlFor="genre-select">Gênero da Letra</Label>
               <Select value={genre} onValueChange={setGenre}>
-                <SelectTrigger id="genre-select">
-                  <SelectValue placeholder="Selecione o gênero" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.keys(BRAZILIAN_GENRE_METRICS)
-                    .filter(g => g !== 'default')
-                    .map(genreName => (
-                    <SelectItem key={genreName} value={genreName}>
-                      <div className="flex items-center justify-between w-full">
-                        <span>{genreName}</span>
-                        <Badge variant="outline" className="text-xs">
-                          {BRAZILIAN_GENRE_METRICS[genreName].syllablesPerLine}s
-                        </Badge>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
+                <SelectValue placeholder="Selecione o gênero" />
+                {Object.keys(BRAZILIAN_GENRE_METRICS)
+                  .filter(g => g !== 'default')
+                  .map(genreName => (
+                  <SelectItem key={genreName} value={genreName}>
+                    <div className="flex items-center justify-between w-full">
+                      <span>{genreName}</span>
+                      <Badge variant="outline" className="text-xs">
+                        {BRAZILIAN_GENRE_METRICS[genreName].syllablesPerLine}s
+                      </Badge>
+                    </div>
+                  </SelectItem>
+                ))}
               </Select>
             </div>
 
             {selectedProjectData && (
-              <Card className="bg-muted/50">
+              <Card className="bg-gray-50">
                 <CardContent className="p-3">
                   <div className="flex items-center justify-between">
                     <div>
@@ -428,7 +550,7 @@ export default function RewritePage() {
                       </div>
                     </div>
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
                       onClick={() => {
                         setSelectedProject('')
@@ -482,7 +604,7 @@ export default function RewritePage() {
                 disabled={!originalLyrics}
                 size="sm"
               >
-                <Copy className="h-4 w-4 mr-1" />
+                <Copy />
                 Copiar
               </Button>
               {originalLyrics && genre && (
@@ -511,7 +633,7 @@ export default function RewritePage() {
                 <Badge variant="secondary">
                   {currentMetrics.bpm}BPM
                 </Badge>
-                <CheckCircle className="h-4 w-4 text-green-500" />
+                <CheckCircle />
               </div>
             )}
           </CardHeader>
@@ -519,10 +641,10 @@ export default function RewritePage() {
             {isLoading ? (
               <div className="flex items-center justify-center h-[300px]">
                 <div className="text-center">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
-                  <p className="text-muted-foreground">Reescrevendo letra...</p>
+                  <Loader2 />
+                  <p className="text-gray-600">Reescrevendo letra...</p>
                   {genre && (
-                    <p className="text-sm text-muted-foreground mt-2">
+                    <p className="text-sm text-gray-600 mt-2">
                       Aplicando métrica de {currentMetrics.syllablesPerLine} sílabas
                     </p>
                   )}
@@ -547,7 +669,7 @@ export default function RewritePage() {
                     onClick={() => navigator.clipboard.writeText(rewrittenLyrics)}
                     size="sm"
                   >
-                    <Copy className="h-4 w-4 mr-1" />
+                    <Copy />
                     Copiar
                   </Button>
                   {genre && (
@@ -558,15 +680,15 @@ export default function RewritePage() {
                     />
                   )}
                   <Button size="sm" className="ml-auto">
-                    <Save className="h-4 w-4 mr-1" />
+                    <Save />
                     Salvar
                   </Button>
                 </div>
               </>
             ) : (
-              <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+              <div className="flex items-center justify-center h-[300px] text-gray-600">
                 <div className="text-center">
-                  <Wand className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <Wand />
                   <p>Reescreva uma letra para ver o resultado</p>
                   {genre && (
                     <p className="text-sm mt-2">
@@ -584,7 +706,7 @@ export default function RewritePage() {
       <Card className="mt-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Zap className="h-5 w-5 text-yellow-500" />
+            <Zap />
             Opções de Reescrita
           </CardTitle>
           <CardDescription>
@@ -600,7 +722,7 @@ export default function RewritePage() {
                 className="h-auto py-3 flex flex-col items-center gap-2"
                 onClick={() => setRewriteType(option.value)}
               >
-                <RefreshCw className="h-4 w-4" />
+                <RefreshCw />
                 <span className="text-xs text-center">{option.label}</span>
               </Button>
             ))}
@@ -626,29 +748,29 @@ export default function RewritePage() {
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 />
                   Processando...
                 </>
               ) : (
                 <>
-                  <Wand className="h-4 w-4 mr-2" />
+                  <Wand />
                   Reescrever com Métrica {currentMetrics.syllablesPerLine}s
                 </>
               )}
             </Button>
             
             {genre && (
-              <div className="text-sm text-muted-foreground text-center min-w-[120px]">
+              <div className="text-sm text-gray-600 text-center min-w-[120px]">
                 <div>{currentMetrics.syllablesPerLine}s/linha</div>
                 <div>{currentMetrics.bpm} BPM</div>
               </div>
             )}
           </div>
 
-          <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+          <div className="p-3 bg-green-50 rounded-lg border border-green-200">
             <div className="flex items-start gap-2">
-              <Music className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-green-800 dark:text-green-300">
+              <Music />
+              <div className="text-sm text-green-800">
                 <strong>Sistema de Métrica Ativo:</strong> Sua letra será reescrita automaticamente 
                 com a métrica ideal para <strong>{genre || 'o gênero selecionado'}</strong>. 
                 Versos longos serão corrigidos automaticamente.
