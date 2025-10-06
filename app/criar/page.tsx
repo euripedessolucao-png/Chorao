@@ -21,7 +21,10 @@ const BRAZILIAN_GENRE_METRICS = {
   Funk: { syllablesPerLine: 6, bpm: 125, structure: "REFRAO-VERSO" },
   Gospel: { syllablesPerLine: 8, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
   default: { syllablesPerLine: 8, bpm: 100, structure: "VERSO-REFRAO" },
-}
+} as const
+
+// Tipo para as chaves do objeto
+type GenreKey = keyof typeof BRAZILIAN_GENRE_METRICS
 
 // Função para contar sílabas em português
 function countPortugueseSyllables(word: string): number {
@@ -58,6 +61,11 @@ function countPortugueseSyllables(word: string): number {
   }
 
   return Math.max(1, syllableCount)
+}
+
+// Função helper para acessar métricas com type safety
+function getGenreMetrics(genre: string) {
+  return BRAZILIAN_GENRE_METRICS[genre as GenreKey] || BRAZILIAN_GENRE_METRICS.default
 }
 
 export default function CreatePage() {
@@ -97,7 +105,7 @@ export default function CreatePage() {
     setGeneratedLyrics("")
 
     try {
-      const metrics = BRAZILIAN_GENRE_METRICS[genre] || BRAZILIAN_GENRE_METRICS.default
+      const metrics = getGenreMetrics(genre) // ← CORRIGIDO
 
       // Simulação de API
       await new Promise((resolve) => setTimeout(resolve, 2000))
@@ -117,13 +125,13 @@ export default function CreatePage() {
     }
   }
 
-  const currentMetrics = genre ? BRAZILIAN_GENRE_METRICS[genre] : BRAZILIAN_GENRE_METRICS.default
+  const currentMetrics = getGenreMetrics(genre) // ← CORRIGIDO
 
   // Validar métrica da letra gerada
   const validateMetrics = (lyrics: string) => {
     if (!genre || !lyrics) return null
 
-    const metrics = BRAZILIAN_GENRE_METRICS[genre] || BRAZILIAN_GENRE_METRICS.default
+    const metrics = getGenreMetrics(genre) // ← CORRIGIDO
     const maxSyllables = metrics.syllablesPerLine
 
     const lines = lyrics.split("\n").filter((line) => {
@@ -165,7 +173,7 @@ export default function CreatePage() {
                   <option value="">Escolha o gênero</option>
                   {genres.map((genreName) => (
                     <option key={genreName} value={genreName}>
-                      {genreName} ({BRAZILIAN_GENRE_METRICS[genreName]?.syllablesPerLine || 8}s)
+                      {genreName} ({getGenreMetrics(genreName).syllablesPerLine}s) {/* ← CORRIGIDO */}
                     </option>
                   ))}
                 </select>
