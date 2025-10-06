@@ -5,7 +5,7 @@ import { GeistMono } from "geist/font/mono"
 import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { Suspense } from "react"
-import { ThemeProvider } from "@/components/theme-provider"
+import { ThemeProvider } from "next-themes" // Importe diretamente
 
 export const metadata: Metadata = {
   title: "Chorão Compositor - Seu assistente de composição musical",
