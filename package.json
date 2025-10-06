@@ -24,6 +24,7 @@
     "@radix-ui/react-tooltip": "^1.0.7",
     "@tanstack/react-query": "^5.0.0",
     "@vercel/analytics": "latest",
+    "ai": "latest",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "copy-to-clipboard": "^3.3.3",
@@ -36,7 +37,8 @@
     "react-dom": "^18",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
-    "tw-animate-css": "latest"
+    "tw-animate-css": "latest",
+    "zod": "latest"
   },
   "devDependencies": {
     "@types/node": "^22",
@@ -46,8 +48,7 @@
     "eslint": "^8.57.0",
     "eslint-config-next": "14.0.0",
     "postcss": "^8.5",
-    "tailwindcss": "^3.3.0",
+    "tailwindcss": "^3.4.17",
     "typescript": "^5"
-  },
-  "packageManager": "npm@10.0.0"
+  }
 }

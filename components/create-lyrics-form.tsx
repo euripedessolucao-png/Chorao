@@ -8,7 +8,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Sparkles, Copy, Save } from "lucide-react"
+import { Sparkles, Copy, Save, Loader2 } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 
 export function CreateLyricsForm() {
   const [genero, setGenero] = useState("")
@@ -21,16 +22,72 @@ export function CreateLyricsForm() {
   const [emocoes, setEmocoes] = useState<string[]>([])
   const [titulo, setTitulo] = useState("")
   const [letraGerada, setLetraGerada] = useState("")
+  const [isGenerating, setIsGenerating] = useState(false)
+  const { toast } = useToast()
 
   const handleEmocaoToggle = (emocao: string) => {
     setEmocoes((prev) => (prev.includes(emocao) ? prev.filter((e) => e !== emocao) : [...prev, emocao]))
   }
 
-  const handleGerarLetra = () => {
-    // Placeholder para geração de letra
-    setLetraGerada(
-      `[Verso 1]\nAqui vai a primeira estrofe da sua música\nCom rimas e emoções do tema escolhido\n\n[Refrão]\n${hook || "Seu refrão marcante aqui"}\n\n[Verso 2]\nSegunda estrofe continuando a história\nCom as metáforas e sentimentos selecionados\n\n[Refrão]\n${hook || "Seu refrão marcante aqui"}`,
-    )
+  const handleGerarLetra = async () => {
+    setIsGenerating(true)
+    try {
+      const response = await fetch("/api/generate-lyrics", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          genero,
+          humor,
+          tema,
+          criatividade,
+          hook,
+          inspiracao,
+          metaforas,
+          emocoes,
+          titulo,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Erro ao gerar letra")
+      }
+
+      const data = await response.json()
+      setLetraGerada(data.letra)
+
+      toast({
+        title: "Letra gerada com sucesso!",
+        description: "Sua letra foi criada. Você pode editá-la ou salvá-la.",
+      })
+    } catch (error) {
+      console.error("[v0] Error:", error)
+      toast({
+        title: "Erro ao gerar letra",
+        description: "Ocorreu um erro ao gerar a letra. Por favor, tente novamente.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  const handleCopiarLetra = () => {
+    if (!letraGerada) {
+      toast({
+        title: "Nenhuma letra para copiar",
+        description: "Gere uma letra primeiro antes de copiar.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    navigator.clipboard.writeText(letraGerada)
+    toast({
+      title: "Letra copiada!",
+      description: "A letra foi copiada para a área de transferência.",
+    })
   }
 
   return (
@@ -191,16 +248,26 @@ export function CreateLyricsForm() {
               onClick={handleGerarLetra}
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
               size="lg"
+              disabled={isGenerating}
             >
-              <Sparkles className="w-4 h-4 mr-2" />
-              Gerar Letra
+              {isGenerating ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Gerando...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Gerar Letra
+                </>
+              )}
             </Button>
             <div className="grid grid-cols-2 gap-2">
               <Button variant="outline" size="lg">
                 <Save className="w-4 h-4 mr-2" />
                 Salvar Projeto
               </Button>
-              <Button variant="outline" size="lg">
+              <Button variant="outline" size="lg" onClick={handleCopiarLetra}>
                 <Copy className="w-4 h-4 mr-2" />
                 Copiar Letra
               </Button>
