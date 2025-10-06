@@ -6,21 +6,21 @@ import { useState } from "react"
 // Sistema de métricas por gênero brasileiro
 const BRAZILIAN_GENRE_METRICS = {
   "Sertanejo Moderno": { syllablesPerLine: 6, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
-  "Sertanejo": { syllablesPerLine: 7, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
+  Sertanejo: { syllablesPerLine: 7, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
   "Sertanejo Universitário": { syllablesPerLine: 6, bpm: 95, structure: "VERSO-REFRAO" },
   "Sertanejo Sofrência": { syllablesPerLine: 8, bpm: 75, structure: "VERSO-REFRAO-PONTE" },
   "Sertanejo Raiz": { syllablesPerLine: 10, bpm: 80, structure: "VERSO-REFRAO" },
-  "Pagode": { syllablesPerLine: 7, bpm: 100, structure: "VERSO-REFRAO" },
-  "Samba": { syllablesPerLine: 7, bpm: 105, structure: "VERSO-REFRAO-PONTE" },
-  "Forró": { syllablesPerLine: 8, bpm: 120, structure: "VERSO-REFRAO" },
-  "Axé": { syllablesPerLine: 6, bpm: 130, structure: "VERSO-REFRAO" },
-  "MPB": { syllablesPerLine: 9, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
+  Pagode: { syllablesPerLine: 7, bpm: 100, structure: "VERSO-REFRAO" },
+  Samba: { syllablesPerLine: 7, bpm: 105, structure: "VERSO-REFRAO-PONTE" },
+  Forró: { syllablesPerLine: 8, bpm: 120, structure: "VERSO-REFRAO" },
+  Axé: { syllablesPerLine: 6, bpm: 130, structure: "VERSO-REFRAO" },
+  MPB: { syllablesPerLine: 9, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
   "Bossa Nova": { syllablesPerLine: 8, bpm: 70, structure: "VERSO-REFRAO" },
-  "Rock": { syllablesPerLine: 8, bpm: 115, structure: "VERSO-REFRAO-SOLO" },
-  "Pop": { syllablesPerLine: 7, bpm: 110, structure: "VERSO-REFRAO-PONTE" },
-  "Funk": { syllablesPerLine: 6, bpm: 125, structure: "REFRAO-VERSO" },
-  "Gospel": { syllablesPerLine: 8, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
-  "default": { syllablesPerLine: 8, bpm: 100, structure: "VERSO-REFRAO" },
+  Rock: { syllablesPerLine: 8, bpm: 115, structure: "VERSO-REFRAO-SOLO" },
+  Pop: { syllablesPerLine: 7, bpm: 110, structure: "VERSO-REFRAO-PONTE" },
+  Funk: { syllablesPerLine: 6, bpm: 125, structure: "REFRAO-VERSO" },
+  Gospel: { syllablesPerLine: 8, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
+  default: { syllablesPerLine: 8, bpm: 100, structure: "VERSO-REFRAO" },
 } as const
 
 // Tipo para as chaves do objeto
@@ -65,8 +65,7 @@ function countPortugueseSyllables(word: string): number {
 
 // Função helper para acessar métricas com type safety
 function getGenreMetrics(genre: string) {
-  const genreKey = genre as GenreKey
-  return BRAZILIAN_GENRE_METRICS[genreKey] || BRAZILIAN_GENRE_METRICS.default
+  return BRAZILIAN_GENRE_METRICS[genre as GenreKey] || BRAZILIAN_GENRE_METRICS.default
 }
 
 export default function CreatePage() {
@@ -77,7 +76,7 @@ export default function CreatePage() {
   const [theme, setTheme] = useState("")
   const [creativityLevel, setCreativityLevel] = useState("medium")
 
-  const genres: GenreKey[] = [
+  const genres = [
     "Sertanejo Moderno",
     "Sertanejo",
     "Sertanejo Universitário",
@@ -106,7 +105,7 @@ export default function CreatePage() {
     setGeneratedLyrics("")
 
     try {
-      const metrics = getGenreMetrics(genre)
+      const metrics = getGenreMetrics(genre) // ← CORRIGIDO
 
       // Simulação de API
       await new Promise((resolve) => setTimeout(resolve, 2000))
@@ -126,13 +125,13 @@ export default function CreatePage() {
     }
   }
 
-  const currentMetrics = getGenreMetrics(genre)
+  const currentMetrics = getGenreMetrics(genre) // ← CORRIGIDO
 
   // Validar métrica da letra gerada
   const validateMetrics = (lyrics: string) => {
     if (!genre || !lyrics) return null
 
-    const metrics = getGenreMetrics(genre)
+    const metrics = getGenreMetrics(genre) // ← CORRIGIDO
     const maxSyllables = metrics.syllablesPerLine
 
     const lines = lyrics.split("\n").filter((line) => {
@@ -174,7 +173,7 @@ export default function CreatePage() {
                   <option value="">Escolha o gênero</option>
                   {genres.map((genreName) => (
                     <option key={genreName} value={genreName}>
-                      {genreName} ({getGenreMetrics(genreName).syllablesPerLine}s)
+                      {genreName} ({getGenreMetrics(genreName).syllablesPerLine}s) {/* ← CORRIGIDO */}
                     </option>
                   ))}
                 </select>
