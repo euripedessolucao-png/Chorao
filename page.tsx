@@ -1,13 +1,8 @@
-'use client'
-
-import React from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
-import { Button } from '~/components/ui/button'
-import { Badge } from '~/components/ui/badge'
-import { 
-  BookOpen, BrainCircuit, Music, Rocket, Target, 
-  GraduationCap, Play, CheckCircle 
-} from 'lucide-react'
+"use client"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { BookOpen, BrainCircuit, Music, Rocket, Target, GraduationCap, Play, CheckCircle } from "lucide-react"
 
 const learningModules = [
   {
@@ -19,7 +14,7 @@ const learningModules = [
     color: "bg-blue-100 dark:bg-blue-900",
     borderColor: "border-blue-300 dark:border-blue-700",
     lessons: 4,
-    completed: 0
+    completed: 0,
   },
   {
     id: "tecnicas-avancadas",
@@ -30,7 +25,7 @@ const learningModules = [
     color: "bg-purple-100 dark:bg-purple-900",
     borderColor: "border-purple-300 dark:border-purple-700",
     lessons: 3,
-    completed: 0
+    completed: 0,
   },
   {
     id: "generos-musicais",
@@ -41,7 +36,7 @@ const learningModules = [
     color: "bg-amber-100 dark:bg-amber-900",
     borderColor: "border-amber-300 dark:border-amber-700",
     lessons: 4,
-    completed: 0
+    completed: 0,
   },
   {
     id: "composicao-profissional",
@@ -52,7 +47,7 @@ const learningModules = [
     color: "bg-green-100 dark:bg-green-900",
     borderColor: "border-green-300 dark:border-green-700",
     lessons: 4,
-    completed: 0
+    completed: 0,
   },
   {
     id: "desafios-praticos",
@@ -63,8 +58,8 @@ const learningModules = [
     color: "bg-red-100 dark:bg-red-900",
     borderColor: "border-red-300 dark:border-red-700",
     lessons: 4,
-    completed: 0
-  }
+    completed: 0,
+  },
 ]
 
 export default function AprenderPage() {
@@ -89,9 +84,7 @@ export default function AprenderPage() {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-center sm:text-left">
               <h3 className="text-2xl font-bold mb-2">Seu Progresso</h3>
-              <p className="text-muted-foreground">
-                Comece sua jornada na composição musical
-              </p>
+              <p className="text-muted-foreground">Comece sua jornada na composição musical</p>
             </div>
             <div className="flex items-center gap-6">
               <div className="text-center">
@@ -116,8 +109,8 @@ export default function AprenderPage() {
         {learningModules.map((module) => {
           const Icon = module.icon
           return (
-            <Card 
-              key={module.id} 
+            <Card
+              key={module.id}
               className={`hover:shadow-lg transition-all duration-300 cursor-pointer border-2 ${module.borderColor} hover:scale-105`}
             >
               <CardHeader className={`pb-3 ${module.color} rounded-t-lg`}>
@@ -126,9 +119,18 @@ export default function AprenderPage() {
                     <div className="p-2 bg-background rounded-lg">
                       <Icon className="h-6 w-6 text-primary" />
                     </div>
-                    <Badge variant="secondary" className={module.level === "Iniciante" ? "bg-green-100 text-green-800" : 
-                      module.level === "Intermediário" ? "bg-blue-100 text-blue-800" : 
-                      module.level === "Avançado" ? "bg-purple-100 text-purple-800" : "bg-gray-100 text-gray-800"}>
+                    <Badge
+                      variant="secondary"
+                      className={
+                        module.level === "Iniciante"
+                          ? "bg-green-100 text-green-800"
+                          : module.level === "Intermediário"
+                            ? "bg-blue-100 text-blue-800"
+                            : module.level === "Avançado"
+                              ? "bg-purple-100 text-purple-800"
+                              : "bg-gray-100 text-gray-800"
+                      }
+                    >
                       {module.level}
                     </Badge>
                   </div>
@@ -140,14 +142,14 @@ export default function AprenderPage() {
               <CardContent className="pt-4">
                 <CardTitle className="text-xl mb-2">{module.title}</CardTitle>
                 <p className="text-muted-foreground mb-4">{module.description}</p>
-                
+
                 <div className="space-y-2 mb-4">
                   <div className="flex justify-between text-sm">
                     <span>Progresso</span>
                     <span>{Math.round((module.completed / module.lessons) * 100)}%</span>
                   </div>
                   <div className="w-full bg-secondary rounded-full h-2">
-                    <div 
+                    <div
                       className="bg-primary h-2 rounded-full transition-all duration-500"
                       style={{ width: `${(module.completed / module.lessons) * 100}%` }}
                     ></div>
@@ -187,7 +189,11 @@ export default function AprenderPage() {
               <GraduationCap className="h-5 w-5 mr-2" />
               Ver Primeira Aula
             </Button>
-            <Button variant="outline" className="bg-transparent border-white text-white hover:bg-white hover:text-primary" size="lg">
+            <Button
+              variant="outline"
+              className="bg-transparent border-white text-white hover:bg-white hover:text-primary"
+              size="lg"
+            >
               <Music className="h-5 w-5 mr-2" />
               Criar Letra Agora
             </Button>

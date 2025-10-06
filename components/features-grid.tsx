@@ -8,7 +8,7 @@ const features = [
     description: "Acesse rapidamente suas últimas composições e continue de onde parou",
     icon: Clock,
     gradient: "from-blue-500/20 to-cyan-500/20",
-    href: "/projetos",
+    href: "/galeria",
   },
   {
     title: "Reescrever Letras",

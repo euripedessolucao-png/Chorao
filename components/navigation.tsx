@@ -1,74 +1,58 @@
-'use client'
+"use client"
 
-import React, { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { Button } from '~/components/ui/button'
-import { 
-  Home, Plus, RefreshCw, Pencil, LayoutGrid, 
-  Database, TrendingUp, GraduationCap, HelpCircle, 
-  Menu, Music, Sun, Moon 
-} from 'lucide-react'
+import { useState, useEffect } from "react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import {
+  Home,
+  Plus,
+  RefreshCw,
+  Pencil,
+  LayoutGrid,
+  Database,
+  GraduationCap,
+  Menu,
+  Music,
+  Sun,
+  Moon,
+} from "lucide-react"
 
 function ThemeToggle() {
-  const [theme, setTheme] = useState<'light' | 'dark'>('light')
+  const [theme, setTheme] = useState<"light" | "dark">("dark")
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' || 'light'
+    const savedTheme = (localStorage.getItem("theme") as "light" | "dark") || "dark"
     setTheme(savedTheme)
-    document.documentElement.classList.toggle('dark', savedTheme === 'dark')
+    document.documentElement.classList.toggle("dark", savedTheme === "dark")
   }, [])
 
   const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light'
+    const newTheme = theme === "light" ? "dark" : "light"
     setTheme(newTheme)
-    document.documentElement.classList.toggle('dark', newTheme === 'dark')
-    localStorage.setItem('theme', newTheme)
+    document.documentElement.classList.toggle("dark", newTheme === "dark")
+    localStorage.setItem("theme", newTheme)
   }
 
   return (
     <Button variant="ghost" size="icon" onClick={toggleTheme}>
-      {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+      {theme === "light" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
     </Button>
   )
 }
 
-export default function Navigation() {
+export function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const pathname = usePathname()
 
-  // Atalhos de teclado
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.metaKey) {
-        switch (e.key) {
-          case '1':
-            e.preventDefault()
-            window.location.href = '/'
-            break
-          case '2':
-            e.preventDefault()
-            window.location.href = '/create'
-            break
-          // ... outros atalhos
-        }
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
-
   const navItems = [
-    { href: '/', label: 'Início', icon: Home },
-    { href: '/create', label: 'Nova Letra', icon: Plus },
-    { href: '/rewrite', label: 'Reescrever', icon: RefreshCw },
-    { href: '/editar', label: 'Editar com Assistente', icon: Pencil },
-    { href: '/gallery', label: 'Galeria', icon: LayoutGrid },
-    { href: '/backup', label: 'Backup', icon: Database },
-    { href: '/melhorias', label: 'Melhorias', icon: TrendingUp },
-    { href: '/aprender', label: 'Aprender', icon: GraduationCap },
-    { href: '/manual', label: 'Manual', icon: HelpCircle },
+    { href: "/", label: "Início", icon: Home },
+    { href: "/criar", label: "Criar Letra", icon: Plus },
+    { href: "/reescrever", label: "Reescrever", icon: RefreshCw },
+    { href: "/editar", label: "Editar", icon: Pencil },
+    { href: "/galeria", label: "Galeria", icon: LayoutGrid },
+    { href: "/backup", label: "Backup", icon: Database },
+    { href: "/aprender", label: "Aprender", icon: GraduationCap },
   ]
 
   return (
@@ -78,7 +62,7 @@ export default function Navigation() {
           <div className="relative">
             <Music className="h-7 w-7 text-primary transition-transform duration-300 group-hover:scale-110" />
           </div>
-          <span className="text-xl font-bold hidden sm:block">Chorão - Compositor</span>
+          <span className="text-xl font-bold hidden sm:block">Chorão Compositor</span>
           <span className="text-lg font-bold sm:hidden">Chorão</span>
         </Link>
 
@@ -94,8 +78,8 @@ export default function Navigation() {
             const Icon = item.icon
             return (
               <Link key={item.href} href={item.href}>
-                <Button variant={isActive ? "default" : "ghost"} size="sm" className="flex items-center">
-                  <Icon className="h-4 w-4 mr-2" />
+                <Button variant={isActive ? "default" : "ghost"} size="sm" className="flex items-center gap-2">
+                  <Icon className="h-4 w-4" />
                   {item.label}
                 </Button>
               </Link>
@@ -114,9 +98,9 @@ export default function Navigation() {
               const Icon = item.icon
               return (
                 <Link key={item.href} href={item.href}>
-                  <Button 
-                    variant={isActive ? "default" : "ghost"} 
-                    size="sm" 
+                  <Button
+                    variant={isActive ? "default" : "ghost"}
+                    size="sm"
                     className="w-full justify-start"
                     onClick={() => setIsMenuOpen(false)}
                   >
@@ -126,6 +110,9 @@ export default function Navigation() {
                 </Link>
               )
             })}
+            <div className="pt-2 border-t mt-2">
+              <ThemeToggle />
+            </div>
           </div>
         </div>
       )}
