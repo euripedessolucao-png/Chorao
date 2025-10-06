@@ -9,6 +9,7 @@ import "./globals.css"
 export const metadata: Metadata = {
   title: "Seu App",
   description: "Descrição do seu app",
+    generator: 'v0.app'
 }
 
 export default function RootLayout({
