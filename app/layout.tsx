@@ -1,28 +1,36 @@
-import type React from "react"
 import type { Metadata } from "next"
 import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
-import { Analytics } from "@vercel/analytics/next"
-import "./globals.css"
+import { ThemeProvider } from "next-themes"
 import { Suspense } from "react"
-import { ThemeProvider } from "next-themes" // Importe diretamente
+import { Analytics } from "@vercel/analytics/react"
+import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "Chorão Compositor - Seu assistente de composição musical",
-  description: "Crie letras originais em qualquer gênero, edite e aperfeiçoe em minutos",
-  generator: "v0.app",
+  title: "Seu App",
+  description: "Descrição do seu app",
 }
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode
-}>) {
+}) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased`}>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-          <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
+        <ThemeProvider 
+          attribute="class" 
+          defaultTheme="dark" 
+          enableSystem 
+          disableTransitionOnChange
+        >
+          {/* Envolva o children em um wrapper */}
+          <div>
+            <Suspense fallback={<div>Loading...</div>}>
+              {children}
+            </Suspense>
+          </div>
         </ThemeProvider>
         <Analytics />
       </body>
