@@ -1,72 +1,9 @@
 "use client"
 
 import type React from "react"
+
 import { useState } from "react"
-
-// Sistema de métricas por gênero brasileiro
-const BRAZILIAN_GENRE_METRICS = {
-  "Sertanejo Moderno": { syllablesPerLine: 6, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
-  Sertanejo: { syllablesPerLine: 7, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
-  "Sertanejo Universitário": { syllablesPerLine: 6, bpm: 95, structure: "VERSO-REFRAO" },
-  "Sertanejo Sofrência": { syllablesPerLine: 8, bpm: 75, structure: "VERSO-REFRAO-PONTE" },
-  "Sertanejo Raiz": { syllablesPerLine: 10, bpm: 80, structure: "VERSO-REFRAO" },
-  Pagode: { syllablesPerLine: 7, bpm: 100, structure: "VERSO-REFRAO" },
-  Samba: { syllablesPerLine: 7, bpm: 105, structure: "VERSO-REFRAO-PONTE" },
-  Forró: { syllablesPerLine: 8, bpm: 120, structure: "VERSO-REFRAO" },
-  Axé: { syllablesPerLine: 6, bpm: 130, structure: "VERSO-REFRAO" },
-  MPB: { syllablesPerLine: 9, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
-  "Bossa Nova": { syllablesPerLine: 8, bpm: 70, structure: "VERSO-REFRAO" },
-  Rock: { syllablesPerLine: 8, bpm: 115, structure: "VERSO-REFRAO-SOLO" },
-  Pop: { syllablesPerLine: 7, bpm: 110, structure: "VERSO-REFRAO-PONTE" },
-  Funk: { syllablesPerLine: 6, bpm: 125, structure: "REFRAO-VERSO" },
-  Gospel: { syllablesPerLine: 8, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
-  default: { syllablesPerLine: 8, bpm: 100, structure: "VERSO-REFRAO" },
-} as const
-
-// Tipo para as chaves do objeto
-type GenreKey = keyof typeof BRAZILIAN_GENRE_METRICS
-
-// Função para contar sílabas em português
-function countPortugueseSyllables(word: string): number {
-  if (!word.trim()) return 0
-
-  const cleanWord = word
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zà-úâ-ûã-õä-üç]/g, "")
-
-  if (cleanWord.length === 0) return 0
-
-  let syllableCount = 0
-  let i = 0
-
-  while (i < cleanWord.length) {
-    const currentChar = cleanWord[i]
-
-    if ("aeiouáéíóúâêîôûàèìòùãõ".includes(currentChar)) {
-      syllableCount++
-
-      if (i + 1 < cleanWord.length) {
-        const nextChar = cleanWord[i + 1]
-        if (
-          ("aeo".includes(currentChar) && "iu".includes(nextChar)) ||
-          ("iu".includes(currentChar) && "aeo".includes(nextChar))
-        ) {
-          i++
-        }
-      }
-    }
-    i++
-  }
-
-  return Math.max(1, syllableCount)
-}
-
-// Função helper para acessar métricas com type safety
-function getGenreMetrics(genre: string) {
-  return BRAZILIAN_GENRE_METRICS[genre as GenreKey] || BRAZILIAN_GENRE_METRICS.default
-}
+import { BRAZILIAN_GENRE_METRICS, validateMetrics, fixMetrics, type GenreName } from "@/lib/metrics"
 
 export default function CreatePage() {
   const [isLoading, setIsLoading] = useState(false)
@@ -74,25 +11,9 @@ export default function CreatePage() {
   const [title, setTitle] = useState("")
   const [genre, setGenre] = useState("")
   const [theme, setTheme] = useState("")
-  const [creativityLevel, setCreativityLevel] = useState("medium")
+  const [creativityLevel, setCreativityLevel] = useState("equilibrado")
 
-  const genres = [
-    "Sertanejo Moderno",
-    "Sertanejo",
-    "Sertanejo Universitário",
-    "Sertanejo Sofrência",
-    "Sertanejo Raiz",
-    "Pagode",
-    "Samba",
-    "Forró",
-    "Axé",
-    "MPB",
-    "Bossa Nova",
-    "Rock",
-    "Pop",
-    "Funk",
-    "Gospel",
-  ]
+  const genres = Object.keys(BRAZILIAN_GENRE_METRICS).filter((g) => g !== "default")
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -105,93 +26,76 @@ export default function CreatePage() {
     setGeneratedLyrics("")
 
     try {
-      const metrics = getGenreMetrics(genre) // ← CORRIGIDO
+      const metrics = BRAZILIAN_GENRE_METRICS[genre as GenreName] || BRAZILIAN_GENRE_METRICS.default
 
-      // Simulação de API
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      const response = await fetch("/api/generate-lyrics", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          genero: genre,
+          tema: theme,
+          criatividade: creativityLevel,
+          metrics: metrics,
+        }),
+      })
 
-      const result = {
-        lyrics: `[INTRO]\nUma nova história vai começar\n\n[VERSO 1]\n${theme} na melodia do coração\nCada verso escrito com emoção\n\n[REFRAO]\nEsta música é pra você cantar\nE no ritmo da vida dançar\n\nMétrica: ${metrics.syllablesPerLine} sílabas/linha | BPM: ${metrics.bpm}`,
-        title: `Música sobre ${theme}`,
-      }
+      if (!response.ok) throw new Error("Erro ao gerar letra")
 
-      setGeneratedLyrics(result.lyrics)
-      setTitle(result.title)
+      const data = await response.json()
+      setGeneratedLyrics(data.letra)
+      setTitle(`Música sobre ${theme}`)
     } catch (error) {
-      console.error("Erro ao gerar letra:", error)
+      console.error("[v0] Erro ao gerar letra:", error)
       alert("Erro ao gerar letra. Tente novamente.")
     } finally {
       setIsLoading(false)
     }
   }
 
-  const currentMetrics = getGenreMetrics(genre) // ← CORRIGIDO
-
-  // Validar métrica da letra gerada
-  const validateMetrics = (lyrics: string) => {
-    if (!genre || !lyrics) return null
-
-    const metrics = getGenreMetrics(genre) // ← CORRIGIDO
-    const maxSyllables = metrics.syllablesPerLine
-
-    const lines = lyrics.split("\n").filter((line) => {
-      const trimmed = line.trim()
-      return trimmed && !trimmed.startsWith("[") && !trimmed.startsWith("(") && !trimmed.includes("Instrumental:")
-    })
-
-    const problematicLines = lines
-      .map((line, index) => ({
-        line,
-        syllables: countPortugueseSyllables(line),
-      }))
-      .filter((item) => item.syllables > maxSyllables)
-
-    return problematicLines
-  }
-
-  const problematicLines = validateMetrics(generatedLyrics)
+  const currentMetrics = BRAZILIAN_GENRE_METRICS[genre as GenreName] || BRAZILIAN_GENRE_METRICS.default
+  const problematicLines = validateMetrics(generatedLyrics, genre)
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Criar Nova Letra</h1>
+        <h1 className="text-3xl font-bold text-foreground mb-8">Criar Nova Letra</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Painel de Parâmetros */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-2">Parâmetros da Letra</h2>
-            <p className="text-gray-600 mb-6">Configure o gênero e tema para gerar sua letra</p>
+          <div className="bg-card rounded-lg shadow-sm border p-6">
+            <h2 className="text-2xl font-semibold text-card-foreground mb-2">Parâmetros da Letra</h2>
+            <p className="text-muted-foreground mb-6">Configure o gênero e tema para gerar sua letra</p>
 
             <form onSubmit={handleGenerate} className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Gênero Musical *</label>
+                <label className="block text-sm font-medium text-card-foreground mb-2">Gênero Musical *</label>
                 <select
                   value={genre}
                   onChange={(e) => setGenre(e.target.value)}
-                  className="w-full rounded-md border border-gray-300 bg-white py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full rounded-md border border-input bg-background py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 >
                   <option value="">Escolha o gênero</option>
                   {genres.map((genreName) => (
                     <option key={genreName} value={genreName}>
-                      {genreName} ({getGenreMetrics(genreName).syllablesPerLine}s) {/* ← CORRIGIDO */}
+                      {genreName} ({BRAZILIAN_GENRE_METRICS[genreName as GenreName].syllablesPerLine}s)
                     </option>
                   ))}
                 </select>
 
                 {genre && (
-                  <div className="mt-3 p-3 bg-blue-50 rounded-md border border-blue-200">
+                  <div className="mt-3 p-3 bg-primary/10 rounded-md border border-primary/20">
                     <div className="grid grid-cols-3 gap-2 text-sm">
                       <div>
-                        <span className="text-blue-700">Métrica:</span>
-                        <div className="font-medium text-blue-900">{currentMetrics.syllablesPerLine} sílabas/linha</div>
+                        <span className="text-primary">Métrica:</span>
+                        <div className="font-medium text-primary">{currentMetrics.syllablesPerLine} sílabas/linha</div>
                       </div>
                       <div>
-                        <span className="text-blue-700">Ritmo:</span>
-                        <div className="font-medium text-blue-900">{currentMetrics.bpm} BPM</div>
+                        <span className="text-primary">Ritmo:</span>
+                        <div className="font-medium text-primary">{currentMetrics.bpm} BPM</div>
                       </div>
                       <div>
-                        <span className="text-blue-700">Estrutura:</span>
-                        <div className="font-medium text-blue-900">{currentMetrics.structure}</div>
+                        <span className="text-primary">Estrutura:</span>
+                        <div className="font-medium text-primary">{currentMetrics.structure}</div>
                       </div>
                     </div>
                   </div>
@@ -199,33 +103,33 @@ export default function CreatePage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Tema *</label>
+                <label className="block text-sm font-medium text-card-foreground mb-2">Tema *</label>
                 <input
                   type="text"
                   value={theme}
                   onChange={(e) => setTheme(e.target.value)}
                   placeholder="Digite o tema da sua música..."
-                  className="w-full rounded-md border border-gray-300 bg-white py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full rounded-md border border-input bg-background py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Nível de Criatividade</label>
+                <label className="block text-sm font-medium text-card-foreground mb-2">Nível de Criatividade</label>
                 <select
                   value={creativityLevel}
                   onChange={(e) => setCreativityLevel(e.target.value)}
-                  className="w-full rounded-md border border-gray-300 bg-white py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full rounded-md border border-input bg-background py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 >
-                  <option value="low">Conservador</option>
-                  <option value="medium">Equilibrado</option>
-                  <option value="high">Ousado</option>
+                  <option value="conservador">Conservador</option>
+                  <option value="equilibrado">Equilibrado</option>
+                  <option value="ousado">Ousado</option>
                 </select>
               </div>
 
               <button
                 type="submit"
                 disabled={isLoading || !genre || !theme}
-                className="w-full bg-blue-600 text-white py-3 px-4 rounded-md font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                className="w-full bg-primary text-primary-foreground py-3 px-4 rounded-md font-medium hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
                 {isLoading ? (
                   <>
@@ -240,10 +144,10 @@ export default function CreatePage() {
                 )}
               </button>
 
-              <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+              <div className="p-4 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
                 <div className="flex items-start">
-                  <span className="text-green-600 mr-2 mt-0.5">⚡</span>
-                  <div className="text-sm text-green-800">
+                  <span className="text-green-600 dark:text-green-400 mr-2 mt-0.5">⚡</span>
+                  <div className="text-sm text-green-800 dark:text-green-200">
                     <strong>Sistema de Métrica Ativo:</strong> Sua letra será gerada automaticamente com a métrica ideal
                     para <strong>{genre || "o gênero selecionado"}</strong>
                   </div>
@@ -253,26 +157,26 @@ export default function CreatePage() {
           </div>
 
           {/* Painel de Resultado */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 flex flex-col">
+          <div className="bg-card rounded-lg shadow-sm border p-6 flex flex-col">
             <div className="mb-6">
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Título da Música"
-                className="w-full text-2xl font-bold border-none focus:outline-none focus:ring-0 p-0"
+                className="w-full text-2xl font-bold border-none focus:outline-none focus:ring-0 p-0 bg-transparent"
                 disabled={!generatedLyrics}
               />
 
               {genre && generatedLyrics && (
                 <div className="flex gap-2 mt-3">
-                  <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
+                  <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
                     {currentMetrics.syllablesPerLine}s/linha
                   </span>
-                  <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                  <span className="inline-flex items-center rounded-full bg-green-100 dark:bg-green-950 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:text-green-200">
                     {currentMetrics.bpm}BPM
                   </span>
-                  <span className="inline-flex items-center rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium text-purple-800">
+                  <span className="inline-flex items-center rounded-full bg-purple-100 dark:bg-purple-950 px-2.5 py-0.5 text-xs font-medium text-purple-800 dark:text-purple-200">
                     {currentMetrics.structure}
                   </span>
                 </div>
@@ -284,9 +188,9 @@ export default function CreatePage() {
                 <div className="flex items-center justify-center h-64">
                   <div className="text-center">
                     <span className="animate-spin text-4xl mb-4 block">🔄</span>
-                    <p className="text-gray-600">Criando sua letra...</p>
+                    <p className="text-muted-foreground">Criando sua letra...</p>
                     {genre && (
-                      <p className="text-sm text-gray-600 mt-2">
+                      <p className="text-sm text-muted-foreground mt-2">
                         Aplicando métrica de {currentMetrics.syllablesPerLine} sílabas/linha
                       </p>
                     )}
@@ -297,18 +201,19 @@ export default function CreatePage() {
                   <textarea
                     value={generatedLyrics}
                     onChange={(e) => setGeneratedLyrics(e.target.value)}
-                    className="flex-1 w-full rounded-md border border-gray-300 bg-white py-2 px-3 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[400px]"
+                    className="flex-1 w-full rounded-md border border-input bg-background py-2 px-3 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring min-h-[400px]"
                     placeholder="Sua letra aparecerá aqui..."
                   />
 
-                  {/* Validação de Métrica */}
                   {problematicLines && problematicLines.length > 0 && (
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+                    <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-md p-4">
                       <div className="flex items-center gap-2 mb-2">
                         <span>⚠️</span>
-                        <span className="font-medium text-yellow-800">Ajuste de Métrica Recomendado</span>
+                        <span className="font-medium text-yellow-800 dark:text-yellow-200">
+                          Ajuste de Métrica Recomendado
+                        </span>
                       </div>
-                      <p className="text-sm text-yellow-700 mb-2">
+                      <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-2">
                         <strong>{genre}</strong> recomenda até{" "}
                         <strong>{currentMetrics.syllablesPerLine} sílabas</strong> por linha.
                         {problematicLines.length} linha(s) precisam de ajuste.
@@ -320,7 +225,7 @@ export default function CreatePage() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => navigator.clipboard.writeText(generatedLyrics)}
-                        className="bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-md text-sm font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center"
+                        className="bg-background border text-foreground py-2 px-4 rounded-md text-sm font-medium hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 flex items-center"
                       >
                         <span className="mr-2">📋</span>
                         Copiar
@@ -329,23 +234,10 @@ export default function CreatePage() {
                       {problematicLines && problematicLines.length > 0 && (
                         <button
                           onClick={() => {
-                            // Correção simples: adicionar quebra em linhas longas
-                            const fixed = generatedLyrics
-                              .split("\n")
-                              .map((line) => {
-                                if (countPortugueseSyllables(line) > currentMetrics.syllablesPerLine) {
-                                  const words = line.split(" ")
-                                  if (words.length > 2) {
-                                    const mid = Math.floor(words.length / 2)
-                                    return words.slice(0, mid).join(" ") + "\n" + words.slice(mid).join(" ")
-                                  }
-                                }
-                                return line
-                              })
-                              .join("\n")
+                            const fixed = fixMetrics(generatedLyrics, currentMetrics.syllablesPerLine)
                             setGeneratedLyrics(fixed)
                           }}
-                          className="bg-yellow-100 border border-yellow-300 text-yellow-700 py-2 px-4 rounded-md text-sm font-medium hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 flex items-center"
+                          className="bg-yellow-100 dark:bg-yellow-950 border border-yellow-300 dark:border-yellow-800 text-yellow-700 dark:text-yellow-200 py-2 px-4 rounded-md text-sm font-medium hover:bg-yellow-200 dark:hover:bg-yellow-900 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 flex items-center"
                         >
                           <span className="mr-2">🔄</span>
                           Corrigir Métrica
@@ -353,14 +245,14 @@ export default function CreatePage() {
                       )}
                     </div>
 
-                    <button className="bg-blue-600 text-white py-2 px-4 rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center">
+                    <button className="bg-primary text-primary-foreground py-2 px-4 rounded-md text-sm font-medium hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 flex items-center">
                       <span className="mr-2">💾</span>
                       Salvar
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center justify-center h-64 text-gray-600">
+                <div className="flex items-center justify-center h-64 text-muted-foreground">
                   <div className="text-center">
                     <span className="text-4xl mb-4 block">🎵</span>
                     <p>Preencha os parâmetros e gere sua primeira letra!</p>
