@@ -10,7 +10,13 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Sparkles, Copy, Save, Loader2, AlertCircle } from "lucide-react"
 
-const BRAZILIAN_GENRE_METRICS = {
+interface GenreMetrics {
+  syllablesPerLine: number;
+  bpm: number;
+  structure: string;
+}
+
+const BRAZILIAN_GENRE_METRICS: Record<string, GenreMetrics> = {
   "Sertanejo Moderno": { syllablesPerLine: 6, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
   Sertanejo: { syllablesPerLine: 7, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
   "Sertanejo Universitário": { syllablesPerLine: 6, bpm: 95, structure: "VERSO-REFRAO" },
