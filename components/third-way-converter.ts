@@ -13,7 +13,7 @@ export const ADVANCED_BRAZILIAN_METRICS = {
 
 export type GenreName = keyof typeof ADVANCED_BRAZILIAN_METRICS
 
-// Sistema de contagem de sílabas CORRIGIDO
+// Sistema de contagem de sílabas COMPLETO
 export function countPortugueseSyllables(word: string): number {
   if (!word.trim()) return 0
   
@@ -51,7 +51,7 @@ export function countPortugueseSyllables(word: string): number {
   return Math.max(1, syllableCount)
 }
 
-// Adicionar as funções auxiliares que estão faltando
+// Funções auxiliares para validação de métrica
 export function validateMetrics(lyrics: string, genre: GenreName) {
   const metrics = ADVANCED_BRAZILIAN_METRICS[genre] || ADVANCED_BRAZILIAN_METRICS.default
   const expectedSyllables = metrics.syllablesPerLine
