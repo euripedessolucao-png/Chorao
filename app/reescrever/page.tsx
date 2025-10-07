@@ -73,7 +73,8 @@ interface ValidationResult {
     line: string
     syllables: number
     expected: number
-  }>
+    index?: number
+  }> | null
   totalLines: number
   validLines: number
 }
@@ -89,6 +90,8 @@ export default function RewritePage() {
   const [customInstruction, setCustomInstruction] = useState("")
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null)
 
+  const currentMetrics = genre ? BRAZILIAN_GENRE_METRICS[genre as GenreName] : BRAZILIAN_GENRE_METRICS.default
+
   // Análise em tempo real da métrica
   useEffect(() => {
     if (originalLyrics && genre) {
@@ -101,16 +104,24 @@ export default function RewritePage() {
       const totalLines = lines.length
       const validLines = totalLines - (problematicLines?.length || 0)
       
+      // Converter o resultado para o formato esperado
+      const convertedProblematicLines = problematicLines?.map(item => ({
+        line: item.line,
+        syllables: item.syllables,
+        expected: currentMetrics.syllablesPerLine,
+        index: item.index
+      }))
+      
       setValidationResult({
         isValid: !problematicLines || problematicLines.length === 0,
-        problematicLines,
+        problematicLines: convertedProblematicLines,
         totalLines,
         validLines
       })
     } else {
       setValidationResult(null)
     }
-  }, [originalLyrics, genre])
+  }, [originalLyrics, genre, currentMetrics.syllablesPerLine])
 
   const handleProjectSelect = (projectId: string) => {
     const project = mockProjects.find((p) => p.id === projectId)
@@ -186,7 +197,6 @@ export default function RewritePage() {
     }
   }
 
-  const currentMetrics = genre ? BRAZILIAN_GENRE_METRICS[genre as GenreName] : BRAZILIAN_GENRE_METRICS.default
   const selectedProjectData = mockProjects.find((p) => p.id === selectedProject)
 
   return (
@@ -392,7 +402,7 @@ export default function RewritePage() {
                         <div key={index} className="text-xs bg-white p-2 rounded border">
                           <div className="font-mono">{item.line.substring(0, 50)}...</div>
                           <div className="text-yellow-700 mt-1">
-                            {item.syllables} sílabas (limite: {currentMetrics.syllablesPerLine})
+                            {item.syllables} sílabas (limite: {item.expected})
                           </div>
                         </div>
                       ))}
