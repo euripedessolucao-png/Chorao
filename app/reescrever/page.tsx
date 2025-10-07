@@ -1,63 +1,64 @@
 "use client"
 
 import { useState } from "react"
+import { BRAZILIAN_GENRE_METRICS, type GenreName, countPortugueseSyllables } from "@/lib/metrics"
 
 // Sistema de métricas por gênero brasileiro
-const BRAZILIAN_GENRE_METRICS = {
-  "Sertanejo Moderno": { syllablesPerLine: 6, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
-  Sertanejo: { syllablesPerLine: 7, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
-  "Sertanejo Universitário": { syllablesPerLine: 6, bpm: 95, structure: "VERSO-REFRAO" },
-  "Sertanejo Sofrência": { syllablesPerLine: 8, bpm: 75, structure: "VERSO-REFRAO-PONTE" },
-  "Sertanejo Raiz": { syllablesPerLine: 10, bpm: 80, structure: "VERSO-REFRAO" },
-  Pagode: { syllablesPerLine: 7, bpm: 100, structure: "VERSO-REFRAO" },
-  Samba: { syllablesPerLine: 7, bpm: 105, structure: "VERSO-REFRAO-PONTE" },
-  Forró: { syllablesPerLine: 8, bpm: 120, structure: "VERSO-REFRAO" },
-  Axé: { syllablesPerLine: 6, bpm: 130, structure: "VERSO-REFRAO" },
-  MPB: { syllablesPerLine: 9, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
-  "Bossa Nova": { syllablesPerLine: 8, bpm: 70, structure: "VERSO-REFRAO" },
-  Rock: { syllablesPerLine: 8, bpm: 115, structure: "VERSO-REFRAO-SOLO" },
-  Pop: { syllablesPerLine: 7, bpm: 110, structure: "VERSO-REFRAO-PONTE" },
-  Funk: { syllablesPerLine: 6, bpm: 125, structure: "REFRAO-VERSO" },
-  Gospel: { syllablesPerLine: 8, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
-  default: { syllablesPerLine: 8, bpm: 100, structure: "VERSO-REFRAO" },
-}
+// const BRAZILIAN_GENRE_METRICS = {
+//   "Sertanejo Moderno": { syllablesPerLine: 6, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
+//   Sertanejo: { syllablesPerLine: 7, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
+//   "Sertanejo Universitário": { syllablesPerLine: 6, bpm: 95, structure: "VERSO-REFRAO" },
+//   "Sertanejo Sofrência": { syllablesPerLine: 8, bpm: 75, structure: "VERSO-REFRAO-PONTE" },
+//   "Sertanejo Raiz": { syllablesPerLine: 10, bpm: 80, structure: "VERSO-REFRAO" },
+//   Pagode: { syllablesPerLine: 7, bpm: 100, structure: "VERSO-REFRAO" },
+//   Samba: { syllablesPerLine: 7, bpm: 105, structure: "VERSO-REFRAO-PONTE" },
+//   Forró: { syllablesPerLine: 8, bpm: 120, structure: "VERSO-REFRAO" },
+//   Axé: { syllablesPerLine: 6, bpm: 130, structure: "VERSO-REFRAO" },
+//   MPB: { syllablesPerLine: 9, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
+//   "Bossa Nova": { syllablesPerLine: 8, bpm: 70, structure: "VERSO-REFRAO" },
+//   Rock: { syllablesPerLine: 8, bpm: 115, structure: "VERSO-REFRAO-SOLO" },
+//   Pop: { syllablesPerLine: 7, bpm: 110, structure: "VERSO-REFRAO-PONTE" },
+//   Funk: { syllablesPerLine: 6, bpm: 125, structure: "REFRAO-VERSO" },
+//   Gospel: { syllablesPerLine: 8, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
+//   default: { syllablesPerLine: 8, bpm: 100, structure: "VERSO-REFRAO" },
+// }
 
 // Função para contar sílabas em português
-function countPortugueseSyllables(word: string): number {
-  if (!word.trim()) return 0
-
-  const cleanWord = word
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zà-úâ-ûã-õä-üç]/g, "")
-
-  if (cleanWord.length === 0) return 0
-
-  let syllableCount = 0
-  let i = 0
-
-  while (i < cleanWord.length) {
-    const currentChar = cleanWord[i]
-
-    if ("aeiouáéíóúâêîôûàèìòùãõ".includes(currentChar)) {
-      syllableCount++
-
-      if (i + 1 < cleanWord.length) {
-        const nextChar = cleanWord[i + 1]
-        if (
-          ("aeo".includes(currentChar) && "iu".includes(nextChar)) ||
-          ("iu".includes(currentChar) && "aeo".includes(nextChar))
-        ) {
-          i++
-        }
-      }
-    }
-    i++
-  }
-
-  return Math.max(1, syllableCount)
-}
+// function countPortugueseSyllables(word: string): number {
+//   if (!word.trim()) return 0
+//
+//   const cleanWord = word
+//     .toLowerCase()
+//     .normalize("NFD")
+//     .replace(/[\u0300-\u036f]/g, "")
+//     .replace(/[^a-zà-úâ-ûã-õä-üç]/g, "")
+//
+//   if (cleanWord.length === 0) return 0
+//
+//   let syllableCount = 0
+//   let i = 0
+//
+//   while (i < cleanWord.length) {
+//     const currentChar = cleanWord[i]
+//
+//     if ("aeiouáéíóúâêîôûàèìòùãõ".includes(currentChar)) {
+//       syllableCount++
+//
+//       if (i + 1 < cleanWord.length) {
+//         const nextChar = cleanWord[i + 1]
+//         if (
+//           ("aeo".includes(currentChar) && "iu".includes(nextChar)) ||
+//           ("iu".includes(currentChar) && "aeo".includes(nextChar))
+//         ) {
+//           i++
+//         }
+//       }
+//     }
+//     i++
+//   }
+//
+//   return Math.max(1, syllableCount)
+// }
 
 // Mock data
 const mockProjects = [
@@ -122,7 +123,7 @@ export default function RewritePage() {
     setRewrittenLyrics("")
 
     try {
-      const metrics = BRAZILIAN_GENRE_METRICS[genre] || BRAZILIAN_GENRE_METRICS.default
+      const metrics = BRAZILIAN_GENRE_METRICS[genre as GenreName] || BRAZILIAN_GENRE_METRICS.default
 
       // Simulação de API
       await new Promise((resolve) => setTimeout(resolve, 2000))
@@ -165,13 +166,13 @@ export default function RewritePage() {
     }
   }
 
-  const currentMetrics = genre ? BRAZILIAN_GENRE_METRICS[genre] : BRAZILIAN_GENRE_METRICS.default
+  const currentMetrics = genre ? BRAZILIAN_GENRE_METRICS[genre as GenreName] : BRAZILIAN_GENRE_METRICS.default
 
   // Validar métrica
   const validateMetrics = (lyrics: string) => {
     if (!genre || !lyrics) return null
 
-    const metrics = BRAZILIAN_GENRE_METRICS[genre] || BRAZILIAN_GENRE_METRICS.default
+    const metrics = BRAZILIAN_GENRE_METRICS[genre as GenreName] || BRAZILIAN_GENRE_METRICS.default
     const maxSyllables = metrics.syllablesPerLine
 
     const lines = lyrics.split("\n").filter((line) => {
@@ -262,7 +263,7 @@ export default function RewritePage() {
                     .filter((g) => g !== "default")
                     .map((genreName) => (
                       <option key={genreName} value={genreName}>
-                        {genreName} ({BRAZILIAN_GENRE_METRICS[genreName].syllablesPerLine}s)
+                        {genreName} ({BRAZILIAN_GENRE_METRICS[genreName as GenreName].syllablesPerLine}s)
                       </option>
                     ))}
                 </select>
@@ -278,7 +279,7 @@ export default function RewritePage() {
                           {selectedProjectData.genre}
                         </span>
                         <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-800">
-                          {BRAZILIAN_GENRE_METRICS[selectedProjectData.genre]?.syllablesPerLine || 8}s
+                          {BRAZILIAN_GENRE_METRICS[selectedProjectData.genre as GenreName]?.syllablesPerLine || 8}s
                         </span>
                       </div>
                     </div>
