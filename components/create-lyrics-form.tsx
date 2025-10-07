@@ -1,13 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Sparkles, Copy, Save, Loader2, AlertCircle } from "lucide-react"
 
 interface GenreMetrics {
@@ -185,45 +178,56 @@ export function CreateLyricsForm() {
     showAlert("Letra copiada!", "A letra foi copiada para a área de transferência.")
   }
 
+  // Classes CSS para estilização
+  const cardClass = "bg-white rounded-lg border border-gray-200 shadow-sm p-6"
+  const inputClass = "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+  const textareaClass = "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[120px] resize-none"
+  const selectClass = "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+  const buttonClass = "w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 flex items-center justify-center gap-2"
+  const buttonOutlineClass = "w-full border border-gray-300 bg-white text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-center gap-2"
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* COLUNA 1: Parâmetros da Letra */}
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="text-xl font-semibold text-foreground">Parâmetros da Letra</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <div className={cardClass}>
+        <div className="mb-4">
+          <h2 className="text-xl font-semibold text-gray-900">Parâmetros da Letra</h2>
+        </div>
+        <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="genero">Gênero Musical</Label>
-            <Select value={genero} onValueChange={setGenero}>
-              <SelectTrigger id="genero">
-                <SelectValue placeholder="Selecione o gênero" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.keys(BRAZILIAN_GENRE_METRICS)
-                  .filter((g) => g !== "default")
-                  .map((genreName) => (
-                    <SelectItem key={genreName} value={genreName}>
-                      {genreName} ({BRAZILIAN_GENRE_METRICS[genreName].syllablesPerLine}s)
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
+            <label htmlFor="genero" className="block text-sm font-medium text-gray-700">
+              Gênero Musical
+            </label>
+            <select
+              id="genero"
+              value={genero}
+              onChange={(e) => setGenero(e.target.value)}
+              className={selectClass}
+            >
+              <option value="">Selecione o gênero</option>
+              {Object.keys(BRAZILIAN_GENRE_METRICS)
+                .filter((g) => g !== "default")
+                .map((genreName) => (
+                  <option key={genreName} value={genreName}>
+                    {genreName} ({BRAZILIAN_GENRE_METRICS[genreName].syllablesPerLine}s)
+                  </option>
+                ))}
+            </select>
 
             {genero && (
-              <div className="mt-3 p-3 bg-primary/10 rounded-md border border-primary/20">
+              <div className="mt-3 p-3 bg-blue-50 rounded-md border border-blue-200">
                 <div className="grid grid-cols-3 gap-2 text-sm">
                   <div>
-                    <span className="text-muted-foreground">Métrica:</span>
-                    <div className="font-medium text-foreground">{currentMetrics.syllablesPerLine} sílabas/linha</div>
+                    <span className="text-gray-600">Métrica:</span>
+                    <div className="font-medium text-gray-900">{currentMetrics.syllablesPerLine} sílabas/linha</div>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Ritmo:</span>
-                    <div className="font-medium text-foreground">{currentMetrics.bpm} BPM</div>
+                    <span className="text-gray-600">Ritmo:</span>
+                    <div className="font-medium text-gray-900">{currentMetrics.bpm} BPM</div>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Estrutura:</span>
-                    <div className="font-medium text-foreground text-xs">{currentMetrics.structure}</div>
+                    <span className="text-gray-600">Estrutura:</span>
+                    <div className="font-medium text-gray-900 text-xs">{currentMetrics.structure}</div>
                   </div>
                 </div>
               </div>
@@ -231,140 +235,165 @@ export function CreateLyricsForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="humor">Humor</Label>
-            <Select value={humor} onValueChange={setHumor}>
-              <SelectTrigger id="humor">
-                <SelectValue placeholder="Selecione o humor" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="feliz">Feliz</SelectItem>
-                <SelectItem value="triste">Triste</SelectItem>
-                <SelectItem value="romantico">Romântico</SelectItem>
-                <SelectItem value="nostalgico">Nostálgico</SelectItem>
-                <SelectItem value="energetico">Energético</SelectItem>
-              </SelectContent>
-            </Select>
+            <label htmlFor="humor" className="block text-sm font-medium text-gray-700">
+              Humor
+            </label>
+            <select
+              id="humor"
+              value={humor}
+              onChange={(e) => setHumor(e.target.value)}
+              className={selectClass}
+            >
+              <option value="">Selecione o humor</option>
+              <option value="feliz">Feliz</option>
+              <option value="triste">Triste</option>
+              <option value="romantico">Romântico</option>
+              <option value="nostalgico">Nostálgico</option>
+              <option value="energetico">Energético</option>
+            </select>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="tema">Tema</Label>
-            <Input
+            <label htmlFor="tema" className="block text-sm font-medium text-gray-700">
+              Tema
+            </label>
+            <input
               id="tema"
+              type="text"
               placeholder="Ex: Amor, Perda, Jornada..."
               value={tema}
               onChange={(e) => setTema(e.target.value)}
+              className={inputClass}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="criatividade">Nível de Criatividade</Label>
-            <Select value={criatividade} onValueChange={setCriatividade}>
-              <SelectTrigger id="criatividade">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="conservador">Conservador</SelectItem>
-                <SelectItem value="equilibrado">Equilibrado</SelectItem>
-                <SelectItem value="ousado">Ousado</SelectItem>
-                <SelectItem value="experimental">Experimental</SelectItem>
-              </SelectContent>
-            </Select>
+            <label htmlFor="criatividade" className="block text-sm font-medium text-gray-700">
+              Nível de Criatividade
+            </label>
+            <select
+              id="criatividade"
+              value={criatividade}
+              onChange={(e) => setCriatividade(e.target.value)}
+              className={selectClass}
+            >
+              <option value="conservador">Conservador</option>
+              <option value="equilibrado">Equilibrado</option>
+              <option value="ousado">Ousado</option>
+              <option value="experimental">Experimental</option>
+            </select>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="hook">Hook/Refrão (opcional)</Label>
-            <Input
+            <label htmlFor="hook" className="block text-sm font-medium text-gray-700">
+              Hook/Refrão (opcional)
+            </label>
+            <input
               id="hook"
+              type="text"
               placeholder="Digite um refrão marcante..."
               value={hook}
               onChange={(e) => setHook(e.target.value)}
+              className={inputClass}
             />
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* COLUNA 2: Inspiração & Sensações */}
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="text-xl font-semibold text-foreground">Inspiração & Sensações</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <div className={cardClass}>
+        <div className="mb-4">
+          <h2 className="text-xl font-semibold text-gray-900">Inspiração & Sensações</h2>
+        </div>
+        <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="inspiracao">Inspiração Literária</Label>
-            <Textarea
+            <label htmlFor="inspiracao" className="block text-sm font-medium text-gray-700">
+              Inspiração Literária
+            </label>
+            <textarea
               id="inspiracao"
               placeholder="Descreva referências literárias, poemas ou textos que inspiram..."
-              className="min-h-[120px] resize-none"
+              className={textareaClass}
               value={inspiracao}
               onChange={(e) => setInspiracao(e.target.value)}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="metaforas">Metáforas Inteligentes</Label>
-            <Textarea
+            <label htmlFor="metaforas" className="block text-sm font-medium text-gray-700">
+              Metáforas Inteligentes
+            </label>
+            <textarea
               id="metaforas"
               placeholder="Sugira metáforas ou figuras de linguagem que gostaria de ver..."
-              className="min-h-[120px] resize-none"
+              className={textareaClass}
               value={metaforas}
               onChange={(e) => setMetaforas(e.target.value)}
             />
           </div>
 
           <div className="space-y-3">
-            <Label>Tags de Emoção</Label>
+            <label className="block text-sm font-medium text-gray-700">Tags de Emoção</label>
             <div className="space-y-2">
               {["Alegria", "Tristeza", "Saudade", "Paixão"].map((emocao) => (
                 <div key={emocao} className="flex items-center space-x-2">
-                  <Checkbox
+                  <input
+                    type="checkbox"
                     id={emocao}
                     checked={emocoes.includes(emocao)}
-                    onCheckedChange={() => handleEmocaoToggle(emocao)}
+                    onChange={() => handleEmocaoToggle(emocao)}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
-                  <Label htmlFor={emocao} className="text-sm font-normal cursor-pointer">
+                  <label htmlFor={emocao} className="text-sm text-gray-700 cursor-pointer">
                     {emocao}
-                  </Label>
+                  </label>
                 </div>
               ))}
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* COLUNA 3: Preview da Letra */}
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="text-xl font-semibold text-foreground">Preview da Letra</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <div className={cardClass}>
+        <div className="mb-4">
+          <h2 className="text-xl font-semibold text-gray-900">Preview da Letra</h2>
+        </div>
+        <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="titulo">Título da Música</Label>
-            <Input
+            <label htmlFor="titulo" className="block text-sm font-medium text-gray-700">
+              Título da Música
+            </label>
+            <input
               id="titulo"
+              type="text"
               placeholder="Digite o título..."
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
+              className={inputClass}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="letra">Letra Gerada</Label>
-            <Textarea
+            <label htmlFor="letra" className="block text-sm font-medium text-gray-700">
+              Letra Gerada
+            </label>
+            <textarea
               id="letra"
               placeholder="A letra gerada aparecerá aqui..."
-              className="min-h-[300px] resize-none font-mono text-sm"
+              className={`${textareaClass} min-h-[300px] font-mono text-sm`}
               value={letraGerada}
               onChange={(e) => setLetraGerada(e.target.value)}
             />
           </div>
 
           {problematicLines && problematicLines.length > 0 && (
-            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-md p-4">
+            <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
               <div className="flex items-center gap-2 mb-2">
                 <AlertCircle className="w-4 h-4 text-yellow-600" />
                 <span className="font-medium text-yellow-600 text-sm">Ajuste de Métrica Recomendado</span>
               </div>
-              <p className="text-sm text-yellow-600/90">
+              <p className="text-sm text-yellow-600">
                 <strong>{genero}</strong> recomenda até <strong>{currentMetrics.syllablesPerLine} sílabas</strong> por
                 linha.
                 {problematicLines.length} linha(s) precisam de ajuste.
@@ -373,49 +402,46 @@ export function CreateLyricsForm() {
           )}
 
           <div className="flex flex-col gap-2">
-            <Button
+            <button
               onClick={handleGerarLetra}
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-              size="lg"
+              className={buttonClass}
               disabled={isGenerating}
             >
               {isGenerating ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                   Gerando...
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-4 h-4 mr-2" />
+                  <Sparkles className="w-4 h-4" />
                   Gerar Letra
                 </>
               )}
-            </Button>
+            </button>
 
             {problematicLines && problematicLines.length > 0 && (
-              <Button
+              <button
                 onClick={handleCorrigirMetrica}
-                variant="outline"
-                size="lg"
-                className="w-full border-yellow-500/20 text-yellow-600 hover:bg-yellow-500/10 bg-transparent"
+                className="w-full border border-yellow-500 text-yellow-600 bg-yellow-50 py-2 px-4 rounded-lg font-medium hover:bg-yellow-100 flex items-center justify-center gap-2"
               >
                 Corrigir Métrica
-              </Button>
+              </button>
             )}
 
             <div className="grid grid-cols-2 gap-2">
-              <Button variant="outline" size="lg">
-                <Save className="w-4 h-4 mr-2" />
+              <button className={buttonOutlineClass}>
+                <Save className="w-4 h-4" />
                 Salvar Projeto
-              </Button>
-              <Button variant="outline" size="lg" onClick={handleCopiarLetra}>
-                <Copy className="w-4 h-4 mr-2" />
+              </button>
+              <button className={buttonOutlineClass} onClick={handleCopiarLetra}>
+                <Copy className="w-4 h-4" />
                 Copiar Letra
-              </Button>
+              </button>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   )
 }
