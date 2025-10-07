@@ -1,13 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Sparkles, Save, Copy, FileText, AlertCircle, Loader2 } from "lucide-react"
+import { Sparkles, Copy, Save, Loader2, AlertCircle, RotateCcw } from "lucide-react"
 
 interface GenreMetrics {
   syllablesPerLine: number;
@@ -72,30 +66,19 @@ function countPortugueseSyllables(word: string): number {
 
 export function RewriteLyricsForm() {
   const [letraOriginal, setLetraOriginal] = useState("")
-  const [generoConversao, setGeneroConversao] = useState("")
-  const [conservarImagens, setConservarImagens] = useState(true)
-  const [polirSemMexer, setPolirSemMexer] = useState(false)
   const [letraReescrita, setLetraReescrita] = useState("")
-  const [qualidadeScore, setQualidadeScore] = useState(0)
-  const [sugestoes, setSugestoes] = useState<string[]>([])
-  const [analisado, setAnalisado] = useState(false)
-  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [genero, setGenero] = useState("")
+  const [tipoReescrita, setTipoReescrita] = useState("melhoria-metrica")
+  const [intensidade, setIntensidade] = useState("media")
   const [isRewriting, setIsRewriting] = useState(false)
 
-  // Função para substituir os toasts
-  const showAlert = (title: string, description?: string) => {
-    alert(title + (description ? `\n\n${description}` : ''))
-  }
-
   const currentMetrics =
-    generoConversao && BRAZILIAN_GENRE_METRICS[generoConversao]
-      ? BRAZILIAN_GENRE_METRICS[generoConversao]
-      : BRAZILIAN_GENRE_METRICS.default
+    genero && BRAZILIAN_GENRE_METRICS[genero] ? BRAZILIAN_GENRE_METRICS[genero] : BRAZILIAN_GENRE_METRICS.default
 
   const validateMetrics = (lyrics: string) => {
-    if (!generoConversao || !lyrics) return null
+    if (!genero || !lyrics) return null
 
-    const metrics = BRAZILIAN_GENRE_METRICS[generoConversao] || BRAZILIAN_GENRE_METRICS.default
+    const metrics = BRAZILIAN_GENRE_METRICS[genero] || BRAZILIAN_GENRE_METRICS.default
     const maxSyllables = metrics.syllablesPerLine
 
     const lines = lyrics.split("\n").filter((line) => {
@@ -113,57 +96,57 @@ export function RewriteLyricsForm() {
     return problematicLines
   }
 
-  const originalProblematicLines = validateMetrics(letraOriginal)
-  const rewrittenProblematicLines = validateMetrics(letraReescrita)
+  const problematicLines = validateMetrics(letraOriginal)
 
-  const handleAnalisarLetra = () => {
-    if (!letraOriginal) {
-      showAlert("Nenhuma letra para analisar", "Cole uma letra primeiro antes de analisar.")
+  const showAlert = (title: string, description?: string) => {
+    alert(title + (description ? `\n\n${description}` : ''))
+  }
+
+  const handleReescreverLetra = async () => {
+    if (!letraOriginal.trim()) {
+      showAlert("Erro", "Cole uma letra para reescrever primeiro.")
       return
     }
 
-    setIsAnalyzing(true)
-
-    // Simulação de análise
-    setTimeout(() => {
-      setQualidadeScore(7.5)
-      setSugestoes([
-        "Adicionar mais metáforas visuais no segundo verso",
-        "Reforçar a rima no refrão para maior impacto",
-        "Considerar uma ponte melódica entre verso e refrão",
-        "Explorar mais a temática emocional no final",
-      ])
-      setAnalisado(true)
-      setIsAnalyzing(false)
-
-      showAlert("Análise concluída!", "Confira as sugestões de melhoria.")
-    }, 1500)
-  }
-
-  const handleReescreverLetra = () => {
-    if (!letraOriginal || !generoConversao) {
-      showAlert("Informações incompletas", "Preencha a letra original e selecione o gênero.")
+    if (!genero) {
+      showAlert("Erro", "Selecione o gênero musical.")
       return
     }
 
     setIsRewriting(true)
+    try {
+      const response = await fetch("/api/rewrite-lyrics", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          letraOriginal,
+          genero,
+          tipoReescrita,
+          intensidade,
+          metrics: currentMetrics,
+        }),
+      })
 
-    // Simulação de reescrita
-    setTimeout(() => {
-      setLetraReescrita(
-        `[Verso 1 - ${generoConversao}]\nSua letra transformada no novo gênero\nMantendo a essência e emoção original\n\n[Refrão]\nRefrão adaptado ao estilo escolhido\nCom a mesma mensagem, nova roupagem\n\n[Verso 2]\nContinuação da história recontada\nNo ritmo e linguagem do gênero selecionado\n\nMétrica: ${currentMetrics.syllablesPerLine} sílabas/linha | BPM: ${currentMetrics.bpm}`,
-      )
+      if (!response.ok) {
+        throw new Error("Erro ao reescrever letra")
+      }
+
+      const data = await response.json()
+      setLetraReescrita(data.letraReescrita)
+
+      showAlert("Letra reescrita com sucesso!", "Sua letra foi aprimorada usando técnicas avançadas.")
+    } catch (error) {
+      console.error("[v0] Error:", error)
+      showAlert("Erro ao reescrever letra", "Ocorreu um erro ao processar a letra. Por favor, tente novamente.")
+    } finally {
       setIsRewriting(false)
-
-      showAlert("Letra reescrita com sucesso!", "Confira o resultado e faça ajustes se necessário.")
-    }, 2000)
+    }
   }
 
-  const handleCorrigirMetrica = (isOriginal: boolean) => {
-    const letra = isOriginal ? letraOriginal : letraReescrita
-    const setLetra = isOriginal ? setLetraOriginal : setLetraReescrita
-
-    const fixed = letra
+  const handleCorrigirMetrica = () => {
+    const fixed = letraOriginal
       .split("\n")
       .map((line) => {
         if (countPortugueseSyllables(line) > currentMetrics.syllablesPerLine) {
@@ -176,307 +159,271 @@ export function RewriteLyricsForm() {
         return line
       })
       .join("\n")
-
-    setLetra(fixed)
+    setLetraOriginal(fixed)
 
     showAlert("Métrica corrigida!", "As linhas foram ajustadas para a métrica ideal.")
   }
 
-  const handleAplicarMelhorias = () => {
-    setLetraReescrita((prev) => prev + "\n\n[Melhorias aplicadas com sucesso]")
-
-    showAlert("Melhorias aplicadas!", "As sugestões foram incorporadas à letra.")
-  }
-
-  const handleCopiar = (texto: string) => {
-    if (!texto) {
-      showAlert("Nenhum texto para copiar")
+  const handleCopiarLetra = () => {
+    if (!letraReescrita) {
+      showAlert("Nenhuma letra para copiar", "Reescreva uma letra primeiro antes de copiar.")
       return
     }
 
-    navigator.clipboard.writeText(texto)
-    showAlert("Texto copiado!", "O texto foi copiado para a área de transferência.")
+    navigator.clipboard.writeText(letraReescrita)
+    showAlert("Letra copiada!", "A letra reescrita foi copiada para a área de transferência.")
   }
 
-  // Componente Progress simples para substituir o import
-  const SimpleProgress = ({ value }: { value: number }) => (
-    <div className="w-full bg-gray-200 rounded-full h-2">
-      <div 
-        className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-        style={{ width: `${value}%` }}
-      ></div>
-    </div>
-  )
+  const handleRestaurarOriginal = () => {
+    setLetraReescrita("")
+    showAlert("Original restaurada", "A letra original foi restaurada.")
+  }
+
+  // Classes CSS para estilização
+  const cardClass = "bg-white rounded-lg border border-gray-200 shadow-sm p-6"
+  const inputClass = "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+  const textareaClass = "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[200px] resize-none"
+  const selectClass = "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+  const buttonClass = "w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 flex items-center justify-center gap-2"
+  const buttonOutlineClass = "w-full border border-gray-300 bg-white text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-center gap-2"
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* SEÇÃO ESQUERDA: Input e Configurações */}
-      <div className="space-y-6">
-        <Card className="bg-card border-border">
-          <CardHeader>
-            <CardTitle className="text-xl font-semibold text-foreground">Letra Original</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="letra-original">Cole sua letra aqui...</Label>
-              <Textarea
-                id="letra-original"
-                placeholder="Cole a letra que deseja reescrever ou melhorar..."
-                className="min-h-[300px] resize-none font-mono text-sm"
-                value={letraOriginal}
-                onChange={(e) => setLetraOriginal(e.target.value)}
-              />
-            </div>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* COLUNA 1: Letra Original */}
+      <div className={cardClass}>
+        <div className="mb-4">
+          <h2 className="text-xl font-semibold text-gray-900">Letra Original</h2>
+        </div>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label htmlFor="genero" className="block text-sm font-medium text-gray-700">
+              Gênero Musical
+            </label>
+            <select
+              id="genero"
+              value={genero}
+              onChange={(e) => setGenero(e.target.value)}
+              className={selectClass}
+            >
+              <option value="">Selecione o gênero</option>
+              {Object.keys(BRAZILIAN_GENRE_METRICS)
+                .filter((g) => g !== "default")
+                .map((genreName) => (
+                  <option key={genreName} value={genreName}>
+                    {genreName} ({BRAZILIAN_GENRE_METRICS[genreName].syllablesPerLine}s)
+                  </option>
+                ))}
+            </select>
 
-            {originalProblematicLines && originalProblematicLines.length > 0 && (
-              <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-md p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <AlertCircle className="w-4 h-4 text-yellow-600" />
-                  <span className="font-medium text-yellow-600 text-sm">Ajuste de Métrica Recomendado</span>
-                </div>
-                <p className="text-sm text-yellow-600/90">
-                  <strong>{generoConversao}</strong> recomenda até{" "}
-                  <strong>{currentMetrics.syllablesPerLine} sílabas</strong> por linha.
-                  {originalProblematicLines.length} linha(s) precisam de ajuste.
-                </p>
-              </div>
-            )}
-
-            <div className="flex gap-2">
-              <Button onClick={() => handleCopiar(letraOriginal)} variant="outline" size="sm" disabled={!letraOriginal}>
-                <Copy className="w-4 h-4 mr-2" />
-                Copiar
-              </Button>
-
-              {originalProblematicLines && originalProblematicLines.length > 0 && (
-                <Button
-                  onClick={() => handleCorrigirMetrica(true)}
-                  variant="outline"
-                  size="sm"
-                  className="border-yellow-500/20 text-yellow-600 hover:bg-yellow-500/10"
-                >
-                  Corrigir Métrica
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border-border">
-          <CardHeader>
-            <CardTitle className="text-xl font-semibold text-foreground">Configurações</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="genero-conversao">Gênero para Conversão</Label>
-              <Select value={generoConversao} onValueChange={setGeneroConversao}>
-                <SelectTrigger id="genero-conversao">
-                  <SelectValue placeholder="Selecione o gênero destino" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.keys(BRAZILIAN_GENRE_METRICS)
-                    .filter((g) => g !== "default")
-                    .map((genreName) => (
-                      <SelectItem key={genreName} value={genreName}>
-                        {genreName} ({BRAZILIAN_GENRE_METRICS[genreName].syllablesPerLine}s)
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-
-              {generoConversao && (
-                <div className="mt-3 p-3 bg-primary/10 rounded-md border border-primary/20">
-                  <div className="grid grid-cols-3 gap-2 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Métrica:</span>
-                      <div className="font-medium text-foreground">{currentMetrics.syllablesPerLine} sílabas/linha</div>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Ritmo:</span>
-                      <div className="font-medium text-foreground">{currentMetrics.bpm} BPM</div>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Estrutura:</span>
-                      <div className="font-medium text-foreground text-xs">{currentMetrics.structure}</div>
-                    </div>
+            {genero && (
+              <div className="mt-3 p-3 bg-blue-50 rounded-md border border-blue-200">
+                <div className="grid grid-cols-3 gap-2 text-sm">
+                  <div>
+                    <span className="text-gray-600">Métrica:</span>
+                    <div className="font-medium text-gray-900">{currentMetrics.syllablesPerLine} sílabas/linha</div>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Ritmo:</span>
+                    <div className="font-medium text-gray-900">{currentMetrics.bpm} BPM</div>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Estrutura:</span>
+                    <div className="font-medium text-gray-900 text-xs">{currentMetrics.structure}</div>
                   </div>
                 </div>
-              )}
-            </div>
-
-            <div className="space-y-3">
-              <Label>Opções de Reescrita</Label>
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="conservar-imagens"
-                    checked={conservarImagens}
-                    onCheckedChange={(checked) => setConservarImagens(checked as boolean)}
-                  />
-                  <Label htmlFor="conservar-imagens" className="text-sm font-normal cursor-pointer">
-                    Conservar imagens originais
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="polir-sem-mexer"
-                    checked={polirSemMexer}
-                    onCheckedChange={(checked) => setPolirSemMexer(checked as boolean)}
-                  />
-                  <Label htmlFor="polir-sem-mexer" className="text-sm font-normal cursor-pointer">
-                    Polir sem mexer na estrutura
-                  </Label>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-2 pt-2">
-              <Button
-                onClick={handleAnalisarLetra}
-                variant="outline"
-                size="lg"
-                className="w-full bg-transparent"
-                disabled={!letraOriginal || isAnalyzing}
-              >
-                {isAnalyzing ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Analisando...
-                  </>
-                ) : (
-                  <>
-                    <FileText className="w-4 h-4 mr-2" />
-                    Analisar Letra
-                  </>
-                )}
-              </Button>
-              <Button
-                onClick={handleReescreverLetra}
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                size="lg"
-                disabled={!letraOriginal || !generoConversao || isRewriting}
-              >
-                {isRewriting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Reescrevendo...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Reescrever Letra
-                  </>
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* SEÇÃO DIREITA: Preview e Análise */}
-      <div className="space-y-6">
-        {analisado && (
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="text-xl font-semibold text-foreground">Análise de Qualidade</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>Score de Qualidade</Label>
-                  <span className="text-2xl font-bold text-primary">{qualidadeScore}/10</span>
-                </div>
-                <SimpleProgress value={qualidadeScore * 10} />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Sugestões de Melhoria</Label>
-                <div className="space-y-2">
-                  {sugestoes.map((sugestao, index) => (
-                    <Card key={index} className="bg-muted/50 border-border/50">
-                      <CardContent className="p-3">
-                        <p className="text-sm text-muted-foreground">{sugestao}</p>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        <Card className="bg-card border-border">
-          <CardHeader>
-            <CardTitle className="text-xl font-semibold text-foreground">Letra Reescrita</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="letra-reescrita">Preview</Label>
-              <Textarea
-                id="letra-reescrita"
-                placeholder="A letra reescrita aparecerá aqui..."
-                className="min-h-[400px] resize-none font-mono text-sm"
-                value={letraReescrita}
-                onChange={(e) => setLetraReescrita(e.target.value)}
-              />
-            </div>
-
-            {rewrittenProblematicLines && rewrittenProblematicLines.length > 0 && (
-              <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-md p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <AlertCircle className="w-4 h-4 text-yellow-600" />
-                  <span className="font-medium text-yellow-600 text-sm">Ajuste de Métrica Recomendado</span>
-                </div>
-                <p className="text-sm text-yellow-600/90">
-                  <strong>{generoConversao}</strong> recomenda até{" "}
-                  <strong>{currentMetrics.syllablesPerLine} sílabas</strong> por linha.
-                  {rewrittenProblematicLines.length} linha(s) precisam de ajuste.
-                </p>
               </div>
             )}
+          </div>
 
-            <div className="flex flex-col gap-2">
-              {analisado && (
-                <Button
-                  onClick={handleAplicarMelhorias}
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                  size="lg"
-                  disabled={!letraReescrita}
-                >
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Aplicar Melhorias
-                </Button>
-              )}
+          <div className="space-y-2">
+            <label htmlFor="letra-original" className="block text-sm font-medium text-gray-700">
+              Cole sua letra aqui
+            </label>
+            <textarea
+              id="letra-original"
+              placeholder="Cole a letra que deseja reescrever..."
+              className={`${textareaClass} font-mono text-sm`}
+              value={letraOriginal}
+              onChange={(e) => setLetraOriginal(e.target.value)}
+            />
+          </div>
 
-              {rewrittenProblematicLines && rewrittenProblematicLines.length > 0 && (
-                <Button
-                  onClick={() => handleCorrigirMetrica(false)}
-                  variant="outline"
-                  size="lg"
-                  className="w-full border-yellow-500/20 text-yellow-600 hover:bg-yellow-500/10"
-                >
-                  Corrigir Métrica
-                </Button>
-              )}
+          {problematicLines && problematicLines.length > 0 && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertCircle className="w-4 h-4 text-yellow-600" />
+                <span className="font-medium text-yellow-600 text-sm">Ajuste de Métrica Recomendado</span>
+              </div>
+              <p className="text-sm text-yellow-600">
+                <strong>{genero}</strong> recomenda até <strong>{currentMetrics.syllablesPerLine} sílabas</strong> por
+                linha.
+                {problematicLines.length} linha(s) precisam de ajuste.
+              </p>
+            </div>
+          )}
 
-              <div className="grid grid-cols-2 gap-2">
-                <Button variant="outline" size="lg" disabled={!letraReescrita}>
-                  <Save className="w-4 h-4 mr-2" />
-                  Salvar Cópia
-                </Button>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  disabled={!letraReescrita}
-                  onClick={() => handleCopiar(letraReescrita)}
-                >
-                  <Copy className="w-4 h-4 mr-2" />
-                  Copiar Letra
-                </Button>
+          <div className="flex gap-2">
+            {problematicLines && problematicLines.length > 0 && (
+              <button
+                onClick={handleCorrigirMetrica}
+                className="flex-1 border border-yellow-500 text-yellow-600 bg-yellow-50 py-2 px-4 rounded-lg font-medium hover:bg-yellow-100 flex items-center justify-center gap-2"
+              >
+                Corrigir Métrica
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* COLUNA 2: Configurações de Reescrita */}
+      <div className={cardClass}>
+        <div className="mb-4">
+          <h2 className="text-xl font-semibold text-gray-900">Configurações</h2>
+        </div>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label htmlFor="tipo-reescrita" className="block text-sm font-medium text-gray-700">
+              Tipo de Reescrita
+            </label>
+            <select
+              id="tipo-reescrita"
+              value={tipoReescrita}
+              onChange={(e) => setTipoReescrita(e.target.value)}
+              className={selectClass}
+            >
+              <option value="melhoria-metrica">Melhoria de Métrica</option>
+              <option value="otimizacao-rimas">Otimização de Rimas</option>
+              <option value="intensificacao-emocao">Intensificação Emocional</option>
+              <option value="versao-comercial">Versão Comercial</option>
+              <option value="estilo-diferente">Mudança de Estilo</option>
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="intensidade" className="block text-sm font-medium text-gray-700">
+              Intensidade da Reescrita
+            </label>
+            <select
+              id="intensidade"
+              value={intensidade}
+              onChange={(e) => setIntensidade(e.target.value)}
+              className={selectClass}
+            >
+              <option value="leve">Leve (preserva original)</option>
+              <option value="media">Média (equilibrada)</option>
+              <option value="intensa">Intensa (mudanças significativas)</option>
+            </select>
+          </div>
+
+          <div className="space-y-3">
+            <label className="block text-sm font-medium text-gray-700">Opções Avançadas</label>
+            <div className="space-y-2">
+              {[
+                "Manter estrutura original",
+                "Otimizar para streaming",
+                "Adicionar metáforas",
+                "Intensificar emoções"
+              ].map((opcao) => (
+                <div key={opcao} className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id={opcao}
+                    defaultChecked
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <label htmlFor={opcao} className="text-sm text-gray-700 cursor-pointer">
+                    {opcao}
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <button
+            onClick={handleReescreverLetra}
+            className={buttonClass}
+            disabled={isRewriting || !letraOriginal.trim() || !genero}
+          >
+            {isRewriting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Processando...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4" />
+                Reescrever Letra
+              </>
+            )}
+          </button>
+
+          <div className="p-4 bg-purple-50 rounded-md border border-purple-200">
+            <div className="flex items-start gap-2">
+              <Sparkles className="w-4 h-4 text-purple-600 mt-0.5" />
+              <div className="text-sm text-purple-700">
+                <strong>Terceira Via Ativa:</strong> Sua letra será processada usando variação A + variação B → versão final
+                para garantir a melhor qualidade possível.
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+      </div>
+
+      {/* COLUNA 3: Letra Reescrita */}
+      <div className={cardClass}>
+        <div className="mb-4">
+          <h2 className="text-xl font-semibold text-gray-900">Letra Reescrita</h2>
+        </div>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label htmlFor="letra-reescrita" className="block text-sm font-medium text-gray-700">
+              Resultado da Reescrita
+            </label>
+            <textarea
+              id="letra-reescrita"
+              placeholder="A letra reescrita aparecerá aqui..."
+              className={`${textareaClass} font-mono text-sm`}
+              value={letraReescrita}
+              onChange={(e) => setLetraReescrita(e.target.value)}
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <div className="grid grid-cols-2 gap-2">
+              <button className={buttonOutlineClass} onClick={handleCopiarLetra}>
+                <Copy className="w-4 h-4" />
+                Copiar
+              </button>
+              <button className={buttonOutlineClass}>
+                <Save className="w-4 h-4" />
+                Salvar
+              </button>
+            </div>
+            
+            <button 
+              onClick={handleRestaurarOriginal}
+              className="w-full border border-gray-300 bg-white text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-50 flex items-center justify-center gap-2"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Restaurar Original
+            </button>
+          </div>
+
+          {letraReescrita && (
+            <div className="bg-green-50 border border-green-200 rounded-md p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="w-4 h-4 text-green-600" />
+                <span className="font-medium text-green-600 text-sm">Reescrita Concluída</span>
+              </div>
+              <p className="text-sm text-green-700">
+                Sua letra foi aprimorada usando técnicas avançadas de Terceira Via.
+                {tipoReescrita === "melhoria-metrica" && " Métrica otimizada para o gênero selecionado."}
+                {tipoReescrita === "otimizacao-rimas" && " Rimas e estrutura poética aprimoradas."}
+                {tipoReescrita === "intensificacao-emocao" && " Impacto emocional intensificado."}
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
