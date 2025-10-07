@@ -4,10 +4,17 @@ import { NextResponse } from "next/server"
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { genero, humor, tema, criatividade, hook, inspiracao, metaforas, emocoes, titulo } = body
+    const { genero, humor, tema, criatividade, hook, inspiracao, metaforas, emocoes, titulo, metrics } = body
 
-    // Construir el prompt basado en los parámetros del usuario
-    const prompt = `Você é um compositor profissional especializado em criar letras de músicas autênticas e emocionantes.
+    const metricInfo = metrics
+      ? `\n\nIMPORTANTE - Métrica do Gênero ${genero}:
+- Cada linha deve ter aproximadamente ${metrics.syllablesPerLine} sílabas
+- Ritmo: ${metrics.bpm} BPM
+- Estrutura: ${metrics.structure}
+- Mantenha a métrica consistente em toda a letra`
+      : ""
+
+    const prompt = `Você é um compositor profissional especializado em criar letras de músicas autênticas e emocionantes em português brasileiro.
 
 Crie uma letra de música com os seguintes parâmetros:
 
@@ -19,7 +26,7 @@ Nível de Criatividade: ${criatividade || "equilibrado"}
 ${hook ? `Refrão sugerido: ${hook}` : ""}
 ${inspiracao ? `Inspiração Literária: ${inspiracao}` : ""}
 ${metaforas ? `Metáforas desejadas: ${metaforas}` : ""}
-${emocoes && emocoes.length > 0 ? `Emoções: ${emocoes.join(", ")}` : ""}
+${emocoes && emocoes.length > 0 ? `Emoções: ${emocoes.join(", ")}` : ""}${metricInfo}
 
 Instruções:
 - Crie uma letra completa com estrutura profissional (versos, refrão, ponte se apropriado)
@@ -27,8 +34,9 @@ Instruções:
 - Mantenha coerência com o gênero musical escolhido
 - Capture as emoções e o humor especificados
 - Se um refrão foi sugerido, incorpore-o ou use-o como inspiração
-- Formate a letra claramente com [Verso 1], [Refrão], [Verso 2], etc.
+- Formate a letra claramente com [INTRO], [VERSO 1], [REFRÃO], [VERSO 2], [PONTE], etc.
 - Seja criativo e autêntico
+- RESPEITE A MÉTRICA especificada para o gênero
 
 Retorne APENAS a letra da música, sem comentários adicionais.`
 

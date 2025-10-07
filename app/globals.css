@@ -4,94 +4,52 @@
 
 @layer base {
   :root {
-    /* Tema personalizado para Chorão Compositor com azul principal e fundo escuro */
-    --background: 17 4% 12%;
-    --foreground: 0 0% 98%;
-    --card: 17 5% 18%;
-    --card-foreground: 0 0% 98%;
-    --popover: 17 5% 15%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 264 60% 61%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 264 8% 25%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 264 6% 25%;
-    --muted-foreground: 264 4% 65%;
-    --accent: 264 70% 55%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 264 8% 25%;
-    --input: 264 8% 25%;
-    --ring: 264 60% 61%;
-    --chart-1: 264 60% 61%;
-    --chart-2: 280 70% 55%;
-    --chart-3: 250 60% 65%;
-    --chart-4: 240 55% 70%;
-    --chart-5: 270 65% 60%;
-    --radius: 0.75rem;
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 222 47% 11%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 223 47% 11%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 91% 60%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 217 91% 60%;
+    --chart-1: 217 91% 60%;
+    --chart-2: 240 70% 55%;
+    --chart-3: 200 60% 65%;
+    --chart-4: 180 55% 70%;
+    --chart-5: 220 65% 60%;
+    --radius: 0.5rem;
   }
 
   .dark {
-    /* Modo claro (invertido) */
-    --background: 0 0% 98%;
-    --foreground: 17 4% 12%;
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 17 4% 12%;
+    --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 17 4% 12%;
-    --primary: 264 60% 61%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 264 2% 95%;
-    --secondary-foreground: 17 4% 12%;
-    --muted: 264 2% 95%;
-    --muted-foreground: 264 4% 45%;
-    --accent: 264 70% 55%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 264 2% 90%;
-    --input: 264 2% 90%;
-    --ring: 264 60% 61%;
-  }
-
-  * {
-    @apply border-border;
-  }
-
-  body {
-    @apply bg-background text-foreground;
-  }
-}
-
-/* Animações personalizadas para o Chorão Compositor */
-@keyframes gradient-shift {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-}
-
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-@layer utilities {
-  .animate-gradient {
-    background-size: 200% 200%;
-    animation: gradient-shift 8s ease infinite;
-  }
-
-  .animate-float {
-    animation: float 3s ease-in-out infinite;
+    --popover-foreground: 222 47% 11%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 217 91% 60%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 217 91% 60%;
   }
 }
