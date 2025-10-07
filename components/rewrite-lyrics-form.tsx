@@ -8,11 +8,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Sparkles, Save, Copy, FileText, AlertCircle, Loader2 } from "lucide-react"
-// COMENTE estas linhas:
-// import { Progress } from "@/components/ui/progress"
-// import { useToast } from "@/hooks/use-toast"
 
-const BRAZILIAN_GENRE_METRICS = {
+interface GenreMetrics {
+  syllablesPerLine: number;
+  bpm: number;
+  structure: string;
+}
+
+const BRAZILIAN_GENRE_METRICS: Record<string, GenreMetrics> = {
   "Sertanejo Moderno": { syllablesPerLine: 6, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
   Sertanejo: { syllablesPerLine: 7, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
   "Sertanejo Universitário": { syllablesPerLine: 6, bpm: 95, structure: "VERSO-REFRAO" },
@@ -78,7 +81,11 @@ export function RewriteLyricsForm() {
   const [analisado, setAnalisado] = useState(false)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [isRewriting, setIsRewriting] = useState(false)
-  const { toast } = useToast()
+
+  // Função para substituir os toasts
+  const showAlert = (title: string, description?: string) => {
+    alert(title + (description ? `\n\n${description}` : ''))
+  }
 
   const currentMetrics =
     generoConversao && BRAZILIAN_GENRE_METRICS[generoConversao]
@@ -111,11 +118,7 @@ export function RewriteLyricsForm() {
 
   const handleAnalisarLetra = () => {
     if (!letraOriginal) {
-      toast({
-        title: "Nenhuma letra para analisar",
-        description: "Cole uma letra primeiro antes de analisar.",
-        variant: "destructive",
-      })
+      showAlert("Nenhuma letra para analisar", "Cole uma letra primeiro antes de analisar.")
       return
     }
 
@@ -133,20 +136,13 @@ export function RewriteLyricsForm() {
       setAnalisado(true)
       setIsAnalyzing(false)
 
-      toast({
-        title: "Análise concluída!",
-        description: "Confira as sugestões de melhoria.",
-      })
+      showAlert("Análise concluída!", "Confira as sugestões de melhoria.")
     }, 1500)
   }
 
   const handleReescreverLetra = () => {
     if (!letraOriginal || !generoConversao) {
-      toast({
-        title: "Informações incompletas",
-        description: "Preencha a letra original e selecione o gênero.",
-        variant: "destructive",
-      })
+      showAlert("Informações incompletas", "Preencha a letra original e selecione o gênero.")
       return
     }
 
@@ -159,10 +155,7 @@ export function RewriteLyricsForm() {
       )
       setIsRewriting(false)
 
-      toast({
-        title: "Letra reescrita com sucesso!",
-        description: "Confira o resultado e faça ajustes se necessário.",
-      })
+      showAlert("Letra reescrita com sucesso!", "Confira o resultado e faça ajustes se necessário.")
     }, 2000)
   }
 
@@ -186,36 +179,34 @@ export function RewriteLyricsForm() {
 
     setLetra(fixed)
 
-    toast({
-      title: "Métrica corrigida!",
-      description: "As linhas foram ajustadas para a métrica ideal.",
-    })
+    showAlert("Métrica corrigida!", "As linhas foram ajustadas para a métrica ideal.")
   }
 
   const handleAplicarMelhorias = () => {
     setLetraReescrita((prev) => prev + "\n\n[Melhorias aplicadas com sucesso]")
 
-    toast({
-      title: "Melhorias aplicadas!",
-      description: "As sugestões foram incorporadas à letra.",
-    })
+    showAlert("Melhorias aplicadas!", "As sugestões foram incorporadas à letra.")
   }
 
   const handleCopiar = (texto: string) => {
     if (!texto) {
-      toast({
-        title: "Nenhum texto para copiar",
-        variant: "destructive",
-      })
+      showAlert("Nenhum texto para copiar")
       return
     }
 
     navigator.clipboard.writeText(texto)
-    toast({
-      title: "Texto copiado!",
-      description: "O texto foi copiado para a área de transferência.",
-    })
+    showAlert("Texto copiado!", "O texto foi copiado para a área de transferência.")
   }
+
+  // Componente Progress simples para substituir o import
+  const SimpleProgress = ({ value }: { value: number }) => (
+    <div className="w-full bg-gray-200 rounded-full h-2">
+      <div 
+        className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+        style={{ width: `${value}%` }}
+      ></div>
+    </div>
+  )
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -395,7 +386,7 @@ export function RewriteLyricsForm() {
                   <Label>Score de Qualidade</Label>
                   <span className="text-2xl font-bold text-primary">{qualidadeScore}/10</span>
                 </div>
-                <Progress value={qualidadeScore * 10} className="h-2" />
+                <SimpleProgress value={qualidadeScore * 10} />
               </div>
 
               <div className="space-y-2">
