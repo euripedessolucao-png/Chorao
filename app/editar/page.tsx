@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Loader2, Wand, RefreshCw, Zap, Lightbulb, Copy, Save, Music, AlertTriangle, CheckCircle, Sparkles } from "lucide-react"
-import { ADVANCED_BRAZILIAN_METRICS, type GenreName, validateMetrics, fixMetrics, ThirdWayEngine } from "@/lib/third-way-converter"
+import { validateMetrics, fixMetrics, countPortugueseSyllables } from "@/lib/metrics-utils"
 import { ThirdWayAnalysis } from "@/components/third-way-analysis"
 
 interface ValidationResult {
