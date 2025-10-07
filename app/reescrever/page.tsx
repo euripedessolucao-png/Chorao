@@ -1,13 +1,4 @@
-// app/rewrite/page.tsx
-"use client"
-
-import { useState, useEffect } from "react"
-import { validateMetrics, fixMetrics, countPortugueseSyllables } from "@/lib/metrics-utils"
-import { ThirdWayAnalysis } from "@/components/third-way-analysis"
-
-// Mock data atualizado
-const mockProjects = [
-  {// app/reescrever/page.tsx
+// app/reescrever/page.tsx
 "use client"
 
 import { useState, useEffect } from "react"
@@ -17,55 +8,10 @@ import { ThirdWayAnalysis } from "@/components/third-way-analysis"
 // Defina o tipo GenreName localmente
 type GenreName = keyof typeof ADVANCED_BRAZILIAN_METRICS
 
-// Funções auxiliares para validação de métrica
-const countPortugueseSyllables = (text: string): number => {
-  const cleanText = text.toLowerCase().replace(/[^a-záàâãéèêíïóôõöúçñ]/g, '')
-  const syllables = cleanText.match(/[aeiouáàâãéèêíïóôõöúçñ]+/g)
-  return syllables ? syllables.length : 0
-}
-
-const validateMetrics = (lyrics: string, genre: GenreName) => {
-  const metrics = ADVANCED_BRAZILIAN_METRICS[genre] || ADVANCED_BRAZILIAN_METRICS.default
-  const expectedSyllables = metrics.syllablesPerLine
-  
-  const lines = lyrics.split('\n').filter(line => {
-    const trimmed = line.trim()
-    return trimmed && !trimmed.startsWith('[') && !trimmed.startsWith('(')
-  })
-
-  const problematicLines = lines
-    .map((line, index) => {
-      const syllables = countPortugueseSyllables(line)
-      return { line, syllables, expected: expectedSyllables, index }
-    })
-    .filter(item => item.syllables !== expectedSyllables)
-
-  return problematicLines.length > 0 ? problematicLines : null
-}
-
-const fixMetrics = (lyrics: string, targetSyllables: number): string => {
-  const lines = lyrics.split('\n')
-  
-  return lines.map(line => {
-    if (line.startsWith('[') || line.startsWith('(') || !line.trim()) {
-      return line
-    }
-    
-    const currentSyllables = countPortugueseSyllables(line)
-    
-    if (currentSyllables === targetSyllables) {
-      return line
-    }
-    
-    if (currentSyllables < targetSyllables) {
-      return line + ' amor'
-    } else {
-      return line.split(' ').slice(0, -1).join(' ')
-    }
-  }).join('\n')
-}
-
-id: "1",
+// Mock data atualizado
+const mockProjects = [
+  {
+    id: "1",
     title: "Amor de Verão",
     genre: "Sertanejo Moderno",
     lyrics: "[VERSO 1]\nO calor do verão aquece nosso amor\nDe uma forma especial e sem igual\n\n[REFRAO]\nÉ paixão nessa estação\nQue marca o coração",
@@ -138,6 +84,54 @@ interface ValidationResult {
   validLines: number
 }
 
+// Funções auxiliares para validação de métrica
+const countPortugueseSyllables = (text: string): number => {
+  const cleanText = text.toLowerCase().replace(/[^a-záàâãéèêíïóôõöúçñ]/g, '')
+  const syllables = cleanText.match(/[aeiouáàâãéèêíïóôõöúçñ]+/g)
+  return syllables ? syllables.length : 0
+}
+
+const validateMetrics = (lyrics: string, genre: GenreName) => {
+  const metrics = ADVANCED_BRAZILIAN_METRICS[genre] || ADVANCED_BRAZILIAN_METRICS.default
+  const expectedSyllables = metrics.syllablesPerLine
+  
+  const lines = lyrics.split('\n').filter(line => {
+    const trimmed = line.trim()
+    return trimmed && !trimmed.startsWith('[') && !trimmed.startsWith('(')
+  })
+
+  const problematicLines = lines
+    .map((line, index) => {
+      const syllables = countPortugueseSyllables(line)
+      return { line, syllables, expected: expectedSyllables, index }
+    })
+    .filter(item => item.syllables !== expectedSyllables)
+
+  return problematicLines.length > 0 ? problematicLines : null
+}
+
+const fixMetrics = (lyrics: string, targetSyllables: number): string => {
+  const lines = lyrics.split('\n')
+  
+  return lines.map(line => {
+    if (line.startsWith('[') || line.startsWith('(') || !line.trim()) {
+      return line
+    }
+    
+    const currentSyllables = countPortugueseSyllables(line)
+    
+    if (currentSyllables === targetSyllables) {
+      return line
+    }
+    
+    if (currentSyllables < targetSyllables) {
+      return line + ' amor'
+    } else {
+      return line.split(' ').slice(0, -1).join(' ')
+    }
+  }).join('\n')
+}
+
 export default function RewritePage() {
   const [selectedProject, setSelectedProject] = useState<string>("")
   const [originalLyrics, setOriginalLyrics] = useState("")
@@ -197,7 +191,7 @@ export default function RewritePage() {
     }
   }
 
-  // MÉTODOS DA TERCEIRA VIA (implementações simplificadas)
+  // FUNÇÕES DA TERCEIRA VIA (implementações simplificadas)
   const applyThirdWayMetricOptimization = (lyrics: string, genre: GenreName): string => {
     const lines = lyrics.split('\n')
     return lines.map(line => {
@@ -452,7 +446,7 @@ export default function RewritePage() {
                 </select>
               </div>
 
-              {rewriteType === "converter-genero" || rewriteType === "hibrida" ? (
+              {(rewriteType === "converter-genero" || rewriteType === "hibrida") ? (
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Gênero de Destino *
