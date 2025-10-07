@@ -2,7 +2,6 @@ import type React from "react"
 import type { Metadata } from "next"
 import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
-import { ThemeProvider } from "@/components/theme-provider"
 import { Suspense } from "react"
 import { Analytics } from "@vercel/analytics/react"
 import "./globals.css"
@@ -19,16 +18,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="pt-BR" suppressHydrationWarning>
+    <html lang="pt-BR">
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased`}>
-        // import { ThemeProvider } from "@/components/theme-provider"
-
-// E no JSX:
-{/* <ThemeProvider> */}
-  <div>
-    <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
-  </div>
-{/* </ThemeProvider> */}
+        <div>
+          <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
+        </div>
         <Analytics />
       </body>
     </html>
