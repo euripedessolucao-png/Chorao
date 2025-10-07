@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Loader2, Wand, RefreshCw, Zap, Lightbulb, Copy, Save, Music, AlertTriangle, CheckCircle, Sparkles } from "lucide-react"
-import { ADVANCED_BRAZILIAN_METRICS, type GenreName, countPortugueseSyllables, validateMetrics, fixMetrics, ThirdWayEngine } from "@/lib/third-way-converter"
+import { ADVANCED_BRAZILIAN_METRICS, type GenreName, validateMetrics, fixMetrics, ThirdWayEngine } from "@/lib/third-way-converter"
 import { ThirdWayAnalysis } from "@/components/third-way-analysis"
 
 interface ValidationResult {
@@ -145,6 +145,107 @@ export default function EditarPage() {
     }
   }
 
+  // MÉTODOS DA TERCEIRA VIA PARA EDIÇÃO (convertidos para funções)
+  const applyThirdWayComplete = (lyrics: string, genre: GenreName, intensity: number): string => {
+    const lines = lyrics.split('\n')
+    return lines.map(line => {
+      if (line.startsWith('[') || line.startsWith('(') || !line.trim()) {
+        return line
+      }
+      // TERCEIRA VIA COMPLETA
+      return ThirdWayEngine.generateThirdWayLine(
+        extractThemeFromLine(line),
+        genre,
+        `Edição completa - Intensidade ${intensity}`
+      )
+    }).join('\n')
+  }
+
+  const applyThirdWayMetrics = (lyrics: string, genre: GenreName): string => {
+    const lines = lyrics.split('\n')
+    return lines.map(line => {
+      if (line.startsWith('[') || line.startsWith('(') || !line.trim()) {
+        return line
+      }
+      // TERCEIRA VIA focada em métrica
+      return ThirdWayEngine.generateThirdWayLine(
+        extractThemeFromLine(line),
+        genre,
+        "Otimização métrica - Terceira Via"
+      )
+    }).join('\n')
+  }
+
+  const applyThirdWayRhymes = (lyrics: string, genre: GenreName): string => {
+    const lines = lyrics.split('\n')
+    const optimizedLines = lines.map((line, index) => {
+      if (line.startsWith('[') || line.startsWith('(') || !line.trim()) {
+        return line
+      }
+      
+      // TERCEIRA VIA para rimas
+      const context = index > 0 ? lines[index - 1] : ""
+      return ThirdWayEngine.generateThirdWayLine(
+        extractThemeFromLine(line),
+        genre,
+        `Melhoria de rimas - Contexto: ${context}`
+      )
+    })
+    
+    return optimizedLines.join('\n')
+  }
+
+  const applyThirdWayEmotion = (lyrics: string, genre: GenreName, intensity: number): string => {
+    const lines = lyrics.split('\n')
+    return lines.map(line => {
+      if (line.startsWith('[') || line.startsWith('(') || !line.trim()) {
+        return line
+      }
+      
+      return ThirdWayEngine.generateThirdWayLine(
+        extractThemeFromLine(line),
+        genre,
+        `Intensificação emocional - Nível ${intensity}`
+      )
+    }).join('\n')
+  }
+
+  const applyThirdWayCommercial = (lyrics: string, genre: GenreName): string => {
+    const lines = lyrics.split('\n')
+    return lines.map(line => {
+      if (line.startsWith('[') || line.startsWith('(') || !line.trim()) {
+        return line
+      }
+      
+      return ThirdWayEngine.generateThirdWayLine(
+        extractThemeFromLine(line),
+        genre,
+        "Versão comercial - Apelo de massa"
+      )
+    }).join('\n')
+  }
+
+  const applyThirdWayCustom = (lyrics: string, genre: GenreName, instruction: string): string => {
+    const lines = lyrics.split('\n')
+    return lines.map(line => {
+      if (line.startsWith('[') || line.startsWith('(') || !line.trim()) {
+        return line
+      }
+      
+      return ThirdWayEngine.generateThirdWayLine(
+        extractThemeFromLine(line),
+        genre,
+        `Personalizado: ${instruction}`
+      )
+    }).join('\n')
+  }
+
+  const extractThemeFromLine = (line: string): string => {
+    const commonThemes = ['amor', 'saudade', 'festa', 'dor', 'alegria', 'vida', 'tempo']
+    const words = line.toLowerCase().split(' ')
+    return words.find(word => commonThemes.includes(word)) || 'sentimentos'
+  }
+
   // FUNÇÃO PRINCIPAL DE MELHORIA COM TERCEIRA VIA
   const handleImprove = async () => {
     if (!lyrics.trim()) {
@@ -167,27 +268,27 @@ export default function EditarPage() {
       // APLICAÇÃO DA TERCEIRA VIA CONFORME O TIPO SELECIONADO
       switch (improvementType) {
         case "terceira-via":
-          improvedLyrics = this.applyThirdWayComplete(lyrics, genre, improvementIntensity)
+          improvedLyrics = applyThirdWayComplete(lyrics, genre, improvementIntensity)
           improvedLyrics += `\n\n---\n✅ TERCEIRA VIA COMPLETA APLICADA\n• Processo A/B automático em todas as linhas\n• Intensidade: ${improvementIntensity}/3\n• Métrica garantida: ${currentMetrics.syllablesPerLine} sílabas`
           break
         case "metricas":
-          improvedLyrics = this.applyThirdWayMetrics(lyrics, genre)
+          improvedLyrics = applyThirdWayMetrics(lyrics, genre)
           improvedLyrics += `\n\n---\n✅ TERCEIRA VIA - MÉTRICA OTIMIZADA\n• Sílabas ajustadas para ${currentMetrics.syllablesPerLine}/linha\n• Processo silencioso: Variação A + B → Versão Final\n• Ritmo mantido em ${currentMetrics.bpm} BPM`
           break
         case "rimas":
-          improvedLyrics = this.applyThirdWayRhymes(lyrics, genre)
+          improvedLyrics = applyThirdWayRhymes(lyrics, genre)
           improvedLyrics += `\n\n---\n✅ TERCEIRA VIA - RIMAS APRIMORADAS\n• Conexões poéticas enriquecidas\n• Fluência natural preservada\n• Sonoridade harmoniosa`
           break
         case "emocao":
-          improvedLyrics = this.applyThirdWayEmotion(lyrics, genre, improvementIntensity)
+          improvedLyrics = applyThirdWayEmotion(lyrics, genre, improvementIntensity)
           improvedLyrics += `\n\n---\n✅ TERCEIRA VIA - EMOÇÃO INTENSIFICADA\n• Impacto emocional amplificado\n• Linguagem mais expressiva\n• Intensidade: ${improvementIntensity}/3`
           break
         case "comercial":
-          improvedLyrics = this.applyThirdWayCommercial(lyrics, genre)
+          improvedLyrics = applyThirdWayCommercial(lyrics, genre)
           improvedLyrics += `\n\n---\n✅ TERCEIRA VIA - VERSÃO COMERCIAL\n• Apelo de massa otimizado\n• Estrutura A/B analisada e combinada\n• Potencial de viralidade aumentado`
           break
         case "custom":
-          improvedLyrics = this.applyThirdWayCustom(lyrics, genre, customInstruction)
+          improvedLyrics = applyThirdWayCustom(lyrics, genre, customInstruction)
           improvedLyrics += `\n\n---\n✅ TERCEIRA VIA - PERSONALIZADA\n${customInstruction || "Instruções aplicadas com processo A/B"}`
           break
       }
@@ -199,107 +300,6 @@ export default function EditarPage() {
     } finally {
       setIsLoading(false)
     }
-  }
-
-  // MÉTODOS DA TERCEIRA VIA PARA EDIÇÃO
-  private applyThirdWayComplete = (lyrics: string, genre: GenreName, intensity: number): string => {
-    const lines = lyrics.split('\n')
-    return lines.map(line => {
-      if (line.startsWith('[') || line.startsWith('(') || !line.trim()) {
-        return line
-      }
-      // TERCEIRA VIA COMPLETA
-      return ThirdWayEngine.generateThirdWayLine(
-        this.extractThemeFromLine(line),
-        genre,
-        `Edição completa - Intensidade ${intensity}`
-      )
-    }).join('\n')
-  }
-
-  private applyThirdWayMetrics = (lyrics: string, genre: GenreName): string => {
-    const lines = lyrics.split('\n')
-    return lines.map(line => {
-      if (line.startsWith('[') || line.startsWith('(') || !line.trim()) {
-        return line
-      }
-      // TERCEIRA VIA focada em métrica
-      return ThirdWayEngine.generateThirdWayLine(
-        this.extractThemeFromLine(line),
-        genre,
-        "Otimização métrica - Terceira Via"
-      )
-    }).join('\n')
-  }
-
-  private applyThirdWayRhymes = (lyrics: string, genre: GenreName): string => {
-    const lines = lyrics.split('\n')
-    const optimizedLines = lines.map((line, index) => {
-      if (line.startsWith('[') || line.startsWith('(') || !line.trim()) {
-        return line
-      }
-      
-      // TERCEIRA VIA para rimas
-      const context = index > 0 ? lines[index - 1] : ""
-      return ThirdWayEngine.generateThirdWayLine(
-        this.extractThemeFromLine(line),
-        genre,
-        `Melhoria de rimas - Contexto: ${context}`
-      )
-    })
-    
-    return optimizedLines.join('\n')
-  }
-
-  private applyThirdWayEmotion = (lyrics: string, genre: GenreName, intensity: number): string => {
-    const lines = lyrics.split('\n')
-    return lines.map(line => {
-      if (line.startsWith('[') || line.startsWith('(') || !line.trim()) {
-        return line
-      }
-      
-      return ThirdWayEngine.generateThirdWayLine(
-        this.extractThemeFromLine(line),
-        genre,
-        `Intensificação emocional - Nível ${intensity}`
-      )
-    }).join('\n')
-  }
-
-  private applyThirdWayCommercial = (lyrics: string, genre: GenreName): string => {
-    const lines = lyrics.split('\n')
-    return lines.map(line => {
-      if (line.startsWith('[') || line.startsWith('(') || !line.trim()) {
-        return line
-      }
-      
-      return ThirdWayEngine.generateThirdWayLine(
-        this.extractThemeFromLine(line),
-        genre,
-        "Versão comercial - Apelo de massa"
-      )
-    }).join('\n')
-  }
-
-  private applyThirdWayCustom = (lyrics: string, genre: GenreName, instruction: string): string => {
-    const lines = lyrics.split('\n')
-    return lines.map(line => {
-      if (line.startsWith('[') || line.startsWith('(') || !line.trim()) {
-        return line
-      }
-      
-      return ThirdWayEngine.generateThirdWayLine(
-        this.extractThemeFromLine(line),
-        genre,
-        `Personalizado: ${instruction}`
-      )
-    }).join('\n')
-  }
-
-  private extractThemeFromLine = (line: string): string => {
-    const commonThemes = ['amor', 'saudade', 'festa', 'dor', 'alegria', 'vida', 'tempo']
-    const words = line.toLowerCase().split(' ')
-    return words.find(word => commonThemes.includes(word)) || 'sentimentos'
   }
 
   const handleFixMetrics = () => {
