@@ -2,7 +2,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ADVANCED_BRAZILIAN_METRICS, type GenreName, validateMetrics, fixMetrics, ThirdWayConverter, ThirdWayEngine } from "@/lib/third-way-converter"
+import { validateMetrics, fixMetrics, countPortugueseSyllables } from "@/lib/metrics-utils"
 import { ThirdWayAnalysis } from "@/components/third-way-analysis"
 
 // Mock data atualizado
