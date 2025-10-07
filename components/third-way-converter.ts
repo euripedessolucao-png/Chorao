@@ -13,42 +13,23 @@ export const ADVANCED_BRAZILIAN_METRICS = {
 
 export type GenreName = keyof typeof ADVANCED_BRAZILIAN_METRICS
 
-// Sistema de contagem de sílabas COMPLETO
-export function countPortugueseSyllables(word: string): number {
-  if (!word.trim()) return 0
+// Sistema de contagem de sílabas SIMPLIFICADO E CORRETO
+export function countPortugueseSyllables(text: string): number {
+  if (!text || text.trim().length === 0) return 0
   
-  const cleanWord = word
+  const cleanText = text
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zà-úâ-ûã-õä-üç]/g, "")
+    .replace(/[^a-z\s]/g, "")
+    .trim()
 
-  if (cleanWord.length === 0) return 0
+  if (cleanText.length === 0) return 0
 
-  let syllableCount = 0
-  let i = 0
-
-  while (i < cleanWord.length) {
-    const currentChar = cleanWord[i]
-
-    if ("aeiouáéíóúâêîôûàèìòùãõ".includes(currentChar)) {
-      syllableCount++
-
-      if (i + 1 < cleanWord.length) {
-        const nextChar = cleanWord[i + 1]
-        if (
-          ("aeo".includes(currentChar) && "iu".includes(nextChar)) ||
-          ("iu".includes(currentChar) && "aeo".includes(nextChar))
-        ) {
-          i++
-        }
-      }
-    }
-    i++
-  }
-
-  // GARANTIR retorno em todos os casos
-  return Math.max(1, syllableCount)
+  // Método simplificado: conta grupos de vogais
+  const vowelGroups = cleanText.match(/[aeiouáéíóúâêîôûàèìòùãõ]+/g)
+  
+  return vowelGroups ? vowelGroups.length : 1
 }
 
 // Funções auxiliares para validação de métrica
