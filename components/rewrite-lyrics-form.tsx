@@ -8,8 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Sparkles, Save, Copy, FileText, AlertCircle, Loader2 } from "lucide-react"
-import { Progress } from "@/components/ui/progress"
-import { useToast } from "@/hooks/use-toast"
+// COMENTE estas linhas:
+// import { Progress } from "@/components/ui/progress"
+// import { useToast } from "@/hooks/use-toast"
 
 const BRAZILIAN_GENRE_METRICS = {
   "Sertanejo Moderno": { syllablesPerLine: 6, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
