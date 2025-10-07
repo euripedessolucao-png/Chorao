@@ -3,7 +3,7 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
-import { ADVANCED_BRAZILIAN_METRICS, type GenreName, validateMetrics, fixMetrics, ThirdWayEngine } from "@/lib/third-way-converter"
+import { validateMetrics, fixMetrics, countPortugueseSyllables } from "@/lib/metrics-utils"
 import { ThirdWayAnalysis } from "@/components/third-way-analysis"
 
 interface ValidationResult {
