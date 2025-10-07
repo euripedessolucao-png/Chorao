@@ -21,11 +21,14 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased`}>
-        <ThemeProvider>
-          <div>
-            <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
-          </div>
-        </ThemeProvider>
+        // import { ThemeProvider } from "@/components/theme-provider"
+
+// E no JSX:
+{/* <ThemeProvider> */}
+  <div>
+    <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
+  </div>
+{/* </ThemeProvider> */}
         <Analytics />
       </body>
     </html>
