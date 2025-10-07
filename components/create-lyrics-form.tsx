@@ -9,7 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Sparkles, Copy, Save, Loader2, AlertCircle } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
 
 const BRAZILIAN_GENRE_METRICS = {
   "Sertanejo Moderno": { syllablesPerLine: 6, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
@@ -78,7 +77,6 @@ export function CreateLyricsForm() {
   const [titulo, setTitulo] = useState("")
   const [letraGerada, setLetraGerada] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
-  const { toast } = useToast()
 
   const currentMetrics =
     genero && BRAZILIAN_GENRE_METRICS[genero] ? BRAZILIAN_GENRE_METRICS[genero] : BRAZILIAN_GENRE_METRICS.default
@@ -110,6 +108,10 @@ export function CreateLyricsForm() {
     setEmocoes((prev) => (prev.includes(emocao) ? prev.filter((e) => e !== emocao) : [...prev, emocao]))
   }
 
+  const showAlert = (title: string, description?: string) => {
+    alert(title + (description ? `\n\n${description}` : ''))
+  }
+
   const handleGerarLetra = async () => {
     setIsGenerating(true)
     try {
@@ -139,17 +141,10 @@ export function CreateLyricsForm() {
       const data = await response.json()
       setLetraGerada(data.letra)
 
-      toast({
-        title: "Letra gerada com sucesso!",
-        description: "Sua letra foi criada. Você pode editá-la ou salvá-la.",
-      })
+      showAlert("Letra gerada com sucesso!", "Sua letra foi criada. Você pode editá-la ou salvá-la.")
     } catch (error) {
       console.error("[v0] Error:", error)
-      toast({
-        title: "Erro ao gerar letra",
-        description: "Ocorreu um erro ao gerar a letra. Por favor, tente novamente.",
-        variant: "destructive",
-      })
+      showAlert("Erro ao gerar letra", "Ocorreu um erro ao gerar a letra. Por favor, tente novamente.")
     } finally {
       setIsGenerating(false)
     }
@@ -171,27 +166,17 @@ export function CreateLyricsForm() {
       .join("\n")
     setLetraGerada(fixed)
 
-    toast({
-      title: "Métrica corrigida!",
-      description: "As linhas foram ajustadas para a métrica ideal.",
-    })
+    showAlert("Métrica corrigida!", "As linhas foram ajustadas para a métrica ideal.")
   }
 
   const handleCopiarLetra = () => {
     if (!letraGerada) {
-      toast({
-        title: "Nenhuma letra para copiar",
-        description: "Gere uma letra primeiro antes de copiar.",
-        variant: "destructive",
-      })
+      showAlert("Nenhuma letra para copiar", "Gere uma letra primeiro antes de copiar.")
       return
     }
 
     navigator.clipboard.writeText(letraGerada)
-    toast({
-      title: "Letra copiada!",
-      description: "A letra foi copiada para a área de transferência.",
-    })
+    showAlert("Letra copiada!", "A letra foi copiada para a área de transferência.")
   }
 
   return (
