@@ -3,11 +3,6 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
-import { validateMetrics, fixMetrics, countPortugueseSyllables } from "@/lib/metrics-utils"// app/criar/page.tsx
-"use client"
-
-import type React from "react"
-import { useState, useEffect } from "react"
 import { ADVANCED_BRAZILIAN_METRICS, ThirdWayEngine } from "@/lib/third-way-converter"
 import { ThirdWayAnalysis } from "@/components/third-way-analysis"
 
@@ -61,20 +56,6 @@ const fixMetrics = (lyrics: string, targetSyllables: number): string => {
     }
   }).join('\n')
 }
-
-interface ValidationResult {
-  isValid: boolean
-  problematicLines?: Array<{
-    line: string
-    syllables: number
-    expected: number
-    index?: number
-  }> | null
-  totalLines: number
-  validLines: number
-}
-
-import { ThirdWayAnalysis } from "@/components/third-way-analysis"
 
 interface ValidationResult {
   isValid: boolean
