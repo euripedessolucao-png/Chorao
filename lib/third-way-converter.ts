@@ -13,10 +13,74 @@ export const ADVANCED_BRAZILIAN_METRICS = {
 
 export type GenreName = keyof typeof ADVANCED_BRAZILIAN_METRICS
 
-// Sistema de contagem de sílabas (mantido do seu código)
-export function countPortugueseSyllables(word: string): number {
-  if (!word.trim()) return 0
-  // ... sua implementação exata
+// Sistema de contagem de sílabas - VERSÃO CORRIGIDA
+export function countPortugueseSyllables(text: string): number {
+  // Verificação de entrada
+  if (!text || typeof text !== 'string') return 0
+  if (text.trim().length === 0) return 0
+  
+  try {
+    // Limpeza do texto
+    const cleanText = text
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z\s]/g, "")
+      .trim()
+
+    if (cleanText.length === 0) return 0
+
+    // Conta grupos de vogais consecutivas
+    const vowelGroups = cleanText.match(/[aeiou]+/g)
+    
+    // Retorna o número de grupos ou 1 como fallback
+    return vowelGroups ? vowelGroups.length : 1
+  } catch (error) {
+    // Fallback seguro em caso de erro
+    return Math.max(1, text.split(/\s+/).length)
+  }
+}
+
+// Funções auxiliares para validação de métrica
+export function validateMetrics(lyrics: string, genre: GenreName) {
+  const metrics = ADVANCED_BRAZILIAN_METRICS[genre] || ADVANCED_BRAZILIAN_METRICS.default
+  const expectedSyllables = metrics.syllablesPerLine
+  
+  const lines = lyrics.split('\n').filter(line => {
+    const trimmed = line.trim()
+    return trimmed && !trimmed.startsWith('[') && !trimmed.startsWith('(')
+  })
+
+  const problematicLines = lines
+    .map((line, index) => {
+      const syllables = countPortugueseSyllables(line)
+      return { line, syllables, expected: expectedSyllables, index }
+    })
+    .filter(item => item.syllables !== expectedSyllables)
+
+  return problematicLines.length > 0 ? problematicLines : null
+}
+
+export function fixMetrics(lyrics: string, targetSyllables: number): string {
+  const lines = lyrics.split('\n')
+  
+  return lines.map(line => {
+    if (line.startsWith('[') || line.startsWith('(') || !line.trim()) {
+      return line
+    }
+    
+    const currentSyllables = countPortugueseSyllables(line)
+    
+    if (currentSyllables === targetSyllables) {
+      return line
+    }
+    
+    if (currentSyllables < targetSyllables) {
+      return line + ' amor'
+    } else {
+      return line.split(' ').slice(0, -1).join(' ')
+    }
+  }).join('\n')
 }
 
 // Motor da TERCEIRA VIA
@@ -63,6 +127,30 @@ export class ThirdWayEngine {
     return this.fillTemplate(template, theme, genre)
   }
 
+  private static fillTemplate(template: string, theme: string, genre: GenreName): string {
+    // Implementação simples de preenchimento de template
+    const replacements: Record<string, string> = {
+      "{acao}": "bate",
+      "{dificuldade}": "parar",
+      "{emocao}": "saudade", 
+      "{verbo}": "vive",
+      "{lugar}": "mim",
+      "{situacao}": "dor",
+      "{elemento}": "luz",
+      "{cenario}": "escuro",
+      "{objetos}": "olhos",
+      "{sentimento}": "amor",
+      "{ambiente}": "silêncio"
+    }
+    
+    let result = template
+    for (const [key, value] of Object.entries(replacements)) {
+      result = result.replace(key, value)
+    }
+    
+    return result
+  }
+
   private static analyzeStrengths(variation: string): {
     text: string
     emotionalClarity: number
@@ -78,6 +166,29 @@ export class ThirdWayEngine {
       rhymePotential: this.rateRhymePotential(variation),
       fluency: this.rateFluency(variation)
     }
+  }
+
+  private static rateEmotionalClarity(text: string): number {
+    const emotionalWords = ['coração', 'amor', 'dor', 'saudade', 'vida', 'alma']
+    const matches = emotionalWords.filter(word => text.toLowerCase().includes(word)).length
+    return Math.min(10, matches * 3)
+  }
+
+  private static rateImagery(text: string): number {
+    const imageryWords = ['como', 'luz', 'sol', 'mar', 'vento', 'fogo']
+    const matches = imageryWords.filter(word => text.toLowerCase().includes(word)).length
+    return Math.min(10, matches * 3)
+  }
+
+  private static rateRhymePotential(text: string): number {
+    // Simples avaliação de potencial de rima
+    return text.length > 10 ? 7 : 5
+  }
+
+  private static rateFluency(text: string): number {
+    // Avaliação simples de fluência
+    const words = text.split(' ').length
+    return words >= 3 && words <= 8 ? 8 : 5
   }
 
   private static composeThirdWay(bestOfA: any, bestOfB: any, theme: string, genre: GenreName): string {
@@ -96,6 +207,25 @@ export class ThirdWayEngine {
     finalLine = this.ensureThematicCohesion(finalLine, theme, genre)
     
     return finalLine.trim()
+  }
+
+  private static extractEmotionalCore(text: string): string {
+    // Extrai o núcleo emocional do texto
+    const emotionalWords = ['coração', 'amor', 'dor', 'saudade']
+    const words = text.split(' ')
+    return words.find(word => emotionalWords.includes(word.toLowerCase())) || words[0] || ""
+  }
+
+  private static extractImageryCore(text: string): string {
+    // Extrai o núcleo imagético do texto  
+    const imageryWords = ['como', 'luz', 'sol', 'mar']
+    const words = text.split(' ')
+    return words.find(word => imageryWords.includes(word.toLowerCase())) || words[1] || ""
+  }
+
+  private static ensureThematicCohesion(text: string, theme: string, genre: GenreName): string {
+    // Garante coesão temática (implementação simplificada)
+    return text + ` ${theme}`
   }
 
   // GARANTE a métrica - SILENCIOSAMENTE
@@ -137,6 +267,13 @@ export class ThirdWayEngine {
     
     return compressed
   }
+
+  private static expandLine(line: string, targetSyllables: number): string {
+    // Expande a linha se necessário
+    const expanders = ['meu', 'minha', 'grande', 'bonito', 'lindo']
+    const randomExpander = expanders[Math.floor(Math.random() * expanders.length)]
+    return line + ' ' + randomExpander
+  }
 }
 
 // Sistema de conversão entre gêneros (Terceira Via aplicada)
@@ -159,5 +296,12 @@ export class ThirdWayConverter {
         `Convertendo de ${fromGenre} para ${toGenre}`
       )
     }).join('\n')
+  }
+
+  private static extractTheme(line: string): string {
+    // Extrai tema simples da linha
+    const themes = ['amor', 'saudade', 'festa', 'dor', 'vida']
+    const words = line.toLowerCase().split(' ')
+    return words.find(word => themes.includes(word)) || 'sentimentos'
   }
 }
