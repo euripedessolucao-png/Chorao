@@ -1,9 +1,9 @@
-// app/create/page.tsx
+// app/criar/page.tsx
 "use client"
 
 import type React from "react"
 import { useState, useEffect } from "react"
-import { ADVANCED_BRAZILIAN_METRICS, type GenreName, countPortugueseSyllables, validateMetrics, fixMetrics, ThirdWayEngine } from "@/lib/third-way-converter"
+import { ADVANCED_BRAZILIAN_METRICS, type GenreName, validateMetrics, fixMetrics, ThirdWayEngine } from "@/lib/third-way-converter"
 import { ThirdWayAnalysis } from "@/components/third-way-analysis"
 
 interface ValidationResult {
@@ -130,72 +130,8 @@ export default function CreatePage() {
     }
   }, [selectedProject, useProjectAsBase])
 
-  // FUNÇÃO PRINCIPAL DE CRIAÇÃO COM TERCEIRA VIA
-  const handleGenerate = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!genre || !theme) {
-      alert("Por favor, preencha o gênero e o tema")
-      return
-    }
-
-    setIsLoading(true)
-    setGeneratedLyrics("")
-
-    try {
-      const metrics = ADVANCED_BRAZILIAN_GENRE_METRICS[genre] || ADVANCED_BRAZILIAN_GENRE_METRICS.default
-
-      // Simulação de geração com Terceira Via
-      await new Promise(resolve => setTimeout(resolve, 2500))
-
-      // GERAÇÃO COM TERCEIRA VIA AUTOMÁTICA
-      let letra = this.generateWithThirdWay(theme, genre, mood, creationStyle, advancedOptions)
-      
-      setGeneratedLyrics(letra)
-      setTitle(this.generateTitle(theme, genre, mood))
-      
-    } catch (error) {
-      console.error("Erro ao gerar letra:", error)
-      alert("Erro ao gerar letra. Tente novamente.")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  // GERADOR COM TERCEIRA VIA
-  private generateWithThirdWay = (
-    theme: string, 
-    genre: GenreName, 
-    mood: string, 
-    style: string,
-    options: typeof advancedOptions
-  ): string => {
-    const structure = currentMetrics.structure.split('-')
-    let lyrics = ""
-
-    structure.forEach(section => {
-      lyrics += `[${section}]\n`
-      
-      switch (section) {
-        case 'VERSO':
-          lyrics += this.generateVerseWithThirdWay(theme, genre, mood, options) + "\n\n"
-          break
-        case 'REFRAO':
-          lyrics += this.generateChorusWithThirdWay(theme, genre, mood, options) + "\n\n"
-          break
-        case 'PONTE':
-          lyrics += this.generateBridgeWithThirdWay(theme, genre, mood, options) + "\n\n"
-          break
-        case 'SOLO':
-          lyrics += this.generateSoloWithThirdWay(theme, genre, options) + "\n\n"
-          break
-      }
-    })
-
-    return lyrics.trim()
-  }
-
-  // GERAÇÃO DE VERSO COM TERCEIRA VIA
-  private generateVerseWithThirdWay = (
+  // GERADOR DE VERSO COM TERCEIRA VIA
+  const generateVerseWithThirdWay = (
     theme: string, 
     genre: GenreName, 
     mood: string,
@@ -217,8 +153,8 @@ export default function CreatePage() {
     return lines.join('\n')
   }
 
-  // GERAÇÃO DE REFRÃO COM TERCEIRA VIA
-  private generateChorusWithThirdWay = (
+  // GERADOR DE REFRÃO COM TERCEIRA VIA
+  const generateChorusWithThirdWay = (
     theme: string,
     genre: GenreName,
     mood: string,
@@ -242,8 +178,8 @@ export default function CreatePage() {
     return lines.join('\n')
   }
 
-  // GERAÇÃO DE PONTE COM TERCEIRA VIA
-  private generateBridgeWithThirdWay = (
+  // GERADOR DE PONTE COM TERCEIRA VIA
+  const generateBridgeWithThirdWay = (
     theme: string,
     genre: GenreName,
     mood: string,
@@ -265,8 +201,8 @@ export default function CreatePage() {
     return lines.join('\n')
   }
 
-  // GERAÇÃO DE SOLO/INSTRUMENTAL
-  private generateSoloWithThirdWay = (
+  // GERADOR DE SOLO/INSTRUMENTAL
+  const generateSoloWithThirdWay = (
     theme: string,
     genre: GenreName,
     options: typeof advancedOptions
@@ -274,8 +210,41 @@ export default function CreatePage() {
     return `(Instrumental - ${genre})\n(Mantendo ritmo de ${currentMetrics.bpm} BPM)`
   }
 
+  // GERADOR COM TERCEIRA VIA COMPLETA
+  const generateWithThirdWay = (
+    theme: string, 
+    genre: GenreName, 
+    mood: string, 
+    style: string,
+    options: typeof advancedOptions
+  ): string => {
+    const structure = currentMetrics.structure.split('-')
+    let lyrics = ""
+
+    structure.forEach(section => {
+      lyrics += `[${section}]\n`
+      
+      switch (section) {
+        case 'VERSO':
+          lyrics += generateVerseWithThirdWay(theme, genre, mood, options) + "\n\n"
+          break
+        case 'REFRAO':
+          lyrics += generateChorusWithThirdWay(theme, genre, mood, options) + "\n\n"
+          break
+        case 'PONTE':
+          lyrics += generateBridgeWithThirdWay(theme, genre, mood, options) + "\n\n"
+          break
+        case 'SOLO':
+          lyrics += generateSoloWithThirdWay(theme, genre, options) + "\n\n"
+          break
+      }
+    })
+
+    return lyrics.trim()
+  }
+
   // GERADOR DE TÍTULO INTELIGENTE
-  private generateTitle = (theme: string, genre: GenreName, mood: string): string => {
+  const generateTitle = (theme: string, genre: GenreName, mood: string): string => {
     const themes: Record<string, string[]> = {
       "Sertanejo Moderno": ["Meu Amor", "Nossa História", "Do Jeito Que É"],
       "Sertanejo Universitário": ["Balada", "Festa", "Momento"], 
@@ -289,6 +258,35 @@ export default function CreatePage() {
     const randomTitle = genreTitles[Math.floor(Math.random() * genreTitles.length)]
     
     return `${randomTitle} de ${theme}`
+  }
+
+  // FUNÇÃO PRINCIPAL DE CRIAÇÃO COM TERCEIRA VIA
+  const handleGenerate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!genre || !theme) {
+      alert("Por favor, preencha o gênero e o tema")
+      return
+    }
+
+    setIsLoading(true)
+    setGeneratedLyrics("")
+
+    try {
+      // Simulação de geração com Terceira Via
+      await new Promise(resolve => setTimeout(resolve, 2500))
+
+      // GERAÇÃO COM TERCEIRA VIA AUTOMÁTICA
+      let letra = generateWithThirdWay(theme, genre, mood, creationStyle, advancedOptions)
+      
+      setGeneratedLyrics(letra)
+      setTitle(generateTitle(theme, genre, mood))
+      
+    } catch (error) {
+      console.error("Erro ao gerar letra:", error)
+      alert("Erro ao gerar letra. Tente novamente.")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleFixMetrics = () => {
@@ -824,12 +822,4 @@ export default function CreatePage() {
             isOpen={showThirdWayAnalysis}
             onClose={() => setShowThirdWayAnalysis(false)}
             originalLyrics=""
-            rewrittenLyrics={generatedLyrics}
-            genre={genre}
-            rewriteType="criacao"
-          />
-        )}
-      </div>
-    </div>
-  )
-}
+            rewrittenLyrics={generatedLy
