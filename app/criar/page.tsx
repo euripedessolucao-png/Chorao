@@ -822,4 +822,12 @@ export default function CreatePage() {
             isOpen={showThirdWayAnalysis}
             onClose={() => setShowThirdWayAnalysis(false)}
             originalLyrics=""
-            rewrittenLyrics={generatedLy
+            rewrittenLyrics={generatedLyrics}
+            genre={genre}
+            rewriteType="criacao"
+          />
+        )}
+      </div>
+    </div>
+  )
+}
