@@ -3,65 +3,24 @@ import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Music, RefreshCw, FolderOpen, Pencil } from "lucide-react"
+import { Music, RefreshCw, FolderOpen, Pencil, BarChart3 } from "lucide-react"
 import Link from "next/link"
 
 const mockProjects = [
   {
     id: "1",
-    title: "Letra Reescrita (Terceira Via) - Sertanejo / Separação",
-    genre: "Sertanejo",
-    date: "28/01/2025",
-    lyrics: "[INTRO] (acoustic guitar, melancholic arpeggios)\n\n[PART A - Verse 1]\nTeu riso que antes era meu...",
+    title: "Me Achei de Novo",
+    genre: "Sertanejo Moderno",
+    date: "06/10/2025",
+    lyrics:
+      "[VERSE 1] [INTRO] [PART A – Verse 1] C Sua voz me calava, eu não falava nada, D Eu só via o seu mundo, minha luz apagada...",
   },
   {
     id: "2",
-    title: "DONA DE MIM NEW",
-    genre: "Sertanejo",
-    date: "25/01/2025",
-    lyrics: "[INTRO] Acordeão plays a short, direct, melodic melody over a pulsating electronic beat...",
-  },
-  {
-    id: "3",
-    title: "Letra Reescrita (Terceira Via) - Sertanejo / amor e falta de sintonia",
-    genre: "Sertanejo",
-    date: "19/01/2025",
-    lyrics: "[INTRO] Nossas paixão se misturou em um instante. Vejo a saudade no espelho...",
-  },
-  {
-    id: "4",
-    title: "A vida passa ligeiro",
-    genre: "Sertanejo",
-    date: "19/01/2025",
-    lyrics: "[INTRO] Slow and melancholic viola caipira arpeggios with subtle bass...",
-  },
-  {
-    id: "5",
-    title: "Minha estrelinha",
-    genre: "Sertanejo",
-    date: "22/09/2025",
-    lyrics: "[INTRO] Eu guardo no peito\nA vida sobre tudo...",
-  },
-  {
-    id: "6",
-    title: "A lembrança me fere",
-    genre: "Sertanejo",
-    date: "20/09/2025",
-    lyrics: "[INTRO] Slow and melancholic viola caipira arpeggios...",
-  },
-  {
-    id: "7",
-    title: "Preso no seu Adeus",
-    genre: "Sertanejo",
-    date: "19/01/2025",
-    lyrics: "[INTRO] Te guardo no peito\nA vida sobre tudo...",
-  },
-  {
-    id: "8",
-    title: "A lembrança me desfaz",
-    genre: "Sertanejo",
-    date: "19/01/2025",
-    lyrics: "[INTRO] A beautiful accordion begins the melody...",
+    title: "Metade Roubada",
+    genre: "Sertanejo Moderno",
+    date: "06/10/2025",
+    lyrics: "[INTRO] [VERSE] G A comida não tem gosto D Sem você aqui. Em Ando sem rumo C Nem sei por onde ir...",
   },
 ]
 
@@ -70,17 +29,15 @@ export default function Home() {
     <div className="min-h-screen bg-background">
       <Navigation />
 
-      <section className="relative overflow-hidden bg-gradient-to-br from-purple-100 via-purple-50 to-background dark:from-purple-950/20 dark:via-purple-900/10 dark:to-background pt-24 pb-16 px-4">
+      <section className="relative overflow-hidden bg-gradient-to-br from-purple-100 via-purple-50 to-background dark:from-purple-950/20 dark:via-purple-900/10 dark:to-background pt-32 pb-20 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-5xl md:text-6xl font-bold mb-6 text-foreground">Chorão - Compositor</h1>
           <p className="text-xl md:text-2xl text-muted-foreground mb-4 max-w-3xl mx-auto">
-            Seu assistente de composição que cria letras originais em qualquer gênero, humor ou estilo
+            Seu assistente de composição que cria letras originais em qualquer gênero, humor ou estilo. Edite, analise e
+            aperfeiçoe suas letras em minutos.
           </p>
-          <p className="text-lg text-muted-foreground mb-4 max-w-2xl mx-auto">
-            Edite, analise e aperfeiçoe suas letras em minutos
-          </p>
-          <p className="text-base text-primary/80 mb-8 max-w-3xl mx-auto italic">
-            Todo o conteúdo é de ferramentas do app seguem as principais metodologias e práticas de ensino musical
+          <p className="text-base text-primary mb-8 max-w-3xl mx-auto italic font-medium">
+            Todo o conteúdo e as ferramentas do app seguem as principais metodologias e práticas de ensino musical
             reconhecidas no Brasil.
           </p>
           <Link href="/criar">
@@ -97,22 +54,24 @@ export default function Home() {
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-3xl font-bold">Seus Projetos</h2>
             <Link href="/criar">
-              <Button variant="outline">Novo Projeto</Button>
+              <Button variant="outline">+ Novo Projeto</Button>
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {mockProjects.map((project) => (
               <Card key={project.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
-                  <div className="flex items-start justify-between mb-2">
-                    <Badge variant="secondary">{project.genre}</Badge>
-                    <span className="text-xs text-muted-foreground">{project.date}</span>
+                  <div className="flex items-center justify-between mb-2">
+                    <Badge variant="secondary" className="text-xs">
+                      {project.date}
+                    </Badge>
+                    <Badge>{project.genre}</Badge>
                   </div>
-                  <CardTitle className="text-base line-clamp-2">{project.title}</CardTitle>
+                  <CardTitle className="text-lg">{project.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground line-clamp-3 mb-4">{project.lyrics}</p>
+                  <p className="text-sm text-muted-foreground line-clamp-3 mb-4 font-mono">{project.lyrics}</p>
                   <Link href="/editar">
                     <Button variant="outline" size="sm" className="w-full bg-transparent">
                       <Pencil className="mr-2 h-4 w-4" />
@@ -128,6 +87,29 @@ export default function Home() {
 
       <section className="py-16 px-4 bg-muted/30">
         <div className="max-w-7xl mx-auto">
+          <h2 className="text-3xl font-bold mb-8">Análise e Avaliação</h2>
+
+          <Card className="mb-12">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <BarChart3 className="h-6 w-6 text-primary" />
+                <CardTitle>Avaliação Automática de Qualidade</CardTitle>
+              </div>
+              <CardDescription>
+                Avalie seus projetos automaticamente e receba sugestões de melhoria com notas de 1 a 10.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-3">
+                <Button className="bg-primary">
+                  <BarChart3 className="mr-2 h-4 w-4" />
+                  Avaliar Todos os Projetos
+                </Button>
+                <Button variant="outline">Mostrar Projetos</Button>
+              </div>
+            </CardContent>
+          </Card>
+
           <h2 className="text-3xl font-bold text-center mb-12">Recursos</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -138,7 +120,7 @@ export default function Home() {
                 </div>
                 <CardTitle>Gerar Letras</CardTitle>
                 <CardDescription>
-                  Crie letras originais em qualquer gênero, humor ou estilo apenas alguns cliques.
+                  Crie letras originais em qualquer gênero, humor ou estilo com apenas alguns cliques.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -156,9 +138,7 @@ export default function Home() {
                   <RefreshCw className="h-8 w-8 text-primary" />
                 </div>
                 <CardTitle>Reescrever Letras</CardTitle>
-                <CardDescription>
-                  Refine versões específicas das suas letras transferindo-as de fácil acesso.
-                </CardDescription>
+                <CardDescription>Refine seções específicas das suas letras mantendo o fluxo geral.</CardDescription>
               </CardHeader>
               <CardContent>
                 <Link href="/reescrever">
@@ -175,7 +155,7 @@ export default function Home() {
                   <FolderOpen className="h-8 w-8 text-primary" />
                 </div>
                 <CardTitle>Salvar Projetos</CardTitle>
-                <CardDescription>Organize e salve seus projetos de letras com fácil acesso e edição.</CardDescription>
+                <CardDescription>Organize e salve seus projetos de letras para fácil acesso e edição.</CardDescription>
               </CardHeader>
               <CardContent>
                 <Link href="/galeria">
