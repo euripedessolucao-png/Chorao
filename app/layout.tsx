@@ -24,8 +24,10 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         <Suspense fallback={null}>
           <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-            {children}
-            <Toaster />
+            <>
+              {children}
+              <Toaster />
+            </>
           </ThemeProvider>
         </Suspense>
         <Analytics />
