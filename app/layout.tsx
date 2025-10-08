@@ -33,8 +33,10 @@ html {
       <body>
         <Suspense fallback={null}>
           <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-            {children}
-            <Toaster />
+            <>
+              {children}
+              <Toaster />
+            </>
           </ThemeProvider>
         </Suspense>
         <Analytics />
