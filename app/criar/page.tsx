@@ -15,6 +15,15 @@ import { Slider } from "@/components/ui/slider"
 import { Sparkles, Save, Search, Loader2 } from "lucide-react"
 import { GENRE_CONFIGS } from "@/lib/genre-config"
 import { toast } from "sonner"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Star, Trophy, Wand2 } from "lucide-react"
 
 const BRAZILIAN_GENRE_METRICS = {
   "Sertanejo Moderno": { syllablesPerLine: 6, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
@@ -74,6 +83,18 @@ const EMOTIONS = [
   "Vergonha",
 ]
 
+type ChorusVariation = {
+  chorus: string
+  style: string
+  score: number
+  justification: string
+}
+
+type ChorusResponse = {
+  variations: ChorusVariation[]
+  bestCommercialOptionIndex: number
+}
+
 export default function CriarPage() {
   const [genre, setGenre] = useState("")
   const [mood, setMood] = useState("")
@@ -91,6 +112,10 @@ export default function CriarPage() {
   const [chords, setChords] = useState("")
   const [lyrics, setLyrics] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
+  const [showChorusDialog, setShowChorusDialog] = useState(false)
+  const [chorusData, setChorusData] = useState<ChorusResponse | null>(null)
+  const [selectedChoruses, setSelectedChoruses] = useState<ChorusVariation[]>([])
+  const [isGeneratingChorus, setIsGeneratingChorus] = useState(false)
 
   const toggleEmotion = (emotion: string) => {
     setSelectedEmotions((prev) => (prev.includes(emotion) ? prev.filter((e) => e !== emotion) : [...prev, emotion]))
@@ -159,6 +184,94 @@ export default function CriarPage() {
     localStorage.setItem("projects", JSON.stringify(projects))
 
     toast.success("Projeto salvo com sucesso!")
+  }
+
+  const handleGenerateChorus = async () => {
+    if (!genre || !theme) {
+      toast.error("Selecione gênero e tema antes de gerar o refrão")
+      return
+    }
+
+    setShowChorusDialog(true)
+    setIsGeneratingChorus(true)
+    setChorusData(null)
+    setSelectedChoruses([])
+
+    try {
+      const response = await fetch("/api/generate-chorus", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          genre,
+          theme,
+          mood,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao gerar refrão")
+      }
+
+      setChorusData(data)
+
+      // Selecionar automaticamente a melhor opção comercial
+      if (data.bestCommercialOptionIndex !== undefined && data.variations[data.bestCommercialOptionIndex]) {
+        setSelectedChoruses([data.variations[data.bestCommercialOptionIndex]])
+      }
+
+      toast.success("Refrões gerados com sucesso!")
+    } catch (error) {
+      console.error("[v0] Error generating chorus:", error)
+      toast.error(error instanceof Error ? error.message : "Erro ao gerar refrão")
+      setShowChorusDialog(false)
+    } finally {
+      setIsGeneratingChorus(false)
+    }
+  }
+
+  const handleSelectChorus = (chorus: ChorusVariation) => {
+    setSelectedChoruses((prev) => {
+      if (prev.find((c) => c.chorus === chorus.chorus)) {
+        return prev.filter((c) => c.chorus !== chorus.chorus)
+      }
+      if (prev.length < 2) {
+        return [...prev, chorus]
+      } else {
+        toast.error("Você pode selecionar no máximo 2 refrões")
+        return prev
+      }
+    })
+  }
+
+  const handleApplyChoruses = () => {
+    if (selectedChoruses.length === 0) {
+      toast.error("Selecione pelo menos um refrão")
+      return
+    }
+
+    const chorusText = selectedChoruses.map((c) => c.chorus.replace(/\s\/\s/g, "\n")).join("\n\n")
+
+    const updatedReqs = additionalReqs ? `${additionalReqs}\n\n[CHORUS]\n${chorusText}` : `[CHORUS]\n${chorusText}`
+
+    setAdditionalReqs(updatedReqs)
+    setShowChorusDialog(false)
+
+    toast.success("Refrão(ões) adicionado(s) aos requisitos!")
+  }
+
+  const renderStars = (score: number) => {
+    return (
+      <div className="flex items-center gap-0.5">
+        {Array.from({ length: 10 }).map((_, i) => (
+          <Star
+            key={i}
+            className={`h-3 w-3 ${i < score ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground"}`}
+          />
+        ))}
+      </div>
+    )
   }
 
   return (
@@ -308,6 +421,17 @@ export default function CriarPage() {
                   <p className="text-xs text-muted-foreground">O formato é padrão e não pode ser alterado.</p>
                 </div>
               </div>
+
+              <Button
+                variant="outline"
+                className="w-full bg-transparent"
+                size="sm"
+                onClick={handleGenerateChorus}
+                disabled={!genre || !theme || isGenerating || isGeneratingChorus}
+              >
+                <Wand2 className="mr-2 h-4 w-4" />
+                Gerar Refrão
+              </Button>
 
               <Button className="w-full" size="sm" onClick={handleGenerateLyrics} disabled={isGenerating || !genre}>
                 {isGenerating ? (
@@ -490,6 +614,73 @@ export default function CriarPage() {
           </Card>
         </div>
       </div>
+
+      <Dialog open={showChorusDialog} onOpenChange={setShowChorusDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Sugestões de Refrão</DialogTitle>
+            <DialogDescription>
+              A IA gerou 5 variações de refrão com base no seu tema e gênero. A opção mais comercial foi selecionada
+              automaticamente. Você pode selecionar até 2 para adicionar aos requisitos.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4 space-y-3">
+            {isGeneratingChorus && (
+              <div className="flex items-center justify-center p-8">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span className="ml-2">Gerando refrões...</span>
+              </div>
+            )}
+
+            {chorusData &&
+              chorusData.variations.map((variation, index) => (
+                <Card
+                  key={index}
+                  className={`cursor-pointer transition-all ${
+                    selectedChoruses.find((c) => c.chorus === variation.chorus)
+                      ? "border-primary ring-2 ring-primary"
+                      : "border-border hover:border-primary/50"
+                  }`}
+                  onClick={() => handleSelectChorus(variation)}
+                >
+                  <CardHeader className="pb-2">
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-1">
+                        <CardTitle className="text-base">{variation.style}</CardTitle>
+                        <div className="flex items-center gap-2">
+                          {renderStars(variation.score)}
+                          <span className="text-xs font-bold text-muted-foreground">({variation.score}/10)</span>
+                        </div>
+                      </div>
+                      {chorusData.bestCommercialOptionIndex === index && (
+                        <Badge variant="default" className="bg-green-600 hover:bg-green-700">
+                          <Trophy className="h-3 w-3 mr-1" />
+                          Melhor Opção Comercial
+                        </Badge>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <p className="text-sm whitespace-pre-line font-mono bg-muted/50 p-3 rounded">
+                      {variation.chorus.replace(/\s\/\s/g, "\n")}
+                    </p>
+                    <p className="text-xs text-muted-foreground italic">{variation.justification}</p>
+                  </CardContent>
+                </Card>
+              ))}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowChorusDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleApplyChoruses} disabled={selectedChoruses.length === 0}>
+              Adicionar aos Requisitos ({selectedChoruses.length})
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
