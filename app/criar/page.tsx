@@ -100,7 +100,7 @@ export default function CriarPage() {
           metaforas: metaphorSearch,
           emocoes: selectedEmotions,
           titulo: title,
-          metrics: genreConfig?.metrics,
+          metrics: BRAZILIAN_GENRE_METRICS[genre as keyof typeof BRAZILIAN_GENRE_METRICS] || BRAZILIAN_GENRE_METRICS.default,
         }),
       })
 
