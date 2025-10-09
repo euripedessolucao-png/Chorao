@@ -14,6 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { RefreshCw, Sparkles, Trash2, Search, Save } from "lucide-react"
 import { toast } from "sonner"
 import { openai } from '@ai-sdk/openai' // ← ADICIONE ESTA LINHA
+import { GENRE_CONFIGS } from "@/lib/genre-config"
 
 const GENRES = ["Pop", "Sertanejo Moderno", "MPB"]
 const MOODS = ["Feliz", "Triste", "Nostálgico"]
