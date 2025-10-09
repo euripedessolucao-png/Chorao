@@ -1,0 +1,110 @@
+{
+  "genre": "Sertanejo Moderno / Feminejo",
+  "year_range": "2024–2025",
+  "reference_artists": ["Ana Castela", "Maiara & Maraisa", "Luísa Sonza (sertanejo)", "Simaria", "Naiara Azevedo"],
+  "core_principles": {
+    "theme": "Empoderamento feminino com leveza, autonomia e celebração da liberdade — nunca sofrência, saudade do ex ou vingança agressiva.",
+    "tone": "Confidente, irônico, cotidiano, com atitude suave e final feliz.",
+    "narrative_arc": "Início (controle do ex) → Meio (despertar/libertação) → Fim (celebração autônoma)."
+  },
+  "language_rules": {
+    "allowed": {
+      "concrete_objects": [
+        "biquíni",
+        "PIX",
+        "salário",
+        "chapéu",
+        "praia",
+        "conta",
+        "decote",
+        "carro",
+        "espelho",
+        "anéis"
+      ],
+      "actions": ["cortei", "paguei", "saí", "rasguei", "usei", "dancei", "voei", "quebrei", "aprendi", "sorri"],
+      "phrases": ["meu troco", "você não previu", "faço em dobro", "minha lei", "tô em outra vibe", "dona de mim"]
+    },
+    "forbidden": {
+      "abstract_metaphors": [
+        "floresço",
+        "alma perdida",
+        "mar de dor",
+        "bonança",
+        "brisa me inflama",
+        "castelo de areia"
+      ],
+      "ex_saudade": ["falta da sua voz", "meu coração chora", "volta pra mim", "não consigo viver sem você"],
+      "aggressive_tone": ["odeio você", "se fuder", "vou te destruir"]
+    },
+    "style": "Coloquial, direto, como conversa real entre amigas. Evite poesia rebuscada."
+  },
+  "structure_rules": {
+    "verse": {
+      "lines": 4,
+      "purpose": "Apresentar conflito ou transformação com detalhes concretos."
+    },
+    "chorus": {
+      "lines_options": [2, 4],
+      "forbidden_lines": 3,
+      "required_elements": [
+        "Gancho grudento (ex: 'Dona de mim')",
+        "Contraste claro (ex: 'biquíni que você odiava')",
+        "Afirmação de liberdade (ex: 'vivo o que eu quiser')"
+      ]
+    },
+    "bridge": {
+      "lines_min": 2,
+      "lines_max": 4,
+      "purpose": "Clímax de libertação — foco em ação, não em drama."
+    },
+    "outro": {
+      "style": "Curto, afirmativo, muitas vezes sussurrado.",
+      "example": "Agora eu sou... dona de mim."
+    }
+  },
+  "prosody_rules": {
+    "syllable_count": {
+      "with_comma": {
+        "max_before_comma": 6,
+        "max_after_comma": 6,
+        "total_max": 12
+      },
+      "without_comma": {
+        "min": 5,
+        "max": 7,
+        "acceptable_up_to": 8
+      }
+    },
+    "breathability": "Toda linha deve caber em um fôlego natural ao cantar."
+  },
+  "harmony_and_rhythm": {
+    "key": "C major (default)",
+    "allowed_chords": ["C", "Dm", "Em", "F", "G", "Am", "G7"],
+    "forbidden_chords": ["A", "E", "B", "Bb", "F#", "C#", "Ab"],
+    "bpm_range": {
+      "min": 88,
+      "max": 96,
+      "ideal": 94
+    },
+    "rhythm_style": "Sertanejo pop com groove moderado — não vaneira acelerada."
+  },
+  "performance_and_visual": {
+    "clip_scenes": [
+      "Mulher na praia com biquíni 'proibido'",
+      "Pagando conta no app com sorriso",
+      "Cortando cabelo ou jogando anel no mar",
+      "Dançando sozinha no quarto"
+    ],
+    "audience_cues": ["Aôôô!", "Canta comigo!", "É só!", "Potência!"],
+    "vocal_delivery": "Clara, confiante, com sorriso na voz — nunca dramática ou chorosa."
+  },
+  "validation_checklist": [
+    "Sem saudade do ex",
+    "Frases ≤ 12 sílabas",
+    "Refrão com 2 ou 4 linhas (nunca 3)",
+    "Linguagem concreta e cotidiana",
+    "BPM entre 88–96",
+    "Harmonia diatônica (só acordes permitidos)",
+    "Gancho grudento e visual no refrão"
+  ]
+}
