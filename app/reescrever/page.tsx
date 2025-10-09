@@ -96,7 +96,7 @@ export default function ReescreverPage() {
           generoConversao: genre,
           conservarImagens: true,
           polirSemMexer: false,
-          metrics: genreConfig?.metrics,
+          metrics: BRAZILIAN_GENRE_METRICS[genre as keyof typeof BRAZILIAN_GENRE_METRICS] || BRAZILIAN_GENRE_METRICS.default,
         }),
       })
 
