@@ -15,6 +15,24 @@ import { RefreshCw, Save, Copy, Search, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { GENRE_CONFIGS } from "@/lib/genre-config"
 
+const BRAZILIAN_GENRE_METRICS = {
+  "Sertanejo Moderno": { syllablesPerLine: 6, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
+  Sertanejo: { syllablesPerLine: 7, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
+  "Sertanejo Universitário": { syllablesPerLine: 6, bpm: 95, structure: "VERSO-REFRAO" },
+  "Sertanejo Sofrência": { syllablesPerLine: 8, bpm: 75, structure: "VERSO-REFRAO-PONTE" },
+  "Sertanejo Raiz": { syllablesPerLine: 10, bpm: 80, structure: "VERSO-REFRAO" },
+  Pagode: { syllablesPerLine: 7, bpm: 100, structure: "VERSO-REFRAO" },
+  Samba: { syllablesPerLine: 7, bpm: 105, structure: "VERSO-REFRAO-PONTE" },
+  Forró: { syllablesPerLine: 8, bpm: 120, structure: "VERSO-REFRAO" },
+  Axé: { syllablesPerLine: 6, bpm: 130, structure: "VERSO-REFRAO" },
+  MPB: { syllablesPerLine: 9, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
+  "Bossa Nova": { syllablesPerLine: 8, bpm: 70, structure: "VERSO-REFRAO" },
+  Rock: { syllablesPerLine: 8, bpm: 115, structure: "VERSO-REFRAO-SOLO" },
+  Pop: { syllablesPerLine: 7, bpm: 110, structure: "VERSO-REFRAO-PONTE" },
+  Funk: { syllablesPerLine: 6, bpm: 125, structure: "REFRAO-VERSO" },
+  Gospel: { syllablesPerLine: 8, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
+  default: { syllablesPerLine: 8, bpm: 100, structure: "VERSO-REFRAO" },
+} as const
 const GENRES = ["Pop", "Sertanejo Moderno", "MPB", "Rock", "Funk"]
 const MOODS = ["Feliz", "Triste", "Nostálgico", "Apaixonado"]
 const EMOTIONS = [
