@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { RefreshCw, Sparkles, Trash2, Search, Save } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 
 const GENRES = ["Pop", "Sertanejo Moderno", "MPB"]
 const MOODS = ["Feliz", "Triste", "Nostálgico"]
@@ -52,8 +52,6 @@ const EMOTIONS = [
 ]
 
 export default function EditarPage() {
-  const { toast } = useToast()
-
   const [showExplanations, setShowExplanations] = useState(true)
   const [showQuickTips, setShowQuickTips] = useState(true)
   const [showChallenges, setShowChallenges] = useState(false)
@@ -80,15 +78,14 @@ export default function EditarPage() {
 
         localStorage.removeItem("editingProject")
 
-        toast({
-          title: "Projeto carregado",
+        toast.success("Projeto carregado", {
           description: `"${project.title}" foi carregado no editor.`,
         })
       } catch (error) {
         console.error("Erro ao carregar projeto:", error)
       }
     }
-  }, [toast])
+  }, [])
 
   const toggleEmotion = (emotion: string) => {
     setSelectedEmotions((prev) => (prev.includes(emotion) ? prev.filter((e) => e !== emotion) : [...prev, emotion]))
@@ -96,33 +93,27 @@ export default function EditarPage() {
 
   const handleSave = () => {
     if (!title.trim() || !lyrics.trim()) {
-      toast({
-        title: "Campos obrigatórios",
+      toast.error("Campos obrigatórios", {
         description: "Por favor, preencha o título e a letra antes de salvar.",
-        variant: "destructive",
       })
       return
     }
 
-    toast({
-      title: "Projeto salvo",
+    toast.success("Projeto salvo", {
       description: `"${title}" foi salvo com sucesso.`,
     })
   }
 
   const handleCopy = () => {
     if (!lyrics.trim()) {
-      toast({
-        title: "Nada para copiar",
+      toast.error("Nada para copiar", {
         description: "A letra está vazia.",
-        variant: "destructive",
       })
       return
     }
 
     navigator.clipboard.writeText(lyrics)
-    toast({
-      title: "Letra copiada",
+    toast.success("Letra copiada", {
       description: "A letra foi copiada para a área de transferência.",
     })
   }
@@ -130,8 +121,7 @@ export default function EditarPage() {
   const handleClear = () => {
     if (window.confirm("Tem certeza que deseja limpar a letra? Esta ação não pode ser desfeita.")) {
       setLyrics("")
-      toast({
-        title: "Letra limpa",
+      toast.success("Letra limpa", {
         description: "A letra foi removida do editor.",
       })
     }
