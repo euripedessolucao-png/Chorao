@@ -90,7 +90,7 @@ IMPORTANTE:
       model: openai("gpt-4o-mini"),
       prompt: prompt,
       temperature: 0.7,
-      maxTokens: 1500, // ✅ CORRIGIDO: maxTokens → maxTokens
+      // ⚠️ REMOVIDO: maxTokens não é suportado nesta versão
     })
 
     return NextResponse.json({ letra: text })
