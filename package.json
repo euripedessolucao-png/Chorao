@@ -13,7 +13,7 @@
     "@radix-ui/react-dialog": "^1.0.5",
     "@radix-ui/react-dropdown-menu": "latest",
     "@radix-ui/react-label": "latest",
-    "@radix-ui/react-popover": "^1.0.7",
+    "@radix-ui/react-popover": "latest",
     "@radix-ui/react-progress": "latest",
     "@radix-ui/react-radio-group": "latest",
     "@radix-ui/react-select": "latest",
