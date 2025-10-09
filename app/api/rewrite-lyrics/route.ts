@@ -90,15 +90,18 @@ IMPORTANTE:
       model: openai("gpt-4o-mini"),
       prompt: prompt,
       temperature: 0.7,
-      // ⚠️ REMOVIDO: maxTokens não é suportado nesta versão
     })
 
     return NextResponse.json({ letra: text })
   } catch (error) {
     console.error("[v0] Error rewriting lyrics:", error)
+    
+    // ✅ CORREÇÃO: Tratamento seguro do erro
+    const errorMessage = error instanceof Error ? error.message : "Erro desconhecido"
+    
     return NextResponse.json({ 
       error: "Erro ao reescrever letra.",
-      details: error.message 
+      details: errorMessage 
     }, { status: 500 })
   }
 }
