@@ -86,7 +86,7 @@ export default function ReescreverPage() {
     setIsRewriting(true)
 
     try {
-      const genreConfig = GENRE_CONFIGS[genre]
+      const genreConfig = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS]
 
       const response = await fetch("/api/rewrite-lyrics", {
         method: "POST",
