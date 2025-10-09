@@ -14,7 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
 import { Sparkles, Save, Search, Loader2 } from "lucide-react"
 import { toast } from "sonner"
-import { GENRE_CONFIGS } from "@/lib/genre-config"
+import { BRAZILIAN_GENRE_METRICS } from '@/lib/genre-metrics'
 
 const GENRES = ["Pop", "Sertanejo Moderno", "Sertanejo Universitário", "MPB", "Rock", "Funk", "Pagode", "Forró"]
 
