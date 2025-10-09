@@ -12,8 +12,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
-import { Sparkles, Save, Search } from "lucide-react"
-import { openai } from '@ai-sdk/openai' // ← ADICIONE ESTA LINHA
+import { Sparkles, Save, Search, Loader2 } from "lucide-react"
+import { toast } from "sonner"
+import { GENRE_CONFIGS } from "@/lib/genre-config"
 
 const GENRES = ["Pop", "Sertanejo Moderno", "Sertanejo Universitário", "MPB", "Rock", "Funk", "Pagode", "Forró"]
 
@@ -70,9 +71,74 @@ export default function CriarPage() {
   const [title, setTitle] = useState("")
   const [chords, setChords] = useState("")
   const [lyrics, setLyrics] = useState("")
+  const [isGenerating, setIsGenerating] = useState(false)
 
   const toggleEmotion = (emotion: string) => {
     setSelectedEmotions((prev) => (prev.includes(emotion) ? prev.filter((e) => e !== emotion) : [...prev, emotion]))
+  }
+
+  const handleGenerateLyrics = async () => {
+    if (!genre) {
+      toast.error("Por favor, selecione um gênero musical")
+      return
+    }
+
+    setIsGenerating(true)
+
+    try {
+      const genreConfig = GENRE_CONFIGS[genre]
+
+      const response = await fetch("/api/generate-lyrics", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          genero: genre,
+          humor: mood,
+          tema: theme,
+          criatividade: creativity[0] < 33 ? "conservador" : creativity[0] < 66 ? "equilibrado" : "ousado",
+          inspiracao: inspirationText,
+          metaforas: metaphorSearch,
+          emocoes: selectedEmotions,
+          titulo: title,
+          metrics: genreConfig?.metrics,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao gerar letra")
+      }
+
+      setLyrics(data.letra)
+      toast.success("Letra gerada com sucesso!")
+    } catch (error) {
+      console.error("[v0] Error generating lyrics:", error)
+      toast.error(error instanceof Error ? error.message : "Erro ao gerar letra")
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  const handleSaveProject = () => {
+    if (!title || !lyrics) {
+      toast.error("Adicione um título e letra antes de salvar")
+      return
+    }
+
+    const projects = JSON.parse(localStorage.getItem("projects") || "[]")
+    const newProject = {
+      id: Date.now(),
+      title,
+      genre,
+      lyrics,
+      chords,
+      date: new Date().toISOString(),
+    }
+    projects.push(newProject)
+    localStorage.setItem("projects", JSON.stringify(projects))
+
+    toast.success("Projeto salvo com sucesso!")
   }
 
   return (
@@ -223,9 +289,18 @@ export default function CriarPage() {
                 </div>
               </div>
 
-              <Button className="w-full" size="sm">
-                <Sparkles className="mr-2 h-4 w-4" />
-                Gerar Letra Completa
+              <Button className="w-full" size="sm" onClick={handleGenerateLyrics} disabled={isGenerating || !genre}>
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Gerando...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Gerar Letra Completa
+                  </>
+                )}
               </Button>
 
               <div className="border-t pt-2">
@@ -387,7 +462,7 @@ export default function CriarPage() {
                 />
               </div>
 
-              <Button size="sm" className="w-full">
+              <Button size="sm" className="w-full" onClick={handleSaveProject} disabled={!title || !lyrics}>
                 <Save className="mr-2 h-3 w-3" />
                 Salvar Projeto
               </Button>

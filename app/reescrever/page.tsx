@@ -11,8 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { RefreshCw, Save, Copy, Search } from "lucide-react"
-import { openai } from '@ai-sdk/openai' // ← ADICIONE ESTA LINHA
+import { RefreshCw, Save, Copy, Search, Loader2 } from "lucide-react"
+import { toast } from "sonner"
+import { GENRE_CONFIGS } from "@/lib/genre-config"
 
 const GENRES = ["Pop", "Sertanejo Moderno", "MPB", "Rock", "Funk"]
 const MOODS = ["Feliz", "Triste", "Nostálgico", "Apaixonado"]
@@ -65,9 +66,75 @@ export default function ReescreverPage() {
   const [title, setTitle] = useState("")
   const [chords, setChords] = useState("")
   const [lyrics, setLyrics] = useState("")
+  const [isRewriting, setIsRewriting] = useState(false)
 
   const toggleEmotion = (emotion: string) => {
     setSelectedEmotions((prev) => (prev.includes(emotion) ? prev.filter((e) => e !== emotion) : [...prev, emotion]))
+  }
+
+  const handleRewriteLyrics = async () => {
+    if (!originalLyrics) {
+      toast.error("Por favor, cole a letra original")
+      return
+    }
+
+    if (!genre) {
+      toast.error("Por favor, selecione um gênero")
+      return
+    }
+
+    setIsRewriting(true)
+
+    try {
+      const genreConfig = GENRE_CONFIGS[genre]
+
+      const response = await fetch("/api/rewrite-lyrics", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          letraOriginal: originalLyrics,
+          generoConversao: genre,
+          conservarImagens: true,
+          polirSemMexer: false,
+          metrics: genreConfig?.metrics,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao reescrever letra")
+      }
+
+      setLyrics(data.letra)
+      toast.success("Letra reescrita com sucesso!")
+    } catch (error) {
+      console.error("[v0] Error rewriting lyrics:", error)
+      toast.error(error instanceof Error ? error.message : "Erro ao reescrever letra")
+    } finally {
+      setIsRewriting(false)
+    }
+  }
+
+  const handleSaveProject = () => {
+    if (!title || !lyrics) {
+      toast.error("Adicione um título e letra antes de salvar")
+      return
+    }
+
+    const projects = JSON.parse(localStorage.getItem("projects") || "[]")
+    const newProject = {
+      id: Date.now(),
+      title,
+      genre,
+      lyrics,
+      chords,
+      date: new Date().toISOString(),
+    }
+    projects.push(newProject)
+    localStorage.setItem("projects", JSON.stringify(projects))
+
+    toast.success("Projeto salvo com sucesso!")
   }
 
   return (
@@ -168,9 +235,23 @@ export default function ReescreverPage() {
                 </div>
               </div>
 
-              <Button className="w-full" size="sm">
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Reescrever Letra
+              <Button
+                className="w-full"
+                size="sm"
+                onClick={handleRewriteLyrics}
+                disabled={isRewriting || !originalLyrics || !genre}
+              >
+                {isRewriting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Reescrevendo...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Reescrever Letra
+                  </>
+                )}
               </Button>
             </CardContent>
           </Card>
@@ -340,7 +421,7 @@ export default function ReescreverPage() {
                 />
               </div>
 
-              <Button size="sm" className="w-full">
+              <Button size="sm" className="w-full" onClick={handleSaveProject} disabled={!title || !lyrics}>
                 <Save className="mr-2 h-3 w-3" />
                 Salvar Projeto
               </Button>
