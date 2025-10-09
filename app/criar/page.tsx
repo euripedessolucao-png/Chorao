@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
 import { Sparkles, Save, Search, Loader2 } from "lucide-react"
-import { GENRE_CONFIGS } from "@/lib/genre-configs"
+import { GENRE_CONFIGS } from "@/lib/genre-config"
 import { toast } from "sonner"
 
 const BRAZILIAN_GENRE_METRICS = {
@@ -119,7 +119,8 @@ export default function CriarPage() {
           metaforas: metaphorSearch,
           emocoes: selectedEmotions,
           titulo: title,
-          metrics: BRAZILIAN_GENRE_METRICS[genre as keyof typeof BRAZILIAN_GENRE_METRICS] || BRAZILIAN_GENRE_METRICS.default,
+          metrics:
+            BRAZILIAN_GENRE_METRICS[genre as keyof typeof BRAZILIAN_GENRE_METRICS] || BRAZILIAN_GENRE_METRICS.default,
         }),
       })
 
