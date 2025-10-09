@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
 import { Sparkles, Save, Search, Loader2 } from "lucide-react"
+import { GENRE_CONFIGS } from '@/lib/genre-configs'
 import { toast } from "sonner"
 
 const BRAZILIAN_GENRE_METRICS = {
