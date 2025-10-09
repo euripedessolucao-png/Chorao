@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { RefreshCw, Save, Copy, Search } from "lucide-react"
+import { openai } from '@ai-sdk/openai' // ← ADICIONE ESTA LINHA
 
 const GENRES = ["Pop", "Sertanejo Moderno", "MPB", "Rock", "Funk"]
 const MOODS = ["Feliz", "Triste", "Nostálgico", "Apaixonado"]
