@@ -1,6 +1,6 @@
 import { generateText } from "ai"
 import { NextResponse } from "next/server"
-import { openai } from '@ai-sdk/openai'
+import { openai } from "@ai-sdk/openai"
 
 export async function POST(request: Request) {
   try {
@@ -14,11 +14,33 @@ export async function POST(request: Request) {
 - Estrutura: ${metrics.structure}`
       : ""
 
-    // ✅ DETERMINA O FORMATO BASEADO NO GÊNERO
-    const isSertanejoModerno = generoConversao.includes("Sertanejo Moderno") || 
-                               generoConversao.includes("Feminejo")
-    
-    const formatoEstrutura = isSertanejoModerno 
+    const isSertanejoModerno = generoConversao.includes("Sertanejo Moderno") || generoConversao.includes("Feminejo")
+
+    const regrasSertanejoModerno = isSertanejoModerno
+      ? `\n\nREGRAS ESPECÍFICAS DE SERTANEJO MODERNO 2024-2025:
+
+**REFRÃO (OBRIGATÓRIO):**
+- Estrutura: 2 ou 4 linhas (NUNCA 3)
+- Prosódia: Com vírgula (máx 6 sílabas antes + 6 depois = 12 total), Sem vírgula (5-7 sílabas, aceitável até 8)
+- Linguagem: Tom de empoderamento (feminejo) ou vulnerabilidade com força (masculino)
+- Elementos permitidos: referências concretas (biquíni, PIX, story, boteco, pickup, praia)
+- Elementos proibidos: metáforas abstratas, vitimização, ódio/vingança, machismo, saudade obsessiva
+- Requisitos comerciais: hook curto (2-4 palavras), visual para clipe, repetível, fechamento emocional positivo
+
+**ELEMENTOS PROIBIDOS:**
+- "coração no chão", "mundo desabou", "lágrimas", "chorar por você"
+- Metáforas abstratas sem imagem visual
+- Vitimização ou dependência emocional
+- Saudade obsessiva ou melodramática
+
+**ELEMENTOS MODERNOS (USE):**
+- "dona de mim", "meu troco", "minha vida, minhas regras"
+- Referências visuais: biquíni, story, PIX, boteco, praia
+- Empoderamento e independência
+- Imagens concretas e cinematográficas`
+      : ""
+
+    const formatoEstrutura = isSertanejoModerno
       ? `FORMATO DE SAÍDA OBRIGATÓRIO:
 [INTRO]
 [texto da introdução]
@@ -27,7 +49,7 @@ export async function POST(request: Request) {
 [primeiro verso - 4 linhas]
 
 [PART B – Chorus]
-[refrão - 4 linhas]
+[refrão - 2 ou 4 linhas]
 
 [PART A2 – Verse 2]  
 [segundo verso - 4 linhas]
@@ -65,7 +87,6 @@ export async function POST(request: Request) {
 [OUTRO]
 [encerramento]`
 
-    // ✅ PROMPT DINÂMICO
     const prompt = `Você é um compositor profissional especializado em ${generoConversao}.
 
 LETRA ORIGINAL PARA REESCREVER:
@@ -75,7 +96,7 @@ INSTRUÇÕES DE REESCRITA:
 ${conservarImagens ? "- CONSERVE as imagens e metáforas originais" : "- CRIE novas imagens e metáforas"}
 ${polirSemMexer ? "- MANTENHA a estrutura original, apenas aprimorando" : "- ADAPTE a estrutura para ${generoConversao}"}
 - Preserve a mensagem emocional central
-- Adapte o vocabulário para ${generoConversao}${metricInfo}
+- Adapte o vocabulário para ${generoConversao}${metricInfo}${regrasSertanejoModerno}
 
 ${formatoEstrutura}
 
@@ -95,13 +116,15 @@ IMPORTANTE:
     return NextResponse.json({ letra: text })
   } catch (error) {
     console.error("[v0] Error rewriting lyrics:", error)
-    
-    // ✅ CORREÇÃO: Tratamento seguro do erro
+
     const errorMessage = error instanceof Error ? error.message : "Erro desconhecido"
-    
-    return NextResponse.json({ 
-      error: "Erro ao reescrever letra.",
-      details: errorMessage 
-    }, { status: 500 })
+
+    return NextResponse.json(
+      {
+        error: "Erro ao reescrever letra.",
+        details: errorMessage,
+      },
+      { status: 500 },
+    )
   }
 }
