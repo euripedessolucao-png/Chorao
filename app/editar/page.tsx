@@ -13,8 +13,6 @@ import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { RefreshCw, Sparkles, Trash2, Search, Save } from "lucide-react"
 import { toast } from "sonner"
-import { openai } from '@ai-sdk/openai' // ← ADICIONE ESTA LINHA
-import { GENRE_CONFIGS } from "@/lib/genre-config"
 
 const GENRES = ["Pop", "Sertanejo Moderno", "MPB"]
 const MOODS = ["Feliz", "Triste", "Nostálgico"]
@@ -101,8 +99,37 @@ export default function EditarPage() {
       return
     }
 
+    const projects = JSON.parse(localStorage.getItem("projects") || "[]")
+
+    if (projectId) {
+      // Atualizar projeto existente
+      const index = projects.findIndex((p: any) => p.id === projectId)
+      if (index !== -1) {
+        projects[index] = {
+          ...projects[index],
+          title,
+          lyrics,
+          genre,
+          date: new Date().toISOString(),
+        }
+      }
+    } else {
+      // Criar novo projeto
+      const newProject = {
+        id: Date.now(),
+        title,
+        genre,
+        lyrics,
+        date: new Date().toISOString(),
+      }
+      projects.push(newProject)
+      setProjectId(newProject.id)
+    }
+
+    localStorage.setItem("projects", JSON.stringify(projects))
+
     toast.success("Projeto salvo", {
-      description: `"${title}" foi salvo com sucesso.`,
+      description: `"${title}" foi salvo com sucesso na galeria.`,
     })
   }
 

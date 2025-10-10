@@ -114,7 +114,8 @@ export default function ReescreverPage() {
           generoConversao: genre,
           conservarImagens: true,
           polirSemMexer: false,
-          metrics: BRAZILIAN_GENRE_METRICS[genre as keyof typeof BRAZILIAN_GENRE_METRICS] || BRAZILIAN_GENRE_METRICS.default,
+          metrics:
+            BRAZILIAN_GENRE_METRICS[genre as keyof typeof BRAZILIAN_GENRE_METRICS] || BRAZILIAN_GENRE_METRICS.default,
         }),
       })
 
@@ -439,10 +440,30 @@ export default function ReescreverPage() {
                 />
               </div>
 
-              <Button size="sm" className="w-full" onClick={handleSaveProject} disabled={!title || !lyrics}>
-                <Save className="mr-2 h-3 w-3" />
-                Salvar Projeto
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1 bg-transparent"
+                  onClick={() => {
+                    if (!lyrics.trim()) {
+                      toast.error("Nada para copiar", {
+                        description: "A letra está vazia.",
+                      })
+                      return
+                    }
+                    navigator.clipboard.writeText(lyrics)
+                    toast.success("Letra copiada para a área de transferência!")
+                  }}
+                  disabled={!lyrics}
+                >
+                  Copiar Letra
+                </Button>
+                <Button size="sm" className="flex-1" onClick={handleSaveProject} disabled={!title || !lyrics}>
+                  <Save className="mr-2 h-3 w-3" />
+                  Salvar Projeto
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
