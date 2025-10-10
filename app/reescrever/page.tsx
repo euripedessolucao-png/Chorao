@@ -164,10 +164,10 @@ export default function ReescreverPage() {
         <h1 className="text-2xl font-bold text-center mb-6">Reescrever Letras</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Coluna 1: Reescrever no Gênero */}
+          {/* Coluna 1: Parâmetros de Reescrita */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Reescrever no Gênero</CardTitle>
+              <CardTitle className="text-base">Parâmetros de Reescrita</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <div className="space-y-2">
@@ -176,12 +176,9 @@ export default function ReescreverPage() {
                   placeholder="Cole o rascunho da sua letra..."
                   value={originalLyrics}
                   onChange={(e) => setOriginalLyrics(e.target.value)}
-                  rows={4}
+                  rows={6}
                   className="text-xs"
                 />
-                <p className="text-xs text-muted-foreground">
-                  Indique palavras ou frases que NÃO devem aparecer na letra.
-                </p>
               </div>
 
               <div className="space-y-2">
@@ -221,6 +218,9 @@ export default function ReescreverPage() {
                   onChange={(e) => setAvoidWords(e.target.value)}
                   className="h-9"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Indique palavras ou frases que NÃO devem aparecer na letra.
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -229,7 +229,7 @@ export default function ReescreverPage() {
                   placeholder="Quaisquer elementos específicos..."
                   value={additionalReqs}
                   onChange={(e) => setAdditionalReqs(e.target.value)}
-                  rows={2}
+                  rows={3}
                   className="text-xs"
                 />
                 <p className="text-xs text-muted-foreground">
@@ -279,13 +279,17 @@ export default function ReescreverPage() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Inspiração & Sensações</CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Acesse rapidamente seu diário de inspiração, metáforas e emoções, tudo em um só lugar.
+              </p>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               {/* Diário de Inspiração */}
               <div className="border rounded-lg p-3 bg-purple-50/50 space-y-2">
-                <Label className="text-xs font-semibold">Diário de Inspiração</Label>
+                <Label className="text-xs font-semibold text-purple-700">Diário de Inspiração</Label>
                 <p className="text-xs text-muted-foreground">
-                  Adicione textos, áudios, imagens ou links que representam experiências.
+                  Adicione textos, áudios, imagens ou links que representam experiências, sensações ou histórias reais.
+                  Eles serão usados como inspiração para compor suas letras.
                 </p>
                 <Tabs defaultValue="text">
                   <TabsList className="grid w-full grid-cols-4 h-8">
@@ -320,13 +324,14 @@ export default function ReescreverPage() {
 
               {/* Inspiração Literária Global */}
               <div className="border rounded-lg p-3 bg-purple-50/50 space-y-2">
-                <Label className="text-xs font-semibold">Inspiração Literária Global</Label>
+                <Label className="text-xs font-semibold text-purple-700">Inspiração Literária Global</Label>
                 <p className="text-xs text-muted-foreground">
-                  Busque referências criativas em best-sellers e romances.
+                  Busque referências criativas em best-sellers, romances e grandes histórias do mundo todo. A IA
+                  transforma tudo em sugestões originais, seguras e adaptadas à música brasileira.
                 </p>
                 <div className="flex gap-2">
                   <Input
-                    placeholder="Gênero musical"
+                    placeholder="Gênero musical (opcional)"
                     value={literaryGenre}
                     onChange={(e) => setLiteraryGenre(e.target.value)}
                     className="h-8 text-xs"
@@ -339,7 +344,7 @@ export default function ReescreverPage() {
 
               {/* Metáforas Inteligentes */}
               <div className="border rounded-lg p-3 bg-purple-50/50 space-y-2">
-                <Label className="text-xs font-semibold">Metáforas Inteligentes</Label>
+                <Label className="text-xs font-semibold text-purple-700">Metáforas Inteligentes</Label>
                 <p className="text-xs text-muted-foreground">Busque metáforas por tema para enriquecer sua letra.</p>
                 <div className="flex gap-2">
                   <Input
@@ -352,34 +357,17 @@ export default function ReescreverPage() {
                     <Search className="h-3 w-3" />
                   </Button>
                 </div>
-              </div>
-
-              {/* Ferramentas de Composição */}
-              <div className="border rounded-lg p-3 bg-purple-50/50 space-y-2">
-                <Label className="text-xs font-semibold">Ferramentas de Composição</Label>
-                <p className="text-xs text-muted-foreground">
-                  Use estas ferramentas para enriquecer sua letra durante a reescrita.
-                </p>
-                <div className="space-y-1">
-                  <Button variant="outline" size="sm" className="w-full justify-start text-xs bg-transparent">
-                    Encontrar Rimas
-                  </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start text-xs bg-transparent">
-                    Encontrar Sinônimos
-                  </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start text-xs bg-transparent">
-                    Completar Verso
-                  </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start text-xs bg-transparent">
-                    Expressões Estratégicas
-                  </Button>
-                </div>
+                <p className="text-xs text-muted-foreground">Busque por um tema ou palavra-chave.</p>
               </div>
 
               {/* Sensações & Emoções */}
               <div className="border rounded-lg p-3 bg-purple-50/50 space-y-2">
-                <Label className="text-xs font-semibold">Sensações & Emoções</Label>
-                <p className="text-xs text-muted-foreground">O "como" a história será contada.</p>
+                <Label className="text-xs font-semibold text-purple-700">Sensações & Emoções</Label>
+                <p className="text-xs text-muted-foreground">
+                  O "como" a história será contada. O sentimento que dará o tom da letra e influenciará as sugestões.
+                  Ex: um tema de "fim de namoro" com "tristeza" resulta em dor; o mesmo tema com "alívio" resulta em
+                  libertação.
+                </p>
                 <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
                   {EMOTIONS.map((emotion) => (
                     <Badge
@@ -401,9 +389,6 @@ export default function ReescreverPage() {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base">Título da Música (opcional)</CardTitle>
-                <Button variant="ghost" size="sm">
-                  <Copy className="h-3 w-3" />
-                </Button>
               </div>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
@@ -457,6 +442,7 @@ export default function ReescreverPage() {
                   }}
                   disabled={!lyrics}
                 >
+                  <Copy className="mr-2 h-3 w-3" />
                   Copiar Letra
                 </Button>
                 <Button size="sm" className="flex-1" onClick={handleSaveProject} disabled={!title || !lyrics}>
