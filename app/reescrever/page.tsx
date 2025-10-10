@@ -10,11 +10,20 @@ import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { RefreshCw, Save, Copy, Search, Loader2 } from "lucide-react"
+import { Slider } from "@/components/ui/slider"
+import { RefreshCw, Save, Copy, Search, Loader2, Wand2, Star, Trophy } from "lucide-react"
 import { toast } from "sonner"
 import { GENRE_CONFIGS } from "@/lib/genre-config"
-import { EMOTIONS } from "@/lib/genres"
+import { MOODS, EMOTIONS } from "@/lib/genres"
 import { GenreSelect } from "@/components/genre-select"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 const BRAZILIAN_GENRE_METRICS = {
   "Sertanejo Moderno": { syllablesPerLine: 6, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
@@ -36,24 +45,129 @@ const BRAZILIAN_GENRE_METRICS = {
 } as const
 const GENRES = ["Pop", "Sertanejo Moderno", "MPB", "Rock", "Funk"]
 
+type ChorusVariation = {
+  chorus: string
+  style: string
+  score: number
+  justification: string
+}
+
+type ChorusResponse = {
+  variations: ChorusVariation[]
+  bestCommercialOptionIndex: number
+}
+
 export default function ReescreverPage() {
   const [originalLyrics, setOriginalLyrics] = useState("")
   const [genre, setGenre] = useState("")
+  const [mood, setMood] = useState("")
   const [theme, setTheme] = useState("")
   const [avoidWords, setAvoidWords] = useState("")
   const [additionalReqs, setAdditionalReqs] = useState("")
   const [useDiary, setUseDiary] = useState(true)
+  const [creativity, setCreativity] = useState([50])
   const [inspirationText, setInspirationText] = useState("")
   const [literaryGenre, setLiteraryGenre] = useState("")
+  const [literaryEmotion, setLiteraryEmotion] = useState("")
   const [metaphorSearch, setMetaphorSearch] = useState("")
   const [selectedEmotions, setSelectedEmotions] = useState<string[]>([])
   const [title, setTitle] = useState("")
   const [chords, setChords] = useState("")
   const [lyrics, setLyrics] = useState("")
   const [isRewriting, setIsRewriting] = useState(false)
+  const [showChorusDialog, setShowChorusDialog] = useState(false)
+  const [chorusData, setChorusData] = useState<ChorusResponse | null>(null)
+  const [selectedChoruses, setSelectedChoruses] = useState<ChorusVariation[]>([])
+  const [isGeneratingChorus, setIsGeneratingChorus] = useState(false)
 
   const toggleEmotion = (emotion: string) => {
     setSelectedEmotions((prev) => (prev.includes(emotion) ? prev.filter((e) => e !== emotion) : [...prev, emotion]))
+  }
+
+  const handleGenerateChorus = async () => {
+    if (!genre || !theme) {
+      toast.error("Selecione gênero e tema antes de gerar o refrão")
+      return
+    }
+
+    setShowChorusDialog(true)
+    setIsGeneratingChorus(true)
+    setChorusData(null)
+    setSelectedChoruses([])
+
+    try {
+      const response = await fetch("/api/generate-chorus", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          genre,
+          theme,
+          mood,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao gerar refrão")
+      }
+
+      setChorusData(data)
+
+      if (data.bestCommercialOptionIndex !== undefined && data.variations[data.bestCommercialOptionIndex]) {
+        setSelectedChoruses([data.variations[data.bestCommercialOptionIndex]])
+      }
+
+      toast.success("Refrões gerados com sucesso!")
+    } catch (error) {
+      console.error("[v0] Error generating chorus:", error)
+      toast.error(error instanceof Error ? error.message : "Erro ao gerar refrão")
+      setShowChorusDialog(false)
+    } finally {
+      setIsGeneratingChorus(false)
+    }
+  }
+
+  const handleSelectChorus = (chorus: ChorusVariation) => {
+    setSelectedChoruses((prev) => {
+      if (prev.find((c) => c.chorus === chorus.chorus)) {
+        return prev.filter((c) => c.chorus !== chorus.chorus)
+      }
+      if (prev.length < 2) {
+        return [...prev, chorus]
+      } else {
+        toast.error("Você pode selecionar no máximo 2 refrões")
+        return prev
+      }
+    })
+  }
+
+  const handleApplyChoruses = () => {
+    if (selectedChoruses.length === 0) {
+      toast.error("Selecione pelo menos um refrão")
+      return
+    }
+
+    const chorusText = selectedChoruses.map((c) => c.chorus.replace(/\s\/\s/g, "\n")).join("\n\n")
+    const updatedReqs = additionalReqs ? `${additionalReqs}\n\n[CHORUS]\n${chorusText}` : `[CHORUS]\n${chorusText}`
+
+    setAdditionalReqs(updatedReqs)
+    setShowChorusDialog(false)
+
+    toast.success("Refrão(ões) adicionado(s) aos requisitos!")
+  }
+
+  const renderStars = (score: number) => {
+    return (
+      <div className="flex items-center gap-0.5">
+        {Array.from({ length: 10 }).map((_, i) => (
+          <Star
+            key={i}
+            className={`h-3 w-3 ${i < score ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground"}`}
+          />
+        ))}
+      </div>
+    )
   }
 
   const handleRewriteLyrics = async () => {
@@ -147,9 +261,29 @@ export default function ReescreverPage() {
                 />
               </div>
 
+              <Button variant="ghost" size="sm" className="w-full text-xs">
+                Mostrar informações dos gêneros
+              </Button>
+
               <div className="space-y-2">
                 <Label className="text-xs">Gênero para Reescrever</Label>
                 <GenreSelect value={genre} onValueChange={setGenre} className="h-9" />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Humor</Label>
+                <select
+                  value={mood}
+                  onChange={(e) => setMood(e.target.value)}
+                  className="w-full h-9 rounded-md border border-input bg-background px-3 py-2 text-xs"
+                >
+                  <option value="">Selecione o humor</option>
+                  {MOODS.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="space-y-2">
@@ -163,6 +297,10 @@ export default function ReescreverPage() {
                 <Button variant="link" size="sm" className="h-auto p-0 text-xs">
                   Buscar ideias de Tema
                 </Button>
+                <p className="text-xs text-muted-foreground">
+                  Use Tema para definir "o quê" da sua música (a história) e Sensações & Emoções para definir "como" a
+                  história é contada (o sentimento).
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -184,7 +322,7 @@ export default function ReescreverPage() {
                   placeholder="Quaisquer elementos específicos..."
                   value={additionalReqs}
                   onChange={(e) => setAdditionalReqs(e.target.value)}
-                  rows={3}
+                  rows={2}
                   className="text-xs"
                 />
                 <p className="text-xs text-muted-foreground">
@@ -209,6 +347,49 @@ export default function ReescreverPage() {
                 </div>
               </div>
 
+              <div className="space-y-3 border rounded-lg p-3">
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <Label className="text-xs">Nível de Criatividade</Label>
+                    <span className="text-xs text-muted-foreground">Equilibrado</span>
+                  </div>
+                  <Slider value={creativity} onValueChange={setCreativity} max={100} step={1} />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Equilíbrio entre tradição e originalidade com alta qualidade
+                  </p>
+                </div>
+
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <Label className="text-xs">Qualidade do Modelo</Label>
+                    <span className="text-xs text-muted-foreground">Equilíbrio (padrão)</span>
+                  </div>
+                  <select className="w-full h-8 rounded-md border border-input bg-background px-3 py-1 text-xs">
+                    <option value="standard">Equilíbrio (padrão)</option>
+                    <option value="high">Alta Qualidade</option>
+                  </select>
+                </div>
+
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <Label className="text-xs">Estilo de Formatação</Label>
+                    <span className="text-xs text-muted-foreground">Padrão (fixo)</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">O formato é padrão e não pode ser alterado.</p>
+                </div>
+              </div>
+
+              <Button
+                variant="outline"
+                className="w-full bg-transparent"
+                size="sm"
+                onClick={handleGenerateChorus}
+                disabled={!genre || !theme || isRewriting || isGeneratingChorus}
+              >
+                <Wand2 className="mr-2 h-4 w-4" />
+                Gerar Refrão
+              </Button>
+
               <Button
                 className="w-full"
                 size="sm"
@@ -227,6 +408,12 @@ export default function ReescreverPage() {
                   </>
                 )}
               </Button>
+
+              <div className="border-t pt-2">
+                <Button variant="ghost" size="sm" className="w-full justify-start text-xs">
+                  📈 Tendências Atuais: Geral
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
@@ -234,17 +421,13 @@ export default function ReescreverPage() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Inspiração & Sensações</CardTitle>
-              <p className="text-xs text-muted-foreground">
-                Acesse rapidamente seu diário de inspiração, metáforas e emoções, tudo em um só lugar.
-              </p>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               {/* Diário de Inspiração */}
               <div className="border rounded-lg p-3 bg-purple-50/50 space-y-2">
-                <Label className="text-xs font-semibold text-purple-700">Diário de Inspiração</Label>
+                <Label className="text-xs font-semibold">Diário de Inspiração</Label>
                 <p className="text-xs text-muted-foreground">
                   Adicione textos, áudios, imagens ou links que representam experiências, sensações ou histórias reais.
-                  Eles serão usados como inspiração para compor suas letras.
                 </p>
                 <Tabs defaultValue="text">
                   <TabsList className="grid w-full grid-cols-4 h-8">
@@ -279,27 +462,33 @@ export default function ReescreverPage() {
 
               {/* Inspiração Literária Global */}
               <div className="border rounded-lg p-3 bg-purple-50/50 space-y-2">
-                <Label className="text-xs font-semibold text-purple-700">Inspiração Literária Global</Label>
+                <Label className="text-xs font-semibold">Inspiração Literária Global</Label>
                 <p className="text-xs text-muted-foreground">
-                  Busque referências criativas em best-sellers, romances e grandes histórias do mundo todo. A IA
-                  transforma tudo em sugestões originais, seguras e adaptadas à música brasileira.
+                  Busque referências criativas em best-sellers, romances e grandes histórias do mundo todo.
                 </p>
                 <div className="flex gap-2">
                   <Input
-                    placeholder="Gênero musical (opcional)"
+                    placeholder="Gênero musical"
                     value={literaryGenre}
                     onChange={(e) => setLiteraryGenre(e.target.value)}
+                    className="h-8 text-xs"
+                  />
+                  <Input
+                    placeholder="Emoção (opcional)"
+                    value={literaryEmotion}
+                    onChange={(e) => setLiteraryEmotion(e.target.value)}
                     className="h-8 text-xs"
                   />
                   <Button size="sm" className="h-8">
                     Buscar
                   </Button>
                 </div>
+                <p className="text-xs text-muted-foreground">Busque por um tema ou palavra-chave.</p>
               </div>
 
               {/* Metáforas Inteligentes */}
               <div className="border rounded-lg p-3 bg-purple-50/50 space-y-2">
-                <Label className="text-xs font-semibold text-purple-700">Metáforas Inteligentes</Label>
+                <Label className="text-xs font-semibold">Metáforas Inteligentes</Label>
                 <p className="text-xs text-muted-foreground">Busque metáforas por tema para enriquecer sua letra.</p>
                 <div className="flex gap-2">
                   <Input
@@ -317,11 +506,9 @@ export default function ReescreverPage() {
 
               {/* Sensações & Emoções */}
               <div className="border rounded-lg p-3 bg-purple-50/50 space-y-2">
-                <Label className="text-xs font-semibold text-purple-700">Sensações & Emoções</Label>
+                <Label className="text-xs font-semibold">Sensações & Emoções</Label>
                 <p className="text-xs text-muted-foreground">
-                  O "como" a história será contada. O sentimento que dará o tom da letra e influenciará as sugestões.
-                  Ex: um tema de "fim de namoro" com "tristeza" resulta em dor; o mesmo tema com "alívio" resulta em
-                  libertação.
+                  O "como" a história será contada. O sentimento que dará o tom da letra.
                 </p>
                 <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
                   {EMOTIONS.map((emotion) => (
@@ -335,6 +522,9 @@ export default function ReescreverPage() {
                     </Badge>
                   ))}
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  Dica: A letra será reescrita com base no conteúdo que você colar, mas o Tema será inferido pela IA.
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -342,9 +532,7 @@ export default function ReescreverPage() {
           {/* Coluna 3: Título da Música */}
           <Card>
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base">Título da Música (opcional)</CardTitle>
-              </div>
+              <CardTitle className="text-base">Título da Música (opcional)</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <Input
@@ -409,6 +597,73 @@ export default function ReescreverPage() {
           </Card>
         </div>
       </div>
+
+      <Dialog open={showChorusDialog} onOpenChange={setShowChorusDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Sugestões de Refrão</DialogTitle>
+            <DialogDescription>
+              A IA gerou 5 variações de refrão com base no seu tema e gênero. A opção mais comercial foi selecionada
+              automaticamente. Você pode selecionar até 2 para adicionar aos requisitos.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4 space-y-3">
+            {isGeneratingChorus && (
+              <div className="flex items-center justify-center p-8">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span className="ml-2">Gerando refrões...</span>
+              </div>
+            )}
+
+            {chorusData &&
+              chorusData.variations.map((variation, index) => (
+                <Card
+                  key={index}
+                  className={`cursor-pointer transition-all ${
+                    selectedChoruses.find((c) => c.chorus === variation.chorus)
+                      ? "border-primary ring-2 ring-primary"
+                      : "border-border hover:border-primary/50"
+                  }`}
+                  onClick={() => handleSelectChorus(variation)}
+                >
+                  <CardHeader className="pb-2">
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-1">
+                        <CardTitle className="text-base">{variation.style}</CardTitle>
+                        <div className="flex items-center gap-2">
+                          {renderStars(variation.score)}
+                          <span className="text-xs font-bold text-muted-foreground">({variation.score}/10)</span>
+                        </div>
+                      </div>
+                      {chorusData.bestCommercialOptionIndex === index && (
+                        <Badge variant="default" className="bg-green-600 hover:bg-green-700">
+                          <Trophy className="h-3 w-3 mr-1" />
+                          Melhor Opção Comercial
+                        </Badge>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <p className="text-sm whitespace-pre-line font-mono bg-muted/50 p-3 rounded">
+                      {variation.chorus.replace(/\s\/\s/g, "\n")}
+                    </p>
+                    <p className="text-xs text-muted-foreground italic">{variation.justification}</p>
+                  </CardContent>
+                </Card>
+              ))}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowChorusDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleApplyChoruses} disabled={selectedChoruses.length === 0}>
+              Adicionar aos Requisitos ({selectedChoruses.length})
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

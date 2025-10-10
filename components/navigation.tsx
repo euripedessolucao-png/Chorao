@@ -11,11 +11,11 @@ import {
   Pencil,
   LayoutGrid,
   BookOpen,
-  TrendingUp,
   HelpCircle,
   Music,
   Moon,
   Sun,
+  Database,
 } from "lucide-react"
 
 function ThemeToggle() {
@@ -51,9 +51,9 @@ export function Navigation() {
     { href: "/reescrever", label: "Reescrever", icon: RefreshCw },
     { href: "/editar", label: "Editar", icon: Pencil },
     { href: "/galeria", label: "Galeria", icon: LayoutGrid },
-    { href: "/aprender", label: "Aula", icon: BookOpen },
+    { href: "/backup", label: "Backup", icon: Database },
+    { href: "/aula", label: "Aula", icon: BookOpen },
     { href: "/manual", label: "Manual", icon: HelpCircle },
-    { href: "/melhorias", label: "Melhorias", icon: TrendingUp },
   ]
 
   return (
