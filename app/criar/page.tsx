@@ -24,6 +24,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Star, Trophy, Wand2 } from "lucide-react"
+import { MOODS, EMOTIONS } from "@/lib/genres"
+import { GenreSelect } from "@/components/genre-select"
 
 const BRAZILIAN_GENRE_METRICS = {
   "Sertanejo Moderno": { syllablesPerLine: 6, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
@@ -45,43 +47,6 @@ const BRAZILIAN_GENRE_METRICS = {
 } as const
 
 const GENRES = ["Pop", "Sertanejo Moderno", "Sertanejo Universitário", "MPB", "Rock", "Funk", "Pagode", "Forró"]
-
-const MOODS = ["Feliz", "Triste", "Nostálgico", "Apaixonado", "Revoltado", "Esperançoso", "Melancólico"]
-
-const EMOTIONS = [
-  "Alegria",
-  "Alívio",
-  "Amor",
-  "Ansiedade",
-  "Confusão",
-  "Conexão",
-  "Coragem",
-  "Culpa",
-  "Desapego",
-  "Desilusão",
-  "Desprezo",
-  "Empolgação",
-  "Empoderamento",
-  "Encantamento",
-  "Esperança",
-  "Euforia",
-  "Gratidão",
-  "Inveja",
-  "Liberdade",
-  "Medo",
-  "Melancolia",
-  "Nostalgia",
-  "Orgulho",
-  "Paixão",
-  "Paz",
-  "Raiva",
-  "Saudade",
-  "Solidão",
-  "Tensão",
-  "Ternura",
-  "Tristeza",
-  "Vergonha",
-]
 
 type ChorusVariation = {
   chorus: string
@@ -294,18 +259,7 @@ export default function CriarPage() {
 
               <div className="space-y-2">
                 <Label className="text-xs">Gênero</Label>
-                <Select value={genre} onValueChange={setGenre}>
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Selecione o gênero" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {GENRES.map((g) => (
-                      <SelectItem key={g} value={g}>
-                        {g}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <GenreSelect value={genre} onValueChange={setGenre} className="h-9" />
               </div>
 
               <div className="space-y-2">

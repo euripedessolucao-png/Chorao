@@ -7,13 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { RefreshCw, Save, Copy, Search, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { GENRE_CONFIGS } from "@/lib/genre-config"
+import { EMOTIONS } from "@/lib/genres"
+import { GenreSelect } from "@/components/genre-select"
 
 const BRAZILIAN_GENRE_METRICS = {
   "Sertanejo Moderno": { syllablesPerLine: 6, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
@@ -34,41 +35,6 @@ const BRAZILIAN_GENRE_METRICS = {
   default: { syllablesPerLine: 8, bpm: 100, structure: "VERSO-REFRAO" },
 } as const
 const GENRES = ["Pop", "Sertanejo Moderno", "MPB", "Rock", "Funk"]
-const MOODS = ["Feliz", "Triste", "Nostálgico", "Apaixonado"]
-const EMOTIONS = [
-  "Alegria",
-  "Alívio",
-  "Amor",
-  "Ansiedade",
-  "Confusão",
-  "Conexão",
-  "Coragem",
-  "Culpa",
-  "Desapego",
-  "Desilusão",
-  "Desprezo",
-  "Empolgação",
-  "Empoderamento",
-  "Encantamento",
-  "Esperança",
-  "Euforia",
-  "Gratidão",
-  "Inveja",
-  "Liberdade",
-  "Medo",
-  "Melancolia",
-  "Nostalgia",
-  "Orgulho",
-  "Paixão",
-  "Paz",
-  "Raiva",
-  "Saudade",
-  "Solidão",
-  "Tensão",
-  "Ternura",
-  "Tristeza",
-  "Vergonha",
-]
 
 export default function ReescreverPage() {
   const [originalLyrics, setOriginalLyrics] = useState("")
@@ -183,18 +149,7 @@ export default function ReescreverPage() {
 
               <div className="space-y-2">
                 <Label className="text-xs">Gênero para Reescrever</Label>
-                <Select value={genre} onValueChange={setGenre}>
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Selecione o gênero" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {GENRES.map((g) => (
-                      <SelectItem key={g} value={g}>
-                        {g}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <GenreSelect value={genre} onValueChange={setGenre} className="h-9" />
               </div>
 
               <div className="space-y-2">

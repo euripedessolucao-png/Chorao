@@ -111,6 +111,206 @@ export const GENRE_CONFIGS = {
       rhythm_style: "Sertanejo moderno com groove marcado",
     },
   },
+  "Sertanejo Universitário": {
+    year_range: "2010-2025",
+    reference_artists: ["Jorge & Mateus", "Henrique & Juliano", "Marília Mendonça"],
+    core_principles: {
+      theme: "Relacionamentos modernos, festas, vida universitária",
+      tone: "Descontraído, romântico, celebratório",
+      narrative_arc: "Início (situação) → Meio (desenvolvimento) → Fim (resolução ou festa)",
+    },
+    language_rules: {
+      allowed: {
+        concrete_objects: ["cerveja", "balada", "carro", "celular", "festa", "amigos"],
+        actions: ["bebi", "dancei", "liguei", "esqueci", "curti", "aproveitei"],
+        phrases: ["tô na balada", "esquece o ex", "bora curtir", "vida que segue"],
+      },
+      forbidden: {
+        old_cliches: ["coração partido", "lágrimas no travesseiro", "solidão me mata"],
+      },
+      style: "Coloquial, jovem, direto",
+    },
+    structure_rules: {
+      verse: { lines: 4, purpose: "Contar história de forma leve e direta" },
+      chorus: {
+        lines_options: [2, 4],
+        forbidden_lines: 3,
+        required_elements: ["Gancho grudento", "Fácil de cantar junto"],
+      },
+    },
+    prosody_rules: {
+      syllable_count: {
+        with_comma: { max_before_comma: 6, max_after_comma: 6, total_max: 12 },
+        without_comma: { min: 5, max: 7, acceptable_up_to: 8 },
+      },
+    },
+    harmony_and_rhythm: {
+      key: "G major",
+      allowed_chords: ["G", "C", "D", "Em", "Am"],
+      bpm_range: { min: 95, max: 105, ideal: 100 },
+      rhythm_style: "Sertanejo universitário com groove animado",
+    },
+  },
+  "Forró Pé de Serra": {
+    year_range: "1940-2025",
+    reference_artists: ["Luiz Gonzaga", "Dominguinhos", "Trio Nordestino"],
+    core_principles: {
+      theme: "Nordeste, saudade, amor, festa junina",
+      tone: "Alegre, nostálgico, regional",
+      narrative_arc: "História do sertão com emoção autêntica",
+    },
+    language_rules: {
+      allowed: {
+        concrete_objects: ["sanfona", "xote", "baião", "sertão", "lua", "forró"],
+        actions: ["dançar", "tocar", "cantar", "lembrar", "voltar"],
+        phrases: ["meu sertão", "terra querida", "forró bom", "sanfona chora"],
+      },
+      forbidden: {
+        modern_slang: ["tô na vibe", "manda o pix", "story"],
+      },
+      style: "Regional nordestino, poético mas acessível",
+    },
+    structure_rules: {
+      verse: { lines: 4, purpose: "Contar história do nordeste" },
+      chorus: {
+        lines_options: [2, 4],
+        forbidden_lines: 3,
+        required_elements: ["Melodia marcante", "Fácil de dançar"],
+      },
+    },
+    prosody_rules: {
+      syllable_count: {
+        with_comma: { max_before_comma: 7, max_after_comma: 7, total_max: 14 },
+        without_comma: { min: 6, max: 8, acceptable_up_to: 9 },
+      },
+    },
+    harmony_and_rhythm: {
+      key: "A major",
+      allowed_chords: ["A", "D", "E", "F#m", "Bm"],
+      bpm_range: { min: 110, max: 130, ideal: 120 },
+      rhythm_style: "Forró tradicional com zabumba, triângulo e sanfona",
+    },
+  },
+  "Funk Carioca": {
+    year_range: "2020-2025",
+    reference_artists: ["MC Poze", "MC Cabelinho", "Anitta", "Ludmilla"],
+    core_principles: {
+      theme: "Ostentação, romance, festa, empoderamento",
+      tone: "Direto, confiante, urbano",
+      narrative_arc: "Situação → Atitude → Celebração",
+    },
+    language_rules: {
+      allowed: {
+        concrete_objects: ["nave", "cordão", "baile", "favela", "mansão", "piscina"],
+        actions: ["desce", "sobe", "joga", "toma", "bota", "para"],
+        phrases: ["tá na onda", "bota pressão", "vai descendo", "tá no clima"],
+      },
+      forbidden: {
+        excessive_vulgarity: ["palavrões explícitos sem contexto artístico"],
+      },
+      style: "Gíria carioca, rimas simples e diretas",
+    },
+    structure_rules: {
+      verse: { lines: 4, purpose: "Rimas diretas com flow marcado" },
+      chorus: {
+        lines_options: [2, 4],
+        forbidden_lines: 3,
+        required_elements: ["Batida marcante", "Fácil de repetir"],
+      },
+    },
+    prosody_rules: {
+      syllable_count: {
+        with_comma: { max_before_comma: 6, max_after_comma: 6, total_max: 12 },
+        without_comma: { min: 4, max: 6, acceptable_up_to: 7 },
+      },
+    },
+    harmony_and_rhythm: {
+      key: "C minor",
+      allowed_chords: ["Cm", "Fm", "Gm", "Ab", "Bb"],
+      bpm_range: { min: 125, max: 135, ideal: 130 },
+      rhythm_style: "Batida de funk carioca com grave pesado",
+    },
+  },
+  "Pagode Romântico": {
+    year_range: "1990-2025",
+    reference_artists: ["Thiaguinho", "Péricles", "Ferrugem", "Sorriso Maroto"],
+    core_principles: {
+      theme: "Amor, saudade, relacionamentos, superação",
+      tone: "Romântico, sincero, emotivo",
+      narrative_arc: "Situação amorosa → Sentimento → Resolução ou aceitação",
+    },
+    language_rules: {
+      allowed: {
+        concrete_objects: ["cerveja", "mesa de bar", "violão", "samba", "roda"],
+        actions: ["sofri", "amei", "perdi", "ganhei", "dancei", "cantei"],
+        phrases: ["amor da minha vida", "saudade bateu", "coração apaixonado"],
+      },
+      forbidden: {
+        aggressive_tone: ["odeio", "vingança", "destruir"],
+      },
+      style: "Poético mas acessível, com emoção genuína",
+    },
+    structure_rules: {
+      verse: { lines: 4, purpose: "Contar história de amor com detalhes" },
+      chorus: {
+        lines_options: [2, 4],
+        forbidden_lines: 3,
+        required_elements: ["Melodia marcante", "Emoção clara"],
+      },
+    },
+    prosody_rules: {
+      syllable_count: {
+        with_comma: { max_before_comma: 7, max_after_comma: 7, total_max: 14 },
+        without_comma: { min: 6, max: 8, acceptable_up_to: 9 },
+      },
+    },
+    harmony_and_rhythm: {
+      key: "D major",
+      allowed_chords: ["D", "G", "A", "Bm", "Em", "F#m"],
+      bpm_range: { min: 95, max: 110, ideal: 100 },
+      rhythm_style: "Pagode com cavaquinho, pandeiro e tantã",
+    },
+  },
+  "Gospel Contemporâneo": {
+    year_range: "2010-2025",
+    reference_artists: ["Gabriela Rocha", "Thalles Roberto", "Preto no Branco"],
+    core_principles: {
+      theme: "Fé, esperança, gratidão, adoração",
+      tone: "Inspirador, positivo, edificante",
+      narrative_arc: "Situação difícil → Fé → Vitória ou paz",
+    },
+    language_rules: {
+      allowed: {
+        concrete_objects: ["cruz", "altar", "céu", "luz", "caminho"],
+        actions: ["louvar", "adorar", "crer", "confiar", "vencer"],
+        phrases: ["Deus é fiel", "milagre aconteceu", "fé que move montanhas"],
+      },
+      forbidden: {
+        negative_theology: ["Deus castiga", "merecimento por obras"],
+      },
+      style: "Inspirador, poético, acessível",
+    },
+    structure_rules: {
+      verse: { lines: 4, purpose: "Contar testemunho ou louvor" },
+      chorus: {
+        lines_options: [2, 4],
+        forbidden_lines: 3,
+        required_elements: ["Mensagem clara de fé", "Fácil de cantar em grupo"],
+      },
+    },
+    prosody_rules: {
+      syllable_count: {
+        with_comma: { max_before_comma: 7, max_after_comma: 7, total_max: 14 },
+        without_comma: { min: 6, max: 8, acceptable_up_to: 9 },
+      },
+    },
+    harmony_and_rhythm: {
+      key: "C major",
+      allowed_chords: ["C", "F", "G", "Am", "Dm", "Em"],
+      bpm_range: { min: 80, max: 95, ideal: 88 },
+      rhythm_style: "Pop gospel com instrumentação moderna",
+    },
+  },
 } as const
 
 export type GenreConfig = (typeof GENRE_CONFIGS)[keyof typeof GENRE_CONFIGS]
@@ -197,6 +397,31 @@ export const INSTRUMENTATION_RULES = {
   "Sertanejo Moderno Masculino": {
     required: "(Instrumental: acoustic guitar, electric guitar, drums, bass)",
     optional: ["harmonica", "accordion", "backing vocals"],
+    format: "Sempre entre parênteses, em inglês, após o nome da seção",
+  },
+  "Sertanejo Universitário": {
+    required: "(Instrumental: acoustic guitar, electric guitar, drums, bass)",
+    optional: ["keyboard", "harmonica", "backing vocals"],
+    format: "Sempre entre parênteses, em inglês, após o nome da seção",
+  },
+  "Forró Pé de Serra": {
+    required: "(Instrumental: zabumba, triângulo, sanfona)",
+    optional: ["percussion", "vocals"],
+    format: "Sempre entre parênteses, em inglês, após o nome da seção",
+  },
+  "Funk Carioca": {
+    required: "(Instrumental: grave, bass, percussion)",
+    optional: ["vocals", "synthesizer"],
+    format: "Sempre entre parênteses, em inglês, após o nome da seção",
+  },
+  "Pagode Romântico": {
+    required: "(Instrumental: cavaquinho, pandeiro, tantã)",
+    optional: ["vocals", "acoustic guitar"],
+    format: "Sempre entre parênteses, em inglês, após o nome da seção",
+  },
+  "Gospel Contemporâneo": {
+    required: "(Instrumental: acoustic guitar, electric guitar, drums, bass)",
+    optional: ["keyboard", "vocals"],
     format: "Sempre entre parênteses, em inglês, após o nome da seção",
   },
 } as const
