@@ -544,12 +544,6 @@ export default function ReescreverPage() {
                     </>
                   )}
                 </Button>
-
-                <div className="border-t pt-2">
-                  <Button variant="ghost" size="sm" className="w-full justify-start text-xs">
-                    📈 Tendências
-                  </Button>
-                </div>
               </CardContent>
             </Card>
 
