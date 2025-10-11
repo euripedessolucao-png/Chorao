@@ -188,22 +188,22 @@ export default function ManualPage() {
     <div className="min-h-screen bg-background">
       <Navigation />
 
-      <div className="container mx-auto px-4 py-8 pt-24">
+      <div className="container mx-auto px-4 py-4 pt-20">
         {/* Header */}
-        <div className="text-center mb-12">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="p-3 bg-primary/10 rounded-full">
-              <HelpCircle className="h-8 w-8 text-primary" />
+        <div className="text-left mb-8">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 bg-primary/10 rounded-full">
+              <HelpCircle className="h-6 w-6 text-primary" />
             </div>
-            <h1 className="text-4xl font-bold">Manual do Usuário</h1>
+            <h1 className="text-2xl font-bold">Manual do Usuário</h1>
           </div>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-base text-muted-foreground">
             Aprenda a usar todas as funcionalidades do Chorão Compositor
           </p>
         </div>
 
         {/* Search Bar */}
-        <Card className="mb-8">
+        <Card className="mb-6">
           <CardContent className="p-6">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />

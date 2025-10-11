@@ -247,8 +247,8 @@ export default function CriarPage() {
     <div className="bg-background">
       <Navigation />
 
-      <div className="container mx-auto px-4 py-8 pt-24">
-        <h1 className="text-2xl font-bold text-center mb-6">Criar Nova Letra</h1>
+      <div className="container mx-auto px-4 py-4 pt-20">
+        <h1 className="text-2xl font-bold text-left mb-4">Criar Nova Letra</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Coluna 1: Parâmetros da Letra */}

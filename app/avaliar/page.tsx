@@ -204,8 +204,8 @@ export default function AvaliarPage() {
     <div className="min-h-screen bg-background">
       <Navigation />
 
-      <div className="container mx-auto px-4 py-8 pt-24">
-        <h1 className="text-2xl font-bold mb-6">Avaliar Cantada + Hook</h1>
+      <div className="container mx-auto px-4 py-4 pt-20">
+        <h1 className="text-2xl font-bold text-left mb-4">Avaliar Cantada + Hook</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl mx-auto">
           {/* Formulário de Upload */}

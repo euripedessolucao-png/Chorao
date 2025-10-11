@@ -158,8 +158,8 @@ export default function EditarPage() {
     <div className="min-h-screen bg-background">
       <Navigation />
 
-      <div className="container mx-auto px-4 py-6 pt-24">
-        <h1 className="text-2xl font-bold text-center mb-6">
+      <div className="container mx-auto px-4 py-4 pt-20">
+        <h1 className="text-2xl font-bold text-left mb-4">
           {projectId ? `Editando: ${title || "Sem título"}` : "Modo Editar com Assistente"}
         </h1>
 

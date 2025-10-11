@@ -190,21 +190,21 @@ export default function AulaPage() {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      <div className="container mx-auto px-4 py-8 pt-24">
-        <div className="flex flex-col gap-4 w-full max-w-6xl mx-auto mb-8">
+      <div className="container mx-auto px-4 py-4 pt-20">
+        <div className="flex flex-col gap-2 w-full max-w-6xl mx-auto mb-6">
           <div>
-            <h1 className="text-3xl font-bold flex items-center gap-2">
-              <GraduationCapIcon className="h-7 w-7 text-primary" />
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <GraduationCapIcon className="h-6 w-6 text-primary" />
               Aprendizado de Composição
             </h1>
-            <p className="text-muted-foreground mt-2">
+            <p className="text-sm text-muted-foreground mt-1">
               Aprenda a compor letras do básico ao avançado com nosso assistente IA
             </p>
           </div>
         </div>
 
         {/* Cartão de boas-vindas */}
-        <Card className="mb-8 bg-gradient-to-r from-primary/20 to-accent/30 backdrop-blur-sm dark:from-primary/10 dark:to-accent/20">
+        <Card className="mb-6 bg-gradient-to-r from-primary/20 to-accent/30 backdrop-blur-sm dark:from-primary/10 dark:to-accent/20">
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row items-center gap-6">
               <div className="bg-primary/10 p-4 rounded-full">

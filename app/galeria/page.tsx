@@ -8,10 +8,10 @@ export default function GaleriaPage() {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      <div className="container mx-auto px-4 py-8 pt-24">
+      <div className="container mx-auto px-4 py-4 pt-20">
         <GalleryHeader />
 
-        <div className="mt-8 grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="mt-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Main Content - 3 columns */}
           <div className="lg:col-span-3">
             <GalleryGrid />
