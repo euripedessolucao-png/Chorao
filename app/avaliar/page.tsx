@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Loader2, Upload, Mic2, Trash2 } from "lucide-react"
+import { Loader2, Upload, Mic2, Trash2, Download } from "lucide-react"
 import { toast } from "sonner"
 
 export default function AvaliarPage() {
@@ -78,6 +78,7 @@ export default function AvaliarPage() {
     setLyrics("")
     setTitle("")
     setAvaliacao(null)
+    toast.success("Formulário limpo")
   }
 
   return (
@@ -85,7 +86,7 @@ export default function AvaliarPage() {
       <Navigation />
 
       <div className="container mx-auto px-4 py-8 pt-24">
-        <h1 className="text-2xl font-bold text-center mb-6">Avaliar Cantada</h1>
+        <h1 className="text-2xl font-bold mb-6">Avaliar Cantada</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl mx-auto">
           {/* Formulário de Upload */}
@@ -223,9 +224,10 @@ export default function AvaliarPage() {
                     className="w-full bg-transparent"
                     onClick={() => {
                       navigator.clipboard.writeText(avaliacao)
-                      toast.success("Avaliação copiada para a área de transferência!")
+                      toast.success("Avaliação copiada!")
                     }}
                   >
+                    <Download className="h-4 w-4 mr-2" />
                     Copiar Avaliação
                   </Button>
                 </div>
