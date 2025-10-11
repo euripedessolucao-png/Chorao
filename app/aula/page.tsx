@@ -261,8 +261,7 @@ export default function AulaPage() {
                       key={lesson.id}
                       className="border rounded-md p-3 hover:bg-accent/50 transition-colors cursor-pointer"
                       onClick={() => {
-                        // Navegar para a lição (implementar rota depois)
-                        console.log(`Navegar para ${module.id}/${lesson.id}`)
+                        router.push(`/aula/${module.id}/${lesson.id}`)
                       }}
                     >
                       <div className="flex justify-between items-start mb-1">
