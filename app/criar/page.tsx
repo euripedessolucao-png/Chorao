@@ -248,7 +248,7 @@ export default function CriarPage() {
       <div className="container mx-auto px-4 py-6">
         <h1 className="text-2xl font-bold text-center mb-6">Criar Nova Letra</h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Coluna 1: Parâmetros da Letra */}
           <Card className="order-1">
             <CardHeader className="pb-3">
@@ -492,8 +492,8 @@ export default function CriarPage() {
             </CardContent>
           </Card>
 
-          {/* Nova seção: Botões de Ação */}
-          <div className="order-3 lg:col-span-2 grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-4">
+          {/* Coluna 3: Ferramentas e Resultado */}
+          <div className="order-3 space-y-4">
             {/* Ferramentas de Composição */}
             <Card>
               <CardHeader className="pb-3">
@@ -507,9 +507,7 @@ export default function CriarPage() {
                   onClick={() => setShowHookDialog(true)}
                   disabled={isGenerating || isGeneratingChorus}
                 >
-                  <Zap className="mr-2 h-4 w-4" />
-                  <span className="hidden sm:inline">Gerar Hook</span>
-                  <span className="sm:hidden">Hook</span>
+                  <Zap className="h-4 w-4" />
                 </Button>
 
                 <Button
@@ -519,25 +517,11 @@ export default function CriarPage() {
                   onClick={handleGenerateChorus}
                   disabled={!genre || !theme || isGenerating || isGeneratingChorus}
                 >
-                  <Wand2 className="mr-2 h-4 w-4" />
-                  <span className="hidden sm:inline">Gerar Refrão</span>
-                  <span className="sm:hidden">Refrão</span>
+                  <Wand2 className="h-4 w-4" />
                 </Button>
 
                 <Button className="w-full" size="sm" onClick={handleGenerateLyrics} disabled={isGenerating || !genre}>
-                  {isGenerating ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      <span className="hidden sm:inline">Gerando...</span>
-                      <span className="sm:hidden">...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="mr-2 h-4 w-4" />
-                      <span className="hidden sm:inline">Gerar Letra Completa</span>
-                      <span className="sm:hidden">Gerar</span>
-                    </>
-                  )}
+                  {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                 </Button>
 
                 <div className="border-t pt-2">
@@ -551,7 +535,7 @@ export default function CriarPage() {
             {/* Resultado */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Título da Música</CardTitle>
+                <CardTitle className="text-base">Resultado</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
                 <Input
@@ -604,14 +588,10 @@ export default function CriarPage() {
                     }}
                     disabled={!lyrics}
                   >
-                    <Copy className="mr-2 h-3 w-3" />
-                    <span className="hidden sm:inline">Copiar Letra</span>
-                    <span className="sm:hidden">Copiar</span>
+                    <Copy className="h-3 w-3" />
                   </Button>
                   <Button size="sm" className="flex-1" onClick={handleSaveProject} disabled={!title || !lyrics}>
-                    <Save className="mr-2 h-3 w-3" />
-                    <span className="hidden sm:inline">Salvar Projeto</span>
-                    <span className="sm:hidden">Salvar</span>
+                    <Save className="h-3 w-3" />
                   </Button>
                 </div>
               </CardContent>

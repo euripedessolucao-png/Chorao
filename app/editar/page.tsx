@@ -163,7 +163,7 @@ export default function EditarPage() {
           {projectId ? `Editando: ${title || "Sem título"}` : "Modo Editar com Assistente"}
         </h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Coluna 1: Inspiração & Sensações */}
           <Card className="order-1">
             <CardHeader className="pb-3">
@@ -366,25 +366,20 @@ export default function EditarPage() {
             </CardContent>
           </Card>
 
-          {/* Coluna 3: Título da Música */}
-          <div className="order-3 lg:col-span-2">
+          {/* Coluna 3: Editor de Letra */}
+          <div className="order-3 space-y-4">
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Título da Música (opcional)</CardTitle>
+                <CardTitle className="text-base">Editor</CardTitle>
                 <div className="flex gap-2 mt-2">
                   <Button variant="outline" size="sm" className="flex-1 bg-transparent">
-                    <Sparkles className="mr-1 h-3 w-3" />
-                    <span className="hidden sm:inline">Gerar Refrão</span>
-                    <span className="sm:hidden">Refrão</span>
+                    <Sparkles className="h-3 w-3" />
                   </Button>
                   <Button variant="outline" size="sm" className="flex-1 bg-transparent">
-                    <span className="hidden sm:inline">Analisar</span>
-                    <span className="sm:hidden">📊</span>
+                    📊
                   </Button>
                   <Button variant="outline" size="sm" className="flex-1 bg-transparent">
-                    <RefreshCw className="mr-1 h-3 w-3" />
-                    <span className="hidden sm:inline">Reescrever</span>
-                    <span className="sm:hidden">↻</span>
+                    <RefreshCw className="h-3 w-3" />
                   </Button>
                   <Button variant="outline" size="sm" onClick={handleClear}>
                     <Trash2 className="h-3 w-3" />
@@ -412,14 +407,10 @@ export default function EditarPage() {
 
                 <div className="flex gap-2">
                   <Button size="sm" className="flex-1" onClick={handleCopy}>
-                    <Copy className="mr-2 h-3 w-3" />
-                    <span className="hidden sm:inline">Copiar Letra</span>
-                    <span className="sm:hidden">Copiar</span>
+                    <Copy className="h-3 w-3" />
                   </Button>
                   <Button size="sm" className="flex-1 bg-transparent" variant="outline" onClick={handleSave}>
-                    <Save className="mr-2 h-3 w-3" />
-                    <span className="hidden sm:inline">Salvar</span>
-                    <span className="sm:hidden">💾</span>
+                    <Save className="h-3 w-3" />
                   </Button>
                 </div>
               </CardContent>

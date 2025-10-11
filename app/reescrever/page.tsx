@@ -246,7 +246,7 @@ export default function ReescreverPage() {
       <div className="container mx-auto px-4 py-6">
         <h1 className="text-2xl font-bold text-center mb-6">Reescrever Letras</h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Coluna 1: Parâmetros de Reescrita */}
           <Card className="order-1">
             <CardHeader className="pb-3">
@@ -496,8 +496,9 @@ export default function ReescreverPage() {
             </CardContent>
           </Card>
 
-          {/* Ferramentas de Composição */}
-          <div className="order-3 lg:col-span-2 grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-4">
+          {/* Coluna 3: Ferramentas e Resultado */}
+          <div className="order-3 space-y-4">
+            {/* Ferramentas de Composição */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Ferramentas</CardTitle>
@@ -510,9 +511,7 @@ export default function ReescreverPage() {
                   onClick={() => setShowHookDialog(true)}
                   disabled={isRewriting || isGeneratingChorus}
                 >
-                  <Zap className="mr-2 h-4 w-4" />
-                  <span className="hidden sm:inline">Gerar Hook</span>
-                  <span className="sm:hidden">Hook</span>
+                  <Zap className="h-4 w-4" />
                 </Button>
 
                 <Button
@@ -522,9 +521,7 @@ export default function ReescreverPage() {
                   onClick={handleGenerateChorus}
                   disabled={!genre || !theme || isRewriting || isGeneratingChorus}
                 >
-                  <Wand2 className="mr-2 h-4 w-4" />
-                  <span className="hidden sm:inline">Gerar Refrão</span>
-                  <span className="sm:hidden">Refrão</span>
+                  <Wand2 className="h-4 w-4" />
                 </Button>
 
                 <Button
@@ -533,19 +530,7 @@ export default function ReescreverPage() {
                   onClick={handleRewriteLyrics}
                   disabled={isRewriting || !originalLyrics || !genre}
                 >
-                  {isRewriting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      <span className="hidden sm:inline">Reescrevendo...</span>
-                      <span className="sm:hidden">...</span>
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="mr-2 h-4 w-4" />
-                      <span className="hidden sm:inline">Reescrever Letra</span>
-                      <span className="sm:hidden">Reescrever</span>
-                    </>
-                  )}
+                  {isRewriting ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                 </Button>
 
                 <div className="border-t pt-2">
@@ -559,7 +544,7 @@ export default function ReescreverPage() {
             {/* Resultado */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Título da Música (opcional)</CardTitle>
+                <CardTitle className="text-base">Resultado</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
                 <Input
@@ -612,14 +597,10 @@ export default function ReescreverPage() {
                     }}
                     disabled={!lyrics}
                   >
-                    <Copy className="mr-2 h-3 w-3" />
-                    <span className="hidden sm:inline">Copiar Letra</span>
-                    <span className="sm:hidden">Copiar</span>
+                    <Copy className="h-3 w-3" />
                   </Button>
                   <Button size="sm" className="flex-1" onClick={handleSaveProject} disabled={!title || !lyrics}>
-                    <Save className="mr-2 h-3 w-3" />
-                    <span className="hidden sm:inline">Salvar Projeto</span>
-                    <span className="sm:hidden">Salvar</span>
+                    <Save className="h-3 w-3" />
                   </Button>
                 </div>
               </CardContent>
