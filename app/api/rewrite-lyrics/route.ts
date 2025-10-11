@@ -1,7 +1,7 @@
 import { generateText } from "ai"
 import { NextResponse } from "next/server"
 import { openai } from "@ai-sdk/openai"
-import { ThirdWayEngine, ADVANCED_BRAZILIAN_METRICS, type GenreName } from "@/lib/third-way-converter"
+import { countPortugueseSyllables, ADVANCED_BRAZILIAN_METRICS, type GenreName } from "@/lib/third-way-converter"
 
 export async function POST(request: Request) {
   try {
@@ -43,50 +43,58 @@ export async function POST(request: Request) {
 
     const formatoEstrutura = isSertanejoModerno
       ? `FORMATO DE SAÍDA OBRIGATÓRIO:
+Título: [título derivado do refrão - 2 a 4 palavras impactantes]
+
 [INTRO]
-[texto da introdução]
+[texto da introdução em português]
 
 [PART A – Verse 1]
-[primeiro verso - 4 linhas]
+[primeiro verso completo - 4 linhas em português]
 
 [PART B – Chorus]
-[refrão - 2 ou 4 linhas]
+[refrão completo - 2 ou 4 linhas em português]
 
 [PART A2 – Verse 2]  
-[segundo verso - 4 linhas]
+[segundo verso completo - 4 linhas em português]
 
 [PART C – Bridge]
-[ponte - 2 linhas]
+[ponte completa - 2 linhas em português]
 
 [PART B – Chorus]
-[refrão]
+[refrão repetido completo em português]
 
 [PART B – Chorus]
-[refrão repetido]
+[refrão repetido completo em português]
 
 [OUTRO]
-[encerramento - 2 linhas]`
+[encerramento completo - 2 linhas em português]
+
+(Instruments: [lista de instrumentos em inglês] | BPM: ${metrics?.bpm || 90} | Style: ${generoConversao})`
       : `FORMATO DE SAÍDA OBRIGATÓRIO:
+Título: [título derivado do refrão - 2 a 4 palavras impactantes]
+
 [INTRO]
-[texto da introdução]
+[texto da introdução em português]
 
 [VERSO 1]
-[primeiro verso]
+[primeiro verso completo em português]
 
 [PRÉ-REFRÃO]
-[preparação para o refrão]
+[preparação para o refrão em português]
 
 [REFRÃO]
-[refrão principal]
+[refrão principal completo em português]
 
 [VERSO 2]
-[segundo verso]
+[segundo verso completo em português]
 
 [PONTE]
-[seção de transição]
+[seção de transição em português]
 
 [OUTRO]
-[encerramento]`
+[encerramento completo em português]
+
+(Instruments: [lista de instrumentos em inglês] | BPM: ${metrics?.bpm || 100} | Style: ${generoConversao})`
 
     const prompt = `Você é um compositor profissional especializado em ${generoConversao}.
 
@@ -97,16 +105,18 @@ INSTRUÇÕES DE REESCRITA:
 ${conservarImagens ? "- CONSERVE as imagens e metáforas originais" : "- CRIE novas imagens e metáforas"}
 ${polirSemMexer ? "- MANTENHA a estrutura original, apenas aprimorando" : "- ADAPTE a estrutura para ${generoConversao}"}
 - Preserve a mensagem emocional central
-- Adapte o vocabulário para ${generoConversao}${metricInfo}${regrasSertanejoModerno}
+- Adapte o vocabulário para ${generoConversao}
+- ESCREVA VERSOS COMPLETOS (não apenas palavras soltas)
+- Cada linha deve ser uma frase completa e coerente${metricInfo}${regrasSertanejoModerno}
 
 ${formatoEstrutura}
 
-(Instruments: [lista de instrumentos em inglês] | BPM: ${metrics?.bpm || "adequado"} | Style: ${generoConversao})
-
 IMPORTANTE: 
-- A LETRA (parte cantada) deve ser SEMPRE em PORTUGUÊS
+- A LETRA COMPLETA (parte cantada) deve ser SEMPRE em PORTUGUÊS
 - INSTRUÇÕES e INSTRUMENTOS em INGLÊS
-- Retorne APENAS a letra formatada, sem comentários adicionais.`
+- ESCREVA VERSOS COMPLETOS, não apenas palavras soltas
+- O título deve ser derivado do refrão (2-4 palavras impactantes)
+- Retorne APENAS a letra formatada completa, sem comentários adicionais.`
 
     const { text } = await generateText({
       model: openai("gpt-4o-mini"),
@@ -131,22 +141,53 @@ IMPORTANTE:
     ) as GenreName
 
     const targetMetrics = ADVANCED_BRAZILIAN_METRICS[genreKey] || ADVANCED_BRAZILIAN_METRICS.default
+    const targetSyllables = targetMetrics.syllablesPerLine
 
-    // Aplicar Terceira Via linha por linha (silenciosamente)
     const lines = text.split("\n")
     const optimizedLines = lines.map((line) => {
-      // Pular cabeçalhos e linhas vazias
-      if (line.startsWith("[") || line.startsWith("(") || !line.trim()) {
+      // Pular cabeçalhos, instruções e linhas vazias
+      if (line.startsWith("[") || line.startsWith("(") || line.startsWith("Título:") || !line.trim()) {
         return line
       }
 
-      // Aplicar Terceira Via para otimizar cada linha
-      return ThirdWayEngine.generateThirdWayLine("reescrita", genreKey, `Conversão para: ${generoConversao}`)
+      // Validar métrica da linha
+      const currentSyllables = countPortugueseSyllables(line)
+
+      // Se a métrica está próxima do alvo (±2 sílabas), manter a linha original
+      if (Math.abs(currentSyllables - targetSyllables) <= 2) {
+        return line
+      }
+
+      // Se a métrica está muito fora, tentar ajustar minimamente
+      if (currentSyllables > targetSyllables + 2) {
+        // Comprimir: remover artigos desnecessários
+        return line
+          .replace(/\b(o|a|os|as)\s/gi, "")
+          .replace(/\bpara\b/gi, "pra")
+          .replace(/\bestá\b/gi, "tá")
+      } else if (currentSyllables < targetSyllables - 2) {
+        // Expandir: adicionar adjetivos sutis
+        const expanders = ["meu", "minha", "tão"]
+        const randomExpander = expanders[Math.floor(Math.random() * expanders.length)]
+        return line + " " + randomExpander
+      }
+
+      return line
     })
 
     const optimizedLyrics = optimizedLines.join("\n")
 
-    return NextResponse.json({ letra: optimizedLyrics })
+    let finalLyrics = optimizedLyrics
+    if (!finalLyrics.includes("Título:")) {
+      const chorusMatch = finalLyrics.match(/\[(?:PART B|REFRÃO)[^\]]*\]\s*\n([^\n]+)/i)
+      if (chorusMatch && chorusMatch[1]) {
+        const chorusLine = chorusMatch[1].trim()
+        const titleWords = chorusLine.split(" ").slice(0, 4).join(" ")
+        finalLyrics = `Título: ${titleWords}\n\n${finalLyrics}`
+      }
+    }
+
+    return NextResponse.json({ letra: finalLyrics })
   } catch (error) {
     console.error("[v0] Error rewriting lyrics:", error)
 
