@@ -82,6 +82,7 @@ export default function ReescreverPage() {
   const [selectedChoruses, setSelectedChoruses] = useState<ChorusVariation[]>([])
   const [isGeneratingChorus, setIsGeneratingChorus] = useState(false)
   const [showHookDialog, setShowHookDialog] = useState(false)
+  const [formattingStyle, setFormattingStyle] = useState("padrao")
 
   const toggleEmotion = (emotion: string) => {
     setSelectedEmotions((prev) => (prev.includes(emotion) ? prev.filter((e) => e !== emotion) : [...prev, emotion]))
@@ -197,6 +198,7 @@ export default function ReescreverPage() {
           generoConversao: genre,
           conservarImagens: true,
           polirSemMexer: false,
+          formattingStyle: formattingStyle,
           metrics:
             BRAZILIAN_GENRE_METRICS[genre as keyof typeof BRAZILIAN_GENRE_METRICS] || BRAZILIAN_GENRE_METRICS.default,
         }),
@@ -376,9 +378,23 @@ export default function ReescreverPage() {
                 <div>
                   <div className="flex justify-between mb-1">
                     <Label className="text-xs">Estilo de Formatação</Label>
-                    <span className="text-xs text-muted-foreground">Padrão (fixo)</span>
+                    <span className="text-xs text-muted-foreground">
+                      {formattingStyle === "padrao" ? "Padrão" : "Performático"}
+                    </span>
                   </div>
-                  <p className="text-xs text-muted-foreground">O formato é padrão e não pode ser alterado.</p>
+                  <select
+                    value={formattingStyle}
+                    onChange={(e) => setFormattingStyle(e.target.value)}
+                    className="w-full h-8 rounded-md border border-input bg-background px-3 py-1 text-xs"
+                  >
+                    <option value="padrao">Padrão</option>
+                    <option value="performatico">Performático</option>
+                  </select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {formattingStyle === "performatico"
+                      ? "Inclui descrições detalhadas de palco e lista de instrumentos"
+                      : "Formato simples com marcadores básicos"}
+                  </p>
                 </div>
               </div>
             </CardContent>

@@ -83,6 +83,7 @@ export default function CriarPage() {
   const [selectedChoruses, setSelectedChoruses] = useState<ChorusVariation[]>([])
   const [isGeneratingChorus, setIsGeneratingChorus] = useState(false)
   const [showHookDialog, setShowHookDialog] = useState(false)
+  const [formattingStyle, setFormattingStyle] = useState("padrao")
 
   const toggleEmotion = (emotion: string) => {
     setSelectedEmotions((prev) => (prev.includes(emotion) ? prev.filter((e) => e !== emotion) : [...prev, emotion]))
@@ -111,6 +112,7 @@ export default function CriarPage() {
           metaforas: metaphorSearch,
           emocoes: selectedEmotions,
           titulo: title,
+          formattingStyle: formattingStyle,
           metrics:
             BRAZILIAN_GENRE_METRICS[genre as keyof typeof BRAZILIAN_GENRE_METRICS] || BRAZILIAN_GENRE_METRICS.default,
         }),
@@ -372,9 +374,24 @@ export default function CriarPage() {
                 <div>
                   <div className="flex justify-between mb-1">
                     <Label className="text-xs">Estilo de Formatação</Label>
-                    <span className="text-xs text-muted-foreground">Padrão (fixo)</span>
+                    <span className="text-xs text-muted-foreground">
+                      {formattingStyle === "padrao" ? "Padrão" : "Performático"}
+                    </span>
                   </div>
-                  <p className="text-xs text-muted-foreground">O formato é padrão e não pode ser alterado.</p>
+                  <Select value={formattingStyle} onValueChange={setFormattingStyle}>
+                    <SelectTrigger className="h-8">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="padrao">Padrão</SelectItem>
+                      <SelectItem value="performatico">Performático</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {formattingStyle === "performatico"
+                      ? "Inclui descrições detalhadas de palco e lista de instrumentos"
+                      : "Formato simples com marcadores básicos"}
+                  </p>
                 </div>
               </div>
             </CardContent>

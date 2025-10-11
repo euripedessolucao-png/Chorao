@@ -6,8 +6,20 @@ import { countPortugueseSyllables, ADVANCED_BRAZILIAN_METRICS, type GenreName } 
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { genero, humor, tema, criatividade, hook, inspiracao, metaforas, emocoes, titulo, metrics, chorusSelected } =
-      body
+    const {
+      genero,
+      humor,
+      tema,
+      criatividade,
+      hook,
+      inspiracao,
+      metaforas,
+      emocoes,
+      titulo,
+      metrics,
+      chorusSelected,
+      formattingStyle,
+    } = body
 
     const chorusInfo =
       chorusSelected && chorusSelected.length > 0
@@ -32,6 +44,7 @@ IMPORTANTE: Use estes refrões EXATAMENTE como fornecidos na seção [PART B –
       : ""
 
     const isSertanejoModerno = genero.includes("Sertanejo Moderno") || genero.includes("Feminejo")
+    const isPerformanceMode = formattingStyle === "performatico"
 
     const regrasSertanejoModerno = isSertanejoModerno
       ? `\n\nREGRAS ESPECÍFICAS DE SERTANEJO MODERNO 2024-2025:
@@ -58,7 +71,37 @@ IMPORTANTE: Use estes refrões EXATAMENTE como fornecidos na seção [PART B –
       : ""
 
     const formatoEstrutura = isSertanejoModerno
-      ? `FORMATO DE SAÍDA OBRIGATÓRIO:
+      ? isPerformanceMode
+        ? `FORMATO DE SAÍDA OBRIGATÓRIO (MODO PERFORMÁTICO):
+Título: ${titulo || "[título derivado do refrão - 2 a 4 palavras impactantes]"}
+
+[INTRO - Descrição detalhada da instrumentação, atmosfera e entrada musical]
+
+[PART A – Verse 1 - Descrição da voz, instrumentação e ritmo]
+[primeiro verso completo - 4 linhas em português]
+
+[PART B – Chorus - Descrição da energia, instrumentos e dinâmica]
+[refrão completo - 2 ou 4 linhas em português]
+(Performance: [direções de palco se houver])
+(Audience: [interação com público se houver])
+
+[PART A2 – Verse 2 - Descrição das mudanças musicais]  
+[segundo verso completo - 4 linhas em português]
+
+[PART C – Bridge - Descrição da pausa dramática e mudança]
+[ponte completa - 2 linhas em português]
+
+[PART B – Chorus - Descrição da repetição com variações]
+[refrão repetido completo em português]
+
+[PART B – Chorus - Descrição da energia máxima]
+[refrão repetido completo em português]
+
+[OUTRO - Descrição do fade out e encerramento]
+[encerramento completo - 2 linhas em português]
+
+(Instruments: [lista completa de instrumentos em inglês] | BPM: ${metrics?.bpm || 90} | Style: ${genero})`
+        : `FORMATO DE SAÍDA OBRIGATÓRIO:
 Título: ${titulo || "[título derivado do refrão - 2 a 4 palavras impactantes]"}
 
 [INTRO]
@@ -86,7 +129,33 @@ Título: ${titulo || "[título derivado do refrão - 2 a 4 palavras impactantes]
 [encerramento completo - 2 linhas em português]
 
 (Instruments: [lista de instrumentos em inglês] | BPM: ${metrics?.bpm || 90} | Style: ${genero})`
-      : `FORMATO DE SAÍDA OBRIGATÓRIO:
+      : isPerformanceMode
+        ? `FORMATO DE SAÍDA OBRIGATÓRIO (MODO PERFORMÁTICO):
+Título: ${titulo || "[título derivado do refrão - 2 a 4 palavras impactantes]"}
+
+[INTRO - Descrição detalhada da instrumentação, atmosfera e entrada musical]
+
+[VERSO 1 - Descrição da voz, instrumentação e ritmo]
+[primeiro verso completo em português]
+
+[PRÉ-REFRÃO - Descrição da preparação e build-up]
+[preparação para o refrão em português]
+
+[REFRÃO - Descrição da energia, instrumentos e dinâmica]
+[refrão principal completo em português]
+(Performance: [direções de palco se houver])
+
+[VERSO 2 - Descrição das mudanças musicais]
+[segundo verso completo em português]
+
+[PONTE - Descrição da pausa dramática e mudança]
+[seção de transição em português]
+
+[OUTRO - Descrição do fade out e encerramento]
+[encerramento completo em português]
+
+(Instruments: [lista completa de instrumentos em inglês] | BPM: ${metrics?.bpm || 100} | Style: ${genero})`
+        : `FORMATO DE SAÍDA OBRIGATÓRIO:
 Título: ${titulo || "[título derivado do refrão - 2 a 4 palavras impactantes]"}
 
 [INTRO]
@@ -110,7 +179,7 @@ Título: ${titulo || "[título derivado do refrão - 2 a 4 palavras impactantes]
 [OUTRO]
 [encerramento completo em português]
 
-(Instruments: [lista de instrumentos em inglês] | BPM: ${metrics?.bpm || 100} | Style: ${genero})`
+${isPerformanceMode ? `(Instruments: [lista de instrumentos em inglês] | BPM: ${metrics?.bpm || 100} | Style: ${genero})` : ""}`
 
     const prompt = `Você é um compositor profissional especializado em ${genero}.
 
@@ -201,6 +270,11 @@ IMPORTANTE:
         const titleWords = chorusLine.split(" ").slice(0, 4).join(" ")
         finalLyrics = `Título: ${titleWords}\n\n${finalLyrics}`
       }
+    }
+
+    if (isPerformanceMode && !finalLyrics.includes("(Instruments:")) {
+      const instrumentList = `(Instruments: [guitar, bass, drums, keyboard, synthesizer] | BPM: ${metrics?.bpm || 100} | Style: ${genero})`
+      finalLyrics = finalLyrics + "\n\n" + instrumentList
     }
 
     return NextResponse.json({ letra: finalLyrics })
