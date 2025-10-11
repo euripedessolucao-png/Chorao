@@ -29,7 +29,7 @@ export async function POST(request: Request) {
         : GENRE_CONFIGS[generoConversao as keyof typeof GENRE_CONFIGS]
 
     const instrumentMatch = letraOriginal.match(/$$Instruments?:\s*\[([^\]]+)\][^$$]*\)/i)
-    const originalInstruments = instrumentMatch ? instrumentMatch[0] : null
+    const originalInstruments = instrumentMatch ? instrumentMatch[1] : null
 
     const hasPerformanceMode =
       /\[(?:INTRO|VERSE|CHORUS|BRIDGE|OUTRO)\s*-\s*[^\]]+\]/.test(letraOriginal) || isPerformanceMode

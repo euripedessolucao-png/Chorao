@@ -19,12 +19,40 @@ export const ADVANCED_BRAZILIAN_METRICS = {
 export type GenreName = keyof typeof ADVANCED_BRAZILIAN_METRICS
 
 /**
+ * ============================================================================
  * TERCEIRA VIA - SISTEMA DE COMPOSIÇÃO POR RESTRIÇÕES
+ * ============================================================================
  *
- * NÃO ensina a IA a compor. FORÇA a IA a seguir regras absolutas.
- * Gera 2 variações sob restrições diferentes, depois combina o melhor.
+ * PROPÓSITO:
+ * Este sistema NÃO ensina a IA a compor. Ele FORÇA a IA a seguir regras
+ * absolutas através de um processo de 3 etapas:
+ *
+ * 1. VARIAÇÃO A: Foco em métrica perfeita (sílabas, ritmo, estrutura)
+ * 2. VARIAÇÃO B: Foco em criatividade (vocabulário, imagens, emoção)
+ * 3. SÍNTESE FINAL: Combina os melhores elementos de A e B
+ *
+ * REGRAS UNIVERSAIS:
+ * - Linguagem simples e coloquial (dia-a-dia brasileiro)
+ * - Respeito absoluto aos limites de sílabas por gênero
+ * - Nunca quebrar palavras (ex: "nãsãnossas" é PROIBIDO)
+ * - Requisitos Adicionais têm PRIORIDADE TOTAL sobre qualquer regra
+ *
+ * ============================================================================
  */
 export class ThirdWayEngine {
+  /**
+   * ----------------------------------------------------------------------------
+   * FUNÇÃO PRINCIPAL: Gera uma linha usando o sistema de Terceira Via
+   * ----------------------------------------------------------------------------
+   *
+   * @param originalLine - Linha original a ser processada
+   * @param genre - Gênero musical (Bachata, Sertanejo, etc.)
+   * @param genreRules - Regras específicas do gênero
+   * @param context - Contexto da música (tema, emoção, etc.)
+   * @param performanceMode - Se deve incluir descrições performáticas
+   * @param additionalRequirements - Requisitos do compositor (PRIORIDADE TOTAL)
+   * @returns Linha processada seguindo todas as restrições
+   */
   static async generateThirdWayLine(
     originalLine: string,
     genre: string,
@@ -73,7 +101,7 @@ export class ThirdWayEngine {
       return finalLine
     } catch (error) {
       console.error("[v0] Erro na Terceira Via:", error)
-      return originalLine
+      return originalLine // Em caso de erro, retorna a linha original
     }
   }
 
@@ -228,7 +256,6 @@ RETORNE APENAS A LINHA FINAL (sem explicações, sem aspas, sem comentários).`
 
     const finalLine = text.trim().replace(/^["']|["']$/g, "")
 
-    // Validação final: se exceder limite, comprimir com segurança
     const finalSyllables = countSyllables(finalLine)
     if (finalSyllables > metrics.maxSyllables) {
       return this.safeCompress(finalLine, metrics.maxSyllables)
@@ -263,7 +290,6 @@ RETORNE APENAS A LINHA FINAL (sem explicações, sem aspas, sem comentários).`
       }
     }
 
-    // Se não conseguiu comprimir, retorna original
     // Melhor ter linha longa que palavra quebrada
     return line
   }
