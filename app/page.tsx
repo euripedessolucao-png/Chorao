@@ -2,27 +2,8 @@ import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Music, RefreshCw, FolderOpen, Pencil, BarChart3 } from "lucide-react"
+import { Music, RefreshCw, FolderOpen, BarChart3 } from "lucide-react"
 import Link from "next/link"
-
-const mockProjects = [
-  {
-    id: "1",
-    title: "Me Achei de Novo",
-    genre: "Sertanejo Moderno",
-    date: "06/10/2025",
-    lyrics:
-      "[VERSE 1] [INTRO] [PART A – Verse 1] C Sua voz me calava, eu não falava nada, D Eu só via o seu mundo, minha luz apagada...",
-  },
-  {
-    id: "2",
-    title: "Metade Roubada",
-    genre: "Sertanejo Moderno",
-    date: "06/10/2025",
-    lyrics: "[INTRO] [VERSE] G A comida não tem gosto D Sem você aqui. Em Ando sem rumo C Nem sei por onde ir...",
-  },
-]
 
 export default function Home() {
   return (
@@ -46,42 +27,6 @@ export default function Home() {
               Criar Nova Letra
             </Button>
           </Link>
-        </div>
-      </section>
-
-      <section className="py-16 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-3xl font-bold">Seus Projetos</h2>
-            <Link href="/criar">
-              <Button variant="outline">+ Novo Projeto</Button>
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {mockProjects.map((project) => (
-              <Card key={project.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex items-center justify-between mb-2">
-                    <Badge variant="secondary" className="text-xs">
-                      {project.date}
-                    </Badge>
-                    <Badge>{project.genre}</Badge>
-                  </div>
-                  <CardTitle className="text-lg">{project.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground line-clamp-3 mb-4 font-mono">{project.lyrics}</p>
-                  <Link href="/editar">
-                    <Button variant="outline" size="sm" className="w-full bg-transparent">
-                      <Pencil className="mr-2 h-4 w-4" />
-                      Editar Letra
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
         </div>
       </section>
 
