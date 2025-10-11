@@ -373,16 +373,19 @@ export default function EditarPage() {
                 <CardTitle className="text-base">Editor</CardTitle>
                 <div className="flex gap-2 mt-2">
                   <Button variant="outline" size="sm" className="flex-1 bg-transparent">
-                    <Sparkles className="h-3 w-3" />
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    <span className="text-xs">Sugerir</span>
                   </Button>
                   <Button variant="outline" size="sm" className="flex-1 bg-transparent">
-                    📊
+                    <span className="text-xs">📊 Validar</span>
                   </Button>
                   <Button variant="outline" size="sm" className="flex-1 bg-transparent">
-                    <RefreshCw className="h-3 w-3" />
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                    <span className="text-xs">Refazer</span>
                   </Button>
                   <Button variant="outline" size="sm" onClick={handleClear}>
-                    <Trash2 className="h-3 w-3" />
+                    <Trash2 className="h-3 w-3 mr-1" />
+                    <span className="text-xs">Limpar</span>
                   </Button>
                 </div>
               </CardHeader>
@@ -407,10 +410,12 @@ export default function EditarPage() {
 
                 <div className="flex gap-2">
                   <Button size="sm" className="flex-1" onClick={handleCopy}>
-                    <Copy className="h-3 w-3" />
+                    <Copy className="h-3 w-3 mr-1" />
+                    Copiar
                   </Button>
                   <Button size="sm" className="flex-1 bg-transparent" variant="outline" onClick={handleSave}>
-                    <Save className="h-3 w-3" />
+                    <Save className="h-3 w-3 mr-1" />
+                    Salvar
                   </Button>
                 </div>
               </CardContent>

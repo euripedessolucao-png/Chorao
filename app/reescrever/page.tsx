@@ -506,31 +506,43 @@ export default function ReescreverPage() {
               <CardContent className="space-y-2">
                 <Button
                   variant="outline"
-                  className="w-full bg-transparent"
+                  className="w-full bg-transparent justify-start"
                   size="sm"
                   onClick={() => setShowHookDialog(true)}
                   disabled={isRewriting || isGeneratingChorus}
                 >
-                  <Zap className="h-4 w-4" />
+                  <Zap className="h-4 w-4 mr-2" />
+                  Gerador de Hook
                 </Button>
 
                 <Button
                   variant="outline"
-                  className="w-full bg-transparent"
+                  className="w-full bg-transparent justify-start"
                   size="sm"
                   onClick={handleGenerateChorus}
                   disabled={!genre || !theme || isRewriting || isGeneratingChorus}
                 >
-                  <Wand2 className="h-4 w-4" />
+                  <Wand2 className="h-4 w-4 mr-2" />
+                  Gerar Refrão
                 </Button>
 
                 <Button
-                  className="w-full"
+                  className="w-full justify-start"
                   size="sm"
                   onClick={handleRewriteLyrics}
                   disabled={isRewriting || !originalLyrics || !genre}
                 >
-                  {isRewriting ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                  {isRewriting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Reescrevendo...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Reescrever Letra
+                    </>
+                  )}
                 </Button>
 
                 <div className="border-t pt-2">
@@ -597,10 +609,12 @@ export default function ReescreverPage() {
                     }}
                     disabled={!lyrics}
                   >
-                    <Copy className="h-3 w-3" />
+                    <Copy className="h-3 w-3 mr-1" />
+                    Copiar
                   </Button>
                   <Button size="sm" className="flex-1" onClick={handleSaveProject} disabled={!title || !lyrics}>
-                    <Save className="h-3 w-3" />
+                    <Save className="h-3 w-3 mr-1" />
+                    Salvar
                   </Button>
                 </div>
               </CardContent>
