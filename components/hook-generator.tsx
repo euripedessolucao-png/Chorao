@@ -68,10 +68,10 @@ export function HookGenerator() {
     return "text-red-600"
   }
 
-  const getScoreVariant = (score: number): "default" | "secondary" | "destructive" => {
+  const getScoreVariant = (score: number): "default" | "secondary" | "outline" => {
     if (score >= 80) return "default"
     if (score >= 60) return "secondary"
-    return "destructive"
+    return "outline"
   }
 
   return (
