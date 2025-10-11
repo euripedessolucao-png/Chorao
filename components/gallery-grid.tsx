@@ -30,14 +30,12 @@ export function GalleryGrid() {
           setProjects(parsed)
         }
       } catch (error) {
-        console.error("[v0] Error loading projects:", error)
         toast.error("Erro ao carregar projetos")
       }
     }
 
     loadProjects()
 
-    // Atualiza quando há mudanças no localStorage
     const handleStorageChange = () => {
       loadProjects()
     }
@@ -67,7 +65,6 @@ export function GalleryGrid() {
       setProjects(updatedProjects)
       toast.success("Projeto deletado com sucesso!")
     } catch (error) {
-      console.error("[v0] Error deleting project:", error)
       toast.error("Erro ao deletar projeto")
     }
   }

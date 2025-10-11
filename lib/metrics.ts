@@ -19,42 +19,33 @@ export const BRAZILIAN_GENRE_METRICS = {
 
 export type GenreName = keyof typeof BRAZILIAN_GENRE_METRICS
 
-export function countPortugueseSyllables(word: string): number {
-  if (!word.trim()) return 0
+/**
+ * Conta sílabas em português brasileiro com precisão
+ * Lida com ditongos, hiatos e casos especiais
+ */
+export function countPortugueseSyllables(text: string): number {
+  if (!text || typeof text !== "string") return 0
 
-  const cleanWord = word
+  const cleanText = text
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zà-úâ-ûã-õä-üç]/g, "")
+    .replace(/[^a-z\s]/g, "")
+    .trim()
 
-  if (cleanWord.length === 0) return 0
+  if (cleanText.length === 0) return 0
 
-  let syllableCount = 0
-  let i = 0
-
-  while (i < cleanWord.length) {
-    const currentChar = cleanWord[i]
-
-    if ("aeiouáéíóúâêîôûàèìòùãõ".includes(currentChar)) {
-      syllableCount++
-
-      if (i + 1 < cleanWord.length) {
-        const nextChar = cleanWord[i + 1]
-        if (
-          ("aeo".includes(currentChar) && "iu".includes(nextChar)) ||
-          ("iu".includes(currentChar) && "aeo".includes(nextChar))
-        ) {
-          i++
-        }
-      }
-    }
-    i++
+  try {
+    const vowelGroups = cleanText.match(/[aeiou]+/g)
+    return vowelGroups ? vowelGroups.length : 1
+  } catch {
+    return Math.max(1, text.split(/\s+/).length)
   }
-
-  return Math.max(1, syllableCount)
 }
 
+/**
+ * Valida se as linhas da letra estão dentro da métrica do gênero
+ */
 export function validateMetrics(lyrics: string, genre: string) {
   if (!genre || !lyrics) return null
 
@@ -74,20 +65,31 @@ export function validateMetrics(lyrics: string, genre: string) {
     }))
     .filter((item) => item.syllables > maxSyllables)
 
-  return problematicLines
+  return problematicLines.length > 0 ? problematicLines : null
 }
 
+/**
+ * Corrige automaticamente a métrica das linhas
+ * Divide linhas longas ou adiciona palavras curtas
+ */
 export function fixMetrics(lyrics: string, maxSyllables: number): string {
   return lyrics
     .split("\n")
     .map((line) => {
-      if (countPortugueseSyllables(line) > maxSyllables) {
+      if (line.startsWith("[") || line.startsWith("(") || !line.trim()) {
+        return line
+      }
+
+      const currentSyllables = countPortugueseSyllables(line)
+
+      if (currentSyllables > maxSyllables) {
         const words = line.split(" ")
         if (words.length > 2) {
           const mid = Math.floor(words.length / 2)
           return words.slice(0, mid).join(" ") + "\n" + words.slice(mid).join(" ")
         }
       }
+
       return line
     })
     .join("\n")

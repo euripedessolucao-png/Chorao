@@ -82,7 +82,7 @@ export default function EditarPage() {
           description: `"${project.title}" foi carregado no editor.`,
         })
       } catch (error) {
-        console.error("Erro ao carregar projeto:", error)
+        toast.error("Erro ao carregar projeto")
       }
     }
   }, [])
@@ -102,7 +102,6 @@ export default function EditarPage() {
     const projects = JSON.parse(localStorage.getItem("projects") || "[]")
 
     if (projectId) {
-      // Atualizar projeto existente
       const index = projects.findIndex((p: any) => p.id === projectId)
       if (index !== -1) {
         projects[index] = {
@@ -114,7 +113,6 @@ export default function EditarPage() {
         }
       }
     } else {
-      // Criar novo projeto
       const newProject = {
         id: Date.now(),
         title,
@@ -160,7 +158,7 @@ export default function EditarPage() {
     <div className="min-h-screen bg-background">
       <Navigation />
 
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto px-4 py-6 pt-24">
         <h1 className="text-2xl font-bold text-center mb-6">
           {projectId ? `Editando: ${title || "Sem título"}` : "Modo Editar com Assistente"}
         </h1>
@@ -175,7 +173,6 @@ export default function EditarPage() {
               </p>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
-              {/* Diário de Inspiração */}
               <div className="border rounded-lg p-3 bg-purple-50/50 space-y-2">
                 <Label className="text-xs font-semibold">Diário de Inspiração</Label>
                 <p className="text-xs text-muted-foreground">Adicione textos, áudios, imagens ou links.</p>
@@ -210,7 +207,6 @@ export default function EditarPage() {
                 </Tabs>
               </div>
 
-              {/* Inspiração Literária Global */}
               <div className="border rounded-lg p-3 bg-purple-50/50 space-y-2">
                 <Label className="text-xs font-semibold">Inspiração Literária Global</Label>
                 <p className="text-xs text-muted-foreground">Busque referências criativas em best-sellers.</p>
@@ -227,7 +223,6 @@ export default function EditarPage() {
                 </div>
               </div>
 
-              {/* Metáforas Inteligentes */}
               <div className="border rounded-lg p-3 bg-purple-50/50 space-y-2">
                 <Label className="text-xs font-semibold">Metáforas Inteligentes</Label>
                 <p className="text-xs text-muted-foreground">Busque metáforas por tema.</p>
@@ -244,7 +239,6 @@ export default function EditarPage() {
                 </div>
               </div>
 
-              {/* Sensações & Emoções */}
               <div className="border rounded-lg p-3 bg-purple-50/50 space-y-2">
                 <Label className="text-xs font-semibold">Sensações & Emoções</Label>
                 <p className="text-xs text-muted-foreground">O "como" a história será contada.</p>
@@ -270,7 +264,6 @@ export default function EditarPage() {
               <CardTitle className="text-base">Ferramentas de Edição</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
-              {/* Preferências do Modo Assistente */}
               <div className="border rounded-lg p-3 space-y-2">
                 <Label className="text-xs font-semibold">Preferências do Modo Assistente</Label>
                 <div className="space-y-2">
@@ -307,7 +300,6 @@ export default function EditarPage() {
                 </div>
               </div>
 
-              {/* Gênero e Humor */}
               <div className="border rounded-lg p-3 space-y-2">
                 <Label className="text-xs font-semibold">Gênero (para sugestões)</Label>
                 <Select value={genre} onValueChange={setGenre}>
@@ -338,7 +330,6 @@ export default function EditarPage() {
                 </Select>
               </div>
 
-              {/* Ferramentas */}
               <div className="border rounded-lg p-3 space-y-2">
                 <Label className="text-xs font-semibold">Ferramentas</Label>
                 <div className="space-y-1">
@@ -357,7 +348,6 @@ export default function EditarPage() {
                 </div>
               </div>
 
-              {/* Texto Selecionado */}
               <div className="border rounded-lg p-3 space-y-2">
                 <Label className="text-xs font-semibold">Texto Selecionado</Label>
                 <p className="text-xs text-muted-foreground">Selecione texto para ativar estas opções</p>
@@ -369,7 +359,6 @@ export default function EditarPage() {
                 </Button>
               </div>
 
-              {/* Trechos Salvos */}
               <div className="border rounded-lg p-3 space-y-2">
                 <Label className="text-xs font-semibold">Trechos Salvos</Label>
                 <p className="text-xs text-muted-foreground text-center">Nenhum trecho salvo encontrado</p>
