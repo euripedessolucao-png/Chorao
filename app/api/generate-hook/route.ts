@@ -3,13 +3,23 @@ import { generateText } from "ai"
 
 export async function POST(request: Request) {
   try {
-    const { lyrics } = await request.json()
+    const { lyrics, additionalRequirements } = await request.json()
 
     if (!lyrics) {
       return NextResponse.json({ error: "Letra é obrigatória" }, { status: 400 })
     }
 
-    const prompt = `Você é um especialista em hooks musicais e viralidade. Analise esta letra e gere hooks comerciais.
+    const languageRule = additionalRequirements
+      ? `ATENÇÃO: Os requisitos adicionais do compositor têm PRIORIDADE ABSOLUTA sobre qualquer regra:\n${additionalRequirements}\n\n`
+      : `REGRA UNIVERSAL DE LINGUAGEM (INVIOLÁVEL):
+- Use APENAS palavras simples e coloquiais do dia-a-dia
+- Fale como um humano comum fala na conversa cotidiana
+- PROIBIDO: vocabulário rebuscado, poético, literário ou formal
+- PERMITIDO: gírias, contrações, expressões populares
+
+`
+
+    const prompt = `${languageRule}Você é um especialista em hooks musicais e viralidade. Analise esta letra e gere hooks comerciais.
 
 LETRA PARA ANALISAR:
 ${lyrics}
@@ -56,12 +66,11 @@ FORMATO DE RESPOSTA EM JSON:
 Retorne APENAS o JSON, sem markdown ou texto adicional.`
 
     const { text } = await generateText({
-      model: "openai/gpt-4o-mini",
+      model: "openai/gpt-4o",
       prompt: prompt,
       temperature: 0.8,
     })
 
-    // Parse do JSON retornado pela IA
     let parsedResult
     try {
       parsedResult = JSON.parse(text)

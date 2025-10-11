@@ -31,6 +31,7 @@ export class ThirdWayEngine {
     genreRules: any,
     context: string,
     performanceMode = false,
+    additionalRequirements?: string,
   ): Promise<string> {
     // Normalizar nome do gênero
     const normalizedGenre = genre.includes("Bachata") ? "Bachata Moderna" : genre
@@ -38,10 +39,24 @@ export class ThirdWayEngine {
 
     try {
       // VARIAÇÃO A: Métrica perfeita (restrição rígida de sílabas)
-      const variationA = await this.forceMetricVariation(originalLine, genre, genreRules, metrics, context)
+      const variationA = await this.forceMetricVariation(
+        originalLine,
+        genre,
+        genreRules,
+        metrics,
+        context,
+        additionalRequirements,
+      )
 
       // VARIAÇÃO B: Criatividade (restrição rígida de linguagem)
-      const variationB = await this.forceCreativeVariation(originalLine, genre, genreRules, metrics, context)
+      const variationB = await this.forceCreativeVariation(
+        originalLine,
+        genre,
+        genreRules,
+        metrics,
+        context,
+        additionalRequirements,
+      )
 
       // SÍNTESE: Combinar sob todas as restrições
       const finalLine = await this.forceFinalSynthesis(
@@ -52,6 +67,7 @@ export class ThirdWayEngine {
         genreRules,
         metrics,
         context,
+        additionalRequirements,
       )
 
       return finalLine
@@ -67,10 +83,19 @@ export class ThirdWayEngine {
     genreRules: any,
     metrics: any,
     context: string,
+    additionalRequirements?: string,
   ): Promise<string> {
     const forbiddenList = genreRules?.language_rules?.forbidden
       ? Object.values(genreRules.language_rules.forbidden).flat()
       : []
+
+    const universalRule =
+      genreRules?.language_rules?.universal_rule ||
+      "SEMPRE use palavras simples e coloquiais, faladas como um humano no dia-a-dia. Evite vocabulário rebuscado, poético ou formal."
+
+    const languageOverride = additionalRequirements
+      ? `\n\nEXCEÇÃO: O compositor especificou requisitos adicionais: "${additionalRequirements}". Siga estas instruções específicas.`
+      : `\n\nREGRA UNIVERSAL INVIOLÁVEIS: ${universalRule}`
 
     const prompt = `RESTRIÇÕES ABSOLUTAS - VARIAÇÃO A (MÉTRICA):
 
@@ -84,6 +109,7 @@ REGRAS INVIOLÁVEIS:
 3. NUNCA quebre palavras (ex: "nãsãnossas" é PROIBIDO)
 4. NUNCA use: ${forbiddenList.slice(0, 10).join(", ")}
 5. Mantenha o significado emocional da linha original
+6. PALAVRAS SIMPLES E COLOQUIAIS - fale como uma pessoa comum fala no dia-a-dia${languageOverride}
 
 CONTEXTO: ${context}
 
@@ -104,6 +130,7 @@ RETORNE APENAS A LINHA REESCRITA (sem explicações, sem aspas, sem comentários
     genreRules: any,
     metrics: any,
     context: string,
+    additionalRequirements?: string,
   ): Promise<string> {
     const allowedList = genreRules?.language_rules?.allowed
       ? Object.values(genreRules.language_rules.allowed).flat()
@@ -111,6 +138,14 @@ RETORNE APENAS A LINHA REESCRITA (sem explicações, sem aspas, sem comentários
     const forbiddenList = genreRules?.language_rules?.forbidden
       ? Object.values(genreRules.language_rules.forbidden).flat()
       : []
+
+    const universalRule =
+      genreRules?.language_rules?.universal_rule ||
+      "SEMPRE use palavras simples e coloquiais, faladas como um humano no dia-a-dia. Evite vocabulário rebuscado, poético ou formal."
+
+    const languageOverride = additionalRequirements
+      ? `\n\nEXCEÇÃO: O compositor especificou requisitos adicionais: "${additionalRequirements}". Siga estas instruções específicas.`
+      : `\n\nREGRA UNIVERSAL INVIOLÁVEIS: ${universalRule}`
 
     const prompt = `RESTRIÇÕES ABSOLUTAS - VARIAÇÃO B (CRIATIVIDADE):
 
@@ -125,6 +160,7 @@ REGRAS INVIOLÁVEIS:
 4. NUNCA quebre palavras
 5. Evite clichês de IA: "coração partido", "alma vazia", "dor profunda"
 6. Use imagens CONCRETAS e VISUAIS (não abstratas)
+7. PALAVRAS SIMPLES DO DIA-A-DIA - como uma pessoa comum fala${languageOverride}
 
 CONTEXTO: ${context}
 
@@ -147,12 +183,21 @@ RETORNE APENAS A LINHA REESCRITA (sem explicações, sem aspas, sem comentários
     genreRules: any,
     metrics: any,
     context: string,
+    additionalRequirements?: string,
   ): Promise<string> {
     const syllablesA = countSyllables(variationA)
     const syllablesB = countSyllables(variationB)
     const forbiddenList = genreRules?.language_rules?.forbidden
       ? Object.values(genreRules.language_rules.forbidden).flat()
       : []
+
+    const universalRule =
+      genreRules?.language_rules?.universal_rule ||
+      "SEMPRE use palavras simples e coloquiais, faladas como um humano no dia-a-dia. Evite vocabulário rebuscado, poético ou formal."
+
+    const languageOverride = additionalRequirements
+      ? `\n\nEXCEÇÃO: O compositor especificou requisitos adicionais: "${additionalRequirements}". Siga estas instruções específicas.`
+      : `\n\nREGRA UNIVERSAL INVIOLÁVEIS: ${universalRule}`
 
     const prompt = `SÍNTESE FINAL - TODAS AS RESTRIÇÕES APLICADAS:
 
@@ -168,6 +213,7 @@ RESTRIÇÕES ABSOLUTAS:
 3. NUNCA quebre palavras (mantenha espaços entre palavras)
 4. Use a métrica de A + a criatividade de B
 5. Palavras COMPLETAS e CORRETAS sempre
+6. LINGUAGEM SIMPLES E COLOQUIAL - fale como uma pessoa comum no dia-a-dia${languageOverride}
 
 GÊNERO: ${genre}
 CONTEXTO: ${context}

@@ -15,6 +15,8 @@ export const SERTANEJO_MODERNO_2024 = {
     narrative_arc: "Início (fim do amor) → Meio (superação com atitude) → Fim (recomeço com dignidade).",
   },
   language_rules: {
+    universal_rule:
+      "SEMPRE use palavras simples e coloquiais, faladas como um humano no dia-a-dia. Evite vocabulário rebuscado, poético ou formal, EXCETO se especificado em 'Requisitos Adicionais'.",
     allowed: {
       concrete_objects: [
         "biquíni",

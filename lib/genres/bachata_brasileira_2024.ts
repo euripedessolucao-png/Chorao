@@ -19,6 +19,8 @@ export const BACHATA_BRASILEIRA_2024 = {
     narrative_arc: "Encontro → Dança → Saudade ou recomeço.",
   },
   language_rules: {
+    universal_rule:
+      "SEMPRE use palavras simples e coloquiais, faladas como um humano no dia-a-dia. Evite vocabulário rebuscado, poético ou formal, EXCETO se especificado em 'Requisitos Adicionais'.",
     allowed: {
       concrete_objects: ["dança", "luz baixa", "corpo", "música", "noite", "beijo", "ritmo"],
       actions: ["dançar colado", "sentir seu calor", "fechar os olhos", "deixar levar"],
@@ -28,7 +30,8 @@ export const BACHATA_BRASILEIRA_2024 = {
       vulgarity: ["corpo perfeito", "sexo explícito"],
       dramatic_cliches: ["não vivo sem você", "mundo desabou"],
     },
-    style: "Romântico, sensual, com metáforas suaves.",
+    style:
+      "Romântico, sensual, com linguagem simples e cotidiana. Use palavras que as pessoas falam no dia-a-dia, não poesia rebuscada.",
   },
   structure_rules: {
     verse: { lines: 4 },

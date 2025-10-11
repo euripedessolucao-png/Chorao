@@ -14,6 +14,8 @@ export const FORRO_2024 = {
     narrative_arc: "Convite para dançar → História de amor simples → Volta para a pista.",
   },
   language_rules: {
+    universal_rule:
+      "SEMPRE use palavras simples e coloquiais, faladas como um humano no dia-a-dia. Evite vocabulário rebuscado, poético ou formal, EXCETO se especificado em 'Requisitos Adicionais'.",
     allowed: {
       concrete_objects: ["sanfona", "triângulo", "zabumba", "piseiro", "forrozão", "quintal", "luar", "baião"],
       actions: ["dançar colado", "chamar pra pista", "beber um licor", "curtir o luar"],
@@ -23,7 +25,8 @@ export const FORRO_2024 = {
       dramatic_cliches: ["coração partido", "lágrimas no copo", "mundo desabou", "não vivo sem você"],
       passive_victimhood: ["só penso em você", "meu peito aperta", "não consigo seguir"],
     },
-    style: "Nordestino, coloquial, com expressões regionais ('véio', 'bicho', 'arretado').",
+    style:
+      "Nordestino, coloquial, com expressões regionais ('véio', 'bicho', 'arretado'). Use palavras simples do dia-a-dia.",
   },
   structure_rules: {
     verse: { lines: 4 },

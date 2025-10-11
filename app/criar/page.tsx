@@ -113,6 +113,7 @@ export default function CriarPage() {
           emocoes: selectedEmotions,
           titulo: title,
           formattingStyle: formattingStyle,
+          additionalRequirements: additionalReqs, // Enviando requisitos adicionais
           metrics:
             BRAZILIAN_GENRE_METRICS[genre as keyof typeof BRAZILIAN_GENRE_METRICS] || BRAZILIAN_GENRE_METRICS.default,
         }),
@@ -125,6 +126,9 @@ export default function CriarPage() {
       }
 
       setLyrics(data.letra)
+      if (data.titulo && !title) {
+        setTitle(data.titulo)
+      }
       toast.success("Letra gerada com sucesso!")
     } catch (error) {
       console.error("[v0] Error generating lyrics:", error)

@@ -199,6 +199,7 @@ export default function ReescreverPage() {
           conservarImagens: true,
           polirSemMexer: false,
           formattingStyle: formattingStyle,
+          additionalRequirements: additionalReqs, // Enviando requisitos adicionais
           metrics:
             BRAZILIAN_GENRE_METRICS[genre as keyof typeof BRAZILIAN_GENRE_METRICS] || BRAZILIAN_GENRE_METRICS.default,
         }),
@@ -211,6 +212,9 @@ export default function ReescreverPage() {
       }
 
       setLyrics(data.letra)
+      if (data.titulo && !title) {
+        setTitle(data.titulo)
+      }
       toast.success("Letra reescrita com sucesso!")
     } catch (error) {
       console.error("[v0] Error rewriting lyrics:", error)

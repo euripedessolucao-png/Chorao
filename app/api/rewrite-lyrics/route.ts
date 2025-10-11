@@ -8,13 +8,20 @@ import { GENRE_CONFIGS } from "@/lib/genre-config"
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { letraOriginal, generoConversao, conservarImagens, polirSemMexer, metrics, formattingStyle } = body
+    const {
+      letraOriginal,
+      generoConversao,
+      conservarImagens,
+      polirSemMexer,
+      metrics,
+      formattingStyle,
+      additionalRequirements,
+    } = body
 
     const isBachata = generoConversao.toLowerCase().includes("bachata")
     const isSertanejo = generoConversao.toLowerCase().includes("sertanejo")
     const isPerformanceMode = formattingStyle === "performatico"
 
-    // Obter configuração do gênero
     const genreConfig = isBachata
       ? BACHATA_BRASILEIRA_2024
       : isSertanejo
@@ -26,6 +33,18 @@ export async function POST(request: Request) {
 
     const hasPerformanceMode =
       /\[(?:INTRO|VERSE|CHORUS|BRIDGE|OUTRO)\s*-\s*[^\]]+\]/.test(letraOriginal) || isPerformanceMode
+
+    const languageRule = additionalRequirements
+      ? `ATENÇÃO: Os requisitos adicionais do compositor têm PRIORIDADE ABSOLUTA sobre qualquer regra abaixo:\n${additionalRequirements}\n\n`
+      : `REGRA UNIVERSAL DE LINGUAGEM (INVIOLÁVEL):
+- Use APENAS palavras simples e coloquiais do dia-a-dia
+- Fale como um humano comum fala na conversa cotidiana
+- PROIBIDO: vocabulário rebuscado, poético, literário ou formal
+- PERMITIDO: gírias, contrações, expressões populares
+- Exemplo BOM: "tô", "cê", "pra", "né", "mano"
+- Exemplo RUIM: "outono da alma", "florescer", "bonança"
+
+`
 
     const metricInfo = metrics
       ? `\n\nMÉTRICA DO GÊNERO:
@@ -84,7 +103,7 @@ Título: [título derivado do refrão]
 
 (Instruments: [lista de instrumentos] | BPM: ${metrics?.bpm || 100} | Style: ${generoConversao})`
 
-    const prompt = `Você é um compositor profissional especializado em ${generoConversao}.
+    const prompt = `${languageRule}Você é um compositor profissional especializado em ${generoConversao}.
 
 LETRA ORIGINAL PARA REESCREVER:
 ${letraOriginal}
@@ -126,12 +145,10 @@ ${isBachata ? "- CADA LINHA DEVE TER NO MÁXIMO 12 SÍLABAS" : ""}
     const lines = text.split("\n")
     const processedLines = await Promise.all(
       lines.map(async (line, index) => {
-        // Pular cabeçalhos, instruções e linhas vazias
         if (line.startsWith("[") || line.startsWith("(") || line.startsWith("Título:") || !line.trim()) {
           return line
         }
 
-        // Aplicar Terceira Via para melhorar a linha
         try {
           const improvedLine = await ThirdWayEngine.generateThirdWayLine(
             line,
@@ -139,18 +156,30 @@ ${isBachata ? "- CADA LINHA DEVE TER NO MÁXIMO 12 SÍLABAS" : ""}
             genreConfig,
             `Reescrevendo linha ${index + 1} de ${generoConversao}`,
             isPerformanceMode,
+            additionalRequirements,
           )
           return improvedLine
         } catch (error) {
           console.error(`[v0] Erro ao processar linha ${index + 1}:`, error)
-          return line // Retorna linha original em caso de erro
+          return line
         }
       }),
     )
 
     let finalLyrics = processedLines.join("\n")
 
-    // Garantir lista de instrumentos no final
+    let extractedTitle = ""
+    const titleMatch = finalLyrics.match(/^Título:\s*(.+)$/m)
+    if (titleMatch?.[1]) {
+      extractedTitle = titleMatch[1].trim()
+    } else {
+      const chorusMatch = finalLyrics.match(/\[(?:CHORUS|REFRÃO)[^\]]*\]\s*\n([^\n]+)/i)
+      if (chorusMatch?.[1]) {
+        extractedTitle = chorusMatch[1].trim().split(" ").slice(0, 4).join(" ")
+        finalLyrics = `Título: ${extractedTitle}\n\n${finalLyrics}`
+      }
+    }
+
     if (!finalLyrics.includes("(Instruments:")) {
       const instrumentList =
         originalInstruments ||
@@ -158,7 +187,7 @@ ${isBachata ? "- CADA LINHA DEVE TER NO MÁXIMO 12 SÍLABAS" : ""}
       finalLyrics = finalLyrics + "\n\n" + instrumentList
     }
 
-    return NextResponse.json({ letra: finalLyrics })
+    return NextResponse.json({ letra: finalLyrics, titulo: extractedTitle })
   } catch (error) {
     console.error("[v0] Error rewriting lyrics:", error)
 

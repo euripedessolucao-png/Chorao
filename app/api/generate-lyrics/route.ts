@@ -21,6 +21,7 @@ export async function POST(request: Request) {
       metrics,
       chorusSelected,
       formattingStyle,
+      additionalRequirements,
     } = body
 
     const isBachata = genero.toLowerCase().includes("bachata")
@@ -40,7 +41,19 @@ export async function POST(request: Request) {
       ? Object.values(genreConfig.language_rules.allowed).flat()
       : []
 
-    const prompt = `COMPOSITOR PROFISSIONAL - RESTRIÇÕES ABSOLUTAS
+    const languageRule = additionalRequirements
+      ? `ATENÇÃO: Os requisitos adicionais do compositor têm PRIORIDADE ABSOLUTA sobre qualquer regra abaixo:\n${additionalRequirements}\n\n`
+      : `REGRA UNIVERSAL DE LINGUAGEM (INVIOLÁVEL):
+- Use APENAS palavras simples e coloquiais do dia-a-dia
+- Fale como um humano comum fala na conversa cotidiana
+- PROIBIDO: vocabulário rebuscado, poético, literário ou formal
+- PERMITIDO: gírias, contrações, expressões populares
+- Exemplo BOM: "tô", "cê", "pra", "né", "mano"
+- Exemplo RUIM: "outono da alma", "florescer", "bonança"
+
+`
+
+    const prompt = `${languageRule}COMPOSITOR PROFISSIONAL - RESTRIÇÕES ABSOLUTAS
 
 GÊNERO: ${genero}
 TEMA: ${tema || "universal"}
@@ -123,7 +136,6 @@ RETORNE APENAS A LETRA FORMATADA (sem comentários, sem explicações).`
     const lines = text.split("\n")
     const processedLines = await Promise.all(
       lines.map(async (line, index) => {
-        // Pular headers, instruções e linhas vazias
         if (line.startsWith("[") || line.startsWith("(") || line.startsWith("Título:") || !line.trim()) {
           return line
         }
@@ -135,6 +147,7 @@ RETORNE APENAS A LETRA FORMATADA (sem comentários, sem explicações).`
             genreConfig,
             `${tema} - linha ${index + 1}`,
             isPerformanceMode,
+            additionalRequirements,
           )
         } catch (error) {
           console.error(`[v0] Erro Terceira Via linha ${index + 1}:`, error)
@@ -145,16 +158,18 @@ RETORNE APENAS A LETRA FORMATADA (sem comentários, sem explicações).`
 
     let finalLyrics = processedLines.join("\n")
 
-    // Garantir título
-    if (!titulo && !finalLyrics.includes("Título:")) {
+    let extractedTitle = titulo || ""
+    const titleMatch = finalLyrics.match(/^Título:\s*(.+)$/m)
+    if (titleMatch?.[1]) {
+      extractedTitle = titleMatch[1].trim()
+    } else if (!extractedTitle) {
       const chorusMatch = finalLyrics.match(/\[(?:CHORUS|REFRÃO)[^\]]*\]\s*\n([^\n]+)/i)
       if (chorusMatch?.[1]) {
-        const titleWords = chorusMatch[1].trim().split(" ").slice(0, 4).join(" ")
-        finalLyrics = `Título: ${titleWords}\n\n${finalLyrics}`
+        extractedTitle = chorusMatch[1].trim().split(" ").slice(0, 4).join(" ")
+        finalLyrics = `Título: ${extractedTitle}\n\n${finalLyrics}`
       }
     }
 
-    // Garantir lista de instrumentos no modo performático
     if (isPerformanceMode && !finalLyrics.includes("(Instruments:")) {
       const instruments = isBachata
         ? "electric guitar, synthesizer, electronic drums, accordion"
@@ -162,7 +177,7 @@ RETORNE APENAS A LETRA FORMATADA (sem comentários, sem explicações).`
       finalLyrics += `\n\n(Instruments: [${instruments}] | BPM: ${metrics?.bpm || 100} | Style: ${genero})`
     }
 
-    return NextResponse.json({ letra: finalLyrics })
+    return NextResponse.json({ letra: finalLyrics, titulo: extractedTitle })
   } catch (error) {
     console.error("[v0] Erro ao gerar letra:", error)
     return NextResponse.json(

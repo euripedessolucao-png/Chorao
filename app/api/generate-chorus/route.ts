@@ -3,24 +3,35 @@ import { generateText } from "ai"
 
 export async function POST(request: NextRequest) {
   try {
-    const { genre, theme, mood } = await request.json()
+    const { genre, theme, mood, additionalRequirements } = await request.json()
 
     if (!genre || !theme) {
       return NextResponse.json({ error: "Gênero e tema são obrigatórios" }, { status: 400 })
     }
+
+    const languageRule = additionalRequirements
+      ? `ATENÇÃO: Os requisitos adicionais do compositor têm PRIORIDADE ABSOLUTA sobre qualquer regra:\n${additionalRequirements}\n\n`
+      : `REGRA UNIVERSAL DE LINGUAGEM (INVIOLÁVEL):
+- Use APENAS palavras simples e coloquiais do dia-a-dia
+- Fale como um humano comum fala na conversa cotidiana
+- PROIBIDO: vocabulário rebuscado, poético, literário ou formal
+- PERMITIDO: gírias, contrações, expressões populares
+- Exemplo BOM: "tô", "cê", "pra", "né", "mano"
+- Exemplo RUIM: "outono da alma", "florescer", "bonança"
+
+`
 
     const isSertanejoModerno = genre.toLowerCase().includes("sertanejo moderno")
 
     let prompt: string
 
     if (isSertanejoModerno) {
-      // Prompt específico para Sertanejo Moderno 2024-2025
       const isFeminejo = genre.toLowerCase().includes("feminino")
       const tone = isFeminejo
         ? "Empoderamento com leveza, ironia suave, celebração da autonomia"
         : "Vulnerabilidade com força, superação com amigos, respeito no amor"
 
-      prompt = `Você é um compositor profissional de sertanejo moderno com sucessos nas paradas do Spotify, TikTok e rádios brasileiras.
+      prompt = `${languageRule}Você é um compositor profissional de sertanejo moderno com sucessos nas paradas do Spotify, TikTok e rádios brasileiras.
 
 TAREFA: Gere 5 opções de refrão grudento, radiofônico e viralizável para uma música com as seguintes características:
 - Gênero: ${genre}
@@ -85,8 +96,7 @@ IMPORTANTE:
 
 Gere as 5 variações agora:`
     } else {
-      // Prompt genérico para outros gêneros
-      prompt = `Você é um compositor profissional especializado em criar refrões comerciais e grudentos.
+      prompt = `${languageRule}Você é um compositor profissional especializado em criar refrões comerciais e grudentos.
 
 TAREFA: Gere 5 variações de refrão para uma música com as seguintes características:
 - Gênero: ${genre}
@@ -128,12 +138,11 @@ Gere as 5 variações agora:`
     }
 
     const { text } = await generateText({
-      model: "openai/gpt-4o-mini",
+      model: "openai/gpt-4o",
       prompt,
       temperature: 0.8,
     })
 
-    // Parse the JSON response
     const jsonMatch = text.match(/\{[\s\S]*\}/)
     if (!jsonMatch) {
       throw new Error("Resposta da IA não está no formato JSON esperado")

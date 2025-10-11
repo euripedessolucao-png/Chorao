@@ -31,6 +31,8 @@ export const funkRules2024 = {
   // REGRAS DE LINGUAGEM
   // ============================================================================
   languageRules: {
+    universalRule:
+      "SEMPRE use palavras simples e coloquiais, faladas como um humano no dia-a-dia. Evite vocabulário rebuscado, poético ou formal, EXCETO se especificado em 'Requisitos Adicionais'.",
     allowed: {
       concreteObjects: ["paredão", "rolê", "zap", "story", "look", "beat", "flow", "baile", "favela", "quebrada"],
       actions: [
@@ -65,7 +67,8 @@ export const funkRules2024 = {
     },
 
     style: {
-      description: "Direto, repetitivo, com gírias urbanas",
+      description:
+        "Direto, repetitivo, com gírias urbanas do dia-a-dia. Use palavras que as pessoas falam na rua, não vocabulário formal.",
       slang: ["mano", "véio", "bicho", "truta", "parça"],
       tone: "Confiante, empoderado, festivo mas consciente",
     },
