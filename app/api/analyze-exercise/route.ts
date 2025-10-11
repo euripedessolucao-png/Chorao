@@ -13,7 +13,6 @@ export async function POST(request: NextRequest) {
       model: "openai/gpt-4o-mini",
       prompt: `${aiPrompt}\n\nExercício: ${exercise}\n\nResposta do usuário:\n${userAnswer}\n\nForneça uma análise detalhada e construtiva em português do Brasil.`,
       temperature: 0.7,
-      maxTokens: 500,
     })
 
     return NextResponse.json({ analysis: text })
