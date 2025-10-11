@@ -246,9 +246,9 @@ export default function ReescreverPage() {
       <div className="container mx-auto px-4 py-6">
         <h1 className="text-2xl font-bold text-center mb-6">Reescrever Letras</h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:items-start">
           {/* Coluna 1: Parâmetros de Reescrita */}
-          <Card className="order-1">
+          <Card className="order-1 h-fit">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Parâmetros de Reescrita</CardTitle>
             </CardHeader>
@@ -385,7 +385,7 @@ export default function ReescreverPage() {
           </Card>
 
           {/* Coluna 2: Inspiração & Sensações */}
-          <Card className="order-2">
+          <Card className="order-2 h-fit">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Inspiração & Sensações</CardTitle>
             </CardHeader>
@@ -497,7 +497,7 @@ export default function ReescreverPage() {
           </Card>
 
           {/* Coluna 3: Ferramentas e Resultado */}
-          <div className="order-3 space-y-4">
+          <div className="order-3 space-y-4 h-fit">
             {/* Ferramentas de Composição */}
             <Card>
               <CardHeader className="pb-3">

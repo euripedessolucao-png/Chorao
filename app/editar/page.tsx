@@ -163,9 +163,9 @@ export default function EditarPage() {
           {projectId ? `Editando: ${title || "Sem título"}` : "Modo Editar com Assistente"}
         </h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:items-start">
           {/* Coluna 1: Inspiração & Sensações */}
-          <Card className="order-1">
+          <Card className="order-1 h-fit">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Inspiração & Sensações</CardTitle>
               <p className="text-xs text-muted-foreground">
@@ -259,7 +259,7 @@ export default function EditarPage() {
           </Card>
 
           {/* Coluna 2: Ferramentas de Edição */}
-          <Card className="order-2">
+          <Card className="order-2 h-fit">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Ferramentas de Edição</CardTitle>
             </CardHeader>
@@ -367,7 +367,7 @@ export default function EditarPage() {
           </Card>
 
           {/* Coluna 3: Editor de Letra */}
-          <div className="order-3 space-y-4">
+          <div className="order-3 space-y-4 h-fit">
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Editor</CardTitle>
