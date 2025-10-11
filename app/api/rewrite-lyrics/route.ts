@@ -1,6 +1,7 @@
 import { generateText } from "ai"
 import { NextResponse } from "next/server"
 import { openai } from "@ai-sdk/openai"
+import { ThirdWayEngine, ADVANCED_BRAZILIAN_METRICS, type GenreName } from "@/lib/third-way-converter"
 
 export async function POST(request: Request) {
   try {
@@ -113,7 +114,39 @@ IMPORTANTE:
       temperature: 0.7,
     })
 
-    return NextResponse.json({ letra: text })
+    const genreKey = (
+      generoConversao.includes("Sertanejo Moderno")
+        ? "Sertanejo Moderno"
+        : generoConversao.includes("Sertanejo Universitário")
+          ? "Sertanejo Universitário"
+          : generoConversao.includes("Pagode")
+            ? "Pagode"
+            : generoConversao.includes("Funk")
+              ? "Funk"
+              : generoConversao.includes("MPB")
+                ? "MPB"
+                : generoConversao.includes("Pop")
+                  ? "Pop"
+                  : "default"
+    ) as GenreName
+
+    const targetMetrics = ADVANCED_BRAZILIAN_METRICS[genreKey] || ADVANCED_BRAZILIAN_METRICS.default
+
+    // Aplicar Terceira Via linha por linha (silenciosamente)
+    const lines = text.split("\n")
+    const optimizedLines = lines.map((line) => {
+      // Pular cabeçalhos e linhas vazias
+      if (line.startsWith("[") || line.startsWith("(") || !line.trim()) {
+        return line
+      }
+
+      // Aplicar Terceira Via para otimizar cada linha
+      return ThirdWayEngine.generateThirdWayLine("reescrita", genreKey, `Conversão para: ${generoConversao}`)
+    })
+
+    const optimizedLyrics = optimizedLines.join("\n")
+
+    return NextResponse.json({ letra: optimizedLyrics })
   } catch (error) {
     console.error("[v0] Error rewriting lyrics:", error)
 

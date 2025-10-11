@@ -15,8 +15,8 @@ import {
   Settings,
   HelpCircle,
   Video,
-  FileText,
   ChevronRight,
+  Sparkles,
 } from "lucide-react"
 import { useState } from "react"
 
@@ -42,10 +42,11 @@ const manualSections = [
     bgColor: "bg-purple-50 dark:bg-purple-950",
     topics: [
       "Como criar uma nova letra",
-      "Escolher gênero e humor",
+      "Escolher gênero e sub-gênero",
       "Usar inspirações e sensações",
-      "Validar métricas",
-      "Salvar projetos",
+      "Gerar refrões comerciais",
+      "Validar métricas automaticamente",
+      "Salvar projetos na galeria",
     ],
   },
   {
@@ -55,11 +56,12 @@ const manualSections = [
     color: "text-green-500",
     bgColor: "bg-green-50 dark:bg-green-950",
     topics: [
-      "Selecionar letra para reescrever",
-      "Opções de reescrita",
-      "Terceira Via explicada",
+      "Colar letra existente",
+      "Opções de reescrita avançadas",
+      "Terceira Via: O cérebro do sistema",
       "Converter entre gêneros",
-      "Otimizar métricas",
+      "Otimizar métricas e prosódia",
+      "Comparar versões",
     ],
   },
   {
@@ -69,10 +71,11 @@ const manualSections = [
     color: "text-orange-500",
     bgColor: "bg-orange-50 dark:bg-orange-950",
     topics: [
-      "Abrir projeto existente",
-      "Ferramentas de edição",
+      "Abrir projeto da galeria",
+      "Ferramentas de edição em tempo real",
       "Encontrar rimas e sinônimos",
-      "Completar versos",
+      "Completar versos automaticamente",
+      "Validação de métricas ao vivo",
       "Salvar alterações",
     ],
   },
@@ -83,11 +86,27 @@ const manualSections = [
     color: "text-pink-500",
     bgColor: "bg-pink-50 dark:bg-pink-950",
     topics: [
-      "Visualizar todos os projetos",
-      "Filtrar e buscar",
-      "Organizar por gênero",
-      "Exportar projetos",
-      "Compartilhar letras",
+      "Visualizar todos os projetos salvos",
+      "Filtrar por gênero e data",
+      "Buscar por título ou conteúdo",
+      "Editar projetos existentes",
+      "Exportar para TXT/PDF",
+      "Deletar projetos",
+    ],
+  },
+  {
+    id: "terceira-via",
+    title: "Terceira Via",
+    icon: Sparkles,
+    color: "text-yellow-500",
+    bgColor: "bg-yellow-50 dark:bg-yellow-950",
+    topics: [
+      "O que é a Terceira Via?",
+      "Como funciona o processo A + B → Final",
+      "Otimização automática de métricas",
+      "Análise de pontos fortes",
+      "Aplicação em todos os gêneros",
+      "Visualizar análise detalhada",
     ],
   },
   {
@@ -96,7 +115,13 @@ const manualSections = [
     icon: Settings,
     color: "text-gray-500",
     bgColor: "bg-gray-50 dark:bg-gray-950",
-    topics: ["Preferências do usuário", "Tema claro/escuro", "Integrações", "Conta e perfil", "Exportar dados"],
+    topics: [
+      "Preferências de gênero padrão",
+      "Nível de criatividade",
+      "Qualidade do modelo de IA",
+      "Tema claro/escuro",
+      "Exportar/Importar dados",
+    ],
   },
 ]
 
@@ -104,25 +129,60 @@ const faqItems = [
   {
     question: "Como funciona a Terceira Via?",
     answer:
-      "A Terceira Via é um processo automático que gera duas variações (A e B) da sua letra e combina os melhores elementos de cada uma para criar a versão final otimizada.",
+      "A Terceira Via é o cérebro do Chorão Compositor. Para cada linha da sua letra, o sistema gera silenciosamente duas variações (A e B): a Variação A foca em métrica perfeita e fluidez, enquanto a Variação B explora criatividade e emoção. O sistema então analisa os pontos fortes de cada variação e combina os melhores elementos para criar a versão final otimizada. Esse processo acontece automaticamente em todas as gerações de letras, versos e refrões, garantindo qualidade superior sem esforço manual.",
   },
   {
-    question: "Posso usar o app offline?",
-    answer: "Não, o Chorão Compositor requer conexão com internet para acessar os modelos de IA e gerar letras.",
-  },
-  {
-    question: "Como salvar meus projetos?",
+    question: "Quais gêneros musicais são suportados?",
     answer:
-      "Clique no botão 'Salvar Projeto' em qualquer página de criação ou edição. Seus projetos ficam salvos na nuvem e podem ser acessados de qualquer dispositivo.",
+      "O Chorão Compositor suporta 11 gêneros principais com sub-gêneros específicos: Sertanejo (Moderno, Universitário, Raiz, Sofrência, Romântico), Forró (Pé de Serra, Eletrônico, Universitário), Funk (Carioca, Melody, Ostentação, Consciente), Pagode (Romântico, 90, Baiano), MPB (Clássica, Moderna), Samba (de Raiz, Pagode, Enredo, Rock), Gospel (Contemporâneo, Tradicional, Sertanejo), Pop (Brasileiro, Internacional, Rock), Rock (Nacional, Alternativo, Clássico), Bachata (Tradicional, Moderna) e Outros Gêneros. Cada gênero tem regras específicas de prosódia, métrica e estilo atualizadas para 2024-2025.",
   },
   {
-    question: "Quantos projetos posso criar?",
-    answer: "Não há limite! Você pode criar quantos projetos quiser e organizá-los na Galeria.",
+    question: "Como gerar refrões comerciais e grudentos?",
+    answer:
+      "Na aba Criar ou Reescrever, clique no botão 'Gerar Refrão' no painel esquerdo. O sistema gerará 5 variações de refrão otimizadas para o gênero selecionado, cada uma com score comercial (1-10) e justificativa. Para Sertanejo Moderno, os refrões seguem regras específicas: 2 ou 4 linhas (nunca 3), prosódia com máximo 6 sílabas antes/depois da vírgula, elementos visuais modernos (biquíni, PIX, story), e fechamento emocional positivo. A melhor opção comercial é destacada automaticamente.",
+  },
+  {
+    question: "Posso converter letras entre gêneros diferentes?",
+    answer:
+      "Sim! Na aba Reescrever, cole sua letra existente e selecione o gênero de destino no campo 'Gênero de Conversão'. O sistema aplicará a Terceira Via para adaptar a letra ao novo gênero, ajustando métrica, vocabulário, estrutura e estilo, enquanto preserva a mensagem emocional central. Você pode escolher conservar as imagens originais ou criar novas metáforas.",
+  },
+  {
+    question: "Como funciona a validação de métricas?",
+    answer:
+      "O sistema valida automaticamente cada linha da sua letra usando regras específicas do gênero selecionado. Para cada gênero, há um número ideal de sílabas por linha (ex: Sertanejo Moderno = 6 sílabas, MPB = 9 sílabas). Linhas problemáticas são destacadas em vermelho com sugestões de correção. A Terceira Via garante que todas as linhas geradas automaticamente já tenham métrica perfeita.",
+  },
+  {
+    question: "Posso salvar e editar meus projetos depois?",
+    answer:
+      "Sim! Clique em 'Salvar Projeto' em qualquer aba (Criar, Reescrever, Editar) para salvar sua letra no navegador. Todos os projetos salvos aparecem na Galeria, onde você pode visualizar, editar, exportar (TXT/PDF) ou deletar. Os projetos são salvos localmente no seu navegador e persistem entre sessões.",
+  },
+  {
+    question: "O que são as 'Inspirações do Diário'?",
+    answer:
+      "O Diário de Inspiração permite adicionar referências que influenciam a geração da letra. Você pode adicionar texto livre, imagens (que são analisadas pela IA), áudios (transcritos automaticamente) ou links de músicas/vídeos. Essas inspirações são processadas e incorporadas no contexto da geração, tornando a letra mais personalizada e alinhada com suas ideias.",
+  },
+  {
+    question: "Como usar as Metáforas Inteligentes?",
+    answer:
+      "No painel esquerdo das abas Criar e Reescrever, digite um tema no campo 'Buscar Metáforas' (ex: 'amor', 'saudade', 'liberdade'). O sistema gerará metáforas criativas e adequadas ao gênero selecionado. Clique em uma metáfora para adicioná-la ao contexto da geração. As metáforas são otimizadas para cada gênero - por exemplo, Sertanejo Moderno evita metáforas abstratas e prefere imagens visuais concretas.",
   },
 ]
 
 export default function ManualPage() {
   const [searchQuery, setSearchQuery] = useState("")
+  const [expandedSection, setExpandedSection] = useState<string | null>(null)
+
+  const filteredSections = manualSections.filter(
+    (section) =>
+      section.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      section.topics.some((topic) => topic.toLowerCase().includes(searchQuery.toLowerCase())),
+  )
+
+  const filteredFAQ = faqItems.filter(
+    (item) =>
+      item.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.answer.toLowerCase().includes(searchQuery.toLowerCase()),
+  )
 
   return (
     <div className="min-h-screen bg-background">
@@ -179,10 +239,16 @@ export default function ManualPage() {
 
         {/* Manual Sections */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          {manualSections.map((section) => {
+          {filteredSections.map((section) => {
             const Icon = section.icon
+            const isExpanded = expandedSection === section.id
+
             return (
-              <Card key={section.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+              <Card
+                key={section.id}
+                className="hover:shadow-lg transition-shadow cursor-pointer"
+                onClick={() => setExpandedSection(isExpanded ? null : section.id)}
+              >
                 <CardHeader className={section.bgColor}>
                   <div className="flex items-center gap-3 mb-2">
                     <Icon className={`h-6 w-6 ${section.color}`} />
@@ -201,10 +267,6 @@ export default function ManualPage() {
                       </li>
                     ))}
                   </ul>
-                  <Button variant="outline" className="w-full mt-4 bg-transparent">
-                    <FileText className="h-4 w-4 mr-2" />
-                    Ler Seção
-                  </Button>
                 </CardContent>
               </Card>
             )
@@ -218,14 +280,14 @@ export default function ManualPage() {
               <HelpCircle className="h-6 w-6" />
               Perguntas Frequentes
             </CardTitle>
-            <CardDescription>Respostas para as dúvidas mais comuns</CardDescription>
+            <CardDescription>Respostas detalhadas para as dúvidas mais comuns</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {faqItems.map((item, index) => (
-                <div key={index} className="border-b border-border pb-4 last:border-0">
-                  <h3 className="font-semibold mb-2">{item.question}</h3>
-                  <p className="text-muted-foreground text-sm">{item.answer}</p>
+            <div className="space-y-6">
+              {filteredFAQ.map((item, index) => (
+                <div key={index} className="border-b border-border pb-6 last:border-0">
+                  <h3 className="font-semibold mb-3 text-lg">{item.question}</h3>
+                  <p className="text-muted-foreground leading-relaxed">{item.answer}</p>
                 </div>
               ))}
             </div>

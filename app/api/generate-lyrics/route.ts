@@ -1,6 +1,7 @@
 import { generateText } from "ai"
 import { NextResponse } from "next/server"
 import { openai } from "@ai-sdk/openai"
+import { ThirdWayEngine, ADVANCED_BRAZILIAN_METRICS, type GenreName } from "@/lib/third-way-converter"
 
 export async function POST(request: Request) {
   try {
@@ -138,7 +139,40 @@ IMPORTANTE:
               : 0.7,
     })
 
-    return NextResponse.json({ letra: text })
+    const genreKey = (
+      genero.includes("Sertanejo Moderno")
+        ? "Sertanejo Moderno"
+        : genero.includes("Sertanejo Universitário")
+          ? "Sertanejo Universitário"
+          : genero.includes("Pagode")
+            ? "Pagode"
+            : genero.includes("Funk")
+              ? "Funk"
+              : genero.includes("MPB")
+                ? "MPB"
+                : genero.includes("Pop")
+                  ? "Pop"
+                  : "default"
+    ) as GenreName
+
+    const targetMetrics = ADVANCED_BRAZILIAN_METRICS[genreKey] || ADVANCED_BRAZILIAN_METRICS.default
+
+    const lines = text.split("\n")
+    const optimizedLines = lines.map((line) => {
+      if (line.startsWith("[") || line.startsWith("(") || !line.trim()) {
+        return line
+      }
+
+      return ThirdWayEngine.generateThirdWayLine(
+        tema || "sentimentos",
+        genreKey,
+        `Gênero: ${genero}, Humor: ${humor || "neutro"}`,
+      )
+    })
+
+    const optimizedLyrics = optimizedLines.join("\n")
+
+    return NextResponse.json({ letra: optimizedLyrics })
   } catch (error) {
     console.error("[v0] Error generating lyrics:", error)
 
