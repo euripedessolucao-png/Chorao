@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
-import { Sparkles, Save, Search, Loader2, Zap } from "lucide-react"
+import { Sparkles, Save, Search, Loader2, Zap, Copy } from "lucide-react"
 import { GENRE_CONFIGS } from "@/lib/genre-config"
 import { toast } from "sonner"
 import {
@@ -248,9 +248,9 @@ export default function CriarPage() {
       <div className="container mx-auto px-4 py-6">
         <h1 className="text-2xl font-bold text-center mb-6">Criar Nova Letra</h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Coluna 1: Parâmetros da Letra */}
-          <Card className="order-1 lg:order-1">
+          <Card className="order-1">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Parâmetros da Letra</CardTitle>
             </CardHeader>
@@ -381,7 +381,7 @@ export default function CriarPage() {
           </Card>
 
           {/* Coluna 2: Inspiração & Sensações */}
-          <Card className="order-2 lg:order-2">
+          <Card className="order-2">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Inspiração & Sensações</CardTitle>
             </CardHeader>
@@ -493,12 +493,13 @@ export default function CriarPage() {
           </Card>
 
           {/* Nova seção: Botões de Ação */}
-          <div className="order-4 lg:order-3 space-y-3">
+          <div className="order-3 lg:col-span-2 grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-4">
+            {/* Ferramentas de Composição */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Ferramentas de Composição</CardTitle>
+                <CardTitle className="text-base">Ferramentas</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-2">
                 <Button
                   variant="outline"
                   className="w-full bg-transparent"
@@ -507,7 +508,8 @@ export default function CriarPage() {
                   disabled={isGenerating || isGeneratingChorus}
                 >
                   <Zap className="mr-2 h-4 w-4" />
-                  Gerar Hook
+                  <span className="hidden sm:inline">Gerar Hook</span>
+                  <span className="sm:hidden">Hook</span>
                 </Button>
 
                 <Button
@@ -518,97 +520,103 @@ export default function CriarPage() {
                   disabled={!genre || !theme || isGenerating || isGeneratingChorus}
                 >
                   <Wand2 className="mr-2 h-4 w-4" />
-                  Gerar Refrão
+                  <span className="hidden sm:inline">Gerar Refrão</span>
+                  <span className="sm:hidden">Refrão</span>
                 </Button>
 
                 <Button className="w-full" size="sm" onClick={handleGenerateLyrics} disabled={isGenerating || !genre}>
                   {isGenerating ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Gerando...
+                      <span className="hidden sm:inline">Gerando...</span>
+                      <span className="sm:hidden">...</span>
                     </>
                   ) : (
                     <>
                       <Sparkles className="mr-2 h-4 w-4" />
-                      Gerar Letra Completa
+                      <span className="hidden sm:inline">Gerar Letra Completa</span>
+                      <span className="sm:hidden">Gerar</span>
                     </>
                   )}
                 </Button>
 
                 <div className="border-t pt-2">
                   <Button variant="ghost" size="sm" className="w-full justify-start text-xs">
-                    📈 Tendências Atuais: Geral
+                    📈 Tendências
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Resultado */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Título da Música</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                <Input
+                  placeholder="Título da música..."
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="h-9"
+                />
+
+                <Button variant="outline" size="sm" className="w-full bg-transparent">
+                  Validar métrica
+                </Button>
+
+                <div className="space-y-2">
+                  <Label className="text-xs">Acordes</Label>
+                  <Textarea
+                    placeholder="Os acordes gerados aparecerão aqui..."
+                    value={chords}
+                    onChange={(e) => setChords(e.target.value)}
+                    rows={3}
+                    className="font-mono text-xs"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs">Letra</Label>
+                  <Textarea
+                    placeholder="Sua letra aparecerá aqui..."
+                    value={lyrics}
+                    onChange={(e) => setLyrics(e.target.value)}
+                    rows={12}
+                    className="font-mono text-xs"
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 bg-transparent"
+                    onClick={() => {
+                      if (!lyrics.trim()) {
+                        toast.error("Nada para copiar", {
+                          description: "A letra está vazia.",
+                        })
+                        return
+                      }
+                      navigator.clipboard.writeText(lyrics)
+                      toast.success("Letra copiada para a área de transferência!")
+                    }}
+                    disabled={!lyrics}
+                  >
+                    <Copy className="mr-2 h-3 w-3" />
+                    <span className="hidden sm:inline">Copiar Letra</span>
+                    <span className="sm:hidden">Copiar</span>
+                  </Button>
+                  <Button size="sm" className="flex-1" onClick={handleSaveProject} disabled={!title || !lyrics}>
+                    <Save className="mr-2 h-3 w-3" />
+                    <span className="hidden sm:inline">Salvar Projeto</span>
+                    <span className="sm:hidden">Salvar</span>
                   </Button>
                 </div>
               </CardContent>
             </Card>
           </div>
-
-          {/* Coluna 3: Resultado */}
-          <Card className="order-3 lg:order-4">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Título da Música</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <Input
-                placeholder="Título da música..."
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="h-9"
-              />
-
-              <Button variant="outline" size="sm" className="w-full bg-transparent">
-                Validar métrica
-              </Button>
-
-              <div className="space-y-2">
-                <Label className="text-xs">Acordes</Label>
-                <Textarea
-                  placeholder="Os acordes gerados aparecerão aqui..."
-                  value={chords}
-                  onChange={(e) => setChords(e.target.value)}
-                  rows={3}
-                  className="font-mono text-xs"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-xs">Letra</Label>
-                <Textarea
-                  placeholder="Sua letra aparecerá aqui..."
-                  value={lyrics}
-                  onChange={(e) => setLyrics(e.target.value)}
-                  rows={12}
-                  className="font-mono text-xs"
-                />
-              </div>
-
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="flex-1 bg-transparent"
-                  onClick={() => {
-                    if (!lyrics.trim()) {
-                      toast.error("Nada para copiar", {
-                        description: "A letra está vazia.",
-                      })
-                      return
-                    }
-                    navigator.clipboard.writeText(lyrics)
-                    toast.success("Letra copiada para a área de transferência!")
-                  }}
-                  disabled={!lyrics}
-                >
-                  Copiar Letra
-                </Button>
-                <Button size="sm" className="flex-1" onClick={handleSaveProject} disabled={!title || !lyrics}>
-                  <Save className="mr-2 h-3 w-3" />
-                  Salvar Projeto
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
 

@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { RefreshCw, Sparkles, Trash2, Search, Save } from "lucide-react"
+import { RefreshCw, Sparkles, Trash2, Search, Save, Copy } from "lucide-react"
 import { toast } from "sonner"
 
 const GENRES = ["Pop", "Sertanejo Moderno", "MPB"]
@@ -163,9 +163,9 @@ export default function EditarPage() {
           {projectId ? `Editando: ${title || "Sem título"}` : "Modo Editar com Assistente"}
         </h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Coluna 1: Inspiração & Sensações */}
-          <Card>
+          <Card className="order-1">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Inspiração & Sensações</CardTitle>
               <p className="text-xs text-muted-foreground">
@@ -259,7 +259,7 @@ export default function EditarPage() {
           </Card>
 
           {/* Coluna 2: Ferramentas de Edição */}
-          <Card>
+          <Card className="order-2">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Ferramentas de Edição</CardTitle>
             </CardHeader>
@@ -367,56 +367,64 @@ export default function EditarPage() {
           </Card>
 
           {/* Coluna 3: Título da Música */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Título da Música (opcional)</CardTitle>
-              <div className="flex gap-2 mt-2">
-                <Button variant="outline" size="sm" className="flex-1 bg-transparent">
-                  <Sparkles className="mr-1 h-3 w-3" />
-                  Gerar Refrão
-                </Button>
-                <Button variant="outline" size="sm" className="flex-1 bg-transparent">
-                  Analisar
-                </Button>
-                <Button variant="outline" size="sm" className="flex-1 bg-transparent">
-                  <RefreshCw className="mr-1 h-3 w-3" />
-                  Reescrever
-                </Button>
-                <Button variant="outline" size="sm" onClick={handleClear}>
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <Input
-                placeholder="Título da música..."
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="h-9"
-              />
-
-              <div className="space-y-2">
-                <Label className="text-xs">Letra</Label>
-                <Textarea
-                  placeholder="Sua letra aparecerá aqui..."
-                  value={lyrics}
-                  onChange={(e) => setLyrics(e.target.value)}
-                  rows={18}
-                  className="font-mono text-xs"
+          <div className="order-3 lg:col-span-2">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Título da Música (opcional)</CardTitle>
+                <div className="flex gap-2 mt-2">
+                  <Button variant="outline" size="sm" className="flex-1 bg-transparent">
+                    <Sparkles className="mr-1 h-3 w-3" />
+                    <span className="hidden sm:inline">Gerar Refrão</span>
+                    <span className="sm:hidden">Refrão</span>
+                  </Button>
+                  <Button variant="outline" size="sm" className="flex-1 bg-transparent">
+                    <span className="hidden sm:inline">Analisar</span>
+                    <span className="sm:hidden">📊</span>
+                  </Button>
+                  <Button variant="outline" size="sm" className="flex-1 bg-transparent">
+                    <RefreshCw className="mr-1 h-3 w-3" />
+                    <span className="hidden sm:inline">Reescrever</span>
+                    <span className="sm:hidden">↻</span>
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={handleClear}>
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                <Input
+                  placeholder="Título da música..."
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="h-9"
                 />
-              </div>
 
-              <div className="flex gap-2">
-                <Button size="sm" className="flex-1" onClick={handleCopy}>
-                  Copiar Letra
-                </Button>
-                <Button size="sm" className="flex-1 bg-transparent" variant="outline" onClick={handleSave}>
-                  <Save className="mr-2 h-3 w-3" />
-                  Salvar
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+                <div className="space-y-2">
+                  <Label className="text-xs">Letra</Label>
+                  <Textarea
+                    placeholder="Sua letra aparecerá aqui..."
+                    value={lyrics}
+                    onChange={(e) => setLyrics(e.target.value)}
+                    rows={18}
+                    className="font-mono text-xs"
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <Button size="sm" className="flex-1" onClick={handleCopy}>
+                    <Copy className="mr-2 h-3 w-3" />
+                    <span className="hidden sm:inline">Copiar Letra</span>
+                    <span className="sm:hidden">Copiar</span>
+                  </Button>
+                  <Button size="sm" className="flex-1 bg-transparent" variant="outline" onClick={handleSave}>
+                    <Save className="mr-2 h-3 w-3" />
+                    <span className="hidden sm:inline">Salvar</span>
+                    <span className="sm:hidden">💾</span>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
