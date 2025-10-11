@@ -4,19 +4,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import {
-  Home,
-  Plus,
-  RefreshCw,
-  Pencil,
-  LayoutGrid,
-  BookOpen,
-  HelpCircle,
-  Music,
-  Moon,
-  Sun,
-  Database,
-} from "lucide-react"
+import { Home, Plus, RefreshCw, Pencil, LayoutGrid, BookOpen, HelpCircle, Music, Moon, Sun } from "lucide-react"
 
 function ThemeToggle() {
   const [theme, setTheme] = useState<"light" | "dark">("light")
@@ -51,7 +39,6 @@ export function Navigation() {
     { href: "/reescrever", label: "Reescrever", icon: RefreshCw },
     { href: "/editar", label: "Editar", icon: Pencil },
     { href: "/galeria", label: "Galeria", icon: LayoutGrid },
-    { href: "/backup", label: "Backup", icon: Database },
     { href: "/aula", label: "Aula", icon: BookOpen },
     { href: "/manual", label: "Manual", icon: HelpCircle },
   ]

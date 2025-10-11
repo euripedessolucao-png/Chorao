@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import { Navigation } from "@/components/navigation"
+import { Footer } from "@/components/footer"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -186,99 +188,103 @@ export default function AulaPage() {
   ]
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-col gap-4 w-full max-w-6xl mx-auto mb-8">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <GraduationCapIcon className="h-7 w-7 text-primary" />
-            Aprendizado de Composição
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Aprenda a compor letras do básico ao avançado com nosso assistente IA
-          </p>
+    <div className="min-h-screen bg-background">
+      <Navigation />
+      <div className="container mx-auto px-4 py-8 pt-24">
+        <div className="flex flex-col gap-4 w-full max-w-6xl mx-auto mb-8">
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+              <GraduationCapIcon className="h-7 w-7 text-primary" />
+              Aprendizado de Composição
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Aprenda a compor letras do básico ao avançado com nosso assistente IA
+            </p>
+          </div>
+        </div>
+
+        {/* Cartão de boas-vindas */}
+        <Card className="mb-8 bg-gradient-to-r from-primary/20 to-accent/30 backdrop-blur-sm dark:from-primary/10 dark:to-accent/20">
+          <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row items-center gap-6">
+              <div className="bg-primary/10 p-4 rounded-full">
+                <BrainCircuitIcon className="h-12 w-12 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-2xl font-bold mb-2">Cérebro IA de Composição</h2>
+                <p className="mb-4">
+                  Nosso assistente inteligente vai guiar você através de lições interativas, desafios práticos e
+                  feedback personalizado para desenvolver suas habilidades de composição.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Escolha um módulo abaixo para começar sua jornada de aprendizado ou retomar de onde parou.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Módulos de aprendizado */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 w-full">
+          {learningModules.map((module) => (
+            <Card
+              key={module.id}
+              className={`border-2 transition-all duration-300 hover:shadow-lg ${
+                activeModule === module.id ? module.borderColor : "border-border"
+              }`}
+            >
+              <CardHeader
+                className={`${module.color} transition-colors duration-300 cursor-pointer`}
+                onClick={() => setActiveModule(module.id === activeModule ? null : module.id)}
+              >
+                <div className="flex justify-between items-center">
+                  <div
+                    className={`w-10 h-10 rounded-full ${module.iconColor} bg-background flex items-center justify-center`}
+                  >
+                    {module.icon}
+                  </div>
+                  <Badge variant="outline" className="bg-background/80">
+                    {module.level}
+                  </Badge>
+                </div>
+                <CardTitle className="mt-2">{module.title}</CardTitle>
+                <CardDescription className="text-foreground/80">{module.description}</CardDescription>
+              </CardHeader>
+              <CardContent
+                className={`${
+                  activeModule === module.id ? "max-h-[500px]" : "max-h-0"
+                } overflow-hidden transition-all duration-500`}
+              >
+                <div className="space-y-3 pt-2">
+                  {module.lessons.map((lesson) => (
+                    <div
+                      key={lesson.id}
+                      className="border rounded-md p-3 hover:bg-accent/50 transition-colors cursor-pointer"
+                      onClick={() => {
+                        // Navegar para a lição (implementar rota depois)
+                        console.log(`Navegar para ${module.id}/${lesson.id}`)
+                      }}
+                    >
+                      <div className="flex justify-between items-start mb-1">
+                        <h4 className="font-semibold text-sm">{lesson.title}</h4>
+                        <Badge variant="secondary" className="text-xs">
+                          {lesson.duration}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{lesson.description}</p>
+                      <Button variant="ghost" size="sm" className="mt-2 w-full justify-between">
+                        Começar Lição
+                        <ChevronRightIcon className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
-
-      {/* Cartão de boas-vindas */}
-      <Card className="mb-8 bg-gradient-to-r from-primary/20 to-accent/30 backdrop-blur-sm dark:from-primary/10 dark:to-accent/20">
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row items-center gap-6">
-            <div className="bg-primary/10 p-4 rounded-full">
-              <BrainCircuitIcon className="h-12 w-12 text-primary" />
-            </div>
-            <div className="flex-1">
-              <h2 className="text-2xl font-bold mb-2">Cérebro IA de Composição</h2>
-              <p className="mb-4">
-                Nosso assistente inteligente vai guiar você através de lições interativas, desafios práticos e feedback
-                personalizado para desenvolver suas habilidades de composição.
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Escolha um módulo abaixo para começar sua jornada de aprendizado ou retomar de onde parou.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Módulos de aprendizado */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 w-full">
-        {learningModules.map((module) => (
-          <Card
-            key={module.id}
-            className={`border-2 transition-all duration-300 hover:shadow-lg ${
-              activeModule === module.id ? module.borderColor : "border-border"
-            }`}
-          >
-            <CardHeader
-              className={`${module.color} transition-colors duration-300 cursor-pointer`}
-              onClick={() => setActiveModule(module.id === activeModule ? null : module.id)}
-            >
-              <div className="flex justify-between items-center">
-                <div
-                  className={`w-10 h-10 rounded-full ${module.iconColor} bg-background flex items-center justify-center`}
-                >
-                  {module.icon}
-                </div>
-                <Badge variant="outline" className="bg-background/80">
-                  {module.level}
-                </Badge>
-              </div>
-              <CardTitle className="mt-2">{module.title}</CardTitle>
-              <CardDescription className="text-foreground/80">{module.description}</CardDescription>
-            </CardHeader>
-            <CardContent
-              className={`${
-                activeModule === module.id ? "max-h-[500px]" : "max-h-0"
-              } overflow-hidden transition-all duration-500`}
-            >
-              <div className="space-y-3 pt-2">
-                {module.lessons.map((lesson) => (
-                  <div
-                    key={lesson.id}
-                    className="border rounded-md p-3 hover:bg-accent/50 transition-colors cursor-pointer"
-                    onClick={() => {
-                      // Navegar para a lição (implementar rota depois)
-                      console.log(`Navegar para ${module.id}/${lesson.id}`)
-                    }}
-                  >
-                    <div className="flex justify-between items-start mb-1">
-                      <h4 className="font-semibold text-sm">{lesson.title}</h4>
-                      <Badge variant="secondary" className="text-xs">
-                        {lesson.duration}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground">{lesson.description}</p>
-                    <Button variant="ghost" size="sm" className="mt-2 w-full justify-between">
-                      Começar Lição
-                      <ChevronRightIcon className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <Footer />
     </div>
   )
 }

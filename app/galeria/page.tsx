@@ -11,7 +11,7 @@ export default function GaleriaPage() {
       <div className="container mx-auto px-4 py-8 pt-24">
         <GalleryHeader />
 
-        <div className="mt-8 grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <div className="mt-8 grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Main Content - 3 columns */}
           <div className="lg:col-span-3">
             <GalleryGrid />

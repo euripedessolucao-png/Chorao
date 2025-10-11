@@ -96,7 +96,7 @@ const manualSections = [
     icon: Settings,
     color: "text-gray-500",
     bgColor: "bg-gray-50 dark:bg-gray-950",
-    topics: ["Preferências do usuário", "Tema claro/escuro", "Backup automático", "Integrações", "Conta e perfil"],
+    topics: ["Preferências do usuário", "Tema claro/escuro", "Integrações", "Conta e perfil", "Exportar dados"],
   },
 ]
 
