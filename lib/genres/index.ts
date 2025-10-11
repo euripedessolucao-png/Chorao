@@ -6,12 +6,17 @@ import { POP_BRASILEIRO_2024 } from "./pop_brasileiro_2024"
 import { ROCK_BRASILEIRO_2024 } from "./rock_brasileiro_2024"
 import { SAMBA_2024 } from "./samba_2024"
 import { BACHATA_BRASILEIRA_2024 } from "./bachata_brasileira_2024"
+import { funkRules2024 } from "./funk_2024"
 
 export const GENRE_RULES = {
   "Sertanejo Moderno": SERTANEJO_MODERNO_2024,
   "Forró Pé de Serra": FORRO_2024,
   "Forró Universitário": FORRO_2024,
   "Forró Eletrônico": FORRO_2024,
+  "Funk Carioca": funkRules2024,
+  "Funk Melody": funkRules2024,
+  "Funk Ostentação": funkRules2024,
+  "Funk Consciente": funkRules2024,
   "MPB Clássica": MPB_2024,
   "MPB Moderna": MPB_2024,
   "Gospel Contemporâneo": GOSPEL_2024,

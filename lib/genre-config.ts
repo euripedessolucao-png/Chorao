@@ -192,43 +192,67 @@ export const GENRE_CONFIGS = {
     },
   },
   "Funk Carioca": {
-    year_range: "2020-2025",
-    reference_artists: ["MC Poze", "MC Cabelinho", "Anitta", "Ludmilla"],
+    year_range: "2024-2025",
+    reference_artists: ["MC Ryan SP", "Pedro Sampaio", "Anitta (funk)", "MC Daniel", "Ludmilla"],
     core_principles: {
-      theme: "Ostentação, romance, festa, empoderamento",
-      tone: "Direto, confiante, urbano",
-      narrative_arc: "Situação → Atitude → Celebração",
+      theme:
+        "Autoestima, empoderamento, festa consciente, amor com respeito — não apologia à violência ou objetificação",
+      tone: "Ritmo marcado, frases curtas, repetitivo e grudento",
+      narrative_arc: "Afirmação → Convite → Celebração",
     },
     language_rules: {
       allowed: {
-        concrete_objects: ["nave", "cordão", "baile", "favela", "mansão", "piscina"],
-        actions: ["desce", "sobe", "joga", "toma", "bota", "para"],
-        phrases: ["tá na onda", "bota pressão", "vai descendo", "tá no clima"],
+        concrete_objects: ["paredão", "rolê", "zap", "story", "look", "beat", "flow", "baile", "favela", "quebrada"],
+        actions: [
+          "mandar ver",
+          "chamar pra dançar",
+          "brilhar",
+          "mandar o flow",
+          "jogar o cabelo",
+          "rebolar",
+          "dominar a pista",
+        ],
+        phrases: [
+          "Tô no meu flow",
+          "Meu beat é pesado",
+          "Respeita meu espaço",
+          "Sou dona de mim",
+          "Vim pra brilhar",
+          "Tô no comando",
+        ],
       },
       forbidden: {
-        excessive_vulgarity: ["palavrões explícitos sem contexto artístico"],
+        toxic_content: [
+          "mulher objeto",
+          "violência",
+          "drogas explícitas",
+          "machismo",
+          "apologia ao crime",
+          "objetificação",
+        ],
+        generic_cliches: ["põe a mão no alto", "vamos curtir a noite", "a festa tá bombando", "todo mundo junto"],
       },
-      style: "Gíria carioca, rimas simples e diretas",
+      style: "Direto, repetitivo, com gírias urbanas ('mano', 'véio', 'bicho'). Tom confiante e empoderado.",
     },
     structure_rules: {
-      verse: { lines: 4, purpose: "Rimas diretas com flow marcado" },
+      verse: { lines: 4, purpose: "Versos curtos e diretos, estabelecendo atitude e contexto" },
       chorus: {
-        lines_options: [2, 4],
-        forbidden_lines: 3,
-        required_elements: ["Batida marcante", "Fácil de repetir"],
+        lines_options: [2],
+        forbidden_lines: [3, 4],
+        required_elements: ["Grudento e repetitivo", "Máximo 6 sílabas por linha", "Frase de impacto", "Sem vírgulas"],
       },
     },
     prosody_rules: {
       syllable_count: {
         with_comma: { max_before_comma: 6, max_after_comma: 6, total_max: 12 },
-        without_comma: { min: 4, max: 6, acceptable_up_to: 7 },
+        without_comma: { min: 3, max: 6, acceptable_up_to: 6 },
       },
     },
     harmony_and_rhythm: {
       key: "C minor",
       allowed_chords: ["Cm", "Fm", "Gm", "Ab", "Bb"],
-      bpm_range: { min: 125, max: 135, ideal: 130 },
-      rhythm_style: "Batida de funk carioca com grave pesado",
+      bpm_range: { min: 120, max: 140, ideal: 130 },
+      rhythm_style: "Batida marcada do funk com graves pesados (paredão)",
     },
   },
   "Pagode Romântico": {
@@ -410,8 +434,23 @@ export const INSTRUMENTATION_RULES = {
     format: "Sempre entre parênteses, em inglês, após o nome da seção",
   },
   "Funk Carioca": {
-    required: "(Instrumental: grave, bass, percussion)",
-    optional: ["vocals", "synthesizer"],
+    required: "(Instrumental: 808 bass, percussion, synth)",
+    optional: ["vocals", "samples", "effects"],
+    format: "Sempre entre parênteses, em inglês, após o nome da seção",
+  },
+  "Funk Melody": {
+    required: "(Instrumental: 808 bass, percussion, synth)",
+    optional: ["vocals", "samples", "effects"],
+    format: "Sempre entre parênteses, em inglês, após o nome da seção",
+  },
+  "Funk Ostentação": {
+    required: "(Instrumental: 808 bass, percussion, synth)",
+    optional: ["vocals", "samples", "effects"],
+    format: "Sempre entre parênteses, em inglês, após o nome da seção",
+  },
+  "Funk Consciente": {
+    required: "(Instrumental: 808 bass, percussion, synth)",
+    optional: ["vocals", "samples", "effects"],
     format: "Sempre entre parênteses, em inglês, após o nome da seção",
   },
   "Pagode Romântico": {
