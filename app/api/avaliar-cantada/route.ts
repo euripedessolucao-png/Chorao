@@ -17,7 +17,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Arquivo muito grande. Máximo 50MB." }, { status: 400 })
     }
 
-    const prompt = `Você é um especialista em avaliação de performances vocais e composição musical brasileira.
+    const promptAnalise = `Você é um especialista em avaliação de performances vocais e composição musical brasileira.
 
 ANALISE ESTA CANTADA:
 
@@ -52,49 +52,89 @@ FORNEÇA:
 - 2-3 pontos fortes identificados
 
 FORMATO DE RESPOSTA:
-═══════════════════════════════════════
-NOTA FINAL: X.X/10
-═══════════════════════════════════════
+NOTA: X.X/10
 
-📊 AVALIAÇÃO POR CATEGORIA:
+FEEDBACK:
+[feedback detalhado por categoria]
 
-1️⃣ MÉTRICA E PROSÓDIA: X/10
-[feedback detalhado]
-
-2️⃣ INTERPRETAÇÃO EMOCIONAL: X/10
-[feedback detalhado]
-
-3️⃣ TÉCNICA VOCAL: X/10
-[feedback detalhado]
-
-═══════════════════════════════════════
-💡 SUGESTÕES DE MELHORIA:
-═══════════════════════════════════════
-
+SUGESTÕES:
 1. [sugestão específica e prática]
 2. [sugestão específica e prática]
 3. [sugestão específica e prática]
 
-═══════════════════════════════════════
-✨ PONTOS FORTES:
-═══════════════════════════════════════
-
+PONTOS FORTES:
 • [ponto forte 1]
 • [ponto forte 2]
 • [ponto forte 3]
 
-═══════════════════════════════════════
-
 Seja construtivo, específico e encorajador. Use linguagem clara e acessível.`
 
-    const { text } = await generateText({
-      model: "openai/gpt-4o-mini",
-      prompt: prompt,
-      temperature: 0.7,
-    })
+    const promptHook = `Você é um especialista em hooks musicais e potencial comercial de músicas brasileiras.
+
+ANALISE O POTENCIAL DE HOOK DESTA LETRA:
+
+LETRA:
+${lyrics}
+
+AVALIE:
+
+1. GANCHÔMETRO (0-100)
+   - Memorabilidade do refrão
+   - Repetição estratégica
+   - Potencial de viralidade
+   - Apelo comercial
+
+2. HOOK IDENTIFICADO
+   - Qual é o trecho mais "grudento"?
+   - Ele é repetido adequadamente?
+   - Tem poder emocional?
+
+3. SUGESTÕES DE OTIMIZAÇÃO
+   - Como melhorar o hook existente
+   - Onde inserir repetições
+   - Transformações para mais impacto
+
+4. EXEMPLOS DE REFERÊNCIA
+   - Hooks similares que deram certo
+   - Estratégias de posicionamento
+
+FORMATO DE RESPOSTA:
+GANCHÔMETRO: X/100
+
+HOOK IDENTIFICADO:
+"[trecho do hook]"
+
+POTENCIAL COMERCIAL:
+[análise do potencial]
+
+SUGESTÕES DE OTIMIZAÇÃO:
+1. [sugestão 1]
+2. [sugestão 2]
+3. [sugestão 3]
+
+REFERÊNCIAS:
+- [exemplo 1] - [por que funcionou]
+- [exemplo 2] - [por que funcionou]
+
+TESTE TIKTOK (5s):
+[como esse hook soaria em um clip de 5s]`
+
+    const [analiseResult, hookResult] = await Promise.all([
+      generateText({
+        model: "openai/gpt-4o-mini",
+        prompt: promptAnalise,
+        temperature: 0.7,
+      }),
+      generateText({
+        model: "openai/gpt-4o-mini",
+        prompt: promptHook,
+        temperature: 0.8,
+      }),
+    ])
 
     return NextResponse.json({
-      avaliacao: text,
+      avaliacao: analiseResult.text,
+      analiseHook: hookResult.text,
       audioProcessado: true,
     })
   } catch (error) {

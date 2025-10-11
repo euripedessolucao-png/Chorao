@@ -9,8 +9,123 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Loader2, Upload, Mic2, Trash2, Download } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Progress } from "@/components/ui/progress"
+import { Loader2, Upload, Mic2, Trash2, Download, TrendingUp, Star } from "lucide-react"
 import { toast } from "sonner"
+
+function ResultadoAvaliacao({ resultado, analiseHook }: { resultado: string | null; analiseHook: string | null }) {
+  if (!resultado && !analiseHook) return null
+
+  // Função para extrair dados do texto da IA
+  const extrairDados = (texto: string | null, hook: string | null) => {
+    const notaMatch = texto?.match(/NOTA:\s*(\d+\.?\d*)\/10/)
+    const ganchometroMatch = hook?.match(/GANCHÔMETRO:\s*(\d+)\/100/)
+    const hookMatch = hook?.match(/HOOK IDENTIFICADO:\s*"([^"]+)"/)
+
+    return {
+      nota: notaMatch ? Number.parseFloat(notaMatch[1]) : null,
+      ganchometro: ganchometroMatch ? Number.parseInt(ganchometroMatch[1]) : null,
+      hook: hookMatch ? hookMatch[1] : null,
+    }
+  }
+
+  const dados = extrairDados(resultado, analiseHook)
+
+  return (
+    <div className="space-y-6">
+      {/* Cartão de Métricas */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-green-600" />
+            Métricas da Cantada
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Nota Geral */}
+          {dados.nota && (
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Nota Geral</Label>
+                <p className="text-sm text-muted-foreground">Performance vocal completa</p>
+              </div>
+              <Badge variant="secondary" className="text-lg px-3 py-1">
+                {dados.nota}/10
+              </Badge>
+            </div>
+          )}
+
+          {/* Ganchômetro */}
+          {dados.ganchometro !== null && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Ganchômetro</Label>
+                <Badge variant={dados.ganchometro >= 70 ? "default" : "secondary"}>{dados.ganchometro}/100</Badge>
+              </div>
+              <Progress value={dados.ganchometro} className="h-2" />
+              <p className="text-sm text-muted-foreground">
+                {dados.ganchometro >= 80
+                  ? "🔥 Potencial de hit!"
+                  : dados.ganchometro >= 60
+                    ? "✅ Bom potencial comercial"
+                    : "💡 Pode melhorar"}
+              </p>
+            </div>
+          )}
+
+          {/* Hook Identificado */}
+          {dados.hook && (
+            <div className="p-4 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+              <Label className="text-yellow-800 dark:text-yellow-200">🎵 Hook Identificado</Label>
+              <p className="mt-2 text-lg font-medium text-yellow-900 dark:text-yellow-100">"{dados.hook}"</p>
+              <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                Este trecho tem maior potencial de viralidade
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Análise Detalhada */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Avaliação Principal */}
+        {resultado && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Star className="h-5 w-5 text-blue-600" />
+                Análise Completa
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="prose prose-sm max-w-none dark:prose-invert">
+                <pre className="whitespace-pre-wrap font-sans text-sm">{resultado}</pre>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Análise do Hook */}
+        {analiseHook && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-green-600" />
+                Análise Comercial
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="prose prose-sm max-w-none dark:prose-invert">
+                <pre className="whitespace-pre-wrap font-sans text-sm">{analiseHook}</pre>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </div>
+  )
+}
 
 export default function AvaliarPage() {
   const [audioFile, setAudioFile] = useState<File | null>(null)
@@ -18,6 +133,7 @@ export default function AvaliarPage() {
   const [title, setTitle] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [avaliacao, setAvaliacao] = useState<string | null>(null)
+  const [analiseHook, setAnaliseHook] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -29,6 +145,7 @@ export default function AvaliarPage() {
 
     setIsLoading(true)
     setAvaliacao(null)
+    setAnaliseHook(null)
 
     try {
       const formData = new FormData()
@@ -49,6 +166,7 @@ export default function AvaliarPage() {
       const data = await response.json()
 
       setAvaliacao(data.avaliacao)
+      setAnaliseHook(data.analiseHook)
       toast.success("Cantada avaliada com sucesso!")
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Erro ao avaliar cantada. Tente novamente.")
@@ -78,6 +196,7 @@ export default function AvaliarPage() {
     setLyrics("")
     setTitle("")
     setAvaliacao(null)
+    setAnaliseHook(null)
     toast.success("Formulário limpo")
   }
 
@@ -86,7 +205,7 @@ export default function AvaliarPage() {
       <Navigation />
 
       <div className="container mx-auto px-4 py-8 pt-24">
-        <h1 className="text-2xl font-bold mb-6">Avaliar Cantada</h1>
+        <h1 className="text-2xl font-bold mb-6">Avaliar Cantada + Hook</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl mx-auto">
           {/* Formulário de Upload */}
@@ -97,7 +216,7 @@ export default function AvaliarPage() {
                 Enviar Cantada
               </CardTitle>
               <p className="text-sm text-muted-foreground">
-                Faça upload do MP3 e cole a letra para receber uma nota (1 a 10), feedback e sugestões de melhoria
+                Receba nota vocal + análise comercial com Ganchômetro e sugestões para viralizar
               </p>
             </CardHeader>
 
@@ -157,7 +276,7 @@ export default function AvaliarPage() {
                     disabled={isLoading}
                   />
                   <p className="text-sm text-muted-foreground">
-                    A letra será analisada para métrica, rima e encaixe com a melodia
+                    A letra será analisada para métrica, rima e potencial comercial
                   </p>
                 </div>
 
@@ -172,12 +291,12 @@ export default function AvaliarPage() {
                     {isLoading ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Avaliando Cantada...
+                        Analisando Performance & Hook...
                       </>
                     ) : (
                       <>
                         <Upload className="h-4 w-4 mr-2" />
-                        Enviar para Avaliação
+                        Avaliar Cantada Completa
                       </>
                     )}
                   </Button>
@@ -200,35 +319,34 @@ export default function AvaliarPage() {
               {isLoading && (
                 <div className="flex flex-col items-center justify-center py-12 space-y-4">
                   <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                  <p className="text-sm text-muted-foreground">Analisando sua cantada...</p>
+                  <p className="text-sm text-muted-foreground">Analisando sua cantada e hook...</p>
                 </div>
               )}
 
-              {!isLoading && !avaliacao && (
+              {!isLoading && !avaliacao && !analiseHook && (
                 <div className="flex flex-col items-center justify-center py-12 space-y-4 text-center">
                   <Mic2 className="h-12 w-12 text-muted-foreground/50" />
                   <p className="text-sm text-muted-foreground">
-                    Envie um arquivo de áudio e a letra para receber sua avaliação
+                    Envie um arquivo de áudio e a letra para receber sua avaliação completa
                   </p>
                 </div>
               )}
 
-              {!isLoading && avaliacao && (
+              {!isLoading && (avaliacao || analiseHook) && (
                 <div className="space-y-4">
-                  <div className="prose prose-sm max-w-none">
-                    <pre className="whitespace-pre-wrap font-sans text-sm bg-muted/50 p-4 rounded-lg">{avaliacao}</pre>
-                  </div>
+                  <ResultadoAvaliacao resultado={avaliacao} analiseHook={analiseHook} />
                   <Button
                     variant="outline"
                     size="sm"
                     className="w-full bg-transparent"
                     onClick={() => {
-                      navigator.clipboard.writeText(avaliacao)
-                      toast.success("Avaliação copiada!")
+                      const textoCompleto = `${avaliacao || ""}\n\n═══════════════════════════════════════\n\n${analiseHook || ""}`
+                      navigator.clipboard.writeText(textoCompleto)
+                      toast.success("Avaliação completa copiada!")
                     }}
                   >
                     <Download className="h-4 w-4 mr-2" />
-                    Copiar Avaliação
+                    Copiar Avaliação Completa
                   </Button>
                 </div>
               )}

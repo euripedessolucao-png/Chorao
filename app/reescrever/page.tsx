@@ -24,6 +24,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { HookGenerator } from "@/components/hook-generator"
+import { Zap } from "lucide-react"
 
 const BRAZILIAN_GENRE_METRICS = {
   "Sertanejo Moderno": { syllablesPerLine: 6, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
@@ -79,6 +81,7 @@ export default function ReescreverPage() {
   const [chorusData, setChorusData] = useState<ChorusResponse | null>(null)
   const [selectedChoruses, setSelectedChoruses] = useState<ChorusVariation[]>([])
   const [isGeneratingChorus, setIsGeneratingChorus] = useState(false)
+  const [showHookDialog, setShowHookDialog] = useState(false)
 
   const toggleEmotion = (emotion: string) => {
     setSelectedEmotions((prev) => (prev.includes(emotion) ? prev.filter((e) => e !== emotion) : [...prev, emotion]))
@@ -237,7 +240,7 @@ export default function ReescreverPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pt-24">
       <Navigation />
 
       <div className="container mx-auto px-4 py-6">
@@ -245,7 +248,7 @@ export default function ReescreverPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Coluna 1: Parâmetros de Reescrita */}
-          <Card>
+          <Card className="order-1 lg:order-1">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Parâmetros de Reescrita</CardTitle>
             </CardHeader>
@@ -378,47 +381,11 @@ export default function ReescreverPage() {
                   <p className="text-xs text-muted-foreground">O formato é padrão e não pode ser alterado.</p>
                 </div>
               </div>
-
-              <Button
-                variant="outline"
-                className="w-full bg-transparent"
-                size="sm"
-                onClick={handleGenerateChorus}
-                disabled={!genre || !theme || isRewriting || isGeneratingChorus}
-              >
-                <Wand2 className="mr-2 h-4 w-4" />
-                Gerar Refrão
-              </Button>
-
-              <Button
-                className="w-full"
-                size="sm"
-                onClick={handleRewriteLyrics}
-                disabled={isRewriting || !originalLyrics || !genre}
-              >
-                {isRewriting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Reescrevendo...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    Reescrever Letra
-                  </>
-                )}
-              </Button>
-
-              <div className="border-t pt-2">
-                <Button variant="ghost" size="sm" className="w-full justify-start text-xs">
-                  📈 Tendências Atuais: Geral
-                </Button>
-              </div>
             </CardContent>
           </Card>
 
           {/* Coluna 2: Inspiração & Sensações */}
-          <Card>
+          <Card className="order-2 lg:order-2">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Inspiração & Sensações</CardTitle>
             </CardHeader>
@@ -529,8 +496,65 @@ export default function ReescreverPage() {
             </CardContent>
           </Card>
 
-          {/* Coluna 3: Título da Música */}
-          <Card>
+          {/* Nova seção: Botões de Ação */}
+          <div className="order-4 lg:order-3 space-y-3">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Ferramentas de Composição</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button
+                  variant="outline"
+                  className="w-full bg-transparent"
+                  size="sm"
+                  onClick={() => setShowHookDialog(true)}
+                  disabled={isRewriting || isGeneratingChorus}
+                >
+                  <Zap className="mr-2 h-4 w-4" />
+                  Gerar Hook
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="w-full bg-transparent"
+                  size="sm"
+                  onClick={handleGenerateChorus}
+                  disabled={!genre || !theme || isRewriting || isGeneratingChorus}
+                >
+                  <Wand2 className="mr-2 h-4 w-4" />
+                  Gerar Refrão
+                </Button>
+
+                <Button
+                  className="w-full"
+                  size="sm"
+                  onClick={handleRewriteLyrics}
+                  disabled={isRewriting || !originalLyrics || !genre}
+                >
+                  {isRewriting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Reescrevendo...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Reescrever Letra
+                    </>
+                  )}
+                </Button>
+
+                <div className="border-t pt-2">
+                  <Button variant="ghost" size="sm" className="w-full justify-start text-xs">
+                    📈 Tendências Atuais: Geral
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Coluna 3: Resultado */}
+          <Card className="order-3 lg:order-4">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Título da Música (opcional)</CardTitle>
             </CardHeader>
@@ -598,6 +622,17 @@ export default function ReescreverPage() {
         </div>
       </div>
 
+      <Dialog open={showHookDialog} onOpenChange={setShowHookDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Gerador de Hook & Ganchômetro</DialogTitle>
+            <DialogDescription>Analise sua letra e gere hooks comerciais com pontuação de viralidade</DialogDescription>
+          </DialogHeader>
+          <HookGenerator />
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para Sugestões de Refrão */}
       <Dialog open={showChorusDialog} onOpenChange={setShowChorusDialog}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
