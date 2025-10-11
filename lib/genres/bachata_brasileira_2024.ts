@@ -1,3 +1,9 @@
+import {
+  validateBachataLine,
+  validateBachataLyrics,
+  BACHATA_PROSODY_RULES,
+} from "../validation/bachataSyllableValidator"
+
 export const BACHATA_BRASILEIRA_2024 = {
   genre: "Bachata Brasileira Moderna",
   year_range: "2024–2025",
@@ -46,11 +52,15 @@ export const BACHATA_BRASILEIRA_2024 = {
     bpm_range: { min: 100, max: 120, ideal: 110 },
     key: "A minor",
   },
-  validation_checklist: [
-    "Sensualidade suave",
-    "Presença de dança, noite, ritmo",
-    "BPM 100–120",
-    "Sem vulgaridade",
-    "Final elegante",
-  ],
+  validation: {
+    validateLine: validateBachataLine,
+    validateLyrics: validateBachataLyrics,
+    prosodyRules: BACHATA_PROSODY_RULES,
+  },
 } as const
+
+export {
+  validateBachataLine,
+  validateBachataLyrics,
+  suggestBachataCorrections,
+} from "../validation/bachataSyllableValidator"
