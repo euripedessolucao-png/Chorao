@@ -2,8 +2,8 @@ import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
 import { getGenreConfig } from "@/lib/genre-config"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
-import { applyTerceiraViaToLine } from "@/lib/terceira-via"
 import { validateRhymesForGenre } from "@/lib/validation/rhyme-validator"
+import { buildUniversalRulesPrompt } from "@/lib/rules/universal-rules"
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,6 +28,8 @@ export async function POST(request: NextRequest) {
     const genreConfig = getGenreConfig(genero)
     const isPerformanceMode = formattingStyle === "performatico"
     const isBachata = genero.toLowerCase().includes("bachata")
+
+    const universalRulesPrompt = buildUniversalRulesPrompt(genero)
 
     const rhymeInstructions = genero.toLowerCase().includes("sertanejo raiz")
       ? `\n\nREGRAS DE RIMA (OBRIGATÓRIAS PARA SERTANEJO RAIZ):
@@ -115,7 +117,9 @@ export async function POST(request: NextRequest) {
 - Mantenha a letra limpa e direta
 - No final, adicione: (Instruments: [lista em inglês] | BPM: ${metrics?.bpm || 100} | Style: ${genero})`
 
-    const prompt = `Você é um compositor profissional brasileiro especializado em ${genero}.
+    const prompt = `${universalRulesPrompt}
+
+Você é um compositor profissional brasileiro especializado em ${genero}.
 
 TAREFA: Escreva uma letra completa seguindo as especificações abaixo.
 
@@ -128,7 +132,6 @@ ${emocoes && emocoes.length > 0 ? `EMOÇÕES: ${emocoes.join(", ")}` : ""}
 ${titulo ? `TÍTULO SUGERIDO: ${titulo}` : ""}
 ${additionalRequirements ? `\nREQUISITOS ADICIONAIS (PRIORIDADE ABSOLUTA):\n${additionalRequirements}\nRESPEITE todos os requisitos adicionais, especialmente metáforas solicitadas.` : ""}
 ${chorusContext}
-${rhymeInstructions}
 
 ${structureGuide}
 
@@ -159,27 +162,7 @@ Escreva a letra completa agora:`
       temperature: 0.8,
     })
 
-    const rawLyrics = text.trim()
-
-    const lines = rawLyrics.split("\n")
-    const processedLines = await Promise.all(
-      lines.map(async (line, index) => {
-        try {
-          return await applyTerceiraViaToLine(
-            line,
-            index,
-            `${genero} - ${tema || "geral"} - ${humor || "neutro"} - criatividade: ${criatividade || 50}`,
-            isPerformanceMode,
-            additionalRequirements,
-          )
-        } catch (error) {
-          console.error(`[v0] Erro Terceira Via linha ${index + 1}:`, error)
-          return line
-        }
-      }),
-    )
-
-    let finalLyrics = processedLines.join("\n")
+    let finalLyrics = text.trim()
 
     const rhymeValidation = validateRhymesForGenre(finalLyrics, genero)
     if (!rhymeValidation.valid) {
