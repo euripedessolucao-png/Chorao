@@ -550,10 +550,11 @@ export function getGenreConfig(genre: string): GenreConfig & { name: string } {
   const config = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS]
 
   if (!config) {
+    // Return a default configuration with proper type casting
     return {
       name: genre,
       year_range: "2024-2025",
-      reference_artists: [] as any[],
+      reference_artists: [] as any,
       core_principles: {
         theme: "Música brasileira contemporânea" as any,
         tone: "Autêntico e natural" as any,
@@ -561,9 +562,9 @@ export function getGenreConfig(genre: string): GenreConfig & { name: string } {
       },
       language_rules: {
         allowed: {
-          concrete_objects: [] as any[],
-          actions: [] as any[],
-          phrases: [] as any[],
+          concrete_objects: [] as any,
+          actions: [] as any,
+          phrases: [] as any,
         },
         forbidden: {},
         style: "Coloquial, brasileiro, com palavras simples do dia-a-dia",
@@ -591,7 +592,7 @@ export function getGenreConfig(genre: string): GenreConfig & { name: string } {
         bpm_range: { min: 90, max: 110, ideal: 100 },
         rhythm_style: "Ritmo brasileiro moderno",
       },
-    }
+    } as GenreConfig & { name: string }
   }
 
   return {
