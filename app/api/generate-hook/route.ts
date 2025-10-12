@@ -4,6 +4,7 @@ import { getGenreConfig } from "@/lib/genre-config"
 import { getAntiForcingRulesForGenre } from "@/lib/validation/anti-forcing-validator"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 import { getUniversalRhymeRules } from "@/lib/validation/universal-rhyme-rules"
+import { validateRhymesForGenre } from "@/lib/validation/rhyme-validator"
 
 export async function POST(request: Request) {
   try {
@@ -146,39 +147,73 @@ IMPORTANTE:
 
 Retorne APENAS o JSON, sem markdown ou texto adicional.`
 
-    const { text } = await generateText({
-      model: "openai/gpt-4o",
-      prompt: prompt,
-      temperature: 0.85,
-    })
+    let parsedResult: any
+    let bestResult: any = null
+    let bestScore = 0
+    const maxAttempts = genre?.toLowerCase().includes("sertanejo raiz") ? 3 : 1
 
-    let parsedResult
-    try {
-      const cleanText = text
-        .replace(/```json\n?/g, "")
-        .replace(/```\n?/g, "")
-        .trim()
-      parsedResult = JSON.parse(cleanText)
-    } catch (parseError) {
-      console.error("[v0] Error parsing hook response:", parseError)
-      return NextResponse.json({ error: "Erro ao processar resposta da IA" }, { status: 500 })
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const { text } = await generateText({
+        model: "openai/gpt-4o",
+        prompt: prompt,
+        temperature: 0.85 + attempt * 0.05, // Aumenta temperatura em tentativas subsequentes
+      })
+
+      try {
+        const cleanText = text
+          .replace(/```json\n?/g, "")
+          .replace(/```\n?/g, "")
+          .trim()
+        parsedResult = JSON.parse(cleanText)
+      } catch (parseError) {
+        console.error("[v0] Error parsing hook response:", parseError)
+        if (attempt === maxAttempts - 1) {
+          return NextResponse.json({ error: "Erro ao processar resposta da IA" }, { status: 500 })
+        }
+        continue
+      }
+
+      if (parsedResult.hook) {
+        parsedResult.hook = capitalizeLines(parsedResult.hook)
+      }
+      if (parsedResult.hookVariations && Array.isArray(parsedResult.hookVariations)) {
+        parsedResult.hookVariations = parsedResult.hookVariations.map((variation: string) => capitalizeLines(variation))
+      }
+      if (parsedResult.transformations && Array.isArray(parsedResult.transformations)) {
+        parsedResult.transformations = parsedResult.transformations.map((t: any) => ({
+          ...t,
+          transformed: capitalizeLines(t.transformed),
+          variations: t.variations?.map((v: string) => capitalizeLines(v)) || t.variations,
+        }))
+      }
+
+      if (genre && parsedResult.hook) {
+        const rhymeValidation = validateRhymesForGenre(parsedResult.hook, genre)
+        parsedResult.rhymeScore = rhymeValidation.analysis.score
+        parsedResult.rhymeWarnings = rhymeValidation.warnings
+
+        console.log(`[v0] Hook generation attempt ${attempt + 1}/${maxAttempts}:`, {
+          score: parsedResult.score,
+          rhymeScore: parsedResult.rhymeScore,
+          genre,
+        })
+
+        const totalScore = (parsedResult.score || 0) + (parsedResult.rhymeScore || 0)
+        if (totalScore > bestScore) {
+          bestScore = totalScore
+          bestResult = parsedResult
+        }
+
+        if (parsedResult.rhymeScore >= 7 && parsedResult.score >= 70) {
+          break
+        }
+      } else {
+        bestResult = parsedResult
+        break
+      }
     }
 
-    if (parsedResult.hook) {
-      parsedResult.hook = capitalizeLines(parsedResult.hook)
-    }
-    if (parsedResult.hookVariations && Array.isArray(parsedResult.hookVariations)) {
-      parsedResult.hookVariations = parsedResult.hookVariations.map((variation: string) => capitalizeLines(variation))
-    }
-    if (parsedResult.transformations && Array.isArray(parsedResult.transformations)) {
-      parsedResult.transformations = parsedResult.transformations.map((t: any) => ({
-        ...t,
-        transformed: capitalizeLines(t.transformed),
-        variations: t.variations?.map((v: string) => capitalizeLines(v)) || t.variations,
-      }))
-    }
-
-    return NextResponse.json(parsedResult)
+    return NextResponse.json(bestResult || parsedResult)
   } catch (error) {
     console.error("[v0] Error generating hook:", error)
     return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 })

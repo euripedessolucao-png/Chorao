@@ -217,36 +217,60 @@ IMPORTANTE:
 Gere as 5 variações CRIATIVAS agora:`
     }
 
-    const { text } = await generateText({
-      model: "openai/gpt-4o",
-      prompt,
-      temperature: 0.9,
-    })
+    let result: any
+    let bestResult: any = null
+    let bestScore = 0
+    const maxAttempts = genre.toLowerCase().includes("sertanejo raiz") ? 3 : 1
 
-    const jsonMatch = text.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) {
-      throw new Error("Resposta da IA não está no formato JSON esperado")
-    }
-
-    const result = JSON.parse(jsonMatch[0])
-
-    if (result.variations && Array.isArray(result.variations)) {
-      result.variations = result.variations.map((variation: any) => ({
-        ...variation,
-        chorus: capitalizeLines(variation.chorus),
-      }))
-
-      result.variations = result.variations.map((variation: any) => {
-        const rhymeValidation = validateRhymesForGenre(variation.chorus, genre)
-        return {
-          ...variation,
-          rhymeScore: rhymeValidation.analysis.score,
-          rhymeWarnings: rhymeValidation.warnings,
-        }
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const { text } = await generateText({
+        model: "openai/gpt-4o",
+        prompt,
+        temperature: 0.9 + attempt * 0.05, // Aumenta temperatura em tentativas subsequentes
       })
+
+      const jsonMatch = text.match(/\{[\s\S]*\}/)
+      if (!jsonMatch) {
+        throw new Error("Resposta da IA não está no formato JSON esperado")
+      }
+
+      result = JSON.parse(jsonMatch[0])
+
+      if (result.variations && Array.isArray(result.variations)) {
+        result.variations = result.variations.map((variation: any) => ({
+          ...variation,
+          chorus: capitalizeLines(variation.chorus),
+        }))
+
+        result.variations = result.variations.map((variation: any) => {
+          const rhymeValidation = validateRhymesForGenre(variation.chorus, genre)
+          return {
+            ...variation,
+            rhymeScore: rhymeValidation.analysis.score,
+            rhymeWarnings: rhymeValidation.warnings,
+          }
+        })
+
+        const avgRhymeScore =
+          result.variations.reduce((sum: number, v: any) => sum + (v.rhymeScore || 0), 0) / result.variations.length
+
+        console.log(`[v0] Chorus generation attempt ${attempt + 1}/${maxAttempts}:`, {
+          avgRhymeScore,
+          genre,
+        })
+
+        if (avgRhymeScore > bestScore) {
+          bestScore = avgRhymeScore
+          bestResult = result
+        }
+
+        if (avgRhymeScore >= 7) {
+          break
+        }
+      }
     }
 
-    return NextResponse.json(result)
+    return NextResponse.json(bestResult || result)
   } catch (error) {
     console.error("[v0] Error generating chorus:", error)
     return NextResponse.json(
