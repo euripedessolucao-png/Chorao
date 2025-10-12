@@ -6,6 +6,7 @@ import { SERTANEJO_MODERNO_2024 } from "@/lib/genres/sertanejo_moderno_2024"
 import { GENRE_CONFIGS } from "@/lib/genre-config"
 import { getAntiForcingRulesForGenre } from "@/lib/validation/anti-forcing-validator"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
+import { validateRhymesForGenre } from "@/lib/validation/rhyme-validator"
 
 export async function POST(request: Request) {
   try {
@@ -41,6 +42,39 @@ export async function POST(request: Request) {
       .slice(0, 3)
       .map((rule) => `- "${rule.keyword}": ${rule.description}`)
       .join("\n")
+
+    const rhymeInstructions = generoConversao.toLowerCase().includes("sertanejo raiz")
+      ? `\n\nREGRAS DE RIMA (OBRIGATÓRIAS PARA SERTANEJO RAIZ):
+- Use RIMAS RICAS: palavras de classes gramaticais DIFERENTES (substantivo + verbo, adjetivo + substantivo)
+- Exemplos de rimas ricas: "amor" (substantivo) + "cantar" (verbo) é RICA
+- Exemplos de rimas ricas: "flor" (substantivo) + "melhor" (adjetivo) é RICA
+- PROIBIDO: rimas pobres (mesma classe gramatical) ou rimas falsas
+- OBRIGATÓRIO: Pelo menos 50% das rimas devem ser ricas
+- Rimas perfeitas (consoantes): som completo igual a partir da última vogal tônica
+- Exemplos: "jardim/capim", "porteira/bananeira", "viola/sacola", "sertão/coração"
+- A rima rica é ESSENCIAL na tradição do Sertanejo Raiz e moda de viola`
+      : generoConversao.toLowerCase().includes("sertanejo moderno")
+        ? `\n\nREGRAS DE RIMA (SERTANEJO MODERNO):
+- PREFIRA rimas ricas (classes gramaticais diferentes)
+- Aceita algumas rimas pobres (mesma classe) se forem naturais
+- Aceita poucas rimas falsas (máximo 20%) se servirem à narrativa
+- Exemplos de rimas ricas: "amor" (substantivo) + "melhor" (adjetivo)
+- Rimas devem soar naturais, não forçadas`
+        : generoConversao.toLowerCase().includes("mpb")
+          ? `\n\nREGRAS DE RIMA (MPB):
+- Alta qualidade de rimas: prefira rimas ricas e perfeitas
+- Evite rimas óbvias ou clichês ("amor/dor", "paixão/ilusão")
+- Use rimas criativas e surpreendentes
+- Rimas toantes (apenas vogais) são aceitáveis se bem usadas`
+          : generoConversao.toLowerCase().includes("pagode") || generoConversao.toLowerCase().includes("samba")
+            ? `\n\nREGRAS DE RIMA (PAGODE/SAMBA):
+- Rimas naturais e fluidas, que não quebrem o swing
+- Varie entre rimas ricas e pobres para evitar monotonia
+- Rimas devem facilitar a cantabilidade, não dificultar`
+            : `\n\nREGRAS DE RIMA:
+- Use rimas naturais que soem bem ao cantar
+- Prefira rimas ricas (classes gramaticais diferentes) quando possível
+- Evite rimas forçadas ou artificiais`
 
     const languageRule = additionalRequirements
       ? `ATENÇÃO: Os requisitos adicionais do compositor têm PRIORIDADE ABSOLUTA sobre qualquer regra abaixo:
@@ -175,7 +209,7 @@ Título: [título derivado do refrão]
 
 (Instruments: [lista de instrumentos] | BPM: ${metrics?.bpm || 100} | Style: ${generoConversao})`
 
-    const prompt = `${languageRule}${antiForcingRule}${genreSpecificGuidance}
+    const prompt = `${languageRule}${antiForcingRule}${genreSpecificGuidance}${rhymeInstructions}
 
 Você é um compositor profissional especializado em ${generoConversao}.
 
@@ -253,6 +287,13 @@ ${isBachata ? "- CADA LINHA DEVE TER NO MÁXIMO 12 SÍLABAS" : ""}
 
     let finalLyrics = processedLines.join("\n")
 
+    const rhymeValidation = validateRhymesForGenre(finalLyrics, generoConversao)
+    if (!rhymeValidation.valid) {
+      console.log("[v0] Avisos de rima:", rhymeValidation.warnings)
+      console.log("[v0] Erros de rima:", rhymeValidation.errors)
+      console.log("[v0] Score de rima:", rhymeValidation.analysis.score)
+    }
+
     let extractedTitle = ""
     const titleMatch = finalLyrics.match(/^Título:\s*(.+)$/m)
     if (titleMatch?.[1]) {
@@ -275,7 +316,12 @@ ${isBachata ? "- CADA LINHA DEVE TER NO MÁXIMO 12 SÍLABAS" : ""}
 
     finalLyrics = capitalizeLines(finalLyrics)
 
-    return NextResponse.json({ letra: finalLyrics, titulo: extractedTitle })
+    return NextResponse.json({
+      letra: finalLyrics,
+      titulo: extractedTitle,
+      rhymeAnalysis: rhymeValidation.analysis,
+      rhymeWarnings: rhymeValidation.warnings,
+    })
   } catch (error) {
     console.error("[v0] Error rewriting lyrics:", error)
 

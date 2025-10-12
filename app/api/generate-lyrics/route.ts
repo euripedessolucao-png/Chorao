@@ -3,6 +3,7 @@ import { generateText } from "ai"
 import { getGenreConfig } from "@/lib/genre-config"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 import { applyTerceiraViaToLine } from "@/lib/terceira-via"
+import { validateRhymesForGenre } from "@/lib/validation/rhyme-validator"
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,6 +28,39 @@ export async function POST(request: NextRequest) {
     const genreConfig = getGenreConfig(genero)
     const isPerformanceMode = formattingStyle === "performatico"
     const isBachata = genero.toLowerCase().includes("bachata")
+
+    const rhymeInstructions = genero.toLowerCase().includes("sertanejo raiz")
+      ? `\n\nREGRAS DE RIMA (OBRIGATÓRIAS PARA SERTANEJO RAIZ):
+- Use RIMAS RICAS: palavras de classes gramaticais DIFERENTES (substantivo + verbo, adjetivo + substantivo)
+- Exemplos de rimas ricas: "coração" (substantivo) + "canção" (substantivo) é POBRE
+- Exemplos de rimas ricas: "amor" (substantivo) + "cantar" (verbo) é RICA
+- Exemplos de rimas ricas: "flor" (substantivo) + "melhor" (adjetivo) é RICA
+- PROIBIDO: rimas pobres (mesma classe gramatical) ou rimas falsas
+- OBRIGATÓRIO: Pelo menos 50% das rimas devem ser ricas
+- Rimas perfeitas (consoantes): som completo igual a partir da última vogal tônica
+- Exemplos: "jardim/capim", "porteira/bananeira", "viola/sacola", "sertão/coração"`
+      : genero.toLowerCase().includes("sertanejo moderno")
+        ? `\n\nREGRAS DE RIMA (SERTANEJO MODERNO):
+- PREFIRA rimas ricas (classes gramaticais diferentes)
+- Aceita algumas rimas pobres (mesma classe) se forem naturais
+- Aceita poucas rimas falsas (máximo 20%) se servirem à narrativa
+- Exemplos de rimas ricas: "amor" (substantivo) + "melhor" (adjetivo)
+- Rimas devem soar naturais, não forçadas`
+        : genero.toLowerCase().includes("mpb")
+          ? `\n\nREGRAS DE RIMA (MPB):
+- Alta qualidade de rimas: prefira rimas ricas e perfeitas
+- Evite rimas óbvias ou clichês ("amor/dor", "paixão/ilusão")
+- Use rimas criativas e surpreendentes
+- Rimas toantes (apenas vogais) são aceitáveis se bem usadas`
+          : genero.toLowerCase().includes("pagode") || genero.toLowerCase().includes("samba")
+            ? `\n\nREGRAS DE RIMA (PAGODE/SAMBA):
+- Rimas naturais e fluidas, que não quebrem o swing
+- Varie entre rimas ricas e pobres para evitar monotonia
+- Rimas devem facilitar a cantabilidade, não dificultar`
+            : `\n\nREGRAS DE RIMA:
+- Use rimas naturais que soem bem ao cantar
+- Prefira rimas ricas (classes gramaticais diferentes) quando possível
+- Evite rimas forçadas ou artificiais`
 
     let chorusContext = ""
     if (additionalRequirements) {
@@ -89,11 +123,12 @@ TEMA: ${tema || "amor e relacionamento"}
 HUMOR: ${humor || "neutro"}
 CRIATIVIDADE: ${criatividade}
 ${inspiracao ? `INSPIRAÇÃO: ${inspiracao}` : ""}
-${metaforas ? `METÁFORAS DESEJADAS: ${metaforas}` : ""}
+${metaforas ? `METÁFORAS DESEJADAS (PRIORIDADE ABSOLUTA): ${metaforas}\nRESPEITE E INSIRA estas metáforas na letra de forma natural e criativa.` : ""}
 ${emocoes && emocoes.length > 0 ? `EMOÇÕES: ${emocoes.join(", ")}` : ""}
 ${titulo ? `TÍTULO SUGERIDO: ${titulo}` : ""}
-${additionalRequirements ? `\nREQUISITOS ADICIONAIS:\n${additionalRequirements}` : ""}
+${additionalRequirements ? `\nREQUISITOS ADICIONAIS (PRIORIDADE ABSOLUTA):\n${additionalRequirements}\nRESPEITE todos os requisitos adicionais, especialmente metáforas solicitadas.` : ""}
 ${chorusContext}
+${rhymeInstructions}
 
 ${structureGuide}
 
@@ -146,6 +181,13 @@ Escreva a letra completa agora:`
 
     let finalLyrics = processedLines.join("\n")
 
+    const rhymeValidation = validateRhymesForGenre(finalLyrics, genero)
+    if (!rhymeValidation.valid) {
+      console.log("[v0] Avisos de rima:", rhymeValidation.warnings)
+      console.log("[v0] Erros de rima:", rhymeValidation.errors)
+      console.log("[v0] Score de rima:", rhymeValidation.analysis.score)
+    }
+
     let extractedTitle = titulo || ""
     const titleMatch = finalLyrics.match(/^Title:\s*(.+)$/m)
     if (titleMatch?.[1]) {
@@ -167,7 +209,12 @@ Escreva a letra completa agora:`
 
     finalLyrics = capitalizeLines(finalLyrics)
 
-    return NextResponse.json({ letra: finalLyrics, titulo: extractedTitle })
+    return NextResponse.json({
+      letra: finalLyrics,
+      titulo: extractedTitle,
+      rhymeAnalysis: rhymeValidation.analysis,
+      rhymeWarnings: rhymeValidation.warnings,
+    })
   } catch (error) {
     console.error("[v0] Erro ao gerar letra:", error)
     return NextResponse.json(
