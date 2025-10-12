@@ -553,7 +553,7 @@ export function getGenreConfig(genre: string): GenreConfig & { name: string } {
     return {
       name: genre,
       year_range: "2024-2025",
-      reference_artists: [] as any,
+      reference_artists: [] as any[],
       core_principles: {
         theme: "Música brasileira contemporânea" as any,
         tone: "Autêntico e natural" as any,
@@ -561,9 +561,9 @@ export function getGenreConfig(genre: string): GenreConfig & { name: string } {
       },
       language_rules: {
         allowed: {
-          concrete_objects: [],
-          actions: [],
-          phrases: [],
+          concrete_objects: [] as any[],
+          actions: [] as any[],
+          phrases: [] as any[],
         },
         forbidden: {},
         style: "Coloquial, brasileiro, com palavras simples do dia-a-dia",
