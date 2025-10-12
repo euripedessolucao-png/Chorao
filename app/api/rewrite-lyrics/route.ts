@@ -29,8 +29,8 @@ export async function POST(request: Request) {
         ? SERTANEJO_MODERNO_2024
         : GENRE_CONFIGS[generoConversao as keyof typeof GENRE_CONFIGS]
 
-    const instrumentMatch = letraOriginal.match(/$$Instruments?:\s*\[([^\]]+)\][^$$]*\)/i)
-    const originalInstruments = instrumentMatch ? instrumentMatch[1] : null
+    const instrumentMatch = letraOriginal.match(/\(Instruments?:\s*\[([^\]]+)\]/i)
+    const originalInstruments = instrumentMatch ? instrumentMatch[1].trim() : null
 
     const hasPerformanceMode =
       /\[(?:INTRO|VERSE|CHORUS|BRIDGE|OUTRO)\s*-\s*[^\]]+\]/.test(letraOriginal) || isPerformanceMode
@@ -217,10 +217,11 @@ ${isBachata ? "- CADA LINHA DEVE TER NO MÁXIMO 12 SÍLABAS" : ""}
     }
 
     if (!finalLyrics.includes("(Instruments:")) {
-      const instrumentList =
-        originalInstruments ||
-        `(Instruments: [${isBachata ? "electric guitar, synthesizer, electronic drums, accordion" : "guitar, bass, drums, keyboard"}] | BPM: ${metrics?.bpm || 100} | Style: ${generoConversao})`
-      finalLyrics = finalLyrics + "\n\n" + instrumentList
+      const instrumentList = originalInstruments
+        ? `(Instruments: [${originalInstruments}] | BPM: ${metrics?.bpm || 100} | Style: ${generoConversao})`
+        : `(Instruments: [${isBachata ? "electric guitar, synthesizer, electronic drums, accordion" : "guitar, bass, drums, keyboard"}] | BPM: ${metrics?.bpm || 100} | Style: ${generoConversao})`
+
+      finalLyrics = finalLyrics.trim() + "\n\n" + instrumentList
     }
 
     return NextResponse.json({ letra: finalLyrics, titulo: extractedTitle })
