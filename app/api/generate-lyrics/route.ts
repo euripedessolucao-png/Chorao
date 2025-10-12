@@ -5,6 +5,7 @@ import { GENRE_CONFIGS } from "@/lib/genre-config"
 import { BACHATA_BRASILEIRA_2024 } from "@/lib/genres/bachata_brasileira_2024"
 import { SERTANEJO_MODERNO_2024 } from "@/lib/genres/sertanejo_moderno_2024"
 import { getAntiForcingRulesForGenre } from "@/lib/validation/anti-forcing-validator"
+import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 
 export async function POST(request: Request) {
   try {
@@ -49,7 +50,16 @@ export async function POST(request: Request) {
       .join("\n")
 
     const languageRule = additionalRequirements
-      ? `ATENÇÃO: Os requisitos adicionais do compositor têm PRIORIDADE ABSOLUTA sobre qualquer regra abaixo:\n${additionalRequirements}\n\n`
+      ? `ATENÇÃO: Os requisitos adicionais do compositor têm PRIORIDADE ABSOLUTA sobre qualquer regra abaixo:
+${additionalRequirements}
+
+REGRA UNIVERSAL DE METÁFORAS:
+- Metáforas solicitadas pelo compositor DEVEM ser respeitadas e inseridas na letra
+- Não altere, ignore ou substitua metáforas especificadas nos requisitos adicionais
+- Integre as metáforas de forma natural no contexto emocional da música
+- Se o compositor pediu uma metáfora específica, ela é OBRIGATÓRIA na composição
+
+`
       : `REGRA UNIVERSAL DE LINGUAGEM (INVIOLÁVEL):
 - Use APENAS palavras simples e coloquiais do dia-a-dia
 - Fale como um humano comum fala na conversa cotidiana
@@ -211,6 +221,8 @@ RETORNE APENAS A LETRA FORMATADA (sem comentários, sem explicações).`
         : "guitar, bass, drums, keyboard"
       finalLyrics += `\n\n(Instruments: [${instruments}] | BPM: ${metrics?.bpm || 100} | Style: ${genero})`
     }
+
+    finalLyrics = capitalizeLines(finalLyrics)
 
     return NextResponse.json({ letra: finalLyrics, titulo: extractedTitle })
   } catch (error) {

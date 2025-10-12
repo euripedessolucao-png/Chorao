@@ -24,7 +24,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Star, Trophy, Wand2 } from "lucide-react"
-import { MOODS, EMOTIONS } from "@/lib/genres"
+import { EMOTIONS } from "@/lib/genres"
 import { GenreSelect } from "@/components/genre-select"
 import { HookGenerator } from "@/components/hook-generator"
 
@@ -292,18 +292,13 @@ export default function CriarPage() {
 
               <div className="space-y-2">
                 <Label className="text-xs">Humor</Label>
-                <Select value={mood} onValueChange={setMood}>
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Selecione o humor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {MOODS.map((m) => (
-                      <SelectItem key={m} value={m}>
-                        {m}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Input
+                  placeholder="Ex: Feliz, Triste, Nostálgico, Melancólico..."
+                  value={mood}
+                  onChange={(e) => setMood(e.target.value)}
+                  className="h-9"
+                />
+                <p className="text-xs text-muted-foreground">Descreva o humor/sentimento desejado para a composição</p>
               </div>
 
               <div className="space-y-2">

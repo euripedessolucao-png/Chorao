@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { generateText } from "ai"
 import { getGenreConfig } from "@/lib/genre-config"
 import { getAntiForcingRulesForGenre } from "@/lib/validation/anti-forcing-validator"
+import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 
 export async function POST(request: Request) {
   try {
@@ -20,7 +21,16 @@ export async function POST(request: Request) {
       .join("\n")
 
     const languageRule = additionalRequirements
-      ? `ATENÇÃO: Os requisitos adicionais do compositor têm PRIORIDADE ABSOLUTA sobre qualquer regra:\n${additionalRequirements}\n\n`
+      ? `ATENÇÃO: Os requisitos adicionais do compositor têm PRIORIDADE ABSOLUTA sobre qualquer regra:
+${additionalRequirements}
+
+REGRA UNIVERSAL DE METÁFORAS:
+- Metáforas solicitadas pelo compositor DEVEM ser respeitadas e inseridas no hook
+- Não altere, ignore ou substitua metáforas especificadas nos requisitos adicionais
+- Integre as metáforas de forma natural no contexto emocional da música
+- Se o compositor pediu uma metáfora específica, ela é OBRIGATÓRIA na composição
+
+`
       : `REGRA UNIVERSAL DE LINGUAGEM (INVIOLÁVEL):
 - Use APENAS palavras simples e coloquiais do dia-a-dia brasileiro
 - Fale como um humano comum fala na conversa cotidiana
@@ -145,6 +155,20 @@ Retorne APENAS o JSON, sem markdown ou texto adicional.`
     } catch (parseError) {
       console.error("[v0] Error parsing hook response:", parseError)
       return NextResponse.json({ error: "Erro ao processar resposta da IA" }, { status: 500 })
+    }
+
+    if (parsedResult.hook) {
+      parsedResult.hook = capitalizeLines(parsedResult.hook)
+    }
+    if (parsedResult.hookVariations && Array.isArray(parsedResult.hookVariations)) {
+      parsedResult.hookVariations = parsedResult.hookVariations.map((variation: string) => capitalizeLines(variation))
+    }
+    if (parsedResult.transformations && Array.isArray(parsedResult.transformations)) {
+      parsedResult.transformations = parsedResult.transformations.map((t: any) => ({
+        ...t,
+        transformed: capitalizeLines(t.transformed),
+        variations: t.variations?.map((v: string) => capitalizeLines(v)) || t.variations,
+      }))
     }
 
     return NextResponse.json(parsedResult)

@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
 import { getGenreConfig } from "@/lib/genre-config"
 import { getAntiForcingRulesForGenre } from "@/lib/validation/anti-forcing-validator"
+import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,7 +25,16 @@ export async function POST(request: NextRequest) {
       : ""
 
     const languageRule = additionalRequirements
-      ? `ATENÇÃO: Os requisitos adicionais do compositor têm PRIORIDADE ABSOLUTA sobre qualquer regra:\n${additionalRequirements}\n\n`
+      ? `ATENÇÃO: Os requisitos adicionais do compositor têm PRIORIDADE ABSOLUTA sobre qualquer regra:
+${additionalRequirements}
+
+REGRA UNIVERSAL DE METÁFORAS:
+- Metáforas solicitadas pelo compositor DEVEM ser respeitadas e inseridas no refrão
+- Não altere, ignore ou substitua metáforas especificadas nos requisitos adicionais
+- Integre as metáforas de forma natural no contexto emocional da música
+- Se o compositor pediu uma metáfora específica, ela é OBRIGATÓRIA na composição
+
+`
       : `REGRA UNIVERSAL DE LINGUAGEM (INVIOLÁVEL):
 - Use APENAS palavras simples e coloquiais do dia-a-dia brasileiro
 - Fale como um humano comum fala na conversa cotidiana
@@ -197,6 +207,13 @@ Gere as 5 variações agora:`
     }
 
     const result = JSON.parse(jsonMatch[0])
+
+    if (result.variations && Array.isArray(result.variations)) {
+      result.variations = result.variations.map((variation: any) => ({
+        ...variation,
+        chorus: capitalizeLines(variation.chorus),
+      }))
+    }
 
     return NextResponse.json(result)
   } catch (error) {

@@ -14,7 +14,7 @@ import { Slider } from "@/components/ui/slider"
 import { RefreshCw, Save, Copy, Search, Loader2, Wand2, Star, Trophy } from "lucide-react"
 import { toast } from "sonner"
 import { GENRE_CONFIGS } from "@/lib/genre-config"
-import { MOODS, EMOTIONS } from "@/lib/genres"
+import { EMOTIONS } from "@/lib/genres"
 import { GenreSelect } from "@/components/genre-select"
 import {
   Dialog,
@@ -302,18 +302,13 @@ export default function ReescreverPage() {
 
               <div className="space-y-2">
                 <Label className="text-xs">Humor</Label>
-                <select
+                <Input
+                  placeholder="Ex: Feliz, Triste, Nostálgico, Melancólico..."
                   value={mood}
                   onChange={(e) => setMood(e.target.value)}
-                  className="w-full h-9 rounded-md border border-input bg-background px-3 py-2 text-xs"
-                >
-                  <option value="">Selecione o humor</option>
-                  {MOODS.map((m) => (
-                    <option key={m} value={m}>
-                      {m}
-                    </option>
-                  ))}
-                </select>
+                  className="h-9"
+                />
+                <p className="text-xs text-muted-foreground">Descreva o humor/sentimento desejado para a reescrita</p>
               </div>
 
               <div className="space-y-2">
