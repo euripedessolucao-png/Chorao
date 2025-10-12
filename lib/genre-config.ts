@@ -263,6 +263,201 @@ export const GENRE_CONFIGS = {
       rhythm_style: "Batida marcada do funk com graves pesados (paredão)",
     },
   },
+  "Funk Melody": {
+    year_range: "2024-2025",
+    reference_artists: ["MC Ryan SP", "Pedro Sampaio", "Anitta (funk)", "MC Daniel", "Ludmilla"],
+    core_principles: {
+      theme:
+        "Autoestima, empoderamento, festa consciente, amor com respeito — não apologia à violência ou objetificação",
+      tone: "Ritmo marcado, frases curtas, repetitivo e grudento",
+      narrative_arc: "Afirmação → Convite → Celebração",
+    },
+    language_rules: {
+      allowed: {
+        concrete_objects: ["paredão", "rolê", "zap", "story", "look", "beat", "flow", "baile", "favela", "quebrada"],
+        actions: [
+          "mandar ver",
+          "chamar pra dançar",
+          "brilhar",
+          "mandar o flow",
+          "jogar o cabelo",
+          "rebolar",
+          "dominar a pista",
+        ],
+        phrases: [
+          "Tô no meu flow",
+          "Meu beat é pesado",
+          "Respeita meu espaço",
+          "Sou dona de mim",
+          "Vim pra brilhar",
+          "Tô no comando",
+        ],
+      },
+      forbidden: {
+        toxic_content: [
+          "mulher objeto",
+          "violência",
+          "drogas explícitas",
+          "machismo",
+          "apologia ao crime",
+          "objetificação",
+        ],
+        generic_cliches: ["põe a mão no alto", "vamos curtir a noite", "a festa tá bombando", "todo mundo junto"],
+      },
+      style: "Direto, repetitivo, com gírias urbanas ('mano', 'véio', 'bicho'). Tom confiante e empoderado.",
+    },
+    structure_rules: {
+      verse: { lines: 4, purpose: "Versos curtos e diretos, estabelecendo atitude e contexto" },
+      chorus: {
+        lines_options: [2],
+        forbidden_lines: [3, 4],
+        required_elements: ["Grudento e repetitivo", "Máximo 6 sílabas por linha", "Frase de impacto", "Sem vírgulas"],
+      },
+    },
+    prosody_rules: {
+      syllable_count: {
+        with_comma: { max_before_comma: 6, max_after_comma: 6, total_max: 12 },
+        without_comma: { min: 3, max: 6, acceptable_up_to: 6 },
+      },
+      verse_counting_rule: "Funk usa versos curtos. Uma linha com vírgula (6+6) conta como 2 VERSOS",
+    },
+    harmony_and_rhythm: {
+      key: "C minor",
+      allowed_chords: ["Cm", "Fm", "Gm", "Ab", "Bb"],
+      bpm_range: { min: 120, max: 140, ideal: 130 },
+      rhythm_style: "Batida marcada do funk com graves pesados (paredão)",
+    },
+  },
+  "Funk Ostentação": {
+    year_range: "2024-2025",
+    reference_artists: ["MC Ryan SP", "Pedro Sampaio", "Anitta (funk)", "MC Daniel", "Ludmilla"],
+    core_principles: {
+      theme:
+        "Autoestima, empoderamento, festa consciente, amor com respeito — não apologia à violência ou objetificação",
+      tone: "Ritmo marcado, frases curtas, repetitivo e grudento",
+      narrative_arc: "Afirmação → Convite → Celebração",
+    },
+    language_rules: {
+      allowed: {
+        concrete_objects: ["paredão", "rolê", "zap", "story", "look", "beat", "flow", "baile", "favela", "quebrada"],
+        actions: [
+          "mandar ver",
+          "chamar pra dançar",
+          "brilhar",
+          "mandar o flow",
+          "jogar o cabelo",
+          "rebolar",
+          "dominar a pista",
+        ],
+        phrases: [
+          "Tô no meu flow",
+          "Meu beat é pesado",
+          "Respeita meu espaço",
+          "Sou dona de mim",
+          "Vim pra brilhar",
+          "Tô no comando",
+        ],
+      },
+      forbidden: {
+        toxic_content: [
+          "mulher objeto",
+          "violência",
+          "drogas explícitas",
+          "machismo",
+          "apologia ao crime",
+          "objetificação",
+        ],
+        generic_cliches: ["põe a mão no alto", "vamos curtir a noite", "a festa tá bombando", "todo mundo junto"],
+      },
+      style: "Direto, repetitivo, com gírias urbanas ('mano', 'véio', 'bicho'). Tom confiante e empoderado.",
+    },
+    structure_rules: {
+      verse: { lines: 4, purpose: "Versos curtos e diretos, estabelecendo atitude e contexto" },
+      chorus: {
+        lines_options: [2],
+        forbidden_lines: [3, 4],
+        required_elements: ["Grudento e repetitivo", "Máximo 6 sílabas por linha", "Frase de impacto", "Sem vírgulas"],
+      },
+    },
+    prosody_rules: {
+      syllable_count: {
+        with_comma: { max_before_comma: 6, max_after_comma: 6, total_max: 12 },
+        without_comma: { min: 3, max: 6, acceptable_up_to: 6 },
+      },
+      verse_counting_rule: "Funk usa versos curtos. Uma linha com vírgula (6+6) conta como 2 VERSOS",
+    },
+    harmony_and_rhythm: {
+      key: "C minor",
+      allowed_chords: ["Cm", "Fm", "Gm", "Ab", "Bb"],
+      bpm_range: { min: 120, max: 140, ideal: 130 },
+      rhythm_style: "Batida marcada do funk com graves pesados (paredão)",
+    },
+  },
+  "Funk Consciente": {
+    year_range: "2024-2025",
+    reference_artists: ["MC Ryan SP", "Pedro Sampaio", "Anitta (funk)", "MC Daniel", "Ludmilla"],
+    core_principles: {
+      theme:
+        "Autoestima, empoderamento, festa consciente, amor com respeito — não apologia à violência ou objetificação",
+      tone: "Ritmo marcado, frases curtas, repetitivo e grudento",
+      narrative_arc: "Afirmação → Convite → Celebração",
+    },
+    language_rules: {
+      allowed: {
+        concrete_objects: ["paredão", "rolê", "zap", "story", "look", "beat", "flow", "baile", "favela", "quebrada"],
+        actions: [
+          "mandar ver",
+          "chamar pra dançar",
+          "brilhar",
+          "mandar o flow",
+          "jogar o cabelo",
+          "rebolar",
+          "dominar a pista",
+        ],
+        phrases: [
+          "Tô no meu flow",
+          "Meu beat é pesado",
+          "Respeita meu espaço",
+          "Sou dona de mim",
+          "Vim pra brilhar",
+          "Tô no comando",
+        ],
+      },
+      forbidden: {
+        toxic_content: [
+          "mulher objeto",
+          "violência",
+          "drogas explícitas",
+          "machismo",
+          "apologia ao crime",
+          "objetificação",
+        ],
+        generic_cliches: ["põe a mão no alto", "vamos curtir a noite", "a festa tá bombando", "todo mundo junto"],
+      },
+      style: "Direto, repetitivo, com gírias urbanas ('mano', 'véio', 'bicho'). Tom confiante e empoderado.",
+    },
+    structure_rules: {
+      verse: { lines: 4, purpose: "Versos curtos e diretos, estabelecendo atitude e contexto" },
+      chorus: {
+        lines_options: [2],
+        forbidden_lines: [3, 4],
+        required_elements: ["Grudento e repetitivo", "Máximo 6 sílabas por linha", "Frase de impacto", "Sem vírgulas"],
+      },
+    },
+    prosody_rules: {
+      syllable_count: {
+        with_comma: { max_before_comma: 6, max_after_comma: 6, total_max: 12 },
+        without_comma: { min: 3, max: 6, acceptable_up_to: 6 },
+      },
+      verse_counting_rule: "Funk usa versos curtos. Uma linha com vírgula (6+6) conta como 2 VERSOS",
+    },
+    harmony_and_rhythm: {
+      key: "C minor",
+      allowed_chords: ["Cm", "Fm", "Gm", "Ab", "Bb"],
+      bpm_range: { min: 120, max: 140, ideal: 130 },
+      rhythm_style: "Batida marcada do funk com graves pesados (paredão)",
+    },
+  },
   "Pagode Romântico": {
     year_range: "1990-2025",
     reference_artists: ["Thiaguinho", "Péricles", "Ferrugem", "Sorriso Maroto"],
@@ -336,7 +531,9 @@ export const GENRE_CONFIGS = {
         with_comma: { max_before_comma: 7, max_after_comma: 5, total_max: 12 },
         without_comma: { min: 5, max: 8, acceptable_up_to: 9 },
       },
-      verse_counting_rule: "Uma linha com vírgula (6+6, 7+5 ou 5+7 sílabas) conta como 2 VERSOS na estrutura total",
+      breathability: "Toda linha deve caber em um fôlego natural ao cantar",
+      verse_counting_rule:
+        "Uma linha com vírgula (ex: 6+6, 7+5 ou 5+7 sílabas) conta como 2 VERSOS na estrutura total, não 1 verso",
     },
     harmony_and_rhythm: {
       key: "C major",
@@ -353,11 +550,10 @@ export function getGenreConfig(genre: string): GenreConfig & { name: string } {
   const config = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS]
 
   if (!config) {
-    // Retorna configuração padrão se o gênero não for encontrado
     return {
       name: genre,
       year_range: "2024-2025",
-      reference_artists: [],
+      reference_artists: [] as any,
       core_principles: {
         theme: "Música brasileira contemporânea",
         tone: "Autêntico e natural",
