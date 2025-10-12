@@ -34,6 +34,7 @@ Com vírgula (conta como 2 versos):
 Sem vírgula (1 verso):
   - Mínimo: ${genreConfig.prosody_rules.syllable_count.without_comma.min} sílabas
   - Máximo: ${genreConfig.prosody_rules.syllable_count.without_comma.max} sílabas
+  - Aceitável até: ${genreConfig.prosody_rules.syllable_count.without_comma.acceptable_up_to} sílabas
 `
       : ""
 
