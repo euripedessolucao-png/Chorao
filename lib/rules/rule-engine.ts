@@ -6,7 +6,7 @@
 
 import { UNIVERSAL_RULES, getRhymeRulesForGenre, buildUniversalRulesPrompt } from "./universal-rules"
 import { getGenreConfig } from "../genre-config"
-import { validateAgainstForcing } from "../validation/anti-forcing-validator"
+import { validateFullLyricAgainstForcing } from "../validation/anti-forcing-validator"
 import { validateRhymesForGenre } from "../validation/rhyme-validator"
 
 export interface RuleValidationResult {
@@ -45,10 +45,10 @@ export async function validateWithAllRules(
   }
 
   // 1. Validar Anti-Forçação
-  const forcingResult = validateAgainstForcing(lyrics, genre)
-  if (!forcingResult.passed) {
+  const forcingResult = validateFullLyricAgainstForcing(lyrics, genre)
+  if (!forcingResult.isValid) {
     details.anti_forcing_check = false
-    errors.push(...forcingResult.violations.map((v) => `Anti-forçação: ${v.reason}`))
+    errors.push(...forcingResult.warnings)
   }
 
   // 2. Validar Rimas
