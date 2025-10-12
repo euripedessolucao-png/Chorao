@@ -44,15 +44,42 @@ export async function POST(request: Request) {
       .join("\n")
 
     const rhymeInstructions = generoConversao.toLowerCase().includes("sertanejo raiz")
-      ? `\n\nREGRAS DE RIMA (OBRIGATÓRIAS PARA SERTANEJO RAIZ):
-- Use RIMAS RICAS: palavras de classes gramaticais DIFERENTES (substantivo + verbo, adjetivo + substantivo)
-- Exemplos de rimas ricas: "amor" (substantivo) + "cantar" (verbo) é RICA
-- Exemplos de rimas ricas: "flor" (substantivo) + "melhor" (adjetivo) é RICA
-- PROIBIDO: rimas pobres (mesma classe gramatical) ou rimas falsas
-- OBRIGATÓRIO: Pelo menos 50% das rimas devem ser ricas
-- Rimas perfeitas (consoantes): som completo igual a partir da última vogal tônica
-- Exemplos: "jardim/capim", "porteira/bananeira", "viola/sacola", "sertão/coração"
-- A rima rica é ESSENCIAL na tradição do Sertanejo Raiz e moda de viola`
+      ? `\n\n🎵 REGRAS DE RIMA PARA SERTANEJO RAIZ (OBRIGATÓRIAS E INVIOLÁVEIS):
+
+⭐ RIMA RICA É OBRIGATÓRIA (mínimo 50% das rimas):
+- Rima Rica = palavras de CLASSES GRAMATICAIS DIFERENTES
+- Substantivo + Verbo: "amor" (substantivo) + "cantar" (verbo) ✓
+- Substantivo + Adjetivo: "flor" (substantivo) + "melhor" (adjetivo) ✓
+- Verbo + Adjetivo: "partir" (verbo) + "sentir" (verbo) ✗ (mesma classe = POBRE)
+
+📋 EXEMPLOS DE RIMAS RICAS PERFEITAS:
+1. "porteira" (substantivo) + "bananeira" (substantivo) - ACEITO (objetos diferentes)
+2. "viola" (substantivo) + "sacola" (substantivo) - ACEITO
+3. "sertão" (substantivo) + "coração" (substantivo) - ACEITO
+4. "jardim" (substantivo) + "capim" (substantivo) - ACEITO
+5. "amor" (substantivo) + "flor" (substantivo) - ACEITO
+6. "cantar" (verbo) + "luar" (substantivo) - RICO ✓
+7. "partir" (verbo) + "sentir" (verbo) - POBRE ✗
+8. "paixão" (substantivo) + "razão" (substantivo) - ACEITO
+
+❌ EXEMPLOS DE RIMAS POBRES (EVITAR):
+- "amor" + "dor" (ambos substantivos abstratos)
+- "cantar" + "amar" (ambos verbos)
+- "feliz" + "infeliz" (ambos adjetivos)
+
+🚫 RIMAS FALSAS SÃO PROIBIDAS:
+- "peito" + "abraço" ✗ (não rimam)
+- "jardim" + "dor" ✗ (não rimam)
+- "mão" + "recado" ✗ (não rimam)
+
+✅ COMO CRIAR RIMAS RICAS:
+1. Escolha a palavra final do verso (ex: "porteira")
+2. Busque uma palavra que rime PERFEITAMENTE (ex: "bananeira", "poeira", "madeira")
+3. Verifique se são classes diferentes OU objetos concretos diferentes
+4. Se for mesma classe abstrata (amor/dor), TROQUE por outra palavra
+
+IMPORTANTE: A tradição do Sertanejo Raiz e moda de viola EXIGE rimas ricas e perfeitas.
+Compositores como Almir Sater, Chitãozinho & Xororó sempre usam rimas de alta qualidade.`
       : generoConversao.toLowerCase().includes("sertanejo moderno")
         ? `\n\nREGRAS DE RIMA (SERTANEJO MODERNO):
 - PREFIRA rimas ricas (classes gramaticais diferentes)
@@ -288,10 +315,83 @@ ${isBachata ? "- CADA LINHA DEVE TER NO MÁXIMO 12 SÍLABAS" : ""}
     let finalLyrics = processedLines.join("\n")
 
     const rhymeValidation = validateRhymesForGenre(finalLyrics, generoConversao)
+
     if (!rhymeValidation.valid) {
-      console.log("[v0] Avisos de rima:", rhymeValidation.warnings)
-      console.log("[v0] Erros de rima:", rhymeValidation.errors)
-      console.log("[v0] Score de rima:", rhymeValidation.analysis.score)
+      console.log("[v0] ⚠️ Avisos de rima:", rhymeValidation.warnings)
+      console.log("[v0] ❌ Erros de rima:", rhymeValidation.errors)
+      console.log("[v0] 📊 Score de rima:", rhymeValidation.analysis.score)
+      console.log("[v0] 📋 Esquema de rimas:", rhymeValidation.analysis.scheme.join(""))
+
+      // Para Sertanejo Raiz, rejeitar se não atender aos padrões
+      if (generoConversao.toLowerCase().includes("sertanejo raiz")) {
+        const richRhymePercentage =
+          rhymeValidation.analysis.quality.filter((q) => q.type === "rica").length /
+          rhymeValidation.analysis.quality.length
+
+        if (richRhymePercentage < 0.5) {
+          console.log(
+            `[v0] 🔄 Regenerando: Sertanejo Raiz precisa de 50% rimas ricas, atual: ${(richRhymePercentage * 100).toFixed(0)}%`,
+          )
+
+          // Adicionar feedback específico ao prompt
+          const rhymeFeedback = `
+ATENÇÃO: A letra anterior teve apenas ${(richRhymePercentage * 100).toFixed(0)}% de rimas ricas.
+Sertanejo Raiz EXIGE pelo menos 50% de rimas ricas.
+
+CORRIJA usando estes exemplos:
+- "porteira/bananeira" (substantivos concretos) ✓
+- "viola/sacola" (substantivos concretos) ✓
+- "sertão/coração" (substantivos) ✓
+- "jardim/capim" (substantivos da natureza) ✓
+
+EVITE:
+- "amor/dor" (muito abstrato e pobre)
+- "paixão/razão" (muito abstrato e pobre)
+- Palavras que não rimam perfeitamente
+`
+
+          const { text: regeneratedText } = await generateText({
+            model: "openai/gpt-4o",
+            prompt: prompt + rhymeFeedback,
+            temperature: 0.8, // Aumentar temperatura para mais criatividade
+          })
+
+          const regeneratedLines = regeneratedText.split("\n")
+          const reprocessedLines = await Promise.all(
+            regeneratedLines.map(async (line, index) => {
+              if (line.startsWith("[") || line.startsWith("(") || line.startsWith("Título:") || !line.trim()) {
+                return line
+              }
+
+              try {
+                const improvedLine = await ThirdWayEngine.generateThirdWayLine(
+                  line,
+                  generoConversao,
+                  genreConfig,
+                  `Reescrevendo linha ${index + 1} com rimas ricas`,
+                  isPerformanceMode,
+                  additionalRequirements,
+                )
+                return improvedLine
+              } catch (error) {
+                console.error(`[v0] Erro ao processar linha ${index + 1}:`, error)
+                return line
+              }
+            }),
+          )
+
+          finalLyrics = reprocessedLines.join("\n")
+
+          // Validar novamente
+          const secondValidation = validateRhymesForGenre(finalLyrics, generoConversao)
+          console.log("[v0] 🔄 Segunda validação - Score:", secondValidation.analysis.score)
+          console.log("[v0] 🔄 Segunda validação - Esquema:", secondValidation.analysis.scheme.join(""))
+        }
+      }
+    } else {
+      console.log("[v0] ✅ Rimas validadas com sucesso!")
+      console.log("[v0] 📊 Score de rima:", rhymeValidation.analysis.score)
+      console.log("[v0] 📋 Esquema de rimas:", rhymeValidation.analysis.scheme.join(""))
     }
 
     let extractedTitle = ""

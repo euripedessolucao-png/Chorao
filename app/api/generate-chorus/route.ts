@@ -3,6 +3,8 @@ import { generateText } from "ai"
 import { getGenreConfig } from "@/lib/genre-config"
 import { getAntiForcingRulesForGenre } from "@/lib/validation/anti-forcing-validator"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
+import { getUniversalRhymeRules } from "@/lib/validation/universal-rhyme-rules"
+import { validateRhymesForGenre } from "@/lib/validation/rhyme-validator"
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,6 +15,7 @@ export async function POST(request: NextRequest) {
     }
 
     const genreConfig = getGenreConfig(genre)
+    const rhymeRules = getUniversalRhymeRules(genre)
 
     const antiForcingRules = getAntiForcingRulesForGenre(genre)
     const antiForcingExamples = antiForcingRules
@@ -81,10 +84,14 @@ TAREFA: Gere 5 opções de refrão grudento, radiofônico e viralizável para um
 - Humor: ${mood || "neutro"}
 - Tom: ${tone}${lyricsContext}
 
+${rhymeRules.instructions}
+
 REGRAS ESTRUTURAIS:
 - Número de linhas: APENAS 2 ou 4 linhas (NUNCA 3 linhas)
 - Máximo de 4 linhas por refrão
 - EMPILHAR VERSOS: Cada verso em linha separada para facilitar contagem
+- CRIATIVIDADE MÁXIMA: Varie estilos, abordagens, metáforas e estruturas entre as 5 opções
+- Cada opção deve ser ÚNICA e DIFERENTE das outras
 
 REGRAS DE PROSÓDIA (${genreConfig.name}):
 Com vírgula (conta como 2 versos):
@@ -117,6 +124,13 @@ REQUISITOS COMERCIAIS:
 3. Fácil de memorizar na primeira escuta
 4. Fechamento emocional: paz, liberdade, alegria ou leveza — NUNCA desespero
 
+DIVERSIDADE CRIATIVA (OBRIGATÓRIA):
+- Opção 1: Chiclete radiofônico (repetição estratégica)
+- Opção 2: Visual e direto (cena clara de clipe)
+- Opção 3: Bordão impactante (frase marcante)
+- Opção 4: Emocional e leve (vulnerabilidade com força)
+- Opção 5: Surpreendente (abordagem inesperada)
+
 FORMATO DE SAÍDA (JSON):
 {
   "variations": [
@@ -131,13 +145,13 @@ FORMATO DE SAÍDA (JSON):
 }
 
 IMPORTANTE:
-- Cada variação deve ter um estilo diferente
+- Cada variação DEVE ter um estilo COMPLETAMENTE DIFERENTE
 - Os scores devem variar entre 7 e 10
 - A melhor opção comercial deve ter score 9 ou 10
 - Use "\\n" para separar linhas no campo "chorus" (versos empilhados)
-- Seja criativo mas mantenha a comercialidade e as regras de prosódia
+- Seja MUITO criativo e varie abordagens, metáforas e estruturas
 
-Gere as 5 variações agora:`
+Gere as 5 variações CRIATIVAS agora:`
     } else {
       prompt = `${languageRule}${antiForcingRule}
 
@@ -148,10 +162,13 @@ TAREFA: Gere 5 variações de refrão para uma música com as seguintes caracter
 - Tema: ${theme}
 - Humor: ${mood || "neutro"}${lyricsContext}
 
+${rhymeRules.instructions}
+
 REGRAS ESTRUTURAIS:
 - Máximo 4 linhas por refrão
 - EMPILHAR VERSOS: Cada verso em linha separada para facilitar contagem
 - Formato preferido: 2 ou 4 linhas (NUNCA 3 linhas)
+- CRIATIVIDADE MÁXIMA: Varie estilos, abordagens e estruturas entre as 5 opções
 
 REGRAS DE PROSÓDIA (${genreConfig.name}):
 Com vírgula (conta como 2 versos):
@@ -172,6 +189,11 @@ REGRAS DO REFRÃO GRUDENTO (2024-2025):
 5. Rimas simples entre linhas (AABB ou ABAB)
 6. Gancho logo na primeira linha
 
+DIVERSIDADE CRIATIVA (OBRIGATÓRIA):
+- Varie entre estilos: repetitivo, onomatopeico, narrativo, emocional, surpreendente
+- Cada opção deve ter abordagem DIFERENTE
+- Explore diferentes metáforas e imagens
+
 FORMATO DE SAÍDA (JSON):
 {
   "variations": [
@@ -186,19 +208,19 @@ FORMATO DE SAÍDA (JSON):
 }
 
 IMPORTANTE:
-- Cada variação deve ter um estilo diferente
+- Cada variação DEVE ser ÚNICA e DIFERENTE
 - Os scores devem variar entre 7 e 10
 - A melhor opção comercial deve ter score 9 ou 10
 - Use "\\n" para separar linhas no campo "chorus" (versos empilhados)
-- Seja criativo mas mantenha a comercialidade
+- Seja MUITO criativo e varie abordagens
 
-Gere as 5 variações agora:`
+Gere as 5 variações CRIATIVAS agora:`
     }
 
     const { text } = await generateText({
       model: "openai/gpt-4o",
       prompt,
-      temperature: 0.8,
+      temperature: 0.9,
     })
 
     const jsonMatch = text.match(/\{[\s\S]*\}/)
@@ -213,6 +235,15 @@ Gere as 5 variações agora:`
         ...variation,
         chorus: capitalizeLines(variation.chorus),
       }))
+
+      result.variations = result.variations.map((variation: any) => {
+        const rhymeValidation = validateRhymesForGenre(variation.chorus, genre)
+        return {
+          ...variation,
+          rhymeScore: rhymeValidation.analysis.score,
+          rhymeWarnings: rhymeValidation.warnings,
+        }
+      })
     }
 
     return NextResponse.json(result)

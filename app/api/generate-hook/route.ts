@@ -3,6 +3,7 @@ import { generateText } from "ai"
 import { getGenreConfig } from "@/lib/genre-config"
 import { getAntiForcingRulesForGenre } from "@/lib/validation/anti-forcing-validator"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
+import { getUniversalRhymeRules } from "@/lib/validation/universal-rhyme-rules"
 
 export async function POST(request: Request) {
   try {
@@ -13,6 +14,7 @@ export async function POST(request: Request) {
     }
 
     const genreConfig = genre ? getGenreConfig(genre) : null
+    const rhymeRules = genre ? getUniversalRhymeRules(genre) : null
 
     const antiForcingRules = genre ? getAntiForcingRulesForGenre(genre) : []
     const antiForcingExamples = antiForcingRules
@@ -82,6 +84,7 @@ Você é um especialista em hooks musicais e viralidade. Analise esta letra e ge
 LETRA PARA ANALISAR:
 ${lyrics}
 ${prosodyRules}
+${rhymeRules ? `\n${rhymeRules.instructions}` : ""}
 
 SUA TAREFA - APLICANDO TERCEIRA VIA:
 
@@ -93,11 +96,13 @@ SUA TAREFA - APLICANDO TERCEIRA VIA:
    - Combine os melhores elementos das 3 variações
    - Resultado final: UM hook principal otimizado
    - Deve ser cativante, simples e fácil de lembrar
+   - RESPEITE as regras de rima do gênero
 
 3. TRANSFORMAÇÕES SUGERIDAS
    - Pegue 2-3 trechos da letra e transforme em hooks melhores
    - Para cada transformação, gere 3 variações e escolha a melhor
    - Mostre: Original → Transformado + Razão da mudança
+   - APLIQUE as regras de rima nas transformações
 
 4. ESTRATÉGIA DE POSICIONAMENTO
    - Onde posicionar o hook na música (intro, refrão, ponte, etc.)
@@ -110,6 +115,7 @@ SUA TAREFA - APLICANDO TERCEIRA VIA:
 6. SUGESTÕES DE MELHORIA
    - 3-4 sugestões específicas para aumentar o ganchômetro
    - Baseadas nas regras de linguagem simples e coloquial
+   - Incluir sugestões de melhoria de rimas se necessário
 
 FORMATO DE RESPOSTA EM JSON:
 {
@@ -136,13 +142,14 @@ IMPORTANTE:
 - Foque em palavras do dia-a-dia
 - O hook deve soar natural, como algo que um brasileiro falaria
 - Respeite as regras de prosódia se fornecidas
+- APLIQUE as regras de rima do gênero
 
 Retorne APENAS o JSON, sem markdown ou texto adicional.`
 
     const { text } = await generateText({
       model: "openai/gpt-4o",
       prompt: prompt,
-      temperature: 0.8,
+      temperature: 0.85,
     })
 
     let parsedResult
