@@ -661,7 +661,12 @@ export default function ReescreverPage() {
               Analise sua letra e escolha o melhor hook entre 3 variações geradas pela Terceira Via
             </DialogDescription>
           </DialogHeader>
-          <HookGenerator onSelectHook={handleSelectHook} showSelectionMode={true} />
+          <HookGenerator
+            onSelectHook={handleSelectHook}
+            showSelectionMode={true}
+            initialLyrics={originalLyrics}
+            initialGenre={genre}
+          />
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowHookDialog(false)}>
               Cancelar
