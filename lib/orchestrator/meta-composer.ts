@@ -24,7 +24,7 @@
 import { generateText } from "ai"
 import { ThirdWayEngine } from "@/lib/third-way-converter"
 import { getGenreConfig } from "@/lib/genre-config"
-import { validateAgainstForcing } from "@/lib/validation/anti-forcing-validator"
+import { validateFullLyricAgainstForcing } from "@/lib/validation/anti-forcing-validator"
 import { countSyllables } from "@/lib/validation/syllableUtils"
 
 export interface CompositionRequest {
@@ -187,11 +187,10 @@ export class MetaComposer {
     const lines = lyrics.split("\n").filter((line) => line.trim() && !line.startsWith("[") && !line.startsWith("("))
 
     // 1. VALIDAÇÃO ANTI-FORÇAÇÃO
-    const forcingValidation = validateAgainstForcing(lyrics, request.genre)
-    if (!forcingValidation.passed) {
-      errors.push(...forcingValidation.errors)
+    const forcingValidation = validateFullLyricAgainstForcing(lyrics, request.genre)
+    if (!forcingValidation.isValid) {
+      errors.push(...forcingValidation.warnings)
     }
-    warnings.push(...forcingValidation.warnings)
 
     // 2. VALIDAÇÃO DE SÍLABAS (limite fisiológico de 12)
     lines.forEach((line, index) => {
