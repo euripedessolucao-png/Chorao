@@ -550,7 +550,6 @@ export function getGenreConfig(genre: string): GenreConfig & { name: string } {
   const config = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS]
 
   if (!config) {
-    // Return a default configuration with proper type casting
     return {
       name: genre,
       year_range: "2024-2025",
@@ -592,7 +591,7 @@ export function getGenreConfig(genre: string): GenreConfig & { name: string } {
         bpm_range: { min: 90, max: 110, ideal: 100 },
         rhythm_style: "Ritmo brasileiro moderno",
       },
-    } as GenreConfig & { name: string }
+    } as unknown as GenreConfig & { name: string }
   }
 
   return {
