@@ -186,7 +186,6 @@ Reescreva APENAS esta linha aplicando os princípios acima. Retorne SOMENTE a li
       model: "openai/gpt-4o-mini",
       prompt,
       temperature: 0.7,
-      maxTokens: 100,
     })
 
     const improvedLine = text.trim().replace(/^["']|["']$/g, "")
