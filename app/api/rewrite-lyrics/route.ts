@@ -21,15 +21,27 @@ export async function POST(request: Request) {
       additionalRequirements,
     } = body
 
-    const isBachata = generoConversao.toLowerCase().includes("bachata")
-    const isSertanejo = generoConversao.toLowerCase().includes("sertanejo")
+    const genreLower = generoConversao.toLowerCase()
+    const isBachata = genreLower.includes("bachata")
+    const isSertanejoRaiz = genreLower.includes("sertanejo raiz") || genreLower.includes("sertanejo-raiz")
+    const isSertanejoModerno = genreLower.includes("sertanejo") && !isSertanejoRaiz
+    const isSertanejo = isSertanejoRaiz || isSertanejoModerno
     const isPerformanceMode = formattingStyle === "performatico"
 
-    const genreConfig = isBachata
-      ? BACHATA_BRASILEIRA_2024
-      : isSertanejo
-        ? SERTANEJO_MODERNO_2024
-        : GENRE_CONFIGS[generoConversao as keyof typeof GENRE_CONFIGS]
+    let genreConfig
+    if (isBachata) {
+      genreConfig = BACHATA_BRASILEIRA_2024
+    } else if (isSertanejoRaiz) {
+      genreConfig = GENRE_CONFIGS["Sertanejo Raiz"]
+    } else if (isSertanejoModerno) {
+      genreConfig = SERTANEJO_MODERNO_2024
+    } else {
+      genreConfig = GENRE_CONFIGS[generoConversao as keyof typeof GENRE_CONFIGS]
+    }
+
+    console.log(`[v0] 🎵 Gênero detectado: ${generoConversao}`)
+    console.log(`[v0] 🎯 É Sertanejo Raiz? ${isSertanejoRaiz}`)
+    console.log(`[v0] 🎯 É Sertanejo Moderno? ${isSertanejoModerno}`)
 
     const instrumentMatch = letraOriginal.match(/\(Instruments?:\s*\[([^\]]+)\]/i)
     const originalInstruments = instrumentMatch ? instrumentMatch[1].trim() : null
@@ -106,13 +118,20 @@ Título: [título derivado do refrão]
 
 Você é um compositor profissional especializado em ${generoConversao}.
 
+⚠️ TAREFA: REESCREVER A LETRA ABAIXO (NÃO CRIAR UMA NOVA!)
+- Mantenha a MESMA HISTÓRIA e TEMA CENTRAL
+- Mantenha a MESMA ESTRUTURA NARRATIVA
+- Mantenha os MESMOS PERSONAGENS e SITUAÇÕES
+- APENAS melhore a qualidade poética e as rimas
+
 LETRA ORIGINAL PARA REESCREVER:
 ${letraOriginal}
 
 INSTRUÇÕES DE REESCRITA:
-${conservarImagens ? "- CONSERVE as imagens e metáforas originais" : "- CRIE novas imagens e metáforas"}
-${polirSemMexer ? "- MANTENHA a estrutura original, apenas aprimorando" : "- ADAPTE a estrutura para ${generoConversao}"}
-- Preserve a mensagem emocional central
+${conservarImagens ? "- CONSERVE as imagens e metáforas originais EXATAMENTE" : "- MELHORE as imagens mantendo o tema"}
+${polirSemMexer ? "- MANTENHA a estrutura original, apenas aprimorando rimas e poesia" : "- ADAPTE a estrutura para ${generoConversao}"}
+- Preserve a mensagem emocional central EXATAMENTE
+- Mantenha os mesmos personagens e situações
 - Adapte o vocabulário para ${generoConversao}
 - ESCREVA VERSOS COMPLETOS (não apenas palavras soltas)
 - Cada linha deve ser uma frase completa e coerente
@@ -121,6 +140,19 @@ ${polirSemMexer ? "- MANTENHA a estrutura original, apenas aprimorando" : "- ADA
 ${isBachata ? "- RESPEITE O LIMITE DE 12 SÍLABAS POR LINHA (máximo absoluto)" : ""}
 ${hasPerformanceMode ? "- MANTENHA as descrições performáticas detalhadas entre colchetes" : ""}
 ${originalInstruments ? `- INCLUA a lista de instrumentos no final: ${originalInstruments}` : ""}${metricInfo}
+
+${
+  isSertanejoRaiz
+    ? `
+🎯 ATENÇÃO ESPECIAL - SERTANEJO RAIZ:
+- MÍNIMO 50% de RIMAS RICAS (classes gramaticais diferentes)
+- ZERO rimas falsas permitidas
+- Use rimas concretas: porteira/bananeira, viola/sacola, sertão/coração
+- EVITE rimas abstratas: amor/dor, paixão/razão
+- Cada par de rimas DEVE ser perfeito (som completo igual)
+`
+    : ""
+}
 
 FORMATAÇÃO DE VERSOS (IMPORTANTE):
 - EMPILHE os versos em linhas separadas (um verso por linha)
@@ -139,6 +171,8 @@ ${JSON.stringify(genreConfig?.language_rules || {}, null, 2)}
 ${formatoEstrutura}
 
 IMPORTANTE: 
+- REESCREVA a letra original, NÃO crie uma nova
+- Mantenha a MESMA história e personagens
 - A LETRA COMPLETA (parte cantada) deve ser SEMPRE em PORTUGUÊS
 - INSTRUÇÕES e INSTRUMENTOS em INGLÊS
 - ESCREVA VERSOS COMPLETOS, não apenas palavras soltas
@@ -223,43 +257,91 @@ Retorne apenas a letra formatada.`
       console.log("[v0] 📊 Score de rima:", rhymeValidation.analysis.score)
       console.log("[v0] 📋 Esquema de rimas:", rhymeValidation.analysis.scheme.join(""))
 
-      if (generoConversao.toLowerCase().includes("sertanejo raiz")) {
-        const richRhymePercentage =
-          rhymeValidation.analysis.quality.filter((q) => q.type === "rica").length /
-          rhymeValidation.analysis.quality.length
+      const totalRhymes = rhymeValidation.analysis.quality.length
+      const richRhymes = rhymeValidation.analysis.quality.filter((q) => q.type === "rica").length
+      const falseRhymes = rhymeValidation.analysis.quality.filter((q) => q.type === "falsa").length
+      const richRhymePercentage = totalRhymes > 0 ? richRhymes / totalRhymes : 0
+      const falseRhymePercentage = totalRhymes > 0 ? falseRhymes / totalRhymes : 0
 
-        if (richRhymePercentage < 0.5) {
-          console.log(
-            `[v0] 🔄 Regenerando: Sertanejo Raiz precisa de 50% rimas ricas, atual: ${(richRhymePercentage * 100).toFixed(0)}%`,
-          )
+      console.log(`[v0] 📊 Rimas ricas: ${(richRhymePercentage * 100).toFixed(0)}%`)
+      console.log(`[v0] 📊 Rimas falsas: ${(falseRhymePercentage * 100).toFixed(0)}%`)
+
+      if (isSertanejoRaiz && (richRhymePercentage < 0.5 || falseRhymePercentage > 0)) {
+        console.log(
+          `[v0] 🔄 REGENERANDO: Sertanejo Raiz não atende requisitos (${(richRhymePercentage * 100).toFixed(0)}% ricas, ${(falseRhymePercentage * 100).toFixed(0)}% falsas)`,
+        )
+
+        let attempts = 0
+        const maxAttempts = 3
+        let bestLyrics = finalLyrics
+        let bestRichPercentage = richRhymePercentage
+
+        while (attempts < maxAttempts && (richRhymePercentage < 0.5 || falseRhymePercentage > 0)) {
+          attempts++
+          console.log(`[v0] 🔄 Tentativa ${attempts}/${maxAttempts}`)
 
           const rhymeFeedback = `
-ATENÇÃO: A letra anterior teve apenas ${(richRhymePercentage * 100).toFixed(0)}% de rimas ricas.
-Sertanejo Raiz EXIGE pelo menos 50% de rimas ricas.
+⚠️ CORREÇÃO OBRIGATÓRIA - TENTATIVA ${attempts}/${maxAttempts}:
+A letra anterior teve apenas ${(richRhymePercentage * 100).toFixed(0)}% de rimas ricas e ${(falseRhymePercentage * 100).toFixed(0)}% de rimas falsas.
 
-CORRIJA usando estes exemplos:
-- "porteira/bananeira" (substantivos concretos) ✓
-- "viola/sacola" (substantivos concretos) ✓
-- "sertão/coração" (substantivos) ✓
-- "jardim/capim" (substantivos da natureza) ✓
+SERTANEJO RAIZ EXIGE:
+✓ Mínimo 50% de rimas ricas (classes gramaticais diferentes)
+✓ Zero rimas falsas
 
-EVITE:
-- "amor/dor" (muito abstrato e pobre)
-- "paixão/razão" (muito abstrato e pobre)
-- Palavras que não rimam perfeitamente
+EXEMPLOS DE RIMAS RICAS CORRETAS:
+- "porteira" (substantivo) / "bananeira" (substantivo) ✓
+- "viola" (substantivo) / "sacola" (substantivo) ✓
+- "sertão" (substantivo) / "coração" (substantivo) ✓
+- "jardim" (substantivo) / "capim" (substantivo) ✓
+- "estrada" (substantivo) / "madrugada" (substantivo) ✓
+
+EVITE RIMAS POBRES:
+✗ "amor/dor" (ambos substantivos abstratos)
+✗ "paixão/razão" (ambos substantivos abstratos)
+✗ "cantando/amando" (ambos gerúndios)
+
+MANTENHA A MESMA HISTÓRIA DA LETRA ORIGINAL!
+Apenas MELHORE as rimas mantendo o tema e personagens.
 `
 
           const { text: regeneratedText } = await generateText({
             model: "openai/gpt-4o",
             prompt: prompt + rhymeFeedback,
-            temperature: 0.8,
+            temperature: 0.8 + attempts * 0.1, // Aumenta temperatura a cada tentativa
           })
 
           finalLyrics = regeneratedText.trim()
 
           const secondValidation = validateRhymesForGenre(finalLyrics, generoConversao)
-          console.log("[v0] 🔄 Segunda validação - Score:", secondValidation.analysis.score)
-          console.log("[v0] 🔄 Segunda validação - Esquema:", secondValidation.analysis.scheme.join(""))
+          const newRichRhymes = secondValidation.analysis.quality.filter((q) => q.type === "rica").length
+          const newTotalRhymes = secondValidation.analysis.quality.length
+          const newRichPercentage = newTotalRhymes > 0 ? newRichRhymes / newTotalRhymes : 0
+          const newFalseRhymes = secondValidation.analysis.quality.filter((q) => q.type === "falsa").length
+          const newFalsePercentage = newTotalRhymes > 0 ? newFalseRhymes / newTotalRhymes : 0
+
+          console.log(`[v0] 🔄 Tentativa ${attempts} - Rimas ricas: ${(newRichPercentage * 100).toFixed(0)}%`)
+          console.log(`[v0] 🔄 Tentativa ${attempts} - Rimas falsas: ${(newFalsePercentage * 100).toFixed(0)}%`)
+          console.log(`[v0] 🔄 Tentativa ${attempts} - Score: ${secondValidation.analysis.score}`)
+
+          // Guardar a melhor tentativa
+          if (newRichPercentage > bestRichPercentage) {
+            bestLyrics = finalLyrics
+            bestRichPercentage = newRichPercentage
+          }
+
+          // Se atingiu os requisitos, parar
+          if (newRichPercentage >= 0.5 && newFalsePercentage === 0) {
+            console.log(`[v0] ✅ Requisitos atingidos na tentativa ${attempts}!`)
+            break
+          }
+        }
+
+        // Se não conseguiu atingir requisitos, usar a melhor tentativa
+        if (richRhymePercentage < 0.5 || falseRhymePercentage > 0) {
+          console.log(
+            `[v0] ⚠️ Não conseguiu atingir 50% após ${maxAttempts} tentativas. Usando melhor resultado: ${(bestRichPercentage * 100).toFixed(0)}%`,
+          )
+          finalLyrics = bestLyrics
         }
       }
     } else {
