@@ -79,6 +79,45 @@ EXEMPLO RUIM: "Ela de biquíni à meia-noite no jantar" (incoerente, forçado)
 EXEMPLO BOM: "Meu biquíni novo, o que você chamava de falha" (coerente com emoção)
 `
 
+    const genreSpecificGuidance = generoConversao.toLowerCase().includes("sertanejo moderno")
+      ? `
+🎯 SERTANEJO MODERNO 2025 - CARACTERÍSTICAS OBRIGATÓRIAS:
+
+TOM CORRETO (OBRIGATÓRIO):
+- Confidente e sincero (NÃO dramático ou pesado)
+- Vulnerabilidade COM atitude (NÃO sofrência passiva)
+- Às vezes brincalhão e leve (NÃO sempre sério)
+- Saudade SAUDÁVEL (NÃO dependência tóxica)
+
+TEMAS PERMITIDOS:
+✅ Superação com leveza ("errei mas cresci", "tô em paz comigo")
+✅ Celebração da vida simples (boteco, amigos, estrada, violão)
+✅ Nova chance ou paz interior (NÃO "não vivo sem você")
+✅ Reflexão ou cura com amigos (cerveja, conversa, música)
+✅ Amor que liberta (NÃO amor que prende)
+
+TEMAS PROIBIDOS:
+❌ Drama excessivo ("meu mundo desabou", "não consigo viver")
+❌ Sofrência passiva ("choro no travesseiro", "solidão me mata")
+❌ Dependência tóxica ("só penso em você", "volta pra mim")
+❌ Metáforas abstratas pesadas ("mar de dor", "alma perdida")
+❌ Masculinidade tóxica ("mulher é tudo igual", "vou destruir")
+
+LINGUAGEM OBRIGATÓRIA:
+- Objetos concretos: cerveja, violão, boteco, estrada, caminhonete, chapéu
+- Ações de superação: errei, aprendi, segui, curei, cresci, perdoei
+- Frases de paz: "tô em paz comigo", "amor que prende não é amor"
+
+NARRATIVA OBRIGATÓRIA:
+Início (erro ou dor leve) → Meio (reflexão/cura com amigos) → Fim (nova chance OU paz interior)
+
+TRANSFORME DRAMA PESADO EM SUPERAÇÃO LEVE:
+- "O silêncio pesa" → "Errei, mas aprendi"
+- "Suspeitas no ar" → "Hoje tô em paz comigo"
+- "Não vivo sem você" → "Amor que prende não é amor"
+`
+      : ""
+
     const metricInfo = metrics
       ? `\n\nMÉTRICA DO GÊNERO:
 - Sílabas por linha: ${metrics.syllablesPerLine}
@@ -136,7 +175,7 @@ Título: [título derivado do refrão]
 
 (Instruments: [lista de instrumentos] | BPM: ${metrics?.bpm || 100} | Style: ${generoConversao})`
 
-    const prompt = `${languageRule}${antiForcingRule}
+    const prompt = `${languageRule}${antiForcingRule}${genreSpecificGuidance}
 
 Você é um compositor profissional especializado em ${generoConversao}.
 

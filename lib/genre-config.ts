@@ -68,28 +68,44 @@ export const GENRE_CONFIGS = {
     year_range: "2024-2025",
     reference_artists: [
       "Gusttavo Lima",
-      "Israel & Rodolffo",
       "Luan Santana",
       "Zé Neto & Cristiano",
       "Henrique & Juliano",
+      "Israel & Rodolffo",
     ],
     core_principles: {
-      theme: "Vulnerabilidade com atitude, celebração da vida simples, superação com leveza",
-      tone: "Confidente, sincero, às vezes brincalhão, com toque de saudade saudável",
+      theme: "Superação com leveza, celebração da vida simples, vulnerabilidade com atitude, novas chances",
+      tone: "Confidente, sincero, brincalhão quando apropriado, com saudade saudável (não tóxica)",
       narrative_arc: "Início (erro ou dor) → Meio (reflexão ou cura com amigos) → Fim (nova chance ou paz interior)",
     },
     language_rules: {
       allowed: {
-        concrete_objects: ["cerveja", "violão", "boteco", "estrada", "caminhonete", "chapéu", "mala", "varanda"],
-        actions: ["errei", "aprendi", "segui", "curei", "bebi", "cantei", "perdoei", "cresci"],
-        phrases: ["tô em paz comigo", "errei mas cresci", "amor que prende não é amor", "meu refúgio é o boteco"],
+        concrete_objects: [
+          "cerveja",
+          "violão",
+          "boteco",
+          "estrada",
+          "caminhonete",
+          "chapéu",
+          "mala",
+          "varanda",
+          "canudinho",
+        ],
+        actions: ["errei", "aprendi", "segui", "curei", "bebi", "cantei", "perdoei", "cresci", "superei"],
+        phrases: [
+          "tô em paz comigo",
+          "errei mas cresci",
+          "amor que prende não é amor",
+          "meu refúgio é o boteco",
+          "vida que segue",
+        ],
       },
       forbidden: {
         toxic_masculinity: ["ela me traiu vou destruir", "mulher é tudo igual", "não choro sou homem"],
-        excessive_drama: ["não vivo sem você", "meu mundo desabou", "só penso em você"],
-        generic_clichés: ["lágrimas no travesseiro", "noite sem luar", "coração partido em mil"],
+        excessive_drama: ["não vivo sem você", "meu mundo desabou", "só penso em você", "morro sem você"],
+        generic_clichés: ["lágrimas no travesseiro", "noite sem luar", "coração partido em mil", "solidão me mata"],
       },
-      style: "Direto, honesto, com toque de poesia cotidiana. Pode ser romântico, mas nunca possessivo.",
+      style: "Direto, honesto, com toque de poesia cotidiana. Pode ser romântico, mas nunca possessivo ou dramático.",
     },
     structure_rules: {
       verse: { lines: 4, purpose: "Contar uma história real: erro, saudade saudável, ou momento de cura" },
@@ -200,16 +216,29 @@ export const GENRE_CONFIGS = {
   },
   "Funk Carioca": {
     year_range: "2024-2025",
-    reference_artists: ["MC Ryan SP", "Pedro Sampaio", "Anitta (funk)", "MC Daniel", "Ludmilla"],
+    reference_artists: ["MC Ryan SP", "MC Hariel", "MC IG", "Ludmilla", "Anitta"],
     core_principles: {
       theme:
-        "Autoestima, empoderamento, festa consciente, amor com respeito — não apologia à violência ou objetificação",
-      tone: "Ritmo marcado, frases curtas, repetitivo e grudento",
-      narrative_arc: "Afirmação → Convite → Celebração",
+        "Autoestima, empoderamento, conquista, celebração da quebrada, respeito — NUNCA apologia à violência ou objetificação",
+      tone: "Ritmo marcado, frases curtas, repetitivo e grudento, confiante",
+      narrative_arc: "Afirmação de valor → Convite ou desafio → Celebração ou conquista",
     },
     language_rules: {
       allowed: {
-        concrete_objects: ["paredão", "rolê", "zap", "story", "look", "beat", "flow", "baile", "favela", "quebrada"],
+        concrete_objects: [
+          "paredão",
+          "rolê",
+          "zap",
+          "story",
+          "look",
+          "beat",
+          "flow",
+          "baile",
+          "favela",
+          "quebrada",
+          "nave",
+          "grife",
+        ],
         actions: [
           "mandar ver",
           "chamar pra dançar",
@@ -218,6 +247,8 @@ export const GENRE_CONFIGS = {
           "jogar o cabelo",
           "rebolar",
           "dominar a pista",
+          "conquistar",
+          "evoluir",
         ],
         phrases: [
           "Tô no meu flow",
@@ -226,20 +257,22 @@ export const GENRE_CONFIGS = {
           "Sou dona de mim",
           "Vim pra brilhar",
           "Tô no comando",
+          "Da quebrada pro mundo",
+          "Evoluí",
         ],
       },
       forbidden: {
         toxic_content: [
           "mulher objeto",
-          "violência",
+          "violência explícita",
           "drogas explícitas",
           "machismo",
           "apologia ao crime",
-          "objetificação",
+          "objetificação sexual",
         ],
         generic_cliches: ["põe a mão no alto", "vamos curtir a noite", "a festa tá bombando", "todo mundo junto"],
       },
-      style: "Direto, repetitivo, com gírias urbanas ('mano', 'véio', 'bicho'). Tom confiante e empoderado.",
+      style: "Direto, repetitivo, com gírias urbanas atuais ('mano', 'tropa', 'bonde'). Tom confiante e empoderado.",
     },
     structure_rules: {
       verse: { lines: 4, purpose: "Versos curtos e diretos, estabelecendo atitude e contexto" },
@@ -259,18 +292,18 @@ export const GENRE_CONFIGS = {
     harmony_and_rhythm: {
       key: "C minor",
       allowed_chords: ["Cm", "Fm", "Gm", "Ab", "Bb"],
-      bpm_range: { min: 120, max: 140, ideal: 130 },
-      rhythm_style: "Batida marcada do funk com graves pesados (paredão)",
+      bpm_range: { min: 120, max: 150, ideal: 130 },
+      rhythm_style: "Batida marcada do funk com graves pesados (paredão) ou funk 150 BPM para TikTok",
     },
   },
   "Funk Melody": {
     year_range: "2024-2025",
-    reference_artists: ["MC Ryan SP", "Pedro Sampaio", "Anitta (funk)", "MC Daniel", "Ludmilla"],
+    reference_artists: ["MC Ryan SP", "MC Hariel", "MC IG", "Ludmilla", "Anitta"],
     core_principles: {
       theme:
-        "Autoestima, empoderamento, festa consciente, amor com respeito — não apologia à violência ou objetificação",
-      tone: "Ritmo marcado, frases curtas, repetitivo e grudento",
-      narrative_arc: "Afirmação → Convite → Celebração",
+        "Autoestima, empoderamento, conquista, celebração da quebrada, respeito — NUNCA apologia à violência ou objetificação",
+      tone: "Ritmo marcado, frases curtas, repetitivo e grudento, confiante",
+      narrative_arc: "Afirmação de valor → Convite ou desafio → Celebração ou conquista",
     },
     language_rules: {
       allowed: {
@@ -330,12 +363,12 @@ export const GENRE_CONFIGS = {
   },
   "Funk Ostentação": {
     year_range: "2024-2025",
-    reference_artists: ["MC Ryan SP", "Pedro Sampaio", "Anitta (funk)", "MC Daniel", "Ludmilla"],
+    reference_artists: ["MC Ryan SP", "MC Hariel", "MC IG", "Ludmilla", "Anitta"],
     core_principles: {
       theme:
-        "Autoestima, empoderamento, festa consciente, amor com respeito — não apologia à violência ou objetificação",
-      tone: "Ritmo marcado, frases curtas, repetitivo e grudento",
-      narrative_arc: "Afirmação → Convite → Celebração",
+        "Autoestima, empoderamento, conquista, celebração da quebrada, respeito — NUNCA apologia à violência ou objetificação",
+      tone: "Ritmo marcado, frases curtas, repetitivo e grudento, confiante",
+      narrative_arc: "Afirmação de valor → Convite ou desafio → Celebração ou conquista",
     },
     language_rules: {
       allowed: {
@@ -395,53 +428,37 @@ export const GENRE_CONFIGS = {
   },
   "Funk Consciente": {
     year_range: "2024-2025",
-    reference_artists: ["MC Ryan SP", "Pedro Sampaio", "Anitta (funk)", "MC Daniel", "Ludmilla"],
+    reference_artists: ["MC Ryan SP", "MC Hariel", "MC IG", "Ludmilla", "Anitta"],
     core_principles: {
       theme:
-        "Autoestima, empoderamento, festa consciente, amor com respeito — não apologia à violência ou objetificação",
-      tone: "Ritmo marcado, frases curtas, repetitivo e grudento",
-      narrative_arc: "Afirmação → Convite → Celebração",
+        "Temas sociais, empoderamento da quebrada, superação, respeito, consciência social — NUNCA apologia à violência",
+      tone: "Ritmo marcado, mensagem forte, repetitivo e grudento, consciente",
+      narrative_arc: "Realidade da quebrada → Reflexão ou luta → Superação ou mensagem social",
     },
     language_rules: {
       allowed: {
-        concrete_objects: ["paredão", "rolê", "zap", "story", "look", "beat", "flow", "baile", "favela", "quebrada"],
-        actions: [
-          "mandar ver",
-          "chamar pra dançar",
-          "brilhar",
-          "mandar o flow",
-          "jogar o cabelo",
-          "rebolar",
-          "dominar a pista",
-        ],
+        concrete_objects: ["quebrada", "favela", "comunidade", "luta", "sonho", "conquista", "respeito"],
+        actions: ["lutar", "vencer", "resistir", "conquistar", "evoluir", "respeitar", "representar"],
         phrases: [
-          "Tô no meu flow",
-          "Meu beat é pesado",
-          "Respeita meu espaço",
-          "Sou dona de mim",
-          "Vim pra brilhar",
-          "Tô no comando",
+          "Da quebrada pro mundo",
+          "Respeita a origem",
+          "Evoluí sem esquecer",
+          "Consciência é poder",
+          "Quebrada unida",
         ],
       },
       forbidden: {
-        toxic_content: [
-          "mulher objeto",
-          "violência",
-          "drogas explícitas",
-          "machismo",
-          "apologia ao crime",
-          "objetificação",
-        ],
-        generic_cliches: ["põe a mão no alto", "vamos curtir a noite", "a festa tá bombando", "todo mundo junto"],
+        toxic_content: ["apologia ao crime", "violência explícita", "drogas explícitas", "machismo", "objetificação"],
+        generic_cliches: ["põe a mão no alto", "vamos curtir a noite"],
       },
-      style: "Direto, repetitivo, com gírias urbanas ('mano', 'véio', 'bicho'). Tom confiante e empoderado.",
+      style: "Direto, com mensagem social forte, gírias urbanas conscientes. Tom de superação e orgulho da origem.",
     },
     structure_rules: {
-      verse: { lines: 4, purpose: "Versos curtos e diretos, estabelecendo atitude e contexto" },
+      verse: { lines: 4, purpose: "Versos com mensagem social, realidade da quebrada, superação" },
       chorus: {
         lines_options: [2],
         forbidden_lines: [3, 4],
-        required_elements: ["Grudento e repetitivo", "Máximo 6 sílabas por linha", "Frase de impacto", "Sem vírgulas"],
+        required_elements: ["Grudento e repetitivo", "Mensagem social clara", "Frase de impacto"],
       },
     },
     prosody_rules: {
@@ -455,34 +472,35 @@ export const GENRE_CONFIGS = {
       key: "C minor",
       allowed_chords: ["Cm", "Fm", "Gm", "Ab", "Bb"],
       bpm_range: { min: 120, max: 140, ideal: 130 },
-      rhythm_style: "Batida marcada do funk com graves pesados (paredão)",
+      rhythm_style: "Batida marcada do funk com graves pesados, mensagem forte",
     },
   },
   "Pagode Romântico": {
-    year_range: "1990-2025",
-    reference_artists: ["Thiaguinho", "Péricles", "Ferrugem", "Sorriso Maroto"],
+    year_range: "2024-2025",
+    reference_artists: ["Menos É Mais", "Thiaguinho", "Sorriso Maroto", "Ferrugem", "Dilsinho"],
     core_principles: {
-      theme: "Amor, saudade, relacionamentos, superação",
-      tone: "Romântico, sincero, emotivo",
-      narrative_arc: "Situação amorosa → Sentimento → Resolução ou aceitação",
+      theme: "Amor autêntico, saudade saudável, superação, celebração da vida, nostalgia positiva",
+      tone: "Romântico, sincero, emotivo mas não dramático, com leveza e autenticidade",
+      narrative_arc: "Situação amorosa → Sentimento genuíno → Resolução ou aceitação com maturidade",
     },
     language_rules: {
       allowed: {
-        concrete_objects: ["cerveja", "mesa de bar", "violão", "samba", "roda"],
-        actions: ["sofri", "amei", "perdi", "ganhei", "dancei", "cantei"],
-        phrases: ["amor da minha vida", "saudade bateu", "coração apaixonado"],
+        concrete_objects: ["cerveja", "mesa de bar", "violão", "samba", "roda", "pagode", "resenha", "tardezinha"],
+        actions: ["sofri", "amei", "perdi", "ganhei", "dancei", "cantei", "superei", "curei", "aprendi"],
+        phrases: ["amor da minha vida", "saudade bateu", "coração apaixonado", "resenha boa", "pagode é vida"],
       },
       forbidden: {
-        aggressive_tone: ["odeio", "vingança", "destruir"],
+        aggressive_tone: ["odeio", "vingança", "destruir", "te odeio"],
+        excessive_drama: ["morro sem você", "não vivo mais", "meu mundo acabou"],
       },
-      style: "Poético mas acessível, com emoção genuína",
+      style: "Poético mas acessível, com emoção genuína e autenticidade. Linguagem do dia-a-dia com toque romântico.",
     },
     structure_rules: {
-      verse: { lines: 4, purpose: "Contar história de amor com detalhes" },
+      verse: { lines: 4, purpose: "Contar história de amor com detalhes autênticos e emoção real" },
       chorus: {
         lines_options: [2, 4],
         forbidden_lines: 3,
-        required_elements: ["Melodia marcante", "Emoção clara"],
+        required_elements: ["Melodia marcante", "Emoção clara", "Fácil de cantar junto"],
       },
     },
     prosody_rules: {
@@ -496,34 +514,42 @@ export const GENRE_CONFIGS = {
       key: "D major",
       allowed_chords: ["D", "G", "A", "Bm", "Em", "F#m"],
       bpm_range: { min: 95, max: 110, ideal: 100 },
-      rhythm_style: "Pagode com cavaquinho, pandeiro e tantã",
+      rhythm_style: "Pagode com cavaquinho, pandeiro e tantã - ritmo contagiante",
     },
   },
   "Gospel Contemporâneo": {
-    year_range: "2010-2025",
-    reference_artists: ["Gabriela Rocha", "Thalles Roberto", "Preto no Branco"],
+    year_range: "2024-2025",
+    reference_artists: ["Gabriela Rocha", "Isadora Pompeo", "Thalles Roberto", "Valesca Mayssa", "Kailane Frauches"],
     core_principles: {
-      theme: "Fé, esperança, gratidão, adoração",
-      tone: "Inspirador, positivo, edificante",
-      narrative_arc: "Situação difícil → Fé → Vitória ou paz",
+      theme: "Fé autêntica, esperança, gratidão, adoração, confiança em Deus, testemunho de vida",
+      tone: "Inspirador, positivo, edificante, jovem e atual",
+      narrative_arc: "Situação difícil ou louvor → Fé e confiança → Vitória, paz ou adoração",
     },
     language_rules: {
       allowed: {
-        concrete_objects: ["cruz", "altar", "céu", "luz", "caminho"],
-        actions: ["louvar", "adorar", "crer", "confiar", "vencer"],
-        phrases: ["Deus é fiel", "milagre aconteceu", "fé que move montanhas"],
+        concrete_objects: ["cruz", "altar", "céu", "luz", "caminho", "promessa", "milagre"],
+        actions: ["louvar", "adorar", "crer", "confiar", "vencer", "testemunhar", "agradecer"],
+        phrases: [
+          "Deus é fiel",
+          "milagre aconteceu",
+          "fé que move montanhas",
+          "Ele cuida dos detalhes",
+          "não há o que temer",
+        ],
       },
       forbidden: {
-        negative_theology: ["Deus castiga", "merecimento por obras"],
+        negative_theology: ["Deus castiga", "merecimento por obras", "Deus pune"],
+        manipulation: ["dê dinheiro para ser abençoado", "prosperidade garantida"],
       },
-      style: "Inspirador, poético, acessível",
+      style:
+        "Inspirador, poético mas acessível, com linguagem jovem e atual. Produção sofisticada com elementos modernos.",
     },
     structure_rules: {
-      verse: { lines: 4, purpose: "Contar testemunho ou louvor" },
+      verse: { lines: 4, purpose: "Contar testemunho, louvor ou situação de fé" },
       chorus: {
         lines_options: [2, 4],
         forbidden_lines: 3,
-        required_elements: ["Mensagem clara de fé", "Fácil de cantar em grupo"],
+        required_elements: ["Mensagem clara de fé", "Fácil de cantar em grupo", "Melodia marcante"],
       },
     },
     prosody_rules: {
@@ -539,7 +565,174 @@ export const GENRE_CONFIGS = {
       key: "C major",
       allowed_chords: ["C", "F", "G", "Am", "Dm", "Em"],
       bpm_range: { min: 80, max: 95, ideal: 88 },
-      rhythm_style: "Pop gospel com instrumentação moderna",
+      rhythm_style: "Pop gospel com instrumentação moderna, elementos eletrônicos sutis, produção sofisticada",
+    },
+  },
+  MPB: {
+    year_range: "2024-2025",
+    reference_artists: ["Djavan", "Marisa Monte", "Gilberto Gil", "Caetano Veloso", "Gal Costa"],
+    core_principles: {
+      theme: "Temas sociais, culturais, amor sofisticado, identidade brasileira, fusão de tradições",
+      tone: "Poético, sofisticado, reflexivo, com riqueza lírica",
+      narrative_arc: "Observação ou situação → Reflexão profunda → Insight ou mensagem cultural",
+    },
+    language_rules: {
+      allowed: {
+        concrete_objects: ["violão", "samba", "bossa", "mar", "cidade", "rua", "gente", "Brasil"],
+        actions: ["cantar", "dançar", "sentir", "viver", "amar", "resistir", "celebrar"],
+        phrases: ["Brasil profundo", "alma brasileira", "ritmo que nos une", "tradição e inovação"],
+      },
+      forbidden: {
+        simplistic_cliches: ["amor perfeito", "felizes para sempre"],
+        commercial_pop: ["hit do verão", "balada top"],
+      },
+      style: "Poético, sofisticado, com riqueza lírica e fusão de estilos. Linguagem elevada mas acessível.",
+    },
+    structure_rules: {
+      verse: { lines: 4, purpose: "Desenvolver narrativa ou reflexão com profundidade lírica" },
+      chorus: {
+        lines_options: [2, 4],
+        forbidden_lines: 3,
+        required_elements: ["Mensagem cultural ou emocional forte", "Melodia memorável"],
+      },
+    },
+    prosody_rules: {
+      syllable_count: {
+        with_comma: { max_before_comma: 7, max_after_comma: 5, total_max: 12 },
+        without_comma: { min: 5, max: 10, acceptable_up_to: 12 },
+      },
+      verse_counting_rule: "Uma linha com vírgula (6+6, 7+5 ou 5+7 sílabas) conta como 2 VERSOS na estrutura total",
+    },
+    harmony_and_rhythm: {
+      key: "Variable",
+      allowed_chords: ["Complexos e jazzísticos permitidos"],
+      bpm_range: { min: 70, max: 120, ideal: 90 },
+      rhythm_style: "Fusão de samba, bossa nova, tropicália, rock, pop, eletrônico - ecleticismo característico",
+    },
+  },
+  Bachata: {
+    year_range: "2024-2025",
+    reference_artists: ["Romeo Santos", "Prince Royce", "Aventura", "Grupo Extra", "Pinto Picasso"],
+    core_principles: {
+      theme: "Amor romântico, saudade, paixão, relacionamentos modernos, bachata urbana",
+      tone: "Romântico, sensual, emotivo, com toque urbano contemporâneo",
+      narrative_arc: "Situação amorosa → Sentimento profundo → Declaração ou resolução",
+    },
+    language_rules: {
+      allowed: {
+        concrete_objects: ["corazón", "amor", "besos", "noche", "luna", "baile"],
+        actions: ["amar", "bailar", "sentir", "extrañar", "soñar", "besar"],
+        phrases: ["mi amor", "te extraño", "eres mi vida", "bachata del alma"],
+      },
+      forbidden: {
+        aggressive_tone: ["odio", "venganza"],
+        modern_slang_excess: ["emoji", "selfie", "viral"],
+      },
+      style: "Romântico, poético, com sensualidade elegante. Pode ter toque urbano mas mantém romantismo.",
+    },
+    structure_rules: {
+      verse: { lines: 4, purpose: "Desenvolver história de amor com emoção" },
+      chorus: {
+        lines_options: [2, 4],
+        forbidden_lines: 3,
+        required_elements: ["Melodia romântica marcante", "Fácil de dançar"],
+      },
+    },
+    prosody_rules: {
+      syllable_count: {
+        with_comma: { max_before_comma: 7, max_after_comma: 5, total_max: 12 },
+        without_comma: { min: 6, max: 9, acceptable_up_to: 10 },
+      },
+      verse_counting_rule: "Uma linha com vírgula (6+6, 7+5 ou 5+7 sílabas) conta como 2 VERSOS na estrutura total",
+    },
+    harmony_and_rhythm: {
+      key: "A minor",
+      allowed_chords: ["Am", "Dm", "E", "F", "G", "C"],
+      bpm_range: { min: 120, max: 140, ideal: 128 },
+      rhythm_style: "Bachata tradicional ou urbana com guitarra característica e bongô",
+    },
+  },
+  Arrocha: {
+    year_range: "2024-2025",
+    reference_artists: ["Pablo", "Nadson Ferinha", "Thiago Aquino", "Unha Pintada", "Tierry"],
+    core_principles: {
+      theme: "Traição, desilusão amorosa, sofrimento romântico, arrependimento, saudade intensa",
+      tone: "Melancólico, emotivo, dramático mas autêntico, com sofrimento genuíno",
+      narrative_arc: "Traição ou perda → Sofrimento e reflexão → Aceitação ou esperança de volta",
+    },
+    language_rules: {
+      allowed: {
+        concrete_objects: ["cama", "foto", "celular", "mensagem", "bebida", "bar", "madrugada"],
+        actions: ["sofrer", "chorar", "lembrar", "perdoar", "voltar", "errar", "trair"],
+        phrases: ["quem ama não machuca", "você me traiu", "saudade dói", "volta pra mim", "te perdoo"],
+      },
+      forbidden: {
+        violence: ["vou te matar", "vingança violenta"],
+        excessive_vulgarity: ["palavrões pesados"],
+      },
+      style: "Emotivo, direto, com drama autêntico. Linguagem do dia-a-dia com carga emocional forte.",
+    },
+    structure_rules: {
+      verse: { lines: 4, purpose: "Contar história de traição ou desilusão com detalhes emocionais" },
+      chorus: {
+        lines_options: [2, 4],
+        forbidden_lines: 3,
+        required_elements: ["Gancho emocional forte", "Fácil de cantar junto", "Carga dramática"],
+      },
+    },
+    prosody_rules: {
+      syllable_count: {
+        with_comma: { max_before_comma: 7, max_after_comma: 5, total_max: 12 },
+        without_comma: { min: 5, max: 8, acceptable_up_to: 9 },
+      },
+      verse_counting_rule: "Uma linha com vírgula (6+6, 7+5 ou 5+7 sílabas) conta como 2 VERSOS na estrutura total",
+    },
+    harmony_and_rhythm: {
+      key: "E minor",
+      allowed_chords: ["Em", "Am", "D", "G", "C", "B7"],
+      bpm_range: { min: 70, max: 85, ideal: 75 },
+      rhythm_style: "Arrocha lento e melódico com teclado e guitarra",
+    },
+  },
+  Samba: {
+    year_range: "2024-2025",
+    reference_artists: ["Alcione", "Zeca Pagodinho", "Diogo Nogueira", "Martinho da Vila", "Beth Carvalho"],
+    core_principles: {
+      theme: "Vida, alegria, saudade, amor, resistência cultural, celebração da cultura brasileira",
+      tone: "Alegre, nostálgico, autêntico, com swing característico",
+      narrative_arc: "Situação cotidiana → Reflexão ou celebração → Mensagem de vida ou alegria",
+    },
+    language_rules: {
+      allowed: {
+        concrete_objects: ["pandeiro", "cavaquinho", "roda de samba", "mesa de bar", "cerveja", "feijoada"],
+        actions: ["sambar", "cantar", "dançar", "celebrar", "resistir", "viver"],
+        phrases: ["samba é vida", "roda de samba", "alegria do povo", "cultura brasileira"],
+      },
+      forbidden: {
+        modern_excess: ["viral", "trending", "hashtag"],
+      },
+      style: "Autêntico, com swing, linguagem do povo mas poética. Celebração da cultura brasileira.",
+    },
+    structure_rules: {
+      verse: { lines: 4, purpose: "Contar história de vida, amor ou celebração cultural" },
+      chorus: {
+        lines_options: [2, 4],
+        forbidden_lines: 3,
+        required_elements: ["Melodia marcante", "Fácil de cantar em roda", "Swing característico"],
+      },
+    },
+    prosody_rules: {
+      syllable_count: {
+        with_comma: { max_before_comma: 7, max_after_comma: 5, total_max: 12 },
+        without_comma: { min: 5, max: 8, acceptable_up_to: 9 },
+      },
+      verse_counting_rule: "Uma linha com vírgula (6+6, 7+5 ou 5+7 sílabas) conta como 2 VERSOS na estrutura total",
+    },
+    harmony_and_rhythm: {
+      key: "C major",
+      allowed_chords: ["C", "G", "Am", "F", "Dm", "E7", "A7", "D7"],
+      bpm_range: { min: 100, max: 130, ideal: 115 },
+      rhythm_style: "Samba tradicional com pandeiro, cavaquinho, surdo e tamborim",
     },
   },
 } as const
