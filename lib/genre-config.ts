@@ -555,9 +555,9 @@ export function getGenreConfig(genre: string): GenreConfig & { name: string } {
       year_range: "2024-2025",
       reference_artists: [] as any,
       core_principles: {
-        theme: "Música brasileira contemporânea",
-        tone: "Autêntico e natural",
-        narrative_arc: "Início → Desenvolvimento → Conclusão",
+        theme: "Música brasileira contemporânea" as any,
+        tone: "Autêntico e natural" as any,
+        narrative_arc: "Início → Desenvolvimento → Conclusão" as any,
       },
       language_rules: {
         allowed: {
@@ -586,7 +586,7 @@ export function getGenreConfig(genre: string): GenreConfig & { name: string } {
           "Uma linha com vírgula (ex: 6+6, 7+5 ou 5+7 sílabas) conta como 2 VERSOS na estrutura total, não 1 verso",
       },
       harmony_and_rhythm: {
-        key: "C major",
+        key: "C major" as any,
         allowed_chords: ["C", "F", "G", "Am", "Dm", "Em"],
         bpm_range: { min: 90, max: 110, ideal: 100 },
         rhythm_style: "Ritmo brasileiro moderno",
