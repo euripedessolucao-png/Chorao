@@ -26,7 +26,7 @@ export const FORRO_2024 = {
       passive_victimhood: ["só penso em você", "meu peito aperta", "não consigo seguir"],
     },
     style:
-      "Nordestino, coloquial, com expressões regionais ('véio', 'bicho', 'arretado'). Use palavras simples do dia-a-dia.",
+      "Nordestino, coloquial, com expressões regionais ('véio', 'bicho', 'arretado'). Use palavras simples do dia-a-dia, não vocabulário formal.",
   },
   structure_rules: {
     verse: { lines: 4 },
@@ -36,14 +36,17 @@ export const FORRO_2024 = {
   },
   prosody_rules: {
     syllable_count: {
+      verse_counting_rule: "Uma linha com 12 sílabas dividida por vírgula conta como 2 VERSOS na estrutura total",
       with_comma: {
         max_before_comma: 6,
         max_after_comma: 6,
         total_max: 12,
+        note: "Linha com vírgula = 2 VERSOS (ex: 'Você diz que me ama, mas não mostra' = verso 1 + verso 2)",
       },
       without_comma: {
         min: 5,
         max: 7,
+        note: "Sem vírgula = 1 VERSO",
       },
     },
   },
@@ -56,7 +59,7 @@ export const FORRO_2024 = {
     "Sem dramalhão",
     "Presença de sanfona, triângulo, zabumba",
     "BPM entre 110–130",
-    "Linguagem nordestina",
+    "Linguagem nordestina simples e coloquial",
     "Final dançante",
   ],
 } as const

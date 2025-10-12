@@ -17,6 +17,8 @@ export const SAMBA_2024 = {
     narrative_arc: "Início (fim do amor) → Meio (boteco com os manos) → Fim (dança, sorriso, recomeço).",
   },
   language_rules: {
+    universal_rule:
+      "SEMPRE use palavras simples e coloquiais, faladas como um humano no dia-a-dia. Evite vocabulário rebuscado, poético ou formal, EXCETO se especificado em 'Requisitos Adicionais'.",
     allowed: {
       concrete_objects: [
         "chopinho",
@@ -70,7 +72,8 @@ export const SAMBA_2024 = {
       ],
       passive_victimhood: ["meu peito em pedaços", "o que sobrou de eu", "final indistinto", "dor que eu sinto"],
     },
-    style: "Coloquial, carioca, com gingado. Use 'tô', 'cê', 'mano', 'véio'. Evite poesia rebuscada ou formal.",
+    style:
+      "Coloquial, carioca, com gingado. Use 'tô', 'cê', 'mano', 'véio'. Use palavras simples do dia-a-dia, não poesia rebuscada.",
   },
   structure_rules: {
     verse: {
@@ -102,15 +105,18 @@ export const SAMBA_2024 = {
   },
   prosody_rules: {
     syllable_count: {
+      verse_counting_rule: "Uma linha com 10 sílabas dividida por vírgula conta como 2 VERSOS na estrutura total",
       with_comma: {
         max_before_comma: 5,
         max_after_comma: 5,
         total_max: 10,
+        note: "Linha com vírgula = 2 VERSOS (ex: 'Tô em paz, meu copo é de vitória' = verso 1 + verso 2)",
       },
       without_comma: {
         min: 4,
         max: 6,
         acceptable_up_to: 7,
+        note: "Sem vírgula = 1 VERSO",
       },
     },
     breathability:
@@ -142,7 +148,7 @@ export const SAMBA_2024 = {
     "Sem dramalhão ou vitimização",
     "Versos com 4–6 sílabas",
     "Refrão com 2 ou 4 linhas",
-    "Linguagem coloquial e carioca",
+    "Linguagem coloquial e carioca simples",
     "Presença de boteco, chopinho ou pagode",
     "BPM entre 92–100",
     "Final de superação (não de desespero)",

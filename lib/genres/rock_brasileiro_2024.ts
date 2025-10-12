@@ -8,6 +8,8 @@ export const ROCK_BRASILEIRO_2024 = {
     narrative_arc: "Questionamento → Revolta → Esperança ou aceitação.",
   },
   language_rules: {
+    universal_rule:
+      "SEMPRE use palavras simples e coloquiais, faladas como um humano no dia-a-dia. Evite vocabulário rebuscado, poético ou formal, EXCETO se especificado em 'Requisitos Adicionais'.",
     allowed: {
       concrete_objects: ["rua", "muro", "guitarra", "cidade", "bandeira", "voz", "caos"],
       actions: ["gritar", "questionar", "quebrar", "construir", "acreditar"],
@@ -17,7 +19,7 @@ export const ROCK_BRASILEIRO_2024 = {
       empty_rebellion: ["ódio pelo ódio", "destruir tudo"],
       generic_cliches: ["coração de pedra", "alma perdida"],
     },
-    style: "Direto, com metáforas fortes, mas reais.",
+    style: "Direto, com metáforas fortes mas reais. Use palavras simples do dia-a-dia, não vocabulário rebuscado.",
   },
   structure_rules: {
     verse: { lines: 4 },
@@ -26,9 +28,11 @@ export const ROCK_BRASILEIRO_2024 = {
   },
   prosody_rules: {
     syllable_count: {
+      verse_counting_rule: "Rock usa frases diretas. Cada linha = 1 VERSO",
       without_comma: {
         min: 5,
         max: 8,
+        note: "Sem vírgula = 1 VERSO. Rock prefere frases diretas e impactantes",
       },
     },
   },
@@ -41,6 +45,7 @@ export const ROCK_BRASILEIRO_2024 = {
     "Presença de guitarra, rua, voz",
     "BPM 100–130",
     "Sem ódio vazio",
+    "Linguagem simples e direta",
     "Final com esperança ou clareza",
   ],
 } as const

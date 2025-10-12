@@ -8,6 +8,8 @@ export const GOSPEL_2024 = {
     narrative_arc: "Provação → Entrega → Vitória em Deus.",
   },
   language_rules: {
+    universal_rule:
+      "SEMPRE use palavras simples e coloquiais, faladas como um humano no dia-a-dia. Evite vocabulário rebuscado, poético ou formal, EXCETO se especificado em 'Requisitos Adicionais'.",
     allowed: {
       concrete_objects: ["altar", "luz", "mar", "montanha", "céu", "graça", "promessa"],
       actions: ["confiar", "entregar", "adorar", "levantar", "caminhar com Deus"],
@@ -17,7 +19,7 @@ export const GOSPEL_2024 = {
       fear_based: ["fogo do inferno", "castigo", "pecado te condena"],
       prosperity_gospel: ["Deus te dará carro", "riqueza é bênção"],
     },
-    style: "Inspirador, com linguagem bíblica suave, não dogmática.",
+    style: "Inspirador, com linguagem bíblica suave e acessível, não dogmática. Use palavras simples do dia-a-dia.",
   },
   structure_rules: {
     verse: { lines: 4 },
@@ -26,14 +28,17 @@ export const GOSPEL_2024 = {
   },
   prosody_rules: {
     syllable_count: {
+      verse_counting_rule: "Uma linha com 12 sílabas dividida por vírgula conta como 2 VERSOS na estrutura total",
       with_comma: {
         max_before_comma: 6,
         max_after_comma: 6,
         total_max: 12,
+        note: "Linha com vírgula = 2 VERSOS (ex: 'Tua graça me basta, em Ti eu descanso' = verso 1 + verso 2)",
       },
       without_comma: {
         min: 5,
         max: 8,
+        note: "Sem vírgula = 1 VERSO",
       },
     },
   },
@@ -46,6 +51,7 @@ export const GOSPEL_2024 = {
     "Sem medo ou julgamento",
     "Presença de 'graça', 'luz', 'fé'",
     "BPM 70–90",
+    "Linguagem simples e acessível",
     "Final de vitória espiritual",
   ],
 } as const

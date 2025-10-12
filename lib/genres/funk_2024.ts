@@ -107,11 +107,13 @@ export const funkRules2024 = {
   // ============================================================================
   prosodyRules: {
     syllableCount: {
+      verseCountingRule: "Funk usa frases diretas sem vírgulas. Cada linha = 1 VERSO",
       withoutComma: {
         min: 3,
         max: 6,
-        description: "Frases curtas e diretas, sem vírgulas",
+        description: "Frases curtas e diretas, sem vírgulas. Cada linha = 1 VERSO",
       },
+      note: "Funk não usa linhas com vírgulas - fluxo direto e grudento",
     },
 
     rhythm: {
