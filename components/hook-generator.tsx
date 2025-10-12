@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
@@ -29,14 +29,29 @@ interface HookResult {
 interface HookGeneratorProps {
   onSelectHook?: (hook: string) => void
   showSelectionMode?: boolean
+  initialLyrics?: string
+  initialGenre?: string
 }
 
-export function HookGenerator({ onSelectHook, showSelectionMode = false }: HookGeneratorProps) {
-  const [lyrics, setLyrics] = useState("")
-  const [genre, setGenre] = useState("")
+export function HookGenerator({
+  onSelectHook,
+  showSelectionMode = false,
+  initialLyrics = "",
+  initialGenre = "",
+}: HookGeneratorProps) {
+  const [lyrics, setLyrics] = useState(initialLyrics)
+  const [genre, setGenre] = useState(initialGenre)
   const [isGenerating, setIsGenerating] = useState(false)
   const [result, setResult] = useState<HookResult | null>(null)
   const [selectedHook, setSelectedHook] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (initialLyrics) setLyrics(initialLyrics)
+  }, [initialLyrics])
+
+  useEffect(() => {
+    if (initialGenre) setGenre(initialGenre)
+  }, [initialGenre])
 
   const generateHook = async () => {
     if (!lyrics.trim()) {
@@ -100,20 +115,33 @@ export function HookGenerator({ onSelectHook, showSelectionMode = false }: HookG
             Gerador de Hook & Ganchômetro
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Analise sua letra e gere 3 variações de hooks comerciais com pontuação de viralidade
+            {initialLyrics
+              ? "Gere hooks da letra já colada"
+              : "Analise sua letra e gere 3 variações de hooks comerciais com pontuação de viralidade"}
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>Cole sua letra para análise</Label>
-            <Textarea
-              placeholder="Cole a letra completa aqui..."
-              value={lyrics}
-              onChange={(e) => setLyrics(e.target.value)}
-              className="min-h-32"
-              disabled={isGenerating}
-            />
-          </div>
+          {!initialLyrics && (
+            <div className="space-y-2">
+              <Label>Cole sua letra para análise</Label>
+              <Textarea
+                placeholder="Cole a letra completa aqui..."
+                value={lyrics}
+                onChange={(e) => setLyrics(e.target.value)}
+                className="min-h-32"
+                disabled={isGenerating}
+              />
+            </div>
+          )}
+
+          {initialLyrics && (
+            <div className="p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
+              <p className="text-sm text-green-800 dark:text-green-200">
+                ✓ Usando letra já colada ({lyrics.split("\n").filter((l) => l.trim()).length} linhas)
+                {genre && ` • Gênero: ${genre}`}
+              </p>
+            </div>
+          )}
 
           <Button onClick={generateHook} disabled={isGenerating || !lyrics.trim()} className="w-full">
             {isGenerating ? (
@@ -310,3 +338,5 @@ export function HookGenerator({ onSelectHook, showSelectionMode = false }: HookG
     </div>
   )
 }
+
+export default HookGenerator

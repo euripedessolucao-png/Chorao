@@ -123,3 +123,76 @@ function checkRhyme(line1: string, line2: string): boolean {
 }
 
 import { GENRE_CONFIGS } from "./genre-config"
+import { generateText } from "ai"
+
+export async function applyTerceiraViaToLine(
+  line: string,
+  index: number,
+  context: string,
+  isPerformanceMode: boolean,
+  additionalRequirements?: string,
+): Promise<string> {
+  // Skip structural markers and empty lines
+  if (!line.trim() || line.startsWith("[") || line.startsWith("(") || line.startsWith("Title:")) {
+    return line
+  }
+
+  // Skip if line is already well-formed (has good structure)
+  if (line.length < 10 || line.match(/^\s*[-•]\s/)) {
+    return line
+  }
+
+  try {
+    // Apply Terceira Via principles: avoid clichés, use concrete imagery
+    const cliches = [
+      "coração partido",
+      "lágrimas no travesseiro",
+      "noite sem luar",
+      "amor eterno",
+      "para sempre",
+      "meu mundo desabou",
+      "vazio na alma",
+    ]
+
+    let needsImprovement = false
+    for (const cliche of cliches) {
+      if (line.toLowerCase().includes(cliche)) {
+        needsImprovement = true
+        break
+      }
+    }
+
+    // If line doesn't need improvement, return as is
+    if (!needsImprovement) {
+      return line
+    }
+
+    // Use AI to improve the line with Terceira Via principles
+    const prompt = `Você é um compositor seguindo os princípios da Terceira Via.
+
+LINHA ORIGINAL: "${line}"
+CONTEXTO: ${context}
+
+REGRAS TERCEIRA VIA:
+- Evite clichês abstratos ("coração partido", "lágrimas no travesseiro")
+- Use imagens concretas do cotidiano brasileiro
+- Mantenha a métrica e rima da linha original
+- Use linguagem coloquial e natural
+- Seja específico, não genérico
+
+Reescreva APENAS esta linha aplicando os princípios acima. Retorne SOMENTE a linha reescrita, sem explicações.`
+
+    const { text } = await generateText({
+      model: "openai/gpt-4o-mini",
+      prompt,
+      temperature: 0.7,
+      maxTokens: 100,
+    })
+
+    const improvedLine = text.trim().replace(/^["']|["']$/g, "")
+    return improvedLine || line
+  } catch (error) {
+    console.error(`[v0] Erro ao aplicar Terceira Via na linha ${index}:`, error)
+    return line
+  }
+}

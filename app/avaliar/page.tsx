@@ -12,6 +12,8 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Loader2, Upload, Mic2, Trash2, Download, TrendingUp, Star, Music } from "lucide-react"
 import { toast } from "sonner"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { HookGenerator } from "@/components/hook-generator"
 
 function ResultadoAvaliacao({ resultado, analiseHook }: { resultado: string | null; analiseHook: string | null }) {
   if (!resultado && !analiseHook) return null
@@ -213,6 +215,7 @@ export default function AvaliarPage() {
   const [audioFile, setAudioFile] = useState<File | null>(null)
   const [lyrics, setLyrics] = useState("")
   const [title, setTitle] = useState("")
+  const [genre, setGenre] = useState("") // Added genre state
   const [isLoading, setIsLoading] = useState(false)
   const [avaliacao, setAvaliacao] = useState<string | null>(null)
   const [analiseHook, setAnaliseHook] = useState<string | null>(null)
@@ -240,6 +243,7 @@ export default function AvaliarPage() {
       formData.append("audio", audioFile)
       formData.append("lyrics", lyrics)
       formData.append("title", title)
+      formData.append("genre", genre) // Added genre to formData
 
       const response = await fetch("/api/avaliar-cantada", {
         method: "POST",
@@ -283,6 +287,7 @@ export default function AvaliarPage() {
     setAudioFile(null)
     setLyrics("")
     setTitle("")
+    setGenre("") // Clear genre state
     setAvaliacao(null)
     setAnaliseHook(null)
     toast.success("Formulário limpo")
@@ -355,6 +360,26 @@ export default function AvaliarPage() {
 
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="genre">Gênero (opcional)</Label>
+                  <Select value={genre} onValueChange={setGenre}>
+                    <SelectTrigger className="h-9">
+                      <SelectValue placeholder="Selecione o gênero..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Sertanejo Moderno">Sertanejo Moderno</SelectItem>
+                      <SelectItem value="Funk">Funk</SelectItem>
+                      <SelectItem value="Pagode">Pagode</SelectItem>
+                      <SelectItem value="MPB">MPB</SelectItem>
+                      <SelectItem value="Gospel">Gospel</SelectItem>
+                      <SelectItem value="Bachata">Bachata</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-muted-foreground">
+                    Ajuda a análise de hook e refrão a seguir as regras do gênero
+                  </p>
+                </div>
+
                 {/* Arquivo de Áudio */}
                 <div className="space-y-2">
                   <Label htmlFor="audio-file">Arquivo MP3 da Cantada</Label>
@@ -437,6 +462,16 @@ export default function AvaliarPage() {
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
+
+                {lyrics.trim() && (
+                  <div className="pt-4 border-t">
+                    <Label className="text-sm font-semibold mb-2 block">Gerar Hook da Letra</Label>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      Use a letra já colada acima para gerar hooks comerciais
+                    </p>
+                    <HookGenerator initialLyrics={lyrics} initialGenre={genre} showSelectionMode={false} />
+                  </div>
+                )}
               </form>
             </CardContent>
           </Card>

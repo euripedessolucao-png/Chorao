@@ -1,262 +1,139 @@
+import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
-import { NextResponse } from "next/server"
-import { ThirdWayEngine } from "@/lib/third-way-converter"
-import { GENRE_CONFIGS } from "@/lib/genre-config"
-import { BACHATA_BRASILEIRA_2024 } from "@/lib/genres/bachata_brasileira_2024"
-import { SERTANEJO_MODERNO_2024 } from "@/lib/genres/sertanejo_moderno_2024"
-import { getAntiForcingRulesForGenre } from "@/lib/validation/anti-forcing-validator"
+import { getGenreConfig } from "@/lib/genre-config"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
+import { applyTerceiraViaToLine } from "@/lib/terceira-via"
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
     const {
       genero,
       humor,
       tema,
       criatividade,
-      hook,
       inspiracao,
       metaforas,
       emocoes,
       titulo,
-      metrics,
-      chorusSelected,
       formattingStyle,
       additionalRequirements,
-    } = body
+      metrics,
+    } = await request.json()
 
-    const isBachata = genero.toLowerCase().includes("bachata")
-    const isSertanejo = genero.toLowerCase().includes("sertanejo")
+    if (!genero) {
+      return NextResponse.json({ error: "Gênero é obrigatório" }, { status: 400 })
+    }
+
+    const genreConfig = getGenreConfig(genero)
     const isPerformanceMode = formattingStyle === "performatico"
+    const isBachata = genero.toLowerCase().includes("bachata")
 
-    const genreConfig = isBachata
-      ? BACHATA_BRASILEIRA_2024
-      : isSertanejo
-        ? SERTANEJO_MODERNO_2024
-        : GENRE_CONFIGS[genero as keyof typeof GENRE_CONFIGS]
+    let chorusContext = ""
+    if (additionalRequirements) {
+      const chorusMatch = additionalRequirements.match(/\[CHORUS\]\s*([\s\S]+?)(?=\n\n|\[|$)/i)
+      if (chorusMatch) {
+        chorusContext = `\n\nREFRÃO PRÉ-DEFINIDO (use exatamente como está):\n${chorusMatch[1].trim()}\n\nConstrua a narrativa da música em torno deste refrão. O refrão deve aparecer pelo menos 2 vezes na estrutura.`
+      }
+    }
 
-    const forbiddenList = genreConfig?.language_rules?.forbidden
-      ? Object.values(genreConfig.language_rules.forbidden).flat()
-      : []
-    const allowedList = genreConfig?.language_rules?.allowed
-      ? Object.values(genreConfig.language_rules.allowed).flat()
-      : []
+    const structureGuide = chorusContext
+      ? `ESTRUTURA OBRIGATÓRIA (3:30 de duração):
+[INTRO] (instrumental, 8-12 segundos)
+[VERSE 1] (4 linhas)
+[PRE-CHORUS] (2 linhas) - preparação emocional
+[CHORUS] (use o refrão pré-definido)
+[VERSE 2] (4 linhas) - desenvolve a história
+[PRE-CHORUS] (2 linhas)
+[CHORUS] (repete o refrão pré-definido)
+[BRIDGE] (2-4 linhas) - momento de reflexão ou virada
+[CHORUS] (repete o refrão pré-definido)
+[OUTRO] (fade out ou repetição do hook)`
+      : genero.toLowerCase().includes("sertanejo moderno")
+        ? `ESTRUTURA CHICLETE (repetição comercial):
+[INTRO] (instrumental)
+[VERSE 1] (4 linhas)
+[CHORUS] (2-4 linhas, grudento)
+[VERSE 2] (4 linhas)
+[CHORUS] (repete)
+[BRIDGE] (2 linhas)
+[CHORUS] (repete 2x para fixar)
+[OUTRO]`
+        : `ESTRUTURA COMERCIAL (3:30):
+[INTRO] (instrumental, 8-12 segundos)
+[VERSE 1] (4 linhas)
+[PRE-CHORUS] (2 linhas)
+[CHORUS] (2-4 linhas)
+[VERSE 2] (4 linhas)
+[PRE-CHORUS] (2 linhas)
+[CHORUS] (repete)
+[BRIDGE] (2-4 linhas)
+[CHORUS] (repete)
+[OUTRO]`
 
-    const antiForcingRules = getAntiForcingRulesForGenre(genero)
-    const antiForcingExamples = antiForcingRules
-      .slice(0, 3)
-      .map((rule) => `- "${rule.keyword}": ${rule.description}`)
-      .join("\n")
+    const performanceInstructions = isPerformanceMode
+      ? `\n\nFORMATO PERFORMÁTICO:
+- Adicione descrições de palco entre parênteses: (sobe o tom), (pausa dramática), (repete 2x), (a cappella)
+- Indique momentos instrumentais: [GUITAR SOLO], [DRUM BREAK]
+- Marque dinâmicas: (suave), (crescendo), (explosivo)
+- No final, adicione: (Instruments: [lista em inglês] | BPM: ${metrics?.bpm || 100} | Style: ${genero})`
+      : `\n\nFORMATO PADRÃO:
+- Use apenas marcadores de estrutura em inglês: [INTRO], [VERSE], [CHORUS], [BRIDGE], [OUTRO]
+- Mantenha a letra limpa e direta
+- No final, adicione: (Instruments: [lista em inglês] | BPM: ${metrics?.bpm || 100} | Style: ${genero})`
 
-    const languageRule = additionalRequirements
-      ? `ATENÇÃO: Os requisitos adicionais do compositor têm PRIORIDADE ABSOLUTA sobre qualquer regra abaixo:
-${additionalRequirements}
+    const prompt = `Você é um compositor profissional brasileiro especializado em ${genero}.
 
-REGRA UNIVERSAL DE METÁFORAS:
-- Metáforas solicitadas pelo compositor DEVEM ser respeitadas e inseridas na letra
-- Não altere, ignore ou substitua metáforas especificadas nos requisitos adicionais
-- Integre as metáforas de forma natural no contexto emocional da música
-- Se o compositor pediu uma metáfora específica, ela é OBRIGATÓRIA na composição
+TAREFA: Escreva uma letra completa seguindo as especificações abaixo.
 
-`
-      : `REGRA UNIVERSAL DE LINGUAGEM (INVIOLÁVEL):
-- Use APENAS palavras simples e coloquiais do dia-a-dia
-- Fale como um humano comum fala na conversa cotidiana
-- PROIBIDO: vocabulário rebuscado, poético, literário ou formal
-- PERMITIDO: gírias, contrações, expressões populares
-- Exemplo BOM: "tô", "cê", "pra", "né", "mano"
-- Exemplo RUIM: "outono da alma", "florescer", "bonança"
+TEMA: ${tema || "amor e relacionamento"}
+HUMOR: ${humor || "neutro"}
+CRIATIVIDADE: ${criatividade}
+${inspiracao ? `INSPIRAÇÃO: ${inspiracao}` : ""}
+${metaforas ? `METÁFORAS DESEJADAS: ${metaforas}` : ""}
+${emocoes && emocoes.length > 0 ? `EMOÇÕES: ${emocoes.join(", ")}` : ""}
+${titulo ? `TÍTULO SUGERIDO: ${titulo}` : ""}
+${additionalRequirements ? `\nREQUISITOS ADICIONAIS:\n${additionalRequirements}` : ""}
+${chorusContext}
 
-`
+${structureGuide}
 
-    const antiForcingRule = `
-🚫 REGRA UNIVERSAL ANTI-FORÇAÇÃO (CRÍTICA):
-Você é um compositor humano, não um robô de palavras-chave.
-- Se for relevante para a emoção da cena, você PODE usar referências do gênero
-- NUNCA force essas palavras só para "cumprir regras"
-- A cena deve surgir NATURALMENTE da dor, alegria, superação ou celebração
-- Se a narrativa não pedir uma referência específica, NÃO a inclua
-- Autenticidade é mais importante que atualidade forçada
+REGRAS DE PROSÓDIA (${genreConfig.name}):
+Com vírgula (conta como 2 versos):
+  - Máximo ${genreConfig.prosody_rules.syllable_count.with_comma.max_before_comma} sílabas antes da vírgula
+  - Máximo ${genreConfig.prosody_rules.syllable_count.with_comma.max_after_comma} sílabas depois da vírgula
+  - Total máximo: ${genreConfig.prosody_rules.syllable_count.with_comma.total_max} sílabas
 
-Exemplos para ${genero}:
-${antiForcingExamples}
+Sem vírgula (1 verso):
+  - Mínimo: ${genreConfig.prosody_rules.syllable_count.without_comma.min} sílabas
+  - Máximo: ${genreConfig.prosody_rules.syllable_count.without_comma.max} sílabas
+  - Aceitável até: ${genreConfig.prosody_rules.syllable_count.without_comma.acceptable_up_to} sílabas
 
-EXEMPLO RUIM: "Ela de biquíni à meia-noite no jantar" (incoerente, forçado)
-EXEMPLO BOM: "Meu biquíni novo, o que você chamava de falha" (coerente com emoção)
-`
+LINGUAGEM:
+- Use português brasileiro coloquial e natural
+- Evite clichês excessivos
+- Mantenha coerência narrativa
+- Rimas naturais (não forçadas)
 
-    const genreSpecificGuidance = genero.toLowerCase().includes("sertanejo moderno")
-      ? `
-🎯 SERTANEJO MODERNO 2025 - CARACTERÍSTICAS OBRIGATÓRIAS:
+${performanceInstructions}
 
-TOM CORRETO (OBRIGATÓRIO):
-- Confidente e sincero (NÃO dramático ou pesado)
-- Vulnerabilidade COM atitude (NÃO sofrência passiva)
-- Às vezes brincalhão e leve (NÃO sempre sério)
-- Saudade SAUDÁVEL (NÃO dependência tóxica)
-
-TEMAS PERMITIDOS:
-✅ Superação com leveza ("errei mas cresci", "tô em paz comigo")
-✅ Celebração da vida simples (boteco, amigos, estrada, violão)
-✅ Nova chance ou paz interior (NÃO "não vivo sem você")
-✅ Reflexão ou cura com amigos (cerveja, conversa, música)
-✅ Amor que liberta (NÃO amor que prende)
-
-TEMAS PROIBIDOS:
-❌ Drama excessivo ("meu mundo desabou", "não consigo viver")
-❌ Sofrência passiva ("choro no travesseiro", "solidão me mata")
-❌ Dependência tóxica ("só penso em você", "volta pra mim")
-❌ Metáforas abstratas pesadas ("mar de dor", "alma perdida")
-❌ Masculinidade tóxica ("mulher é tudo igual", "vou destruir")
-
-LINGUAGEM OBRIGATÓRIA:
-- Objetos concretos: cerveja, violão, boteco, estrada, caminhonete, chapéu
-- Ações de superação: errei, aprendi, segui, curei, cresci, perdoei
-- Frases de paz: "tô em paz comigo", "amor que prende não é amor"
-
-NARRATIVA OBRIGATÓRIA:
-Início (erro ou dor leve) → Meio (reflexão/cura com amigos) → Fim (nova chance OU paz interior)
-
-EXEMPLO DO QUE NÃO FAZER:
-"O silêncio pesa, e o amor se esfria" ❌ (drama pesado, abstrato)
-"Suspeitas no ar, e o medo que cresce" ❌ (sofrência passiva)
-
-EXEMPLO DO QUE FAZER:
-"Errei, mas aprendi, hoje tô em paz" ✅ (superação com leveza)
-"No boteco com os amigos, curei minha dor" ✅ (cura com celebração)
-`
-      : ""
-
-    const prompt = `${languageRule}${antiForcingRule}${genreSpecificGuidance}
-
-COMPOSITOR PROFISSIONAL - RESTRIÇÕES ABSOLUTAS
-
-GÊNERO: ${genero}
-TEMA: ${tema || "universal"}
-HUMOR: ${humor || "variado"}
-${hook ? `HOOK OBRIGATÓRIO: ${hook}` : ""}
-${titulo ? `TÍTULO OBRIGATÓRIO: ${titulo}` : ""}
-
-🎯 ZONAS DE LIBERDADE CRIATIVA:
-- Você PODE surpreender com metáforas originais (desde que coerentes)
-- Você PODE usar estruturas não convencionais (se forem geniais)
-- Você PODE usar palavras inesperadas (desde que sirvam à emoção)
-- VALIDAÇÃO: Por intenção emocional, NÃO por checklist de palavras-chave
-- PRIORIDADE: Autenticidade > Atualidade forçada
-
-RESTRIÇÕES INVIOLÁVEIS:
-1. MÁXIMO ${metrics?.maxSyllables || 12} SÍLABAS POR LINHA (limite fisiológico - um fôlego)
-2. PROIBIDO USAR: ${forbiddenList.slice(0, 15).join(", ")}
-3. USE APENAS: ${allowedList.slice(0, 15).join(", ")}
-4. NUNCA quebre palavras (ex: "nãsãnossas" é ERRO GRAVE)
-5. ${isSertanejo ? "REFRÃO: 2 ou 4 linhas (NUNCA 3)" : ""}
-6. ${isBachata ? "Se usar vírgula: máx 6 sílabas antes + 6 depois" : ""}
-7. BPM: ${metrics?.bpm || 100}
-
-ESTRUTURA OBRIGATÓRIA (MÍNIMO 2 MINUTOS):
-- VERSO 1: 8-12 linhas (estabelece contexto e emoção)
-- REFRÃO: 4-8 linhas (gancho principal, repetível)
-- VERSO 2: 8-12 linhas (desenvolve história ou contraste)
-- REFRÃO: (repete o mesmo refrão)
-- PONTE: 4-8 linhas (clímax emocional ou mudança de perspectiva)
-- REFRÃO FINAL: (repete o mesmo refrão com energia máxima)
-
-FORMATAÇÃO DE VERSOS (IMPORTANTE):
-- EMPILHE os versos em linhas separadas (um verso por linha)
-- EXCEÇÃO: Combine versos na mesma linha SOMENTE quando se completam semanticamente
-- Exemplo CORRETO (empilhado):
-  Você diz que me ama
-  Mas não mostra
-- Exemplo CORRETO (completam-se):
-  Você diz que me ama, mas não mostra
-- MOTIVO: Facilita contagem visual de versos e detecção de erros
-
-${
-  chorusSelected && chorusSelected.length > 0
-    ? `REFRÕES OBRIGATÓRIOS (use EXATAMENTE como fornecidos):
-${chorusSelected.map((c: any, i: number) => `Refrão ${i + 1}:\n${c.lines.join("\n")}`).join("\n\n")}`
-    : ""
-}
-
-FORMATO OBRIGATÓRIO:
-${
-  isPerformanceMode
-    ? `Título: ${titulo || "[2-4 palavras do refrão]"}
-
-[INTRO - Instrumentação e atmosfera]
-
-[VERSE 1 - Voz e ritmo]
-[8-12 linhas em português]
-
-[CHORUS - Energia máxima]
-[4-8 linhas - refrão em português]
-
-[VERSE 2 - Variação]
-[8-12 linhas em português]
-
-[CHORUS - Repete]
-[mesmo refrão]
-
-[BRIDGE - Transição e clímax]
-[4-8 linhas em português]
-
-[FINAL CHORUS - Energia máxima]
-[mesmo refrão]
-
-[OUTRO - Encerramento]
-
-(Instruments: [lista em inglês] | BPM: ${metrics?.bpm || 100} | Style: ${genero})`
-    : `Título: ${titulo || "[2-4 palavras do refrão]"}
-
-[INTRO]
-[introdução]
-
-[VERSO 1]
-[8-12 linhas]
-
-[REFRÃO]
-[4-8 linhas - refrão principal]
-
-[VERSO 2]
-[8-12 linhas]
-
-[REFRÃO]
-[repete o mesmo refrão]
-
-[PONTE]
-[4-8 linhas]
-
-[REFRÃO FINAL]
-[repete o mesmo refrão]
-
-[OUTRO]
-[encerramento]
-
-${isPerformanceMode ? `(Instruments: [lista] | BPM: ${metrics?.bpm || 100} | Style: ${genero})` : ""}`
-}
-
-RETORNE APENAS A LETRA FORMATADA (sem comentários, sem explicações).`
+Escreva a letra completa agora:`
 
     const { text } = await generateText({
       model: "openai/gpt-4o",
       prompt,
-      temperature: criatividade === "conservador" ? 0.5 : criatividade === "ousado" ? 0.9 : 0.7,
+      temperature: 0.8,
     })
 
-    const lines = text.split("\n")
+    const rawLyrics = text.trim()
+
+    const lines = rawLyrics.split("\n")
     const processedLines = await Promise.all(
       lines.map(async (line, index) => {
-        if (line.startsWith("[") || line.startsWith("(") || line.startsWith("Título:") || !line.trim()) {
-          return line
-        }
-
         try {
-          return await ThirdWayEngine.generateThirdWayLine(
+          return await applyTerceiraViaToLine(
             line,
-            genero,
-            genreConfig,
-            `${tema} - linha ${index + 1}`,
+            index,
+            `${genero} - ${tema || "geral"} - ${humor || "neutro"} - criatividade: ${criatividade || 50}`,
             isPerformanceMode,
             additionalRequirements,
           )
@@ -270,14 +147,14 @@ RETORNE APENAS A LETRA FORMATADA (sem comentários, sem explicações).`
     let finalLyrics = processedLines.join("\n")
 
     let extractedTitle = titulo || ""
-    const titleMatch = finalLyrics.match(/^Título:\s*(.+)$/m)
+    const titleMatch = finalLyrics.match(/^Title:\s*(.+)$/m)
     if (titleMatch?.[1]) {
       extractedTitle = titleMatch[1].trim()
     } else if (!extractedTitle) {
       const chorusMatch = finalLyrics.match(/\[(?:CHORUS|REFRÃO)[^\]]*\]\s*\n([^\n]+)/i)
       if (chorusMatch?.[1]) {
         extractedTitle = chorusMatch[1].trim().split(" ").slice(0, 4).join(" ")
-        finalLyrics = `Título: ${extractedTitle}\n\n${finalLyrics}`
+        finalLyrics = `Title: ${extractedTitle}\n\n${finalLyrics}`
       }
     }
 
