@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { generateText } from "ai"
 import { getGenreConfig } from "@/lib/genre-config"
+import { getAntiForcingRulesForGenre } from "@/lib/validation/anti-forcing-validator"
 
 export async function POST(request: Request) {
   try {
@@ -11,6 +12,12 @@ export async function POST(request: Request) {
     }
 
     const genreConfig = genre ? getGenreConfig(genre) : null
+
+    const antiForcingRules = genre ? getAntiForcingRulesForGenre(genre) : []
+    const antiForcingExamples = antiForcingRules
+      .slice(0, 3)
+      .map((rule) => `- "${rule.keyword}": ${rule.description}`)
+      .join("\n")
 
     const languageRule = additionalRequirements
       ? `ATENÇÃO: Os requisitos adicionais do compositor têm PRIORIDADE ABSOLUTA sobre qualquer regra:\n${additionalRequirements}\n\n`
@@ -24,12 +31,32 @@ export async function POST(request: Request) {
 
 `
 
+    const antiForcingRule =
+      genre && antiForcingExamples
+        ? `
+🚫 REGRA UNIVERSAL ANTI-FORÇAÇÃO (CRÍTICA):
+Você é um compositor humano, não um robô de palavras-chave.
+- Se for relevante para a emoção da cena, você PODE usar referências do gênero
+- NUNCA force essas palavras só para "cumprir regras"
+- A cena deve surgir NATURALMENTE da dor, alegria, superação ou celebração
+- Se a narrativa não pedir uma referência específica, NÃO a inclua
+- Autenticidade é mais importante que atualidade forçada
+
+Exemplos para ${genre}:
+${antiForcingExamples}
+
+EXEMPLO RUIM: "Ela de biquíni à meia-noite no jantar" (incoerente, forçado)
+EXEMPLO BOM: "Meu biquíni novo, o que você chamava de falha" (coerente com emoção)
+`
+        : ""
+
     const prosodyRules = genreConfig
       ? `
 REGRAS DE PROSÓDIA (${genreConfig.name}):
 Com vírgula (conta como 2 versos):
   - Máximo ${genreConfig.prosody_rules.syllable_count.with_comma.max_before_comma} sílabas antes da vírgula
   - Máximo ${genreConfig.prosody_rules.syllable_count.with_comma.max_after_comma} sílabas depois da vírgula
+  - Total máximo: ${genreConfig.prosody_rules.syllable_count.with_comma.total_max} sílabas (limite fisiológico - um fôlego)
 
 Sem vírgula (1 verso):
   - Mínimo: ${genreConfig.prosody_rules.syllable_count.without_comma.min} sílabas
@@ -38,7 +65,9 @@ Sem vírgula (1 verso):
 `
       : ""
 
-    const prompt = `${languageRule}Você é um especialista em hooks musicais e viralidade. Analise esta letra e gere hooks comerciais usando a Terceira Via (3 variações → síntese).
+    const prompt = `${languageRule}${antiForcingRule}
+
+Você é um especialista em hooks musicais e viralidade. Analise esta letra e gere hooks comerciais usando a Terceira Via (3 variações → síntese).
 
 LETRA PARA ANALISAR:
 ${lyrics}
@@ -96,6 +125,7 @@ IMPORTANTE:
 - Evite metáforas abstratas e vocabulário rebuscado
 - Foque em palavras do dia-a-dia
 - O hook deve soar natural, como algo que um brasileiro falaria
+- Respeite as regras de prosódia se fornecidas
 
 Retorne APENAS o JSON, sem markdown ou texto adicional.`
 

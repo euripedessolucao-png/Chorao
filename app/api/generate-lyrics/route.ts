@@ -4,6 +4,7 @@ import { ThirdWayEngine } from "@/lib/third-way-converter"
 import { GENRE_CONFIGS } from "@/lib/genre-config"
 import { BACHATA_BRASILEIRA_2024 } from "@/lib/genres/bachata_brasileira_2024"
 import { SERTANEJO_MODERNO_2024 } from "@/lib/genres/sertanejo_moderno_2024"
+import { getAntiForcingRulesForGenre } from "@/lib/validation/anti-forcing-validator"
 
 export async function POST(request: Request) {
   try {
@@ -41,6 +42,12 @@ export async function POST(request: Request) {
       ? Object.values(genreConfig.language_rules.allowed).flat()
       : []
 
+    const antiForcingRules = getAntiForcingRulesForGenre(genero)
+    const antiForcingExamples = antiForcingRules
+      .slice(0, 3)
+      .map((rule) => `- "${rule.keyword}": ${rule.description}`)
+      .join("\n")
+
     const languageRule = additionalRequirements
       ? `ATENÇÃO: Os requisitos adicionais do compositor têm PRIORIDADE ABSOLUTA sobre qualquer regra abaixo:\n${additionalRequirements}\n\n`
       : `REGRA UNIVERSAL DE LINGUAGEM (INVIOLÁVEL):
@@ -53,7 +60,25 @@ export async function POST(request: Request) {
 
 `
 
-    const prompt = `${languageRule}COMPOSITOR PROFISSIONAL - RESTRIÇÕES ABSOLUTAS
+    const antiForcingRule = `
+🚫 REGRA UNIVERSAL ANTI-FORÇAÇÃO (CRÍTICA):
+Você é um compositor humano, não um robô de palavras-chave.
+- Se for relevante para a emoção da cena, você PODE usar referências do gênero
+- NUNCA force essas palavras só para "cumprir regras"
+- A cena deve surgir NATURALMENTE da dor, alegria, superação ou celebração
+- Se a narrativa não pedir uma referência específica, NÃO a inclua
+- Autenticidade é mais importante que atualidade forçada
+
+Exemplos para ${genero}:
+${antiForcingExamples}
+
+EXEMPLO RUIM: "Ela de biquíni à meia-noite no jantar" (incoerente, forçado)
+EXEMPLO BOM: "Meu biquíni novo, o que você chamava de falha" (coerente com emoção)
+`
+
+    const prompt = `${languageRule}${antiForcingRule}
+
+COMPOSITOR PROFISSIONAL - RESTRIÇÕES ABSOLUTAS
 
 GÊNERO: ${genero}
 TEMA: ${tema || "universal"}
@@ -62,7 +87,7 @@ ${hook ? `HOOK OBRIGATÓRIO: ${hook}` : ""}
 ${titulo ? `TÍTULO OBRIGATÓRIO: ${titulo}` : ""}
 
 RESTRIÇÕES INVIOLÁVEIS:
-1. MÁXIMO ${metrics?.maxSyllables || 12} SÍLABAS POR LINHA
+1. MÁXIMO ${metrics?.maxSyllables || 12} SÍLABAS POR LINHA (limite fisiológico - um fôlego)
 2. PROIBIDO USAR: ${forbiddenList.slice(0, 15).join(", ")}
 3. USE APENAS: ${allowedList.slice(0, 15).join(", ")}
 4. NUNCA quebre palavras (ex: "nãsãnossas" é ERRO GRAVE)

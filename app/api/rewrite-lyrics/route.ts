@@ -4,6 +4,7 @@ import { ThirdWayEngine } from "@/lib/third-way-converter"
 import { BACHATA_BRASILEIRA_2024 } from "@/lib/genres/bachata_brasileira_2024"
 import { SERTANEJO_MODERNO_2024 } from "@/lib/genres/sertanejo_moderno_2024"
 import { GENRE_CONFIGS } from "@/lib/genre-config"
+import { getAntiForcingRulesForGenre } from "@/lib/validation/anti-forcing-validator"
 
 export async function POST(request: Request) {
   try {
@@ -34,6 +35,12 @@ export async function POST(request: Request) {
     const hasPerformanceMode =
       /\[(?:INTRO|VERSE|CHORUS|BRIDGE|OUTRO)\s*-\s*[^\]]+\]/.test(letraOriginal) || isPerformanceMode
 
+    const antiForcingRules = getAntiForcingRulesForGenre(generoConversao)
+    const antiForcingExamples = antiForcingRules
+      .slice(0, 3)
+      .map((rule) => `- "${rule.keyword}": ${rule.description}`)
+      .join("\n")
+
     const languageRule = additionalRequirements
       ? `ATENÇÃO: Os requisitos adicionais do compositor têm PRIORIDADE ABSOLUTA sobre qualquer regra abaixo:\n${additionalRequirements}\n\n`
       : `REGRA UNIVERSAL DE LINGUAGEM (INVIOLÁVEL):
@@ -44,6 +51,22 @@ export async function POST(request: Request) {
 - Exemplo BOM: "tô", "cê", "pra", "né", "mano"
 - Exemplo RUIM: "outono da alma", "florescer", "bonança"
 
+`
+
+    const antiForcingRule = `
+🚫 REGRA UNIVERSAL ANTI-FORÇAÇÃO (CRÍTICA):
+Você é um compositor humano, não um robô de palavras-chave.
+- Se for relevante para a emoção da cena, você PODE usar referências do gênero
+- NUNCA force essas palavras só para "cumprir regras"
+- A cena deve surgir NATURALMENTE da dor, alegria, superação ou celebração
+- Se a narrativa não pedir uma referência específica, NÃO a inclua
+- Autenticidade é mais importante que atualidade forçada
+
+Exemplos para ${generoConversao}:
+${antiForcingExamples}
+
+EXEMPLO RUIM: "Ela de biquíni à meia-noite no jantar" (incoerente, forçado)
+EXEMPLO BOM: "Meu biquíni novo, o que você chamava de falha" (coerente com emoção)
 `
 
     const metricInfo = metrics
@@ -103,7 +126,9 @@ Título: [título derivado do refrão]
 
 (Instruments: [lista de instrumentos] | BPM: ${metrics?.bpm || 100} | Style: ${generoConversao})`
 
-    const prompt = `${languageRule}Você é um compositor profissional especializado em ${generoConversao}.
+    const prompt = `${languageRule}${antiForcingRule}
+
+Você é um compositor profissional especializado em ${generoConversao}.
 
 LETRA ORIGINAL PARA REESCREVER:
 ${letraOriginal}

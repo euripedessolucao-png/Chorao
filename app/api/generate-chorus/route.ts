@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
 import { getGenreConfig } from "@/lib/genre-config"
+import { getAntiForcingRulesForGenre } from "@/lib/validation/anti-forcing-validator"
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,6 +12,12 @@ export async function POST(request: NextRequest) {
     }
 
     const genreConfig = getGenreConfig(genre)
+
+    const antiForcingRules = getAntiForcingRulesForGenre(genre)
+    const antiForcingExamples = antiForcingRules
+      .slice(0, 3)
+      .map((rule) => `- "${rule.keyword}": ${rule.description}`)
+      .join("\n")
 
     const lyricsContext = lyrics
       ? `\n\nLETRA EXISTENTE PARA CONTEXTO:\n${lyrics}\n\nGere um refrão que se conecte tematicamente com esta letra.`
@@ -28,6 +35,22 @@ export async function POST(request: NextRequest) {
 
 `
 
+    const antiForcingRule = `
+🚫 REGRA UNIVERSAL ANTI-FORÇAÇÃO (CRÍTICA):
+Você é um compositor humano, não um robô de palavras-chave.
+- Se for relevante para a emoção da cena, você PODE usar referências do gênero
+- NUNCA force essas palavras só para "cumprir regras"
+- A cena deve surgir NATURALMENTE da dor, alegria, superação ou celebração
+- Se a narrativa não pedir uma referência específica, NÃO a inclua
+- Autenticidade é mais importante que atualidade forçada
+
+Exemplos para ${genre}:
+${antiForcingExamples}
+
+EXEMPLO RUIM: "Ela de biquíni à meia-noite no jantar" (incoerente, forçado)
+EXEMPLO BOM: "Meu biquíni novo, o que você chamava de falha" (coerente com emoção)
+`
+
     const isSertanejoModerno = genre.toLowerCase().includes("sertanejo moderno")
 
     let prompt: string
@@ -38,7 +61,9 @@ export async function POST(request: NextRequest) {
         ? "Empoderamento com leveza, ironia suave, celebração da autonomia"
         : "Vulnerabilidade com força, superação com amigos, respeito no amor"
 
-      prompt = `${languageRule}Você é um compositor profissional de sertanejo moderno com sucessos nas paradas do Spotify, TikTok e rádios brasileiras.
+      prompt = `${languageRule}${antiForcingRule}
+
+Você é um compositor profissional de sertanejo moderno com sucessos nas paradas do Spotify, TikTok e rádios brasileiras.
 
 TAREFA: Gere 5 opções de refrão grudento, radiofônico e viralizável para uma música com as seguintes características:
 - Gênero: ${genre}
@@ -55,7 +80,7 @@ REGRAS DE PROSÓDIA (${genreConfig.name}):
 Com vírgula (conta como 2 versos):
   - Máximo ${genreConfig.prosody_rules.syllable_count.with_comma.max_before_comma} sílabas antes da vírgula
   - Máximo ${genreConfig.prosody_rules.syllable_count.with_comma.max_after_comma} sílabas depois da vírgula
-  - Total máximo: ${genreConfig.prosody_rules.syllable_count.with_comma.total_max} sílabas
+  - Total máximo: ${genreConfig.prosody_rules.syllable_count.with_comma.total_max} sílabas (limite fisiológico - um fôlego)
 
 Sem vírgula (1 verso):
   - Mínimo: ${genreConfig.prosody_rules.syllable_count.without_comma.min} sílabas
@@ -104,7 +129,9 @@ IMPORTANTE:
 
 Gere as 5 variações agora:`
     } else {
-      prompt = `${languageRule}Você é um compositor profissional especializado em criar refrões comerciais e grudentos.
+      prompt = `${languageRule}${antiForcingRule}
+
+Você é um compositor profissional especializado em criar refrões comerciais e grudentos.
 
 TAREFA: Gere 5 variações de refrão para uma música com as seguintes características:
 - Gênero: ${genre}
@@ -120,7 +147,7 @@ REGRAS DE PROSÓDIA (${genreConfig.name}):
 Com vírgula (conta como 2 versos):
   - Máximo ${genreConfig.prosody_rules.syllable_count.with_comma.max_before_comma} sílabas antes da vírgula
   - Máximo ${genreConfig.prosody_rules.syllable_count.with_comma.max_after_comma} sílabas depois da vírgula
-  - Total máximo: ${genreConfig.prosody_rules.syllable_count.with_comma.total_max} sílabas
+  - Total máximo: ${genreConfig.prosody_rules.syllable_count.with_comma.total_max} sílabas (limite fisiológico - um fôlego)
 
 Sem vírgula (1 verso):
   - Mínimo: ${genreConfig.prosody_rules.syllable_count.without_comma.min} sílabas
