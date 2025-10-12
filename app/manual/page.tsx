@@ -103,10 +103,10 @@ const manualSections = [
     topics: [
       "O que é a Terceira Via?",
       "Como funciona o processo A + B → Final",
-      "Otimização automática de métricas",
-      "Análise de pontos fortes",
+      "Sistema que força a IA a compor",
+      "Regras universais de prosódia",
+      "Limite fisiológico de 12 sílabas",
       "Aplicação em todos os gêneros",
-      "Visualizar análise detalhada",
     ],
   },
   {
@@ -129,7 +129,7 @@ const faqItems = [
   {
     question: "Como funciona a Terceira Via?",
     answer:
-      "A Terceira Via é o cérebro do Chorão Compositor. Para cada linha da sua letra, o sistema gera silenciosamente duas variações (A e B): a Variação A foca em métrica perfeita e fluidez, enquanto a Variação B explora criatividade e emoção. O sistema então analisa os pontos fortes de cada variação e combina os melhores elementos para criar a versão final otimizada. Esse processo acontece automaticamente em todas as gerações de letras, versos e refrões, garantindo qualidade superior sem esforço manual.",
+      "A Terceira Via é o motor de composição do Chorão Compositor. Ela NÃO ensina a IA a compor - ela FORÇA a IA a compor dentro de restrições rígidas dos gêneros musicais. Para cada linha, o sistema gera 3 variações sob diferentes ângulos: Variação A (foco em métrica e fluidez), Variação B (criatividade e emoção), e Síntese Final (combina os melhores elementos). Este processo garante que todas as letras sigam as regras universais: linguagem simples e coloquial brasileira, máximo de 12 sílabas por verso (limite fisiológico de respiração do cantor), versos empilhados para facilitar contagem, e estrutura adequada ao gênero. A Terceira Via aplica-se a TODAS as funções: criar letras, reescrever, gerar refrão e gerar hook.",
   },
   {
     question: "Quais gêneros musicais são suportados?",
@@ -165,6 +165,21 @@ const faqItems = [
     question: "Como usar as Metáforas Inteligentes?",
     answer:
       "No painel esquerdo das abas Criar e Reescrever, digite um tema no campo 'Buscar Metáforas' (ex: 'amor', 'saudade', 'liberdade'). O sistema gerará metáforas criativas e adequadas ao gênero selecionado. Clique em uma metáfora para adicioná-la ao contexto da geração. As metáforas são otimizadas para cada gênero - por exemplo, Sertanejo Moderno evita metáforas abstratas e prefere imagens visuais concretas.",
+  },
+  {
+    question: "Por que o limite de 12 sílabas?",
+    answer:
+      "O limite de 12 sílabas por verso é fisiológico: é o máximo que um cantor humano consegue cantar confortavelmente em um fôlego. Quando um verso tem vírgula dividindo duas partes, ele conta como 2 VERSOS (não 1), mesmo que esteja escrito em uma linha. As combinações permitidas são: 6+6, 7+5 ou 5+7 sílabas (todas totalizando 12). Esta regra garante que as letras geradas sejam cantáveis por humanos reais, não apenas teoricamente corretas. O sistema empilha versos em linhas separadas sempre que possível para facilitar a contagem visual e detecção de erros.",
+  },
+  {
+    question: "O que são as Regras Universais de Linguagem?",
+    answer:
+      "Todas as letras geradas seguem a regra universal de linguagem simples e coloquial: palavras do dia-a-dia brasileiro, como um humano fala naturalmente. Esta regra aplica-se a TODOS os gêneros e funções (criar, reescrever, refrão, hook). A ÚNICA exceção é quando você especifica vocabulário diferente no campo 'Requisitos Adicionais', que tem PRIORIDADE TOTAL sobre qualquer regra. Os Requisitos Adicionais são comunicação direta entre compositor e IA - o que você escrever ali será seguido absolutamente, sobrepondo as regras padrão.",
+  },
+  {
+    question: "Como o sistema replica composições humanas?",
+    answer:
+      "O sistema foi projetado para replicar a naturalidade de composições humanas através da Terceira Via. Ele analisa padrões de letras escritas por compositores brasileiros: versos empilhados em linhas separadas, linguagem coloquial autêntica, estrutura com repetição para memorização, vírgulas para pausas naturais (não apenas divisão técnica), e fluxo natural do português brasileiro falado. O objetivo não é ensinar a IA a compor, mas forçá-la a compor como um humano compositor brasileiro, seguindo regras padrão dos gêneros enquanto mantém criatividade e emoção. Todas as funções trabalham com o mesmo propósito: compor letras e músicas de sucesso.",
   },
 ]
 

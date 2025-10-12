@@ -49,12 +49,12 @@ export const GENRE_CONFIGS = {
     },
     prosody_rules: {
       syllable_count: {
-        with_comma: { max_before_comma: 6, max_after_comma: 6, total_max: 12 },
+        with_comma: { max_before_comma: 7, max_after_comma: 5, total_max: 12 },
         without_comma: { min: 5, max: 7, acceptable_up_to: 8 },
       },
-      breathability: "Toda linha deve caber em um fôlego natural ao cantar",
+      breathability: "Toda linha deve caber em um fôlego natural ao cantar (máximo 12 sílabas)",
       verse_counting_rule:
-        "Uma linha com vírgula (ex: 6+6 sílabas) conta como 2 VERSOS na estrutura total, não 1 verso",
+        "Uma linha com vírgula (ex: 6+6, 7+5 ou 5+7 sílabas) conta como 2 VERSOS na estrutura total, não 1 verso",
     },
     harmony_and_rhythm: {
       key: "C major",
@@ -101,11 +101,11 @@ export const GENRE_CONFIGS = {
     },
     prosody_rules: {
       syllable_count: {
-        with_comma: { max_before_comma: 6, max_after_comma: 6, total_max: 12 },
-        without_comma: { min: 5, max: 7, acceptable_up_to: 8 },
+        with_comma: { max_before_comma: 7, max_after_comma: 5, total_max: 12 },
+        without_comma: { min: 5, max: 8, acceptable_up_to: 9 },
       },
       verse_counting_rule:
-        "Uma linha com vírgula (ex: 6+6 sílabas) conta como 2 VERSOS na estrutura total, não 1 verso",
+        "Uma linha com vírgula (ex: 6+6, 7+5 ou 5+7 sílabas) conta como 2 VERSOS na estrutura total, não 1 verso",
     },
     harmony_and_rhythm: {
       key: "G major",
@@ -144,11 +144,11 @@ export const GENRE_CONFIGS = {
     },
     prosody_rules: {
       syllable_count: {
-        with_comma: { max_before_comma: 6, max_after_comma: 6, total_max: 12 },
-        without_comma: { min: 5, max: 7, acceptable_up_to: 8 },
+        with_comma: { max_before_comma: 7, max_after_comma: 5, total_max: 12 },
+        without_comma: { min: 5, max: 8, acceptable_up_to: 9 },
       },
       verse_counting_rule:
-        "Uma linha com vírgula (ex: 6+6 sílabas) conta como 2 VERSOS na estrutura total, não 1 verso",
+        "Uma linha com vírgula (ex: 6+6, 7+5 ou 5+7 sílabas) conta como 2 VERSOS na estrutura total, não 1 verso",
     },
     harmony_and_rhythm: {
       key: "G major",
@@ -189,7 +189,7 @@ export const GENRE_CONFIGS = {
         with_comma: { max_before_comma: 7, max_after_comma: 5, total_max: 12 },
         without_comma: { min: 5, max: 8, acceptable_up_to: 9 },
       },
-      verse_counting_rule: "Uma linha com vírgula (6+6 ou 7+5 sílabas) conta como 2 VERSOS na estrutura total",
+      verse_counting_rule: "Uma linha com vírgula (6+6, 7+5 ou 5+7 sílabas) conta como 2 VERSOS na estrutura total",
     },
     harmony_and_rhythm: {
       key: "A major",
@@ -295,7 +295,7 @@ export const GENRE_CONFIGS = {
         with_comma: { max_before_comma: 7, max_after_comma: 5, total_max: 12 },
         without_comma: { min: 5, max: 8, acceptable_up_to: 9 },
       },
-      verse_counting_rule: "Uma linha com vírgula (6+6 ou 7+5 sílabas) conta como 2 VERSOS na estrutura total",
+      verse_counting_rule: "Uma linha com vírgula (6+6, 7+5 ou 5+7 sílabas) conta como 2 VERSOS na estrutura total",
     },
     harmony_and_rhythm: {
       key: "D major",
@@ -336,7 +336,7 @@ export const GENRE_CONFIGS = {
         with_comma: { max_before_comma: 7, max_after_comma: 5, total_max: 12 },
         without_comma: { min: 5, max: 8, acceptable_up_to: 9 },
       },
-      verse_counting_rule: "Uma linha com vírgula (6+6 ou 7+5 sílabas) conta como 2 VERSOS na estrutura total",
+      verse_counting_rule: "Uma linha com vírgula (6+6, 7+5 ou 5+7 sílabas) conta como 2 VERSOS na estrutura total",
     },
     harmony_and_rhythm: {
       key: "C major",
@@ -382,12 +382,12 @@ export function getGenreConfig(genre: string): GenreConfig & { name: string } {
       },
       prosody_rules: {
         syllable_count: {
-          with_comma: { max_before_comma: 6, max_after_comma: 6, total_max: 12 },
-          without_comma: { min: 5, max: 7, acceptable_up_to: 8 },
+          with_comma: { max_before_comma: 7, max_after_comma: 5, total_max: 12 },
+          without_comma: { min: 5, max: 8, acceptable_up_to: 9 },
         },
         breathability: "Toda linha deve caber em um fôlego natural ao cantar",
         verse_counting_rule:
-          "Uma linha com vírgula (ex: 6+6 sílabas) conta como 2 VERSOS na estrutura total, não 1 verso",
+          "Uma linha com vírgula (ex: 6+6, 7+5 ou 5+7 sílabas) conta como 2 VERSOS na estrutura total, não 1 verso",
       },
       harmony_and_rhythm: {
         key: "C major",

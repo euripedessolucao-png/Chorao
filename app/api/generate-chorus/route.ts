@@ -53,9 +53,9 @@ REGRAS ESTRUTURAIS:
 
 REGRAS DE PROSÓDIA (${genreConfig.name}):
 Com vírgula (conta como 2 versos):
-  - Máximo ${genreConfig.prosody_rules.syllable_count.with_comma.max_before} sílabas antes da vírgula
-  - Máximo ${genreConfig.prosody_rules.syllable_count.with_comma.max_after} sílabas depois da vírgula
-  - Total máximo: ${genreConfig.prosody_rules.syllable_count.with_comma.max_total} sílabas
+  - Máximo ${genreConfig.prosody_rules.syllable_count.with_comma.max_before_comma} sílabas antes da vírgula
+  - Máximo ${genreConfig.prosody_rules.syllable_count.with_comma.max_after_comma} sílabas depois da vírgula
+  - Total máximo: ${genreConfig.prosody_rules.syllable_count.with_comma.total_max} sílabas
 
 Sem vírgula (1 verso):
   - Mínimo: ${genreConfig.prosody_rules.syllable_count.without_comma.min} sílabas
@@ -118,9 +118,9 @@ REGRAS ESTRUTURAIS:
 
 REGRAS DE PROSÓDIA (${genreConfig.name}):
 Com vírgula (conta como 2 versos):
-  - Máximo ${genreConfig.prosody_rules.syllable_count.with_comma.max_before} sílabas antes da vírgula
-  - Máximo ${genreConfig.prosody_rules.syllable_count.with_comma.max_after} sílabas depois da vírgula
-  - Total máximo: ${genreConfig.prosody_rules.syllable_count.with_comma.max_total} sílabas
+  - Máximo ${genreConfig.prosody_rules.syllable_count.with_comma.max_before_comma} sílabas antes da vírgula
+  - Máximo ${genreConfig.prosody_rules.syllable_count.with_comma.max_after_comma} sílabas depois da vírgula
+  - Total máximo: ${genreConfig.prosody_rules.syllable_count.with_comma.total_max} sílabas
 
 Sem vírgula (1 verso):
   - Mínimo: ${genreConfig.prosody_rules.syllable_count.without_comma.min} sílabas

@@ -45,6 +45,18 @@ export default function AulaPage() {
           description: "Entenda os diferentes tipos de rimas e como usá-las",
           duration: "20 min",
         },
+        {
+          id: "regras-universais",
+          title: "Regras Universais de Prosódia",
+          description: "Limite de 12 sílabas, contagem de versos e linguagem coloquial",
+          duration: "25 min",
+        },
+        {
+          id: "terceira-via-intro",
+          title: "Introdução à Terceira Via",
+          description: "Como o sistema força a IA a compor como um humano",
+          duration: "20 min",
+        },
       ],
     },
     {
@@ -68,6 +80,12 @@ export default function AulaPage() {
           title: "Técnica das Caixas",
           description: "Método estruturado para organizar ideias e criar letras completas",
           duration: "30 min",
+        },
+        {
+          id: "empilhamento-versos",
+          title: "Empilhamento de Versos",
+          description: "Por que empilhar versos facilita contagem e detecção de erros",
+          duration: "15 min",
         },
         {
           id: "exercicios-para-comecar",
@@ -124,10 +142,22 @@ export default function AulaPage() {
           duration: "30 min",
         },
         {
+          id: "limite-fisiologico",
+          title: "Limite Fisiológico de Respiração",
+          description: "Por que 12 sílabas é o máximo para um cantor humano",
+          duration: "20 min",
+        },
+        {
           id: "colaboracao",
           title: "Colaboração e Co-escrita",
           description: "Técnicas para compor em parceria com outros artistas",
           duration: "25 min",
+        },
+        {
+          id: "requisitos-adicionais",
+          title: "Requisitos Adicionais: Prioridade Total",
+          description: "Como usar requisitos adicionais para controle total da composição",
+          duration: "15 min",
         },
         {
           id: "adaptacao-mercado",
