@@ -2,8 +2,8 @@
  * REGRA UNIVERSAL: CAPITALIZAÇÃO PROFISSIONAL
  *
  * Garante que todas as letras geradas tenham capitalização consistente e profissional:
- * - Primeira letra de cada linha em maiúscula
- * - Resto da linha em minúscula (exceto nomes próprios que o usuário pode adicionar)
+ * - Primeira letra de cada linha em maiúscula (se estiver em minúscula)
+ * - Resto da linha PRESERVADO como está (não força minúscula)
  * - Marcadores de seção ([INTRO], [VERSO], etc.) sempre em maiúsculas
  *
  * Esta é uma regra de pós-processamento aplicada em TODAS as gerações.
@@ -28,8 +28,12 @@ export function capitalizeLines(lyric: string): string {
         return trimmed
       }
 
-      // Capitaliza primeira letra da linha, resto em minúscula
-      return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase()
+      const firstChar = trimmed.charAt(0)
+      if (firstChar === firstChar.toLowerCase()) {
+        return firstChar.toUpperCase() + trimmed.slice(1)
+      }
+
+      return trimmed
     })
     .join("\n")
 }

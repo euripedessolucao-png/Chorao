@@ -96,6 +96,13 @@ HUMOR: ${humor || "variado"}
 ${hook ? `HOOK OBRIGATÓRIO: ${hook}` : ""}
 ${titulo ? `TÍTULO OBRIGATÓRIO: ${titulo}` : ""}
 
+🎯 ZONAS DE LIBERDADE CRIATIVA:
+- Você PODE surpreender com metáforas originais (desde que coerentes)
+- Você PODE usar estruturas não convencionais (se forem geniais)
+- Você PODE usar palavras inesperadas (desde que sirvam à emoção)
+- VALIDAÇÃO: Por intenção emocional, NÃO por checklist de palavras-chave
+- PRIORIDADE: Autenticidade > Atualidade forçada
+
 RESTRIÇÕES INVIOLÁVEIS:
 1. MÁXIMO ${metrics?.maxSyllables || 12} SÍLABAS POR LINHA (limite fisiológico - um fôlego)
 2. PROIBIDO USAR: ${forbiddenList.slice(0, 15).join(", ")}
@@ -104,6 +111,14 @@ RESTRIÇÕES INVIOLÁVEIS:
 5. ${isSertanejo ? "REFRÃO: 2 ou 4 linhas (NUNCA 3)" : ""}
 6. ${isBachata ? "Se usar vírgula: máx 6 sílabas antes + 6 depois" : ""}
 7. BPM: ${metrics?.bpm || 100}
+
+ESTRUTURA OBRIGATÓRIA (MÍNIMO 2 MINUTOS):
+- VERSO 1: 8-12 linhas (estabelece contexto e emoção)
+- REFRÃO: 4-8 linhas (gancho principal, repetível)
+- VERSO 2: 8-12 linhas (desenvolve história ou contraste)
+- REFRÃO: (repete o mesmo refrão)
+- PONTE: 4-8 linhas (clímax emocional ou mudança de perspectiva)
+- REFRÃO FINAL: (repete o mesmo refrão com energia máxima)
 
 FORMATAÇÃO DE VERSOS (IMPORTANTE):
 - EMPILHE os versos em linhas separadas (um verso por linha)
@@ -130,19 +145,22 @@ ${
 [INTRO - Instrumentação e atmosfera]
 
 [VERSE 1 - Voz e ritmo]
-[4 linhas em português]
+[8-12 linhas em português]
 
 [CHORUS - Energia máxima]
-[refrão em português]
+[4-8 linhas - refrão em português]
 
 [VERSE 2 - Variação]
-[4 linhas em português]
+[8-12 linhas em português]
 
-[BRIDGE - Transição]
-[2 linhas em português]
+[CHORUS - Repete]
+[mesmo refrão]
 
-[FINAL CHORUS]
-[refrão repetido]
+[BRIDGE - Transição e clímax]
+[4-8 linhas em português]
+
+[FINAL CHORUS - Energia máxima]
+[mesmo refrão]
 
 [OUTRO - Encerramento]
 
@@ -153,16 +171,22 @@ ${
 [introdução]
 
 [VERSO 1]
-[4 linhas]
+[8-12 linhas]
 
 [REFRÃO]
-[refrão principal]
+[4-8 linhas - refrão principal]
 
 [VERSO 2]
-[4 linhas]
+[8-12 linhas]
+
+[REFRÃO]
+[repete o mesmo refrão]
 
 [PONTE]
-[2 linhas]
+[4-8 linhas]
+
+[REFRÃO FINAL]
+[repete o mesmo refrão]
 
 [OUTRO]
 [encerramento]
