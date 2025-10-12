@@ -55,18 +55,25 @@ export async function validateWithAllRules(
   const rhymeResult = validateRhymesForGenre(lyrics, genre)
   const rhymeRules = getRhymeRulesForGenre(genre)
 
-  if (rhymeResult.richRhymePercentage < rhymeRules.min_rich_rhymes) {
+  const totalRhymes = rhymeResult.analysis.quality.length
+  const richRhymes = rhymeResult.analysis.quality.filter((q) => q.type === "rica").length
+  const falseRhymes = rhymeResult.analysis.quality.filter((q) => q.type === "falsa" && q.score === 0).length
+
+  const richRhymePercentage = totalRhymes > 0 ? richRhymes / totalRhymes : 0
+  const falseRhymePercentage = totalRhymes > 0 ? falseRhymes / totalRhymes : 0
+
+  if (richRhymePercentage < rhymeRules.min_rich_rhymes) {
     details.rhyme_check = false
     errors.push(
-      `Rimas ricas insuficientes: ${(rhymeResult.richRhymePercentage * 100).toFixed(0)}% ` +
+      `Rimas ricas insuficientes: ${(richRhymePercentage * 100).toFixed(0)}% ` +
         `(mínimo ${(rhymeRules.min_rich_rhymes * 100).toFixed(0)}%)`,
     )
   }
 
-  if (rhymeResult.falseRhymePercentage > rhymeRules.max_false_rhymes) {
+  if (falseRhymePercentage > rhymeRules.max_false_rhymes) {
     details.rhyme_check = false
     errors.push(
-      `Rimas falsas em excesso: ${(rhymeResult.falseRhymePercentage * 100).toFixed(0)}% ` +
+      `Rimas falsas em excesso: ${(falseRhymePercentage * 100).toFixed(0)}% ` +
         `(máximo ${(rhymeRules.max_false_rhymes * 100).toFixed(0)}%)`,
     )
   }
