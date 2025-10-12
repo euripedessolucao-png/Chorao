@@ -121,6 +121,17 @@ ${isBachata ? "- RESPEITE O LIMITE DE 12 SÍLABAS POR LINHA (máximo absoluto)" 
 ${hasPerformanceMode ? "- MANTENHA as descrições performáticas detalhadas entre colchetes" : ""}
 ${originalInstruments ? `- INCLUA a lista de instrumentos no final: ${originalInstruments}` : ""}${metricInfo}
 
+FORMATAÇÃO DE VERSOS (IMPORTANTE):
+- EMPILHE os versos em linhas separadas (um verso por linha)
+- EXCEÇÃO: Combine versos na mesma linha SOMENTE quando se completam semanticamente
+- Exemplo CORRETO (empilhado):
+  Você diz que me ama
+  Mas não mostra
+- Exemplo CORRETO (completam-se):
+  Você diz que me ama, mas não mostra
+- MOTIVO: Facilita contagem visual de versos e detecção de erros
+- Esta regra vale para TODOS os gêneros (exceto quando versos se completam)
+
 REGRAS DO GÊNERO:
 ${JSON.stringify(genreConfig?.language_rules || {}, null, 2)}
 

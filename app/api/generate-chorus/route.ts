@@ -1,23 +1,30 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
+import { getGenreConfig } from "@/lib/genre-config"
 
 export async function POST(request: NextRequest) {
   try {
-    const { genre, theme, mood, additionalRequirements } = await request.json()
+    const { genre, theme, mood, additionalRequirements, lyrics } = await request.json()
 
     if (!genre || !theme) {
       return NextResponse.json({ error: "Gênero e tema são obrigatórios" }, { status: 400 })
     }
 
+    const genreConfig = getGenreConfig(genre)
+
+    const lyricsContext = lyrics
+      ? `\n\nLETRA EXISTENTE PARA CONTEXTO:\n${lyrics}\n\nGere um refrão que se conecte tematicamente com esta letra.`
+      : ""
+
     const languageRule = additionalRequirements
       ? `ATENÇÃO: Os requisitos adicionais do compositor têm PRIORIDADE ABSOLUTA sobre qualquer regra:\n${additionalRequirements}\n\n`
       : `REGRA UNIVERSAL DE LINGUAGEM (INVIOLÁVEL):
-- Use APENAS palavras simples e coloquiais do dia-a-dia
+- Use APENAS palavras simples e coloquiais do dia-a-dia brasileiro
 - Fale como um humano comum fala na conversa cotidiana
 - PROIBIDO: vocabulário rebuscado, poético, literário ou formal
-- PERMITIDO: gírias, contrações, expressões populares
-- Exemplo BOM: "tô", "cê", "pra", "né", "mano"
-- Exemplo RUIM: "outono da alma", "florescer", "bonança"
+- PERMITIDO: gírias, contrações, expressões populares brasileiras
+- Exemplo BOM: "tô", "cê", "pra", "né", "mano", "véio"
+- Exemplo RUIM: "outono da alma", "florescer", "bonança", "perecer"
 
 `
 
@@ -37,22 +44,23 @@ TAREFA: Gere 5 opções de refrão grudento, radiofônico e viralizável para um
 - Gênero: ${genre}
 - Tema: ${theme}
 - Humor: ${mood || "neutro"}
-- Tom: ${tone}
+- Tom: ${tone}${lyricsContext}
 
 REGRAS ESTRUTURAIS:
 - Número de linhas: APENAS 2 ou 4 linhas (NUNCA 3 linhas)
 - Máximo de 4 linhas por refrão
+- EMPILHAR VERSOS: Cada verso em linha separada para facilitar contagem
 
-REGRAS DE PROSÓDIA:
-Com vírgula:
-  - Máximo 6 sílabas antes da vírgula
-  - Máximo 6 sílabas depois da vírgula
-  - Total máximo: 12 sílabas
+REGRAS DE PROSÓDIA (${genreConfig.name}):
+Com vírgula (conta como 2 versos):
+  - Máximo ${genreConfig.prosody_rules.syllable_count.with_comma.max_before} sílabas antes da vírgula
+  - Máximo ${genreConfig.prosody_rules.syllable_count.with_comma.max_after} sílabas depois da vírgula
+  - Total máximo: ${genreConfig.prosody_rules.syllable_count.with_comma.max_total} sílabas
 
-Sem vírgula:
-  - Mínimo: 5 sílabas
-  - Máximo: 7 sílabas
-  - Aceitável até: 8 sílabas
+Sem vírgula (1 verso):
+  - Mínimo: ${genreConfig.prosody_rules.syllable_count.without_comma.min} sílabas
+  - Máximo: ${genreConfig.prosody_rules.syllable_count.without_comma.max} sílabas
+  - Aceitável até: ${genreConfig.prosody_rules.syllable_count.without_comma.acceptable_max} sílabas
 
 - Toda linha deve caber em um fôlego natural ao cantar
 
@@ -78,7 +86,7 @@ FORMATO DE SAÍDA (JSON):
 {
   "variations": [
     {
-      "chorus": "linha 1 / linha 2 / linha 3 / linha 4",
+      "chorus": "linha 1\\nlinha 2\\nlinha 3\\nlinha 4",
       "style": "Descrição do estilo (ex: Chiclete Radiofônico, Visual e Direto, etc)",
       "score": número de 1 a 10,
       "justification": "Breve explicação do porquê esse refrão funciona comercialmente"
@@ -91,7 +99,7 @@ IMPORTANTE:
 - Cada variação deve ter um estilo diferente
 - Os scores devem variar entre 7 e 10
 - A melhor opção comercial deve ter score 9 ou 10
-- Use "/" para separar linhas no campo "chorus"
+- Use "\\n" para separar linhas no campo "chorus" (versos empilhados)
 - Seja criativo mas mantenha a comercialidade e as regras de prosódia
 
 Gere as 5 variações agora:`
@@ -101,24 +109,37 @@ Gere as 5 variações agora:`
 TAREFA: Gere 5 variações de refrão para uma música com as seguintes características:
 - Gênero: ${genre}
 - Tema: ${theme}
-- Humor: ${mood || "neutro"}
+- Humor: ${mood || "neutro"}${lyricsContext}
+
+REGRAS ESTRUTURAIS:
+- Máximo 4 linhas por refrão
+- EMPILHAR VERSOS: Cada verso em linha separada para facilitar contagem
+- Formato preferido: 2 ou 4 linhas (NUNCA 3 linhas)
+
+REGRAS DE PROSÓDIA (${genreConfig.name}):
+Com vírgula (conta como 2 versos):
+  - Máximo ${genreConfig.prosody_rules.syllable_count.with_comma.max_before} sílabas antes da vírgula
+  - Máximo ${genreConfig.prosody_rules.syllable_count.with_comma.max_after} sílabas depois da vírgula
+  - Total máximo: ${genreConfig.prosody_rules.syllable_count.with_comma.max_total} sílabas
+
+Sem vírgula (1 verso):
+  - Mínimo: ${genreConfig.prosody_rules.syllable_count.without_comma.min} sílabas
+  - Máximo: ${genreConfig.prosody_rules.syllable_count.without_comma.max} sílabas
+  - Aceitável até: ${genreConfig.prosody_rules.syllable_count.without_comma.acceptable_max} sílabas
 
 REGRAS DO REFRÃO GRUDENTO (2024-2025):
-1. 4 linhas máximo
-2. 5-6 palavras por linha
-3. Repetição de palavras/linhas estratégica
-4. Onomatopeias e vocalizações (Ê, ê, ê / Ô, ô, ô / Ah, ah, ah)
-5. Verbos no imperativo quando apropriado
-6. Prevalência de vogais abertas (A, E, O)
-7. Rimas simples entre linhas (AABB ou ABAB)
-8. Gancho logo na primeira linha
-9. Formato preferido: 2 ou 4 linhas
+1. Repetição de palavras/linhas estratégica
+2. Onomatopeias e vocalizações quando apropriado (Ê, ê, ê / Ô, ô, ô / Ah, ah, ah)
+3. Verbos no imperativo quando apropriado
+4. Prevalência de vogais abertas (A, E, O)
+5. Rimas simples entre linhas (AABB ou ABAB)
+6. Gancho logo na primeira linha
 
 FORMATO DE SAÍDA (JSON):
 {
   "variations": [
     {
-      "chorus": "linha 1 / linha 2 / linha 3 / linha 4",
+      "chorus": "linha 1\\nlinha 2\\nlinha 3\\nlinha 4",
       "style": "Descrição do estilo (ex: Repetitivo e Direto, Onomatopeico, etc)",
       "score": número de 1 a 10,
       "justification": "Breve explicação do porquê esse refrão funciona"
@@ -131,7 +152,7 @@ IMPORTANTE:
 - Cada variação deve ter um estilo diferente
 - Os scores devem variar entre 7 e 10
 - A melhor opção comercial deve ter score 9 ou 10
-- Use "/" para separar linhas no campo "chorus"
+- Use "\\n" para separar linhas no campo "chorus" (versos empilhados)
 - Seja criativo mas mantenha a comercialidade
 
 Gere as 5 variações agora:`

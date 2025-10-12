@@ -186,10 +186,10 @@ export const GENRE_CONFIGS = {
     },
     prosody_rules: {
       syllable_count: {
-        with_comma: { max_before_comma: 7, max_after_comma: 7, total_max: 14 },
-        without_comma: { min: 6, max: 8, acceptable_up_to: 9 },
+        with_comma: { max_before_comma: 7, max_after_comma: 5, total_max: 12 },
+        without_comma: { min: 5, max: 8, acceptable_up_to: 9 },
       },
-      verse_counting_rule: "Uma linha com vírgula conta como 2 VERSOS na estrutura total",
+      verse_counting_rule: "Uma linha com vírgula (6+6 ou 7+5 sílabas) conta como 2 VERSOS na estrutura total",
     },
     harmony_and_rhythm: {
       key: "A major",
@@ -292,10 +292,10 @@ export const GENRE_CONFIGS = {
     },
     prosody_rules: {
       syllable_count: {
-        with_comma: { max_before_comma: 7, max_after_comma: 7, total_max: 14 },
-        without_comma: { min: 6, max: 8, acceptable_up_to: 9 },
+        with_comma: { max_before_comma: 7, max_after_comma: 5, total_max: 12 },
+        without_comma: { min: 5, max: 8, acceptable_up_to: 9 },
       },
-      verse_counting_rule: "Uma linha com vírgula (7+7 sílabas) conta como 2 VERSOS na estrutura total",
+      verse_counting_rule: "Uma linha com vírgula (6+6 ou 7+5 sílabas) conta como 2 VERSOS na estrutura total",
     },
     harmony_and_rhythm: {
       key: "D major",
@@ -333,10 +333,10 @@ export const GENRE_CONFIGS = {
     },
     prosody_rules: {
       syllable_count: {
-        with_comma: { max_before_comma: 7, max_after_comma: 7, total_max: 14 },
-        without_comma: { min: 6, max: 8, acceptable_up_to: 9 },
+        with_comma: { max_before_comma: 7, max_after_comma: 5, total_max: 12 },
+        without_comma: { min: 5, max: 8, acceptable_up_to: 9 },
       },
-      verse_counting_rule: "Uma linha com vírgula (7+7 sílabas) conta como 2 VERSOS na estrutura total",
+      verse_counting_rule: "Uma linha com vírgula (6+6 ou 7+5 sílabas) conta como 2 VERSOS na estrutura total",
     },
     harmony_and_rhythm: {
       key: "C major",
@@ -348,6 +348,61 @@ export const GENRE_CONFIGS = {
 } as const
 
 export type GenreConfig = (typeof GENRE_CONFIGS)[keyof typeof GENRE_CONFIGS]
+
+export function getGenreConfig(genre: string): GenreConfig & { name: string } {
+  const config = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS]
+
+  if (!config) {
+    // Retorna configuração padrão se o gênero não for encontrado
+    return {
+      name: genre,
+      year_range: "2024-2025",
+      reference_artists: [],
+      core_principles: {
+        theme: "Música brasileira contemporânea",
+        tone: "Autêntico e natural",
+        narrative_arc: "Início → Desenvolvimento → Conclusão",
+      },
+      language_rules: {
+        allowed: {
+          concrete_objects: [],
+          actions: [],
+          phrases: [],
+        },
+        forbidden: {},
+        style: "Coloquial, brasileiro, com palavras simples do dia-a-dia",
+      },
+      structure_rules: {
+        verse: { lines: 4, purpose: "Contar história de forma clara" },
+        chorus: {
+          lines_options: [2, 4],
+          forbidden_lines: 3,
+          required_elements: ["Gancho grudento", "Fácil de memorizar"],
+        },
+      },
+      prosody_rules: {
+        syllable_count: {
+          with_comma: { max_before_comma: 6, max_after_comma: 6, total_max: 12 },
+          without_comma: { min: 5, max: 7, acceptable_up_to: 8 },
+        },
+        breathability: "Toda linha deve caber em um fôlego natural ao cantar",
+        verse_counting_rule:
+          "Uma linha com vírgula (ex: 6+6 sílabas) conta como 2 VERSOS na estrutura total, não 1 verso",
+      },
+      harmony_and_rhythm: {
+        key: "C major",
+        allowed_chords: ["C", "F", "G", "Am", "Dm", "Em"],
+        bpm_range: { min: 90, max: 110, ideal: 100 },
+        rhythm_style: "Ritmo brasileiro moderno",
+      },
+    }
+  }
+
+  return {
+    name: genre,
+    ...config,
+  }
+}
 
 export function validateLyrics(
   lyrics: string,

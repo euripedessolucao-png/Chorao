@@ -70,6 +70,16 @@ RESTRIÇÕES INVIOLÁVEIS:
 6. ${isBachata ? "Se usar vírgula: máx 6 sílabas antes + 6 depois" : ""}
 7. BPM: ${metrics?.bpm || 100}
 
+FORMATAÇÃO DE VERSOS (IMPORTANTE):
+- EMPILHE os versos em linhas separadas (um verso por linha)
+- EXCEÇÃO: Combine versos na mesma linha SOMENTE quando se completam semanticamente
+- Exemplo CORRETO (empilhado):
+  Você diz que me ama
+  Mas não mostra
+- Exemplo CORRETO (completam-se):
+  Você diz que me ama, mas não mostra
+- MOTIVO: Facilita contagem visual de versos e detecção de erros
+
 ${
   chorusSelected && chorusSelected.length > 0
     ? `REFRÕES OBRIGATÓRIOS (use EXATAMENTE como fornecidos):
