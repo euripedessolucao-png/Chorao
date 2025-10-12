@@ -7,26 +7,36 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { Loader2, Sparkles, TrendingUp, Copy, Zap } from "lucide-react"
+import { Loader2, Sparkles, TrendingUp, Zap, Check } from "lucide-react"
 import { toast } from "sonner"
 
 interface HookResult {
   hook: string
+  hookVariations: string[]
   score: number
   suggestions: string[]
   placement: string[]
   tiktokTest: string
+  tiktokScore: number
   transformations: Array<{
     original: string
+    variations: string[]
     transformed: string
     reason: string
   }>
 }
 
-export function HookGenerator() {
+interface HookGeneratorProps {
+  onSelectHook?: (hook: string) => void
+  showSelectionMode?: boolean
+}
+
+export function HookGenerator({ onSelectHook, showSelectionMode = false }: HookGeneratorProps) {
   const [lyrics, setLyrics] = useState("")
+  const [genre, setGenre] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
   const [result, setResult] = useState<HookResult | null>(null)
+  const [selectedHook, setSelectedHook] = useState<string | null>(null)
 
   const generateHook = async () => {
     if (!lyrics.trim()) {
@@ -36,12 +46,13 @@ export function HookGenerator() {
 
     setIsGenerating(true)
     setResult(null)
+    setSelectedHook(null)
 
     try {
       const response = await fetch("/api/generate-hook", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lyrics: lyrics.trim() }),
+        body: JSON.stringify({ lyrics: lyrics.trim(), genre }),
       })
 
       if (!response.ok) throw new Error("Erro ao gerar hook")
@@ -49,7 +60,11 @@ export function HookGenerator() {
       const data = await response.json()
       setResult(data)
 
-      toast.success("Hook gerado com sucesso!")
+      if (showSelectionMode && data.hook) {
+        setSelectedHook(data.hook)
+      }
+
+      toast.success("Hooks gerados com sucesso!")
     } catch (error) {
       toast.error("Erro ao gerar hook. Tente novamente.")
     } finally {
@@ -57,9 +72,11 @@ export function HookGenerator() {
     }
   }
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
-    toast.success("Hook copiado!")
+  const handleSelectHook = (hook: string) => {
+    setSelectedHook(hook)
+    if (onSelectHook) {
+      onSelectHook(hook)
+    }
   }
 
   const getScoreColor = (score: number) => {
@@ -83,7 +100,7 @@ export function HookGenerator() {
             Gerador de Hook & Ganchômetro
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Analise sua letra e gere hooks comerciais com pontuação de viralidade
+            Analise sua letra e gere 3 variações de hooks comerciais com pontuação de viralidade
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -107,7 +124,7 @@ export function HookGenerator() {
             ) : (
               <>
                 <Sparkles className="h-4 w-4 mr-2" />
-                Gerar Hook & Ganchômetro
+                Gerar Hooks & Ganchômetro
               </>
             )}
           </Button>
@@ -141,21 +158,71 @@ export function HookGenerator() {
             </CardContent>
           </Card>
 
-          {/* Hook Principal */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Hook Recomendado</span>
-                <Button variant="outline" size="sm" onClick={() => copyToClipboard(result.hook)}>
-                  <Copy className="h-4 w-4 mr-1" />
-                  Copiar
-                </Button>
+              <CardTitle>
+                {showSelectionMode ? "Escolha o Melhor Hook (1 de 3)" : "Variações de Hook Geradas"}
               </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                {showSelectionMode
+                  ? "Selecione o hook que melhor se encaixa na sua composição"
+                  : "3 variações geradas pela Terceira Via"}
+              </p>
             </CardHeader>
-            <CardContent>
-              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-lg font-medium text-center text-yellow-900">"{result.hook}"</p>
-              </div>
+            <CardContent className="space-y-3">
+              {/* Main Hook - Best Option */}
+              <Card
+                className={`cursor-pointer transition-all ${
+                  selectedHook === result.hook
+                    ? "border-primary ring-2 ring-primary bg-primary/5"
+                    : "border-border hover:border-primary/50"
+                }`}
+                onClick={() => showSelectionMode && handleSelectHook(result.hook)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant="default" className="bg-green-600">
+                          Melhor Opção
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">Síntese das 3 variações</span>
+                      </div>
+                      <p className="text-lg font-medium">"{result.hook}"</p>
+                    </div>
+                    {showSelectionMode && selectedHook === result.hook && (
+                      <Check className="h-5 w-5 text-primary flex-shrink-0" />
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Variations */}
+              {result.hookVariations.map((variation, index) => (
+                <Card
+                  key={index}
+                  className={`cursor-pointer transition-all ${
+                    selectedHook === variation
+                      ? "border-primary ring-2 ring-primary bg-primary/5"
+                      : "border-border hover:border-primary/50"
+                  }`}
+                  onClick={() => showSelectionMode && handleSelectHook(variation)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge variant="outline">Variação {index + 1}</Badge>
+                        </div>
+                        <p className="text-lg font-medium">"{variation}"</p>
+                      </div>
+                      {showSelectionMode && selectedHook === variation && (
+                        <Check className="h-5 w-5 text-primary flex-shrink-0" />
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </CardContent>
           </Card>
 

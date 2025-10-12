@@ -83,6 +83,7 @@ export default function CriarPage() {
   const [selectedChoruses, setSelectedChoruses] = useState<ChorusVariation[]>([])
   const [isGeneratingChorus, setIsGeneratingChorus] = useState(false)
   const [showHookDialog, setShowHookDialog] = useState(false)
+  const [selectedHook, setSelectedHook] = useState<string | null>(null)
   const [formattingStyle, setFormattingStyle] = useState("padrao")
 
   const toggleEmotion = (emotion: string) => {
@@ -232,6 +233,25 @@ export default function CriarPage() {
     setShowChorusDialog(false)
 
     toast.success("Refrão(ões) adicionado(s) aos requisitos!")
+  }
+
+  const handleSelectHook = (hook: string) => {
+    setSelectedHook(hook)
+  }
+
+  const handleApplyHook = () => {
+    if (!selectedHook) {
+      toast.error("Selecione um hook")
+      return
+    }
+
+    const hookText = `[HOOK]\n${selectedHook}`
+    const updatedReqs = additionalReqs ? `${additionalReqs}\n\n${hookText}` : hookText
+
+    setAdditionalReqs(updatedReqs)
+    setShowHookDialog(false)
+
+    toast.success("Hook adicionado aos requisitos!")
   }
 
   const renderStars = (score: number) => {
@@ -638,9 +658,19 @@ export default function CriarPage() {
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Gerador de Hook & Ganchômetro</DialogTitle>
-            <DialogDescription>Analise sua letra e gere hooks comerciais com pontuação de viralidade</DialogDescription>
+            <DialogDescription>
+              Analise sua letra e escolha o melhor hook entre 3 variações geradas pela Terceira Via
+            </DialogDescription>
           </DialogHeader>
-          <HookGenerator />
+          <HookGenerator onSelectHook={handleSelectHook} showSelectionMode={true} />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowHookDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleApplyHook} disabled={!selectedHook}>
+              Adicionar aos Requisitos
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
