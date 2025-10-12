@@ -154,7 +154,66 @@ ${isBachata ? "- CADA LINHA DEVE TER NO MÁXIMO 12 SÍLABAS" : ""}
       temperature: 0.7,
     })
 
-    let finalLyrics = text.trim()
+    const refusalPhrases = [
+      "I'm sorry, I can't assist",
+      "I cannot assist",
+      "I'm unable to",
+      "I can't help with that",
+      "I cannot help with that",
+      "I'm not able to",
+      "I cannot provide",
+      "I can't provide",
+    ]
+
+    const isRefusal = refusalPhrases.some((phrase) => text.toLowerCase().includes(phrase.toLowerCase()))
+
+    let finalLyrics = ""
+
+    if (isRefusal) {
+      console.error("[v0] ❌ API recusou o pedido. Tentando com prompt sanitizado...")
+      console.error("[v0] 📝 Resposta da API:", text.substring(0, 200))
+
+      // Tentar novamente com prompt mais simples e sanitizado
+      const simplifiedPrompt = `Você é um compositor profissional de ${generoConversao}.
+
+Reescreva esta letra mantendo a mensagem emocional:
+
+${letraOriginal}
+
+Instruções:
+- Mantenha o tema e emoção
+- Use linguagem natural e poética
+- Escreva versos completos
+- Formato: Título, versos, refrão, ponte
+- Inclua instrumentos no final
+
+Retorne apenas a letra formatada.`
+
+      const { text: retryText } = await generateText({
+        model: "openai/gpt-4o",
+        prompt: simplifiedPrompt,
+        temperature: 0.7,
+      })
+
+      const isRetryRefusal = refusalPhrases.some((phrase) => retryText.toLowerCase().includes(phrase.toLowerCase()))
+
+      if (isRetryRefusal) {
+        console.error("[v0] ❌ Segunda tentativa também foi recusada")
+        return NextResponse.json(
+          {
+            error: "Não foi possível processar esta letra",
+            details:
+              "O conteúdo pode conter palavras ou temas que não podem ser processados. Por favor, revise a letra original e tente novamente com um conteúdo diferente.",
+          },
+          { status: 400 },
+        )
+      }
+
+      // Se a segunda tentativa funcionou, usar esse resultado
+      finalLyrics = retryText.trim()
+    } else {
+      finalLyrics = text.trim()
+    }
 
     const rhymeValidation = validateRhymesForGenre(finalLyrics, generoConversao)
 
