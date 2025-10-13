@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
-import { getGenreConfig } from "@/lib/genre-config"
+import { getGenreConfig, detectSubGenre } from "@/lib/genre-config"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 
 export async function POST(request: NextRequest) {
@@ -26,6 +26,8 @@ export async function POST(request: NextRequest) {
     const genreConfig = getGenreConfig(genero)
     const isPerformanceMode = formattingStyle === "performatico"
     const isBachata = genero.toLowerCase().includes("bachata")
+
+    const subGenreInfo = detectSubGenre(additionalRequirements)
 
     const universalRules = `
 🎵 REGRAS UNIVERSAIS DO SISTEMA
@@ -78,11 +80,11 @@ ESTRUTURA COMERCIAL (3:30 de duração):
 - Adicione descrições: (sobe o tom), (pausa dramática), (repete 2x)
 - Momentos instrumentais: [GUITAR SOLO], [DRUM BREAK]
 - Dinâmicas: (suave), (crescendo), (explosivo)
-- Final: (Instruments: [lista] | BPM: ${metrics?.bpm || 100} | Style: ${genero})`
+- Final: (Instruments: [${subGenreInfo.instruments || (isBachata ? "electric guitar, synthesizer, electronic drums, accordion" : "guitar, bass, drums, keyboard")}] | BPM: ${subGenreInfo.bpm || metrics?.bpm || 100} | Style: ${genero}${subGenreInfo.subGenre ? ` - ${subGenreInfo.styleNote}` : ""})`
       : `\n\nFORMATO PADRÃO:
 - Marcadores em inglês: [INTRO], [VERSE], [CHORUS], [BRIDGE], [OUTRO]
 - Letra limpa e direta
-- Final: (Instruments: [lista] | BPM: ${metrics?.bpm || 100} | Style: ${genero})`
+- Final: (Instruments: [${subGenreInfo.instruments || (isBachata ? "electric guitar, synthesizer, electronic drums, accordion" : "guitar, bass, drums, keyboard")}] | BPM: ${subGenreInfo.bpm || metrics?.bpm || 100} | Style: ${genero}${subGenreInfo.subGenre ? ` - ${subGenreInfo.styleNote}` : ""})`
 
     const prompt = `${universalRules}
 
@@ -140,10 +142,13 @@ Escreva a letra completa agora, aplicando Terceira Via em cada verso:`
     }
 
     if (isPerformanceMode && !finalLyrics.includes("(Instruments:")) {
-      const instruments = isBachata
-        ? "electric guitar, synthesizer, electronic drums, accordion"
-        : "guitar, bass, drums, keyboard"
-      finalLyrics += `\n\n(Instruments: [${instruments}] | BPM: ${metrics?.bpm || 100} | Style: ${genero})`
+      const instruments =
+        subGenreInfo.instruments ||
+        (isBachata ? "electric guitar, synthesizer, electronic drums, accordion" : "guitar, bass, drums, keyboard")
+      const bpm = subGenreInfo.bpm || metrics?.bpm || 100
+      const style = subGenreInfo.subGenre ? `${genero} - ${subGenreInfo.styleNote}` : genero
+
+      finalLyrics += `\n\n(Instruments: [${instruments}] | BPM: ${bpm} | Style: ${style})`
     }
 
     finalLyrics = capitalizeLines(finalLyrics)

@@ -1017,3 +1017,72 @@ export const INSTRUMENTATION_RULES = {
     format: "Sempre entre parênteses, em inglês, após o nome da seção",
   },
 } as const
+
+export const SUB_GENRE_INSTRUMENTS = {
+  // Sertanejo sub-genres
+  arrocha: {
+    instruments: "keyboard, acoustic guitar, bass, light percussion",
+    bpm_range: { min: 70, max: 85, ideal: 75 },
+    style_note: "Arrocha lento e melódico",
+  },
+  vanera: {
+    instruments: "accordion, acoustic guitar, bass, drums",
+    bpm_range: { min: 110, max: 130, ideal: 120 },
+    style_note: "Vanera dançante",
+  },
+  modão: {
+    instruments: "acoustic guitar, electric guitar, bass, drums, harmonica",
+    bpm_range: { min: 85, max: 95, ideal: 90 },
+    style_note: "Modão tradicional",
+  },
+
+  // Forró sub-genres
+  xote: {
+    instruments: "zabumba, triangle, accordion",
+    bpm_range: { min: 100, max: 120, ideal: 110 },
+    style_note: "Xote tradicional",
+  },
+  baião: {
+    instruments: "zabumba, triangle, accordion, guitar",
+    bpm_range: { min: 120, max: 140, ideal: 130 },
+    style_note: "Baião animado",
+  },
+
+  // Pagode sub-genres
+  "pagode 90": {
+    instruments: "cavaquinho, pandeiro, tantã, surdo, acoustic guitar",
+    bpm_range: { min: 95, max: 110, ideal: 100 },
+    style_note: "Pagode anos 90",
+  },
+  "pagode romântico": {
+    instruments: "cavaquinho, pandeiro, tantã, acoustic guitar",
+    bpm_range: { min: 90, max: 105, ideal: 95 },
+    style_note: "Pagode romântico",
+  },
+} as const
+
+export function detectSubGenre(additionalRequirements: string | undefined): {
+  subGenre: string | null
+  instruments: string | null
+  bpm: number | null
+  styleNote: string | null
+} {
+  if (!additionalRequirements) {
+    return { subGenre: null, instruments: null, bpm: null, styleNote: null }
+  }
+
+  const text = additionalRequirements.toLowerCase()
+
+  for (const [subGenre, config] of Object.entries(SUB_GENRE_INSTRUMENTS)) {
+    if (text.includes(subGenre)) {
+      return {
+        subGenre,
+        instruments: config.instruments,
+        bpm: config.bpm_range.ideal,
+        styleNote: config.style_note,
+      }
+    }
+  }
+
+  return { subGenre: null, instruments: null, bpm: null, styleNote: null }
+}

@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
-import { getGenreConfig } from "@/lib/genre-config"
+import { getGenreConfig, detectSubGenre } from "@/lib/genre-config"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 
 export async function POST(request: NextRequest) {
@@ -19,6 +19,7 @@ export async function POST(request: NextRequest) {
     }
 
     const genreConfig = getGenreConfig(genre)
+    const subGenreInfo = detectSubGenre(additionalRequirements)
 
     const lyricsContext = `
 LETRA EXISTENTE (CONTEXTO OBRIGATÓRIO):
@@ -30,6 +31,7 @@ IMPORTANTE: O refrão DEVE:
 - Manter coerência com a história/narrativa
 - Parecer parte natural desta composição
 - Respeitar o estilo e linguagem estabelecidos
+${subGenreInfo.subGenre ? `- Seguir o ritmo de ${subGenreInfo.styleNote}` : ""}
 `
 
     const universalRules = `
