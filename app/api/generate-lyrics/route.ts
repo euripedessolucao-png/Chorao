@@ -2,8 +2,35 @@ import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
 import { getGenreConfig } from "@/lib/genre-config"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
-import { validateRhymesForGenre } from "@/lib/validation/rhyme-validator"
-import { buildUniversalRulesPrompt } from "@/lib/rules/universal-rules"
+
+async function applyTerceiraViaToVerse(verse: string, genre: string): Promise<string> {
+  const { text } = await generateText({
+    model: "openai/gpt-4o",
+    prompt: `Verso original: "${verse}"
+Gênero: ${genre}
+
+Aplique o processo TERCEIRA VIA:
+
+(A) VARIAÇÃO MÉTRICA - foco em fluidez e ritmo
+- Máximo 12 sílabas poéticas
+- Remove redundâncias
+- Ajusta para caber em um fôlego natural
+
+(B) VARIAÇÃO EMOCIONAL - foco em emoção e autenticidade
+- Linguagem simples e brasileira
+- Metáforas naturais (não rebuscadas)
+- Emoção direta e honesta
+
+(C) SÍNTESE FINAL - combine o melhor de A e B
+- Ritmo + Emoção = verso final
+- Coerência com o gênero ${genre}
+- Musicalidade natural
+
+Retorne APENAS o verso final (C), sem explicações.`,
+    temperature: 0.7,
+  })
+  return text.trim()
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,132 +56,101 @@ export async function POST(request: NextRequest) {
     const isPerformanceMode = formattingStyle === "performatico"
     const isBachata = genero.toLowerCase().includes("bachata")
 
-    const universalRulesPrompt = buildUniversalRulesPrompt(genero)
+    const universalRules = `
+🎵 REGRAS UNIVERSAIS DO SISTEMA (INVIOLÁVEIS)
 
-    const rhymeInstructions = genero.toLowerCase().includes("sertanejo raiz")
-      ? `\n\nREGRAS DE RIMA (OBRIGATÓRIAS PARA SERTANEJO RAIZ):
-- Use RIMAS RICAS: palavras de classes gramaticais DIFERENTES (substantivo + verbo, adjetivo + substantivo)
-- Exemplos de rimas ricas: "coração" (substantivo) + "canção" (substantivo) é POBRE
-- Exemplos de rimas ricas: "amor" (substantivo) + "cantar" (verbo) é RICA
-- Exemplos de rimas ricas: "flor" (substantivo) + "melhor" (adjetivo) é RICA
-- PROIBIDO: rimas pobres (mesma classe gramatical) ou rimas falsas
-- OBRIGATÓRIO: Pelo menos 50% das rimas devem ser ricas
-- Rimas perfeitas (consoantes): som completo igual a partir da última vogal tônica
-- Exemplos: "jardim/capim", "porteira/bananeira", "viola/sacola", "sertão/coração"`
-      : genero.toLowerCase().includes("sertanejo moderno")
-        ? `\n\nREGRAS DE RIMA (SERTANEJO MODERNO):
-- PREFIRA rimas ricas (classes gramaticais diferentes)
-- Aceita algumas rimas pobres (mesma classe) se forem naturais
-- Aceita poucas rimas falsas (máximo 20%) se servirem à narrativa
-- Exemplos de rimas ricas: "amor" (substantivo) + "melhor" (adjetivo)
-- Rimas devem soar naturais, não forçadas`
-        : genero.toLowerCase().includes("mpb")
-          ? `\n\nREGRAS DE RIMA (MPB):
-- Alta qualidade de rimas: prefira rimas ricas e perfeitas
-- Evite rimas óbvias ou clichês ("amor/dor", "paixão/ilusão")
-- Use rimas criativas e surpreendentes
-- Rimas toantes (apenas vogais) são aceitáveis se bem usadas`
-          : genero.toLowerCase().includes("pagode") || genero.toLowerCase().includes("samba")
-            ? `\n\nREGRAS DE RIMA (PAGODE/SAMBA):
-- Rimas naturais e fluidas, que não quebrem o swing
-- Varie entre rimas ricas e pobres para evitar monotonia
-- Rimas devem facilitar a cantabilidade, não dificultar`
-            : `\n\nREGRAS DE RIMA:
-- Use rimas naturais que soem bem ao cantar
-- Prefira rimas ricas (classes gramaticais diferentes) quando possível
-- Evite rimas forçadas ou artificiais`
+1. LINGUAGEM BRASILEIRA SIMPLES E COLOQUIAL
+   - Use palavras do dia-a-dia, como um brasileiro fala naturalmente
+   - PROIBIDO: vocabulário rebuscado, poético, literário ("florescer", "bonança", "perecer")
+   - PERMITIDO: gírias, contrações, expressões populares ("tô", "cê", "pra", "né")
 
-    let chorusContext = ""
-    if (additionalRequirements) {
-      const chorusMatch = additionalRequirements.match(/\[CHORUS\]\s*([\s\S]+?)(?=\n\n|\[|$)/i)
-      if (chorusMatch) {
-        chorusContext = `\n\nREFRÃO PRÉ-DEFINIDO (use exatamente como está):\n${chorusMatch[1].trim()}\n\nConstrua a narrativa da música em torno deste refrão. O refrão deve aparecer pelo menos 2 vezes na estrutura.`
-      }
-    }
+2. MÉTRICA E RESPIRAÇÃO (12 SÍLABAS MÁXIMO)
+   - Cada verso deve caber em um fôlego natural ao cantar
+   - Máximo 12 sílabas poéticas por verso
+   - Versos empilhados (um por linha, sem parágrafos longos)
 
-    const structureGuide = chorusContext
-      ? `ESTRUTURA OBRIGATÓRIA (3:30 de duração):
+3. ESTRUTURA DE VERSOS
+   - Um verso por linha (empilhamento vertical)
+   - Facilita contagem de sílabas e respiração
+   - Exemplo CORRETO:
+     Eu te amei demais
+     Você não quis ficar
+     Agora é tarde
+     Não dá pra voltar
+
+4. RIMAS NATURAIS (NÃO FORÇADAS)
+   - Rimas devem surgir naturalmente da narrativa
+   - Prefira rimas ricas (classes gramaticais diferentes)
+   - Evite rimas óbvias ou clichês
+
+5. EMOÇÃO AUTÊNTICA
+   - Sentimentos diretos e honestos
+   - Metáforas concretas (não abstratas)
+   - Cenas visuais claras
+`
+
+    const chorusContext = additionalRequirements?.match(/\[CHORUS\]\s*([\s\S]+?)(?=\n\n|\[|$)/i)?.[1]
+      ? `\n\nREFRÃO PRÉ-DEFINIDO (use exatamente):\n${additionalRequirements.match(/\[CHORUS\]\s*([\s\S]+?)(?=\n\n|\[|$)/i)![1].trim()}\n\nConstrua a narrativa em torno deste refrão.`
+      : ""
+
+    const structureGuide = `
+ESTRUTURA COMERCIAL (3:30 de duração):
 [INTRO] (instrumental, 8-12 segundos)
-[VERSE 1] (4 linhas)
+[VERSE 1] (4 linhas empilhadas)
 [PRE-CHORUS] (2 linhas) - preparação emocional
-[CHORUS] (use o refrão pré-definido)
+[CHORUS] (2-4 linhas) - grudento e memorável
 [VERSE 2] (4 linhas) - desenvolve a história
 [PRE-CHORUS] (2 linhas)
-[CHORUS] (repete o refrão pré-definido)
-[BRIDGE] (2-4 linhas) - momento de reflexão ou virada
-[CHORUS] (repete o refrão pré-definido)
-[OUTRO] (fade out ou repetição do hook)`
-      : genero.toLowerCase().includes("sertanejo moderno")
-        ? `ESTRUTURA CHICLETE (repetição comercial):
-[INTRO] (instrumental)
-[VERSE 1] (4 linhas)
-[CHORUS] (2-4 linhas, grudento)
-[VERSE 2] (4 linhas)
 [CHORUS] (repete)
-[BRIDGE] (2 linhas)
-[CHORUS] (repete 2x para fixar)
-[OUTRO]`
-        : `ESTRUTURA COMERCIAL (3:30):
-[INTRO] (instrumental, 8-12 segundos)
-[VERSE 1] (4 linhas)
-[PRE-CHORUS] (2 linhas)
-[CHORUS] (2-4 linhas)
-[VERSE 2] (4 linhas)
-[PRE-CHORUS] (2 linhas)
+[BRIDGE] (2-4 linhas) - momento de reflexão
 [CHORUS] (repete)
-[BRIDGE] (2-4 linhas)
-[CHORUS] (repete)
-[OUTRO]`
+[OUTRO] (fade out ou hook final)
+`
 
     const performanceInstructions = isPerformanceMode
       ? `\n\nFORMATO PERFORMÁTICO:
-- Adicione descrições de palco entre parênteses: (sobe o tom), (pausa dramática), (repete 2x), (a cappella)
-- Indique momentos instrumentais: [GUITAR SOLO], [DRUM BREAK]
-- Marque dinâmicas: (suave), (crescendo), (explosivo)
-- No final, adicione: (Instruments: [lista em inglês] | BPM: ${metrics?.bpm || 100} | Style: ${genero})`
+- Adicione descrições: (sobe o tom), (pausa dramática), (repete 2x)
+- Momentos instrumentais: [GUITAR SOLO], [DRUM BREAK]
+- Dinâmicas: (suave), (crescendo), (explosivo)
+- Final: (Instruments: [lista] | BPM: ${metrics?.bpm || 100} | Style: ${genero})`
       : `\n\nFORMATO PADRÃO:
-- Use apenas marcadores de estrutura em inglês: [INTRO], [VERSE], [CHORUS], [BRIDGE], [OUTRO]
-- Mantenha a letra limpa e direta
-- No final, adicione: (Instruments: [lista em inglês] | BPM: ${metrics?.bpm || 100} | Style: ${genero})`
+- Marcadores em inglês: [INTRO], [VERSE], [CHORUS], [BRIDGE], [OUTRO]
+- Letra limpa e direta
+- Final: (Instruments: [lista] | BPM: ${metrics?.bpm || 100} | Style: ${genero})`
 
-    const prompt = `${universalRulesPrompt}
+    const prompt = `${universalRules}
 
 Você é um compositor profissional brasileiro especializado em ${genero}.
 
-TAREFA: Escreva uma letra completa seguindo as especificações abaixo.
+TAREFA: Escreva uma letra completa aplicando o processo TERCEIRA VIA em cada verso.
 
+PROCESSO TERCEIRA VIA:
+- Para cada verso, considere: (A) Métrica/Fluidez + (B) Emoção/Autenticidade = (C) Síntese Final
+- Cada linha deve ter ritmo natural E emoção autêntica
+- Máximo 12 sílabas por verso, linguagem simples brasileira
+
+ESPECIFICAÇÕES:
 TEMA: ${tema || "amor e relacionamento"}
 HUMOR: ${humor || "neutro"}
 CRIATIVIDADE: ${criatividade}
 ${inspiracao ? `INSPIRAÇÃO: ${inspiracao}` : ""}
-${metaforas ? `METÁFORAS DESEJADAS (PRIORIDADE ABSOLUTA): ${metaforas}\nRESPEITE E INSIRA estas metáforas na letra de forma natural e criativa.` : ""}
-${emocoes && emocoes.length > 0 ? `EMOÇÕES: ${emocoes.join(", ")}` : ""}
-${titulo ? `TÍTULO SUGERIDO: ${titulo}` : ""}
-${additionalRequirements ? `\nREQUISITOS ADICIONAIS (PRIORIDADE ABSOLUTA):\n${additionalRequirements}\nRESPEITE todos os requisitos adicionais, especialmente metáforas solicitadas.` : ""}
+${metaforas ? `METÁFORAS (PRIORIDADE): ${metaforas}\nInsira naturalmente na letra.` : ""}
+${emocoes?.length ? `EMOÇÕES: ${emocoes.join(", ")}` : ""}
+${titulo ? `TÍTULO: ${titulo}` : ""}
+${additionalRequirements ? `\nREQUISITOS ADICIONAIS (PRIORIDADE ABSOLUTA):\n${additionalRequirements}` : ""}
 ${chorusContext}
 
 ${structureGuide}
 
 REGRAS DE PROSÓDIA (${genreConfig.name}):
-Com vírgula (conta como 2 versos):
-  - Máximo ${genreConfig.prosody_rules.syllable_count.with_comma.max_before_comma} sílabas antes da vírgula
-  - Máximo ${genreConfig.prosody_rules.syllable_count.with_comma.max_after_comma} sílabas depois da vírgula
-  - Total máximo: ${genreConfig.prosody_rules.syllable_count.with_comma.total_max} sílabas
-
-Sem vírgula (1 verso):
-  - Mínimo: ${genreConfig.prosody_rules.syllable_count.without_comma.min} sílabas
-  - Máximo: ${genreConfig.prosody_rules.syllable_count.without_comma.max} sílabas
-  - Aceitável até: ${genreConfig.prosody_rules.syllable_count.without_comma.acceptable_up_to} sílabas
-
-LINGUAGEM:
-- Use português brasileiro coloquial e natural
-- Evite clichês excessivos
-- Mantenha coerência narrativa
-- Rimas naturais (não forçadas)
+- Com vírgula: máx ${genreConfig.prosody_rules.syllable_count.with_comma.max_before_comma} sílabas antes, ${genreConfig.prosody_rules.syllable_count.with_comma.max_after_comma} depois
+- Sem vírgula: ${genreConfig.prosody_rules.syllable_count.without_comma.min}-${genreConfig.prosody_rules.syllable_count.without_comma.max} sílabas (aceitável até ${genreConfig.prosody_rules.syllable_count.without_comma.acceptable_up_to})
 
 ${performanceInstructions}
 
-Escreva a letra completa agora:`
+Escreva a letra completa agora, aplicando Terceira Via em cada verso:`
+
+    console.log("[v0] Gerando letra com Terceira Via...")
 
     const { text } = await generateText({
       model: "openai/gpt-4o",
@@ -164,12 +160,19 @@ Escreva a letra completa agora:`
 
     let finalLyrics = text.trim()
 
-    const rhymeValidation = validateRhymesForGenre(finalLyrics, genero)
-    if (!rhymeValidation.valid) {
-      console.log("[v0] Avisos de rima:", rhymeValidation.warnings)
-      console.log("[v0] Erros de rima:", rhymeValidation.errors)
-      console.log("[v0] Score de rima:", rhymeValidation.analysis.score)
-    }
+    // Descomente se quiser processar cada verso individualmente
+    /*
+    const lines = finalLyrics.split('\n')
+    const processedLines = await Promise.all(
+      lines.map(async (line) => {
+        if (line.trim() && !line.startsWith('[') && !line.startsWith('(')) {
+          return await applyTerceiraViaToVerse(line, genero)
+        }
+        return line
+      })
+    )
+    finalLyrics = processedLines.join('\n')
+    */
 
     let extractedTitle = titulo || ""
     const titleMatch = finalLyrics.match(/^Title:\s*(.+)$/m)
@@ -192,11 +195,11 @@ Escreva a letra completa agora:`
 
     finalLyrics = capitalizeLines(finalLyrics)
 
+    console.log("[v0] Letra gerada com sucesso usando Terceira Via")
+
     return NextResponse.json({
       letra: finalLyrics,
       titulo: extractedTitle,
-      rhymeAnalysis: rhymeValidation.analysis,
-      rhymeWarnings: rhymeValidation.warnings,
     })
   } catch (error) {
     console.error("[v0] Erro ao gerar letra:", error)
