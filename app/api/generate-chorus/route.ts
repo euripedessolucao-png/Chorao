@@ -40,14 +40,20 @@ IMPORTANTE: O refrão DEVE:
    - PROIBIDO: rebuscado, poético, literário
    - PERMITIDO: gírias, contrações ("tô", "cê", "pra")
 
-2. MÉTRICA (12 SÍLABAS MÁXIMO)
+2. MÉTRICA (12 SÍLABAS MÁXIMO - REGRA ABSOLUTA)
    - Cada verso cabe em um fôlego natural
+   - MÁXIMO 12 SÍLABAS POÉTICAS (INVIOLÁVEL)
+   - Se necessário, simplifique para respeitar o limite
    - Versos empilhados (um por linha)
 
 3. PROCESSO TERCEIRA VIA PARA REFRÃO
-   - (A) Métrica/Ritmo: fluidez e respiração
+   - (A) Métrica/Ritmo: fluidez e respiração (máx 12 sílabas)
    - (B) Emoção/Gancho: memorável e autêntico
-   - (C) Síntese: combine A+B = refrão grudento
+   - (C) Síntese: combine A+B = refrão grudento (RESPEITANDO 12 sílabas)
+   
+IMPORTANTE NA SÍNTESE (C):
+- NUNCA exceda 12 sílabas, mesmo que precise cortar palavras
+- Priorize: 1º Limite de sílabas, 2º Emoção, 3º Rima
 `
 
     const metaforasRule = additionalRequirements
@@ -74,6 +80,8 @@ PROCESSO PARA CADA VARIAÇÃO:
 1. Gere versão (A): foco em MÉTRICA e FLUIDEZ (máx 12 sílabas/verso)
 2. Gere versão (B): foco em EMOÇÃO e GANCHO (memorável, autêntico)
 3. Síntese (C): combine o melhor de A e B = refrão final
+   ATENÇÃO: A síntese NUNCA pode exceder 12 sílabas por verso
+   Se necessário, simplifique palavras ou use contrações
 
 REGRAS ESTRUTURAIS:
 - 2 ou 4 linhas por refrão (NUNCA 3)

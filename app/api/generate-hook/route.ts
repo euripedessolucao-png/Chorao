@@ -21,14 +21,21 @@ export async function POST(request: Request) {
    - PROIBIDO: rebuscado, poético, literário
    - PERMITIDO: gírias, contrações ("tô", "cê", "pra")
 
-2. MÉTRICA (MÁXIMO 8 PALAVRAS)
+2. MÉTRICA (MÁXIMO 12 SÍLABAS - REGRA ABSOLUTA)
    - Hook deve ser curto e memorável
-   - Máximo 12 sílabas poéticas
+   - MÁXIMO 12 SÍLABAS POÉTICAS (INVIOLÁVEL)
+   - Preferência por 6-8 palavras
+   - Se necessário, corte palavras para respeitar o limite
 
 3. PROCESSO TERCEIRA VIA PARA HOOKS
-   - (A) Métrica/Ritmo: fluidez e brevidade
+   - (A) Métrica/Ritmo: fluidez e brevidade (máx 12 sílabas)
    - (B) Emoção/Impacto: memorável e viral
-   - (C) Síntese: combine A+B = hook perfeito
+   - (C) Síntese: combine A+B = hook perfeito (RESPEITANDO 12 sílabas)
+
+IMPORTANTE NA SÍNTESE (C):
+- NUNCA exceda 12 sílabas
+- Hooks devem ser ainda mais curtos (6-8 palavras ideal)
+- Priorize brevidade e impacto sobre complexidade
 `
 
     const metaforasRule = additionalRequirements
@@ -67,10 +74,10 @@ SUA TAREFA - APLICANDO TERCEIRA VIA:
 
 2. HOOK PRINCIPAL (Gerado via Terceira Via)
    - Gere 3 variações do hook (máx 8 palavras cada):
-     * Variação A: foco em MÉTRICA e FLUIDEZ
-     * Variação B: foco em EMOÇÃO e IMPACTO
-     * Variação C: SÍNTESE (combine melhor de A e B)
-   - Resultado final: hook principal otimizado (versão C)
+     * Variação A: foco em MÉTRICA e FLUIDEZ (máx 12 sílabas)
+     * Variação B: foco em EMOÇÃO e IMPACTO (máx 12 sílabas)
+     * Variação C: SÍNTESE (combine melhor de A e B, MÁXIMO 12 sílabas)
+   - Resultado final: hook principal otimizado (versão C, respeitando limite)
 
 3. TRANSFORMAÇÕES SUGERIDAS
    - Pegue 2-3 trechos da letra

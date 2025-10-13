@@ -3,35 +3,6 @@ import { generateText } from "ai"
 import { getGenreConfig } from "@/lib/genre-config"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 
-async function applyTerceiraViaToVerse(verse: string, genre: string): Promise<string> {
-  const { text } = await generateText({
-    model: "openai/gpt-4o",
-    prompt: `Verso original: "${verse}"
-Gênero: ${genre}
-
-Aplique o processo TERCEIRA VIA:
-
-(A) VARIAÇÃO MÉTRICA - foco em fluidez e ritmo
-- Máximo 12 sílabas poéticas
-- Remove redundâncias
-- Ajusta para caber em um fôlego natural
-
-(B) VARIAÇÃO EMOCIONAL - foco em emoção e autenticidade
-- Linguagem simples e brasileira
-- Metáforas naturais (não rebuscadas)
-- Emoção direta e honesta
-
-(C) SÍNTESE FINAL - combine o melhor de A e B
-- Ritmo + Emoção = verso final
-- Coerência com o gênero ${genre}
-- Musicalidade natural
-
-Retorne APENAS o verso final (C), sem explicações.`,
-    temperature: 0.7,
-  })
-  return text.trim()
-}
-
 export async function POST(request: NextRequest) {
   try {
     const {
@@ -57,14 +28,14 @@ export async function POST(request: NextRequest) {
     const isBachata = genero.toLowerCase().includes("bachata")
 
     const universalRules = `
-🎵 REGRAS UNIVERSAIS DO SISTEMA (INVIOLÁVEIS)
+🎵 REGRAS UNIVERSAIS DO SISTEMA
 
 1. LINGUAGEM BRASILEIRA SIMPLES E COLOQUIAL
    - Use palavras do dia-a-dia, como um brasileiro fala naturalmente
-   - PROIBIDO: vocabulário rebuscado, poético, literário ("florescer", "bonança", "perecer")
+   - PROIBIDO: vocabulário rebuscado, poético, literário
    - PERMITIDO: gírias, contrações, expressões populares ("tô", "cê", "pra", "né")
 
-2. MÉTRICA E RESPIRAÇÃO (12 SÍLABAS MÁXIMO)
+2. MÉTRICA E RESPIRAÇÃO
    - Cada verso deve caber em um fôlego natural ao cantar
    - Máximo 12 sílabas poéticas por verso
    - Versos empilhados (um por linha, sem parágrafos longos)
@@ -72,11 +43,6 @@ export async function POST(request: NextRequest) {
 3. ESTRUTURA DE VERSOS
    - Um verso por linha (empilhamento vertical)
    - Facilita contagem de sílabas e respiração
-   - Exemplo CORRETO:
-     Eu te amei demais
-     Você não quis ficar
-     Agora é tarde
-     Não dá pra voltar
 
 4. RIMAS NATURAIS (NÃO FORÇADAS)
    - Rimas devem surgir naturalmente da narrativa
@@ -127,7 +93,8 @@ TAREFA: Escreva uma letra completa aplicando o processo TERCEIRA VIA em cada ver
 PROCESSO TERCEIRA VIA:
 - Para cada verso, considere: (A) Métrica/Fluidez + (B) Emoção/Autenticidade = (C) Síntese Final
 - Cada linha deve ter ritmo natural E emoção autêntica
-- Máximo 12 sílabas por verso, linguagem simples brasileira
+- Máximo 12 sílabas por verso
+- Linguagem simples brasileira
 
 ESPECIFICAÇÕES:
 TEMA: ${tema || "amor e relacionamento"}
@@ -144,7 +111,7 @@ ${structureGuide}
 
 REGRAS DE PROSÓDIA (${genreConfig.name}):
 - Com vírgula: máx ${genreConfig.prosody_rules.syllable_count.with_comma.max_before_comma} sílabas antes, ${genreConfig.prosody_rules.syllable_count.with_comma.max_after_comma} depois
-- Sem vírgula: ${genreConfig.prosody_rules.syllable_count.without_comma.min}-${genreConfig.prosody_rules.syllable_count.without_comma.max} sílabas (aceitável até ${genreConfig.prosody_rules.syllable_count.without_comma.acceptable_up_to})
+- Sem vírgula: ${genreConfig.prosody_rules.syllable_count.without_comma.min}-${genreConfig.prosody_rules.syllable_count.without_comma.max} sílabas
 
 ${performanceInstructions}
 
@@ -159,20 +126,6 @@ Escreva a letra completa agora, aplicando Terceira Via em cada verso:`
     })
 
     let finalLyrics = text.trim()
-
-    // Descomente se quiser processar cada verso individualmente
-    /*
-    const lines = finalLyrics.split('\n')
-    const processedLines = await Promise.all(
-      lines.map(async (line) => {
-        if (line.trim() && !line.startsWith('[') && !line.startsWith('(')) {
-          return await applyTerceiraViaToVerse(line, genero)
-        }
-        return line
-      })
-    )
-    finalLyrics = processedLines.join('\n')
-    */
 
     let extractedTitle = titulo || ""
     const titleMatch = finalLyrics.match(/^Title:\s*(.+)$/m)
