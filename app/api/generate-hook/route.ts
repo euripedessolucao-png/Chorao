@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { generateText } from "ai"
-import { getGenreConfig } from "@/lib/genre-config"
+import { getGenreConfig, detectSubGenre } from "@/lib/genre-config"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 
 export async function POST(request: Request) {
@@ -12,6 +12,7 @@ export async function POST(request: Request) {
     }
 
     const genreConfig = genre ? getGenreConfig(genre) : null
+    const subGenreInfo = detectSubGenre(additionalRequirements)
 
     const universalRules = `
 🎵 REGRAS UNIVERSAIS - TERCEIRA VIA PARA HOOKS
@@ -36,6 +37,7 @@ IMPORTANTE NA SÍNTESE (C):
 - NUNCA exceda 12 sílabas
 - Hooks devem ser ainda mais curtos (6-8 palavras ideal)
 - Priorize brevidade e impacto sobre complexidade
+${subGenreInfo.subGenre ? `\n- Adapte ao ritmo de ${subGenreInfo.styleNote}` : ""}
 `
 
     const metaforasRule = additionalRequirements
