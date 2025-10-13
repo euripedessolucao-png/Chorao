@@ -84,6 +84,15 @@ Você é um especialista em hooks musicais e viralidade. Analise esta letra e ge
 
 LETRA PARA ANALISAR:
 ${lyrics}
+
+CONTEXTO IMPORTANTE:
+- Analise TODA a letra acima para entender o tema, emoção e narrativa
+- O hook deve REFLETIR e AMPLIFICAR a essência desta letra específica
+- NÃO crie um hook genérico - ele deve ser único para ESTA composição
+- Mantenha coerência com o tom emocional e estilo da letra fornecida
+- Se a letra fala de superação, o hook deve refletir superação
+- Se a letra fala de amor perdido, o hook deve refletir essa dor
+
 ${prosodyRules}
 ${rhymeRules ? `\n${rhymeRules.instructions}` : ""}
 

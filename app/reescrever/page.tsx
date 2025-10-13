@@ -95,6 +95,11 @@ export default function ReescreverPage() {
       return
     }
 
+    if (!originalLyrics.trim()) {
+      toast.error("Cole a letra original antes de gerar o refrão")
+      return
+    }
+
     setShowChorusDialog(true)
     setIsGeneratingChorus(true)
     setChorusData(null)
@@ -108,6 +113,8 @@ export default function ReescreverPage() {
           genre,
           theme,
           mood,
+          lyrics: originalLyrics,
+          additionalRequirements: additionalReqs,
         }),
       })
 

@@ -24,7 +24,14 @@ export async function POST(request: NextRequest) {
       .join("\n")
 
     const lyricsContext = lyrics
-      ? `\n\nLETRA EXISTENTE PARA CONTEXTO:\n${lyrics}\n\nGere um refrão que se conecte tematicamente com esta letra.`
+      ? `\n\nLETRA EXISTENTE PARA CONTEXTO:
+${lyrics}
+
+IMPORTANTE: O refrão DEVE se conectar tematicamente com esta letra existente.
+- Use o mesmo tom emocional da letra
+- Mantenha coerência com a história/narrativa apresentada
+- O refrão deve parecer parte natural desta composição
+- Respeite o estilo e linguagem já estabelecidos na letra`
       : ""
 
     const languageRule = additionalRequirements
