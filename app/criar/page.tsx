@@ -27,16 +27,6 @@ import { Star, Trophy, Wand2 } from "lucide-react"
 import { EMOTIONS } from "@/lib/genres"
 import { GenreSelect } from "@/components/genre-select"
 import { HookGenerator } from "@/components/hook-generator"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 
 const BRAZILIAN_GENRE_METRICS = {
   "Sertanejo Moderno": { syllablesPerLine: 6, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
@@ -95,7 +85,6 @@ export default function CriarPage() {
   const [showHookDialog, setShowHookDialog] = useState(false)
   const [selectedHook, setSelectedHook] = useState<string | null>(null)
   const [formattingStyle, setFormattingStyle] = useState("padrao")
-  const [showClearDialog, setShowClearDialog] = useState(false)
 
   const toggleEmotion = (emotion: string) => {
     setSelectedEmotions((prev) => (prev.includes(emotion) ? prev.filter((e) => e !== emotion) : [...prev, emotion]))
@@ -266,11 +255,14 @@ export default function CriarPage() {
   }
 
   const handleClearLyrics = () => {
-    setLyrics("")
-    setTitle("")
-    setChords("")
-    setShowClearDialog(false)
-    toast.success("Letra limpa com sucesso!")
+    if (
+      window.confirm("Limpar letra? Esta ação irá limpar o título, letra e acordes. Esta ação não pode ser desfeita.")
+    ) {
+      setLyrics("")
+      setTitle("")
+      setChords("")
+      toast.success("Letra limpa com sucesso!")
+    }
   }
 
   const renderStars = (score: number) => {
@@ -661,7 +653,7 @@ export default function CriarPage() {
                     size="sm"
                     variant="outline"
                     className="flex-1 bg-transparent"
-                    onClick={() => setShowClearDialog(true)}
+                    onClick={handleClearLyrics}
                     disabled={!lyrics && !title && !chords}
                   >
                     <Trash2 className="h-3 w-3 mr-1" />
@@ -765,22 +757,6 @@ export default function CriarPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Dialog para Limpar Letra */}
-      <AlertDialog open={showClearDialog} onOpenChange={setShowClearDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Limpar letra?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação irá limpar o título, letra e acordes. Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleClearLyrics}>Limpar</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }

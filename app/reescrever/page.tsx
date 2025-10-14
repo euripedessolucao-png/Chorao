@@ -25,16 +25,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { HookGenerator } from "@/components/hook-generator"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 
 const BRAZILIAN_GENRE_METRICS = {
   "Sertanejo Moderno": { syllablesPerLine: 6, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
@@ -93,8 +83,6 @@ export default function ReescreverPage() {
   const [showHookDialog, setShowHookDialog] = useState(false)
   const [selectedHook, setSelectedHook] = useState<string | null>(null)
   const [formattingStyle, setFormattingStyle] = useState("padrao")
-  const [showClearInputDialog, setShowClearInputDialog] = useState(false)
-  const [showClearOutputDialog, setShowClearOutputDialog] = useState(false)
 
   const toggleEmotion = (emotion: string) => {
     setSelectedEmotions((prev) => (prev.includes(emotion) ? prev.filter((e) => e !== emotion) : [...prev, emotion]))
@@ -285,17 +273,25 @@ export default function ReescreverPage() {
   }
 
   const handleClearInput = () => {
-    setOriginalLyrics("")
-    setShowClearInputDialog(false)
-    toast.success("Letra original limpa!")
+    if (
+      window.confirm("Limpar letra original? Esta ação irá limpar a letra colada. Esta ação não pode ser desfeita.")
+    ) {
+      setOriginalLyrics("")
+      toast.success("Letra original limpa!")
+    }
   }
 
   const handleClearOutput = () => {
-    setLyrics("")
-    setTitle("")
-    setChords("")
-    setShowClearOutputDialog(false)
-    toast.success("Resultado limpo!")
+    if (
+      window.confirm(
+        "Limpar resultado? Esta ação irá limpar o título, letra e acordes reescritos. Esta ação não pode ser desfeita.",
+      )
+    ) {
+      setLyrics("")
+      setTitle("")
+      setChords("")
+      toast.success("Resultado limpo!")
+    }
   }
 
   return (
@@ -319,7 +315,7 @@ export default function ReescreverPage() {
                     variant="ghost"
                     size="sm"
                     className="h-6 px-2"
-                    onClick={() => setShowClearInputDialog(true)}
+                    onClick={handleClearInput}
                     disabled={!originalLyrics}
                   >
                     <Trash2 className="h-3 w-3 mr-1" />
@@ -690,7 +686,7 @@ export default function ReescreverPage() {
                     size="sm"
                     variant="outline"
                     className="flex-1 bg-transparent"
-                    onClick={() => setShowClearOutputDialog(true)}
+                    onClick={handleClearOutput}
                     disabled={!lyrics && !title && !chords}
                   >
                     <Trash2 className="h-3 w-3 mr-1" />
@@ -800,37 +796,6 @@ export default function ReescreverPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Confirmation Dialogs */}
-      <AlertDialog open={showClearInputDialog} onOpenChange={setShowClearInputDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Limpar letra original?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação irá limpar a letra colada. Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleClearInput}>Limpar</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={showClearOutputDialog} onOpenChange={setShowClearOutputDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Limpar resultado?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação irá limpar o título, letra e acordes reescritos. Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleClearOutput}>Limpar</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }
