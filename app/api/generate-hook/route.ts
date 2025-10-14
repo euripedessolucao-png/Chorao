@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { generateText } from "ai"
-import { getGenreConfig, detectSubGenre } from "@/lib/genre-config"
+import { getGenreConfig, detectSubGenre, getGenreRhythm } from "@/lib/genre-config"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 
 export async function POST(request: Request) {
@@ -13,6 +13,8 @@ export async function POST(request: Request) {
 
     const genreConfig = genre ? getGenreConfig(genre) : null
     const subGenreInfo = detectSubGenre(additionalRequirements)
+    const defaultRhythm = genre ? getGenreRhythm(genre) : "Brasileiro"
+    const finalRhythm = subGenreInfo.rhythm || defaultRhythm
 
     const universalRules = `
 🎵 REGRAS UNIVERSAIS - TERCEIRA VIA PARA HOOKS
@@ -37,7 +39,7 @@ IMPORTANTE NA SÍNTESE (C):
 - NUNCA exceda 12 sílabas
 - Hooks devem ser ainda mais curtos (6-8 palavras ideal)
 - Priorize brevidade e impacto sobre complexidade
-${subGenreInfo.subGenre ? `\n- Adapte ao ritmo de ${subGenreInfo.styleNote}` : ""}
+${subGenreInfo.subGenre ? `\n- Adapte ao ritmo de ${subGenreInfo.styleNote}` : `\n- Adapte ao ritmo de ${finalRhythm}`}
 `
 
     const metaforasRule = additionalRequirements
@@ -50,6 +52,7 @@ METÁFORAS: Se especificadas, são OBRIGATÓRIAS no hook.`
     const prosodyRules = genreConfig
       ? `
 REGRAS DE PROSÓDIA (${genreConfig.name}):
+- Ritmo: ${finalRhythm}
 - Máximo 12 sílabas poéticas
 - Deve caber em um fôlego natural
 - Preferência por 6-8 palavras
@@ -66,6 +69,7 @@ CONTEXTO IMPORTANTE:
 - O hook deve REFLETIR e AMPLIFICAR a essência desta letra
 - NÃO crie hook genérico - único para ESTA composição
 - Mantenha coerência com tom emocional e estilo
+- Ritmo da composição: ${finalRhythm}
 
 ${prosodyRules}
 

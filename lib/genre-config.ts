@@ -173,6 +173,105 @@ export const GENRE_CONFIGS = {
       rhythm_style: "Sertanejo universitário com groove animado",
     },
   },
+  "Sertanejo Raiz": {
+    year_range: "2024-2025",
+    reference_artists: ["Almir Sater", "Gabriel Sater", "Chitãozinho & Xororó", "Sérgio Reis", "Renato Teixeira"],
+    core_principles: {
+      theme:
+        "Vida rural autêntica, natureza, tradições do campo, saudade da terra, histórias genuínas do sertão, preservação das raízes",
+      tone: "Nostálgico, autêntico, respeitoso com as tradições, poético mas acessível, com alma caipira",
+      narrative_arc:
+        "Situação do campo ou memória → Reflexão sobre tradições ou natureza → Mensagem de preservação ou saudade saudável",
+    },
+    language_rules: {
+      allowed: {
+        concrete_objects: [
+          "viola caipira",
+          "sanfona",
+          "sertão",
+          "roça",
+          "enxada",
+          "boiadeiro",
+          "porteira",
+          "curral",
+          "lua",
+          "estrela",
+          "rio",
+          "mata",
+          "cavalo",
+          "carroça",
+          "chaleira",
+          "fogão de lenha",
+        ],
+        actions: [
+          "plantar",
+          "colher",
+          "tocar viola",
+          "cantar",
+          "lembrar",
+          "saudade",
+          "trabalhar",
+          "amanhecer",
+          "anoitecer",
+          "cavalgar",
+        ],
+        phrases: [
+          "modão das antigas",
+          "raiz sertaneja",
+          "viola caipira",
+          "saudade do sertão",
+          "terra querida",
+          "vida simples",
+          "tradição que não se perde",
+          "alma caipira",
+        ],
+      },
+      forbidden: {
+        modern_urban: ["balada", "paredão", "story", "zap", "PIX", "viral", "trending", "selfie", "app", "internet"],
+        electric_instruments: ["guitarra elétrica", "sintetizador", "bateria eletrônica", "808"],
+        pop_slang: ["tô na vibe", "manda o papo", "tá ligado", "tipo assim"],
+      },
+      style:
+        "Poético, com vocabulário rural autêntico, respeitando o linguajar caipira tradicional. Evita gírias urbanas modernas.",
+    },
+    structure_rules: {
+      verse: {
+        lines: 4,
+        purpose: "Contar história do campo, memórias rurais, ou reflexões sobre a vida simples com autenticidade",
+      },
+      chorus: {
+        lines_options: [2, 4],
+        forbidden_lines: 3,
+        required_elements: [
+          "Melodia tradicional marcante",
+          "Fácil de cantar em dupla (harmonias)",
+          "Mensagem de preservação ou saudade",
+        ],
+      },
+      bridge: {
+        lines_min: 2,
+        lines_max: 4,
+        purpose: "Momento de reflexão sobre tradições ou natureza — pode ter solo de viola",
+      },
+    },
+    prosody_rules: {
+      syllable_count: {
+        with_comma: { max_before_comma: 7, max_after_comma: 5, total_max: 12 },
+        without_comma: { min: 6, max: 10, acceptable_up_to: 12 },
+      },
+      breathability: "Toda linha deve caber em um fôlego natural ao cantar, respeitando o ritmo da moda de viola",
+      verse_counting_rule:
+        "Uma linha com vírgula (ex: 6+6, 7+5 ou 5+7 sílabas) conta como 2 VERSOS na estrutura total, não 1 verso",
+    },
+    harmony_and_rhythm: {
+      key: "G major",
+      allowed_chords: ["G", "C", "D", "Em", "Am", "A7", "D7"],
+      forbidden_chords: ["Acordes com 7M", "9", "11", "13", "diminutos", "aumentados"],
+      bpm_range: { min: 80, max: 100, ideal: 90 },
+      rhythm_style:
+        "Moda de viola tradicional com viola caipira de 10 cordas, sanfona, violão acústico. SEM instrumentos elétricos ou eletrônicos. Pode ter influências de blues e rock acústico (estilo Almir Sater) mas mantendo a essência raiz.",
+    },
+  },
   "Forró Pé de Serra": {
     year_range: "1940-2025",
     reference_artists: ["Luiz Gonzaga", "Dominguinhos", "Trio Nordestino"],
@@ -297,71 +396,6 @@ export const GENRE_CONFIGS = {
     },
   },
   "Funk Melody": {
-    year_range: "2024-2025",
-    reference_artists: ["MC Ryan SP", "MC Hariel", "MC IG", "Ludmilla", "Anitta"],
-    core_principles: {
-      theme:
-        "Autoestima, empoderamento, conquista, celebração da quebrada, respeito — NUNCA apologia à violência ou objetificação",
-      tone: "Ritmo marcado, frases curtas, repetitivo e grudento, confiante",
-      narrative_arc: "Afirmação de valor → Convite ou desafio → Celebração ou conquista",
-    },
-    language_rules: {
-      allowed: {
-        concrete_objects: ["paredão", "rolê", "zap", "story", "look", "beat", "flow", "baile", "favela", "quebrada"],
-        actions: [
-          "mandar ver",
-          "chamar pra dançar",
-          "brilhar",
-          "mandar o flow",
-          "jogar o cabelo",
-          "rebolar",
-          "dominar a pista",
-        ],
-        phrases: [
-          "Tô no meu flow",
-          "Meu beat é pesado",
-          "Respeita meu espaço",
-          "Sou dona de mim",
-          "Vim pra brilhar",
-          "Tô no comando",
-        ],
-      },
-      forbidden: {
-        toxic_content: [
-          "mulher objeto",
-          "violência",
-          "drogas explícitas",
-          "machismo",
-          "apologia ao crime",
-          "objetificação",
-        ],
-        generic_cliches: ["põe a mão no alto", "vamos curtir a noite", "a festa tá bombando", "todo mundo junto"],
-      },
-      style: "Direto, repetitivo, com gírias urbanas ('mano', 'véio', 'bicho'). Tom confiante e empoderado.",
-    },
-    structure_rules: {
-      verse: { lines: 4, purpose: "Versos curtos e diretos, estabelecendo atitude e contexto" },
-      chorus: {
-        lines_options: [2],
-        forbidden_lines: [3, 4],
-        required_elements: ["Grudento e repetitivo", "Máximo 6 sílabas por linha", "Frase de impacto", "Sem vírgulas"],
-      },
-    },
-    prosody_rules: {
-      syllable_count: {
-        with_comma: { max_before_comma: 6, max_after_comma: 6, total_max: 12 },
-        without_comma: { min: 3, max: 6, acceptable_up_to: 6 },
-      },
-      verse_counting_rule: "Funk usa versos curtos. Uma linha com vírgula (6+6) conta como 2 VERSOS",
-    },
-    harmony_and_rhythm: {
-      key: "C minor",
-      allowed_chords: ["Cm", "Fm", "Gm", "Ab", "Bb"],
-      bpm_range: { min: 120, max: 140, ideal: 130 },
-      rhythm_style: "Batida marcada do funk com graves pesados (paredão)",
-    },
-  },
-  "Funk Ostentação": {
     year_range: "2024-2025",
     reference_artists: ["MC Ryan SP", "MC Hariel", "MC IG", "Ludmilla", "Anitta"],
     core_principles: {
@@ -735,105 +769,6 @@ export const GENRE_CONFIGS = {
       rhythm_style: "Samba tradicional com pandeiro, cavaquinho, surdo e tamborim",
     },
   },
-  "Sertanejo Raiz": {
-    year_range: "2024-2025",
-    reference_artists: ["Almir Sater", "Gabriel Sater", "Chitãozinho & Xororó", "Sérgio Reis", "Renato Teixeira"],
-    core_principles: {
-      theme:
-        "Vida rural autêntica, natureza, tradições do campo, saudade da terra, histórias genuínas do sertão, preservação das raízes",
-      tone: "Nostálgico, autêntico, respeitoso com as tradições, poético mas acessível, com alma caipira",
-      narrative_arc:
-        "Situação do campo ou memória → Reflexão sobre tradições ou natureza → Mensagem de preservação ou saudade saudável",
-    },
-    language_rules: {
-      allowed: {
-        concrete_objects: [
-          "viola caipira",
-          "sanfona",
-          "sertão",
-          "roça",
-          "enxada",
-          "boiadeiro",
-          "porteira",
-          "curral",
-          "lua",
-          "estrela",
-          "rio",
-          "mata",
-          "cavalo",
-          "carroça",
-          "chaleira",
-          "fogão de lenha",
-        ],
-        actions: [
-          "plantar",
-          "colher",
-          "tocar viola",
-          "cantar",
-          "lembrar",
-          "saudade",
-          "trabalhar",
-          "amanhecer",
-          "anoitecer",
-          "cavalgar",
-        ],
-        phrases: [
-          "modão das antigas",
-          "raiz sertaneja",
-          "viola caipira",
-          "saudade do sertão",
-          "terra querida",
-          "vida simples",
-          "tradição que não se perde",
-          "alma caipira",
-        ],
-      },
-      forbidden: {
-        modern_urban: ["balada", "paredão", "story", "zap", "PIX", "viral", "trending", "selfie", "app", "internet"],
-        electric_instruments: ["guitarra elétrica", "sintetizador", "bateria eletrônica", "808"],
-        pop_slang: ["tô na vibe", "manda o papo", "tá ligado", "tipo assim"],
-      },
-      style:
-        "Poético, com vocabulário rural autêntico, respeitando o linguajar caipira tradicional. Evita gírias urbanas modernas.",
-    },
-    structure_rules: {
-      verse: {
-        lines: 4,
-        purpose: "Contar história do campo, memórias rurais, ou reflexões sobre a vida simples com autenticidade",
-      },
-      chorus: {
-        lines_options: [2, 4],
-        forbidden_lines: 3,
-        required_elements: [
-          "Melodia tradicional marcante",
-          "Fácil de cantar em dupla (harmonias)",
-          "Mensagem de preservação ou saudade",
-        ],
-      },
-      bridge: {
-        lines_min: 2,
-        lines_max: 4,
-        purpose: "Momento de reflexão sobre tradições ou natureza — pode ter solo de viola",
-      },
-    },
-    prosody_rules: {
-      syllable_count: {
-        with_comma: { max_before_comma: 7, max_after_comma: 5, total_max: 12 },
-        without_comma: { min: 6, max: 10, acceptable_up_to: 12 },
-      },
-      breathability: "Toda linha deve caber em um fôlego natural ao cantar, respeitando o ritmo da moda de viola",
-      verse_counting_rule:
-        "Uma linha com vírgula (ex: 6+6, 7+5 ou 5+7 sílabas) conta como 2 VERSOS na estrutura total, não 1 verso",
-    },
-    harmony_and_rhythm: {
-      key: "G major",
-      allowed_chords: ["G", "C", "D", "Em", "Am", "A7", "D7"],
-      forbidden_chords: ["Acordes com 7M", "9", "11", "13", "diminutos", "aumentados"],
-      bpm_range: { min: 80, max: 100, ideal: 90 },
-      rhythm_style:
-        "Moda de viola tradicional com viola caipira de 10 cordas, sanfona, violão acústico. SEM instrumentos elétricos ou eletrônicos. Pode ter influências de blues e rock acústico (estilo Almir Sater) mas mantendo a essência raiz.",
-    },
-  },
 } as const
 
 export type GenreConfig = (typeof GENRE_CONFIGS)[keyof typeof GENRE_CONFIGS]
@@ -996,11 +931,6 @@ export const INSTRUMENTATION_RULES = {
     optional: ["vocals", "samples", "effects"],
     format: "Sempre entre parênteses, em inglês, após o nome da seção",
   },
-  "Funk Ostentação": {
-    required: "(Instrumental: 808 bass, percussion, synth)",
-    optional: ["vocals", "samples", "effects"],
-    format: "Sempre entre parênteses, em inglês, após o nome da seção",
-  },
   "Funk Consciente": {
     required: "(Instrumental: 808 bass, percussion, synth)",
     optional: ["vocals", "samples", "effects"],
@@ -1023,16 +953,19 @@ export const SUB_GENRE_INSTRUMENTS = {
   arrocha: {
     instruments: "keyboard, acoustic guitar, bass, light percussion",
     bpm_range: { min: 70, max: 85, ideal: 75 },
+    rhythm: "Arrocha",
     style_note: "Arrocha lento e melódico",
   },
   vanera: {
     instruments: "accordion, acoustic guitar, bass, drums",
     bpm_range: { min: 110, max: 130, ideal: 120 },
+    rhythm: "Vanera",
     style_note: "Vanera dançante",
   },
   modão: {
     instruments: "acoustic guitar, electric guitar, bass, drums, harmonica",
     bpm_range: { min: 85, max: 95, ideal: 90 },
+    rhythm: "Modão",
     style_note: "Modão tradicional",
   },
 
@@ -1040,11 +973,13 @@ export const SUB_GENRE_INSTRUMENTS = {
   xote: {
     instruments: "zabumba, triangle, accordion",
     bpm_range: { min: 100, max: 120, ideal: 110 },
+    rhythm: "Xote",
     style_note: "Xote tradicional",
   },
   baião: {
     instruments: "zabumba, triangle, accordion, guitar",
     bpm_range: { min: 120, max: 140, ideal: 130 },
+    rhythm: "Baião",
     style_note: "Baião animado",
   },
 
@@ -1052,11 +987,13 @@ export const SUB_GENRE_INSTRUMENTS = {
   "pagode 90": {
     instruments: "cavaquinho, pandeiro, tantã, surdo, acoustic guitar",
     bpm_range: { min: 95, max: 110, ideal: 100 },
+    rhythm: "Pagode 90",
     style_note: "Pagode anos 90",
   },
   "pagode romântico": {
     instruments: "cavaquinho, pandeiro, tantã, acoustic guitar",
     bpm_range: { min: 90, max: 105, ideal: 95 },
+    rhythm: "Pagode Romântico",
     style_note: "Pagode romântico",
   },
 } as const
@@ -1065,10 +1002,11 @@ export function detectSubGenre(additionalRequirements: string | undefined): {
   subGenre: string | null
   instruments: string | null
   bpm: number | null
+  rhythm: string | null
   styleNote: string | null
 } {
   if (!additionalRequirements) {
-    return { subGenre: null, instruments: null, bpm: null, styleNote: null }
+    return { subGenre: null, instruments: null, bpm: null, rhythm: null, styleNote: null }
   }
 
   const text = additionalRequirements.toLowerCase()
@@ -1079,10 +1017,32 @@ export function detectSubGenre(additionalRequirements: string | undefined): {
         subGenre,
         instruments: config.instruments,
         bpm: config.bpm_range.ideal,
+        rhythm: config.rhythm,
         styleNote: config.style_note,
       }
     }
   }
 
-  return { subGenre: null, instruments: null, bpm: null, styleNote: null }
+  return { subGenre: null, instruments: null, bpm: null, rhythm: null, styleNote: null }
+}
+
+export const GENRE_RHYTHMS = {
+  "Sertanejo Moderno Feminino": "Sertanejo Moderno",
+  "Sertanejo Moderno Masculino": "Sertanejo Moderno",
+  "Sertanejo Universitário": "Sertanejo Universitário",
+  "Sertanejo Raiz": "Toada",
+  "Forró Pé de Serra": "Forró Pé de Serra",
+  "Funk Carioca": "Funk Carioca",
+  "Funk Melody": "Funk Melody",
+  "Funk Consciente": "Funk Consciente",
+  "Pagode Romântico": "Pagode Romântico",
+  "Gospel Contemporâneo": "Gospel Pop",
+  MPB: "MPB",
+  Bachata: "Bachata",
+  Arrocha: "Arrocha",
+  Samba: "Samba de Raiz",
+} as const
+
+export function getGenreRhythm(genre: string): string {
+  return GENRE_RHYTHMS[genre as keyof typeof GENRE_RHYTHMS] || genre
 }

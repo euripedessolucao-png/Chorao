@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
-import { getGenreConfig, detectSubGenre } from "@/lib/genre-config"
+import { getGenreConfig, detectSubGenre, getGenreRhythm } from "@/lib/genre-config"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 
 export async function POST(request: NextRequest) {
@@ -20,6 +20,8 @@ export async function POST(request: NextRequest) {
 
     const genreConfig = getGenreConfig(genre)
     const subGenreInfo = detectSubGenre(additionalRequirements)
+    const defaultRhythm = getGenreRhythm(genre)
+    const finalRhythm = subGenreInfo.rhythm || defaultRhythm
 
     const lyricsContext = `
 LETRA EXISTENTE (CONTEXTO OBRIGATÓRIO):
@@ -75,6 +77,7 @@ TAREFA: Gere 5 variações de refrão aplicando TERCEIRA VIA.
 
 ESPECIFICAÇÕES:
 - Gênero: ${genre}
+- Ritmo: ${finalRhythm}
 - Tema: ${theme}
 - Humor: ${mood || "neutro"}
 

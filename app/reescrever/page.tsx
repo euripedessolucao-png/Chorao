@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
-import { RefreshCw, Save, Copy, Search, Loader2, Wand2, Star, Trophy } from "lucide-react"
+import { RefreshCw, Save, Copy, Search, Loader2, Star, Trophy, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { GENRE_CONFIGS } from "@/lib/genre-config"
 import { EMOTIONS } from "@/lib/genres"
@@ -25,7 +25,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { HookGenerator } from "@/components/hook-generator"
-import { Zap } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 const BRAZILIAN_GENRE_METRICS = {
   "Sertanejo Moderno": { syllablesPerLine: 6, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
@@ -84,6 +93,8 @@ export default function ReescreverPage() {
   const [showHookDialog, setShowHookDialog] = useState(false)
   const [selectedHook, setSelectedHook] = useState<string | null>(null)
   const [formattingStyle, setFormattingStyle] = useState("padrao")
+  const [showClearInputDialog, setShowClearInputDialog] = useState(false)
+  const [showClearOutputDialog, setShowClearOutputDialog] = useState(false)
 
   const toggleEmotion = (emotion: string) => {
     setSelectedEmotions((prev) => (prev.includes(emotion) ? prev.filter((e) => e !== emotion) : [...prev, emotion]))
@@ -273,6 +284,20 @@ export default function ReescreverPage() {
     toast.success("Hook adicionado aos requisitos!")
   }
 
+  const handleClearInput = () => {
+    setOriginalLyrics("")
+    setShowClearInputDialog(false)
+    toast.success("Letra original limpa!")
+  }
+
+  const handleClearOutput = () => {
+    setLyrics("")
+    setTitle("")
+    setChords("")
+    setShowClearOutputDialog(false)
+    toast.success("Resultado limpo!")
+  }
+
   return (
     <div className="bg-background">
       <Navigation />
@@ -288,7 +313,19 @@ export default function ReescreverPage() {
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <div className="space-y-2">
-                <Label className="text-xs">Cole sua letra</Label>
+                <div className="flex justify-between items-center">
+                  <Label className="text-xs">Cole sua letra</Label>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2"
+                    onClick={() => setShowClearInputDialog(true)}
+                    disabled={!originalLyrics}
+                  >
+                    <Trash2 className="h-3 w-3 mr-1" />
+                    <span className="text-xs">Limpar</span>
+                  </Button>
+                </div>
                 <Textarea
                   placeholder="Cole o rascunho da sua letra..."
                   value={originalLyrics}
@@ -554,7 +591,7 @@ export default function ReescreverPage() {
                   onClick={() => setShowHookDialog(true)}
                   disabled={isRewriting || isGeneratingChorus}
                 >
-                  <Zap className="h-4 w-4 mr-2" />
+                  <Trash2 className="h-4 w-4 mr-2" />
                   Gerador de Hook
                 </Button>
 
@@ -565,7 +602,7 @@ export default function ReescreverPage() {
                   onClick={handleGenerateChorus}
                   disabled={!genre || !theme || isRewriting || isGeneratingChorus}
                 >
-                  <Wand2 className="h-4 w-4 mr-2" />
+                  <Trash2 className="h-4 w-4 mr-2" />
                   Gerar Refrão
                 </Button>
 
@@ -649,6 +686,16 @@ export default function ReescreverPage() {
                     <Copy className="h-3 w-3 mr-1" />
                     Copiar
                   </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 bg-transparent"
+                    onClick={() => setShowClearOutputDialog(true)}
+                    disabled={!lyrics && !title && !chords}
+                  >
+                    <Trash2 className="h-3 w-3 mr-1" />
+                    Limpar
+                  </Button>
                   <Button size="sm" className="flex-1" onClick={handleSaveProject} disabled={!title || !lyrics}>
                     <Save className="h-3 w-3 mr-1" />
                     Salvar
@@ -659,31 +706,6 @@ export default function ReescreverPage() {
           </div>
         </div>
       </div>
-
-      <Dialog open={showHookDialog} onOpenChange={setShowHookDialog}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Gerador de Hook & Ganchômetro</DialogTitle>
-            <DialogDescription>
-              Analise sua letra e escolha o melhor hook entre 3 variações geradas pela Terceira Via
-            </DialogDescription>
-          </DialogHeader>
-          <HookGenerator
-            onSelectHook={handleSelectHook}
-            showSelectionMode={true}
-            initialLyrics={originalLyrics}
-            initialGenre={genre}
-          />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowHookDialog(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleApplyHook} disabled={!selectedHook}>
-              Adicionar aos Requisitos
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Dialog para Sugestões de Refrão */}
       <Dialog open={showChorusDialog} onOpenChange={setShowChorusDialog}>
@@ -752,6 +774,63 @@ export default function ReescreverPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog para Gerador de Hook */}
+      <Dialog open={showHookDialog} onOpenChange={setShowHookDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Gerador de Hook & Ganchômetro</DialogTitle>
+            <DialogDescription>
+              Analise sua letra e escolha o melhor hook entre 3 variações geradas pela Terceira Via
+            </DialogDescription>
+          </DialogHeader>
+          <HookGenerator
+            onSelectHook={handleSelectHook}
+            showSelectionMode={true}
+            initialLyrics={originalLyrics}
+            initialGenre={genre}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowHookDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleApplyHook} disabled={!selectedHook}>
+              Adicionar aos Requisitos
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmation Dialogs */}
+      <AlertDialog open={showClearInputDialog} onOpenChange={setShowClearInputDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Limpar letra original?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação irá limpar a letra colada. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleClearInput}>Limpar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showClearOutputDialog} onOpenChange={setShowClearOutputDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Limpar resultado?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação irá limpar o título, letra e acordes reescritos. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleClearOutput}>Limpar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

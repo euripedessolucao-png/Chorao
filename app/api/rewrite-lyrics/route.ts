@@ -67,52 +67,77 @@ export async function POST(request: Request) {
 
     const formatoEstrutura = isPerformanceMode
       ? `FORMATO DE SAÍDA OBRIGATÓRIO (MODO PERFORMÁTICO):
-Título: [título derivado do refrão - 2 a 4 palavras impactantes]
+NÃO INCLUA "Título:" no início - será adicionado automaticamente.
 
 [INTRO - Descrição detalhada da instrumentação, atmosfera e entrada musical]
 
 [VERSE 1 - Descrição da voz, instrumentação e ritmo]
-[primeiro verso completo - 4 linhas em português]
+[primeiro verso completo - 8 linhas em português]
+
+[PRE-CHORUS - Preparação emocional]
+[pré-refrão - 2-4 linhas em português]
 
 [CHORUS - Descrição da energia, instrumentos e dinâmica]
-[refrão completo em português]
-(Performance: [direções de palco se houver])
+[refrão completo - 4 linhas em português]
 
 [VERSE 2 - Descrição das mudanças musicais]
-[segundo verso completo em português]
+[segundo verso completo - 8 linhas em português]
+
+[PRE-CHORUS - Preparação emocional]
+[pré-refrão - 2-4 linhas em português]
+
+[CHORUS - Repete com mesma energia]
+[refrão completo - 4 linhas em português]
 
 [BRIDGE - Descrição da pausa dramática e mudança]
-[ponte completa em português]
+[ponte completa - 8 linhas em português]
+
+[SOLO - Descrição do solo instrumental, 8-16 segundos]
 
 [FINAL CHORUS - Descrição da energia máxima]
-[refrão final em português]
+[refrão final - 4 linhas em português]
 
 [OUTRO - Descrição do fade out e encerramento]
-[encerramento completo em português]
+[encerramento completo - 4 linhas em português]
 
-(Instruments: [lista completa de instrumentos em inglês] | BPM: ${metrics?.bpm || 100} | Style: ${generoConversao})`
+(Instrumentos: [lista completa de instrumentos em inglês] | BPM: ${metrics?.bpm || 100} | Ritmo: [ritmo específico] | Estilo: ${generoConversao})`
       : `FORMATO DE SAÍDA OBRIGATÓRIO:
-Título: [título derivado do refrão]
+NÃO INCLUA "Título:" no início - será adicionado automaticamente.
 
 [INTRO]
 [introdução em português]
 
-[VERSO 1]
-[primeiro verso completo em português]
+[VERSE 1]
+[primeiro verso completo - 8 linhas em português]
 
-[REFRÃO]
-[refrão principal completo em português]
+[PRE-CHORUS]
+[pré-refrão - 2-4 linhas em português]
 
-[VERSO 2]
-[segundo verso completo em português]
+[CHORUS]
+[refrão principal - 4 linhas em português]
 
-[PONTE]
-[transição em português]
+[VERSE 2]
+[segundo verso completo - 8 linhas em português]
+
+[PRE-CHORUS]
+[pré-refrão - 2-4 linhas em português]
+
+[CHORUS]
+[refrão repete - 4 linhas em português]
+
+[BRIDGE]
+[transição - 8 linhas em português]
+
+[SOLO]
+[momento instrumental]
+
+[FINAL CHORUS]
+[refrão final - 4 linhas em português]
 
 [OUTRO]
-[encerramento em português]
+[encerramento - 4 linhas em português]
 
-(Instruments: [lista de instrumentos] | BPM: ${metrics?.bpm || 100} | Style: ${generoConversao})`
+(Instrumentos: [lista de instrumentos] | BPM: ${metrics?.bpm || 100} | Ritmo: [ritmo específico] | Estilo: ${generoConversao})`
 
     const prompt = `${universalRulesPrompt}
 
@@ -249,6 +274,9 @@ Retorne apenas a letra formatada.`
       finalLyrics = text.trim()
     }
 
+    finalLyrics = finalLyrics.replace(/^(?:Título|Title):\s*.+$/gm, "").trim()
+    finalLyrics = finalLyrics.replace(/^\*\*(?:Título|Title):\s*.+\*\*$/gm, "").trim()
+
     const rhymeValidation = validateRhymesForGenre(finalLyrics, generoConversao)
 
     if (!rhymeValidation.valid) {
@@ -351,21 +379,19 @@ Apenas MELHORE as rimas mantendo o tema e personagens.
     }
 
     let extractedTitle = ""
-    const titleMatch = finalLyrics.match(/^Título:\s*(.+)$/m)
-    if (titleMatch?.[1]) {
-      extractedTitle = titleMatch[1].trim()
-    } else {
-      const chorusMatch = finalLyrics.match(/\[(?:CHORUS|REFRÃO)[^\]]*\]\s*\n([^\n]+)/i)
-      if (chorusMatch?.[1]) {
-        extractedTitle = chorusMatch[1].trim().split(" ").slice(0, 4).join(" ")
-        finalLyrics = `Título: ${extractedTitle}\n\n${finalLyrics}`
-      }
+    const chorusMatch = finalLyrics.match(/\[(?:CHORUS|REFRÃO)[^\]]*\]\s*\n([^\n]+)/i)
+    if (chorusMatch?.[1]) {
+      extractedTitle = chorusMatch[1].trim().split(" ").slice(0, 4).join(" ")
+    }
+
+    if (extractedTitle) {
+      finalLyrics = `Título: ${extractedTitle}\n\n${finalLyrics}`
     }
 
     if (!finalLyrics.includes("(Instruments:")) {
       const instrumentList = originalInstruments
-        ? `(Instruments: [${originalInstruments}] | BPM: ${metrics?.bpm || 100} | Style: ${generoConversao})`
-        : `(Instruments: [${isBachata ? "electric guitar, synthesizer, electronic drums, accordion" : "guitar, bass, drums, keyboard"}] | BPM: ${metrics?.bpm || 100} | Style: ${generoConversao})`
+        ? `(Instruments: [${originalInstruments}] | BPM: ${metrics?.bpm || 100} | Ritmo: [ritmo específico] | Estilo: ${generoConversao})`
+        : `(Instruments: [${isBachata ? "electric guitar, synthesizer, electronic drums, accordion" : "guitar, bass, drums, keyboard"}] | BPM: ${metrics?.bpm || 100} | Ritmo: [ritmo específico] | Estilo: ${generoConversao})`
 
       finalLyrics = finalLyrics.trim() + "\n\n" + instrumentList
     }

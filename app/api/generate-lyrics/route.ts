@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
-import { getGenreConfig, detectSubGenre } from "@/lib/genre-config"
+import { getGenreConfig, detectSubGenre, getGenreRhythm } from "@/lib/genre-config"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 
 export async function POST(request: NextRequest) {
@@ -28,6 +28,8 @@ export async function POST(request: NextRequest) {
     const isBachata = genero.toLowerCase().includes("bachata")
 
     const subGenreInfo = detectSubGenre(additionalRequirements)
+    const defaultRhythm = getGenreRhythm(genero)
+    const finalRhythm = subGenreInfo.rhythm || defaultRhythm
 
     const universalRules = `
 🎵 REGRAS UNIVERSAIS DO SISTEMA
@@ -64,15 +66,16 @@ export async function POST(request: NextRequest) {
     const structureGuide = `
 ESTRUTURA COMERCIAL (3:30 de duração):
 [INTRO] (instrumental, 8-12 segundos)
-[VERSE 1] (4 linhas empilhadas)
-[PRE-CHORUS] (2 linhas) - preparação emocional
-[CHORUS] (2-4 linhas) - grudento e memorável
-[VERSE 2] (4 linhas) - desenvolve a história
-[PRE-CHORUS] (2 linhas)
-[CHORUS] (repete)
-[BRIDGE] (2-4 linhas) - momento de reflexão
-[CHORUS] (repete)
-[OUTRO] (fade out ou hook final)
+[VERSE 1] (8 linhas empilhadas) - estabelece a história
+[PRE-CHORUS] (2-4 linhas) - preparação emocional
+[CHORUS] (4 linhas) - grudento e memorável
+[VERSE 2] (8 linhas) - desenvolve a história
+[PRE-CHORUS] (2-4 linhas)
+[CHORUS] (4 linhas) - repete
+[BRIDGE] (8 linhas) - momento de reflexão profunda
+[SOLO] (instrumental, 8-16 segundos) - momento instrumental
+[FINAL CHORUS] (4 linhas) - repete com mais intensidade
+[OUTRO] (4 linhas ou fade out)
 `
 
     const performanceInstructions = isPerformanceMode
@@ -80,11 +83,11 @@ ESTRUTURA COMERCIAL (3:30 de duração):
 - Adicione descrições: (sobe o tom), (pausa dramática), (repete 2x)
 - Momentos instrumentais: [GUITAR SOLO], [DRUM BREAK]
 - Dinâmicas: (suave), (crescendo), (explosivo)
-- Final: (Instruments: [${subGenreInfo.instruments || (isBachata ? "electric guitar, synthesizer, electronic drums, accordion" : "guitar, bass, drums, keyboard")}] | BPM: ${subGenreInfo.bpm || metrics?.bpm || 100} | Style: ${genero}${subGenreInfo.subGenre ? ` - ${subGenreInfo.styleNote}` : ""})`
+- Final: (Instrumentos: [${subGenreInfo.instruments || (isBachata ? "electric guitar, synthesizer, electronic drums, accordion" : "guitar, bass, drums, keyboard")}] | BPM: ${subGenreInfo.bpm || metrics?.bpm || 100} | Ritmo: ${finalRhythm} | Estilo: ${genero})`
       : `\n\nFORMATO PADRÃO:
 - Marcadores em inglês: [INTRO], [VERSE], [CHORUS], [BRIDGE], [OUTRO]
-- Letra limpa e direta
-- Final: (Instruments: [${subGenreInfo.instruments || (isBachata ? "electric guitar, synthesizer, electronic drums, accordion" : "guitar, bass, drums, keyboard")}] | BPM: ${subGenreInfo.bpm || metrics?.bpm || 100} | Style: ${genero}${subGenreInfo.subGenre ? ` - ${subGenreInfo.styleNote}` : ""})`
+- Letra limpa e direta em português brasileiro
+- Final: (Instrumentos: [${subGenreInfo.instruments || (isBachata ? "electric guitar, synthesizer, electronic drums, accordion" : "guitar, bass, drums, keyboard")}] | BPM: ${subGenreInfo.bpm || metrics?.bpm || 100} | Ritmo: ${finalRhythm} | Estilo: ${genero})`
 
     const prompt = `${universalRules}
 
@@ -129,26 +132,20 @@ Escreva a letra completa agora, aplicando Terceira Via em cada verso:`
 
     let finalLyrics = text.trim()
 
+    finalLyrics = finalLyrics.replace(/^(?:Título|Title):\s*.+$/gm, "").trim()
+    finalLyrics = finalLyrics.replace(/^\*\*(?:Título|Title):\s*.+\*\*$/gm, "").trim()
+
     let extractedTitle = titulo || ""
-    const titleMatch = finalLyrics.match(/^Title:\s*(.+)$/m)
-    if (titleMatch?.[1]) {
-      extractedTitle = titleMatch[1].trim()
-    } else if (!extractedTitle) {
+
+    if (!extractedTitle) {
       const chorusMatch = finalLyrics.match(/\[(?:CHORUS|REFRÃO)[^\]]*\]\s*\n([^\n]+)/i)
       if (chorusMatch?.[1]) {
         extractedTitle = chorusMatch[1].trim().split(" ").slice(0, 4).join(" ")
-        finalLyrics = `Title: ${extractedTitle}\n\n${finalLyrics}`
       }
     }
 
-    if (isPerformanceMode && !finalLyrics.includes("(Instruments:")) {
-      const instruments =
-        subGenreInfo.instruments ||
-        (isBachata ? "electric guitar, synthesizer, electronic drums, accordion" : "guitar, bass, drums, keyboard")
-      const bpm = subGenreInfo.bpm || metrics?.bpm || 100
-      const style = subGenreInfo.subGenre ? `${genero} - ${subGenreInfo.styleNote}` : genero
-
-      finalLyrics += `\n\n(Instruments: [${instruments}] | BPM: ${bpm} | Style: ${style})`
+    if (extractedTitle) {
+      finalLyrics = `Título: ${extractedTitle}\n\n${finalLyrics}`
     }
 
     finalLyrics = capitalizeLines(finalLyrics)

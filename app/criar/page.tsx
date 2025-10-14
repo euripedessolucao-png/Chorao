@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
-import { Sparkles, Save, Search, Loader2, Zap, Copy } from "lucide-react"
+import { Sparkles, Save, Search, Loader2, Zap, Copy, Trash2 } from "lucide-react"
 import { GENRE_CONFIGS } from "@/lib/genre-config"
 import { toast } from "sonner"
 import {
@@ -27,6 +27,16 @@ import { Star, Trophy, Wand2 } from "lucide-react"
 import { EMOTIONS } from "@/lib/genres"
 import { GenreSelect } from "@/components/genre-select"
 import { HookGenerator } from "@/components/hook-generator"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 const BRAZILIAN_GENRE_METRICS = {
   "Sertanejo Moderno": { syllablesPerLine: 6, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
@@ -85,6 +95,7 @@ export default function CriarPage() {
   const [showHookDialog, setShowHookDialog] = useState(false)
   const [selectedHook, setSelectedHook] = useState<string | null>(null)
   const [formattingStyle, setFormattingStyle] = useState("padrao")
+  const [showClearDialog, setShowClearDialog] = useState(false)
 
   const toggleEmotion = (emotion: string) => {
     setSelectedEmotions((prev) => (prev.includes(emotion) ? prev.filter((e) => e !== emotion) : [...prev, emotion]))
@@ -252,6 +263,14 @@ export default function CriarPage() {
     setShowHookDialog(false)
 
     toast.success("Hook adicionado aos requisitos!")
+  }
+
+  const handleClearLyrics = () => {
+    setLyrics("")
+    setTitle("")
+    setChords("")
+    setShowClearDialog(false)
+    toast.success("Letra limpa com sucesso!")
   }
 
   const renderStars = (score: number) => {
@@ -638,6 +657,16 @@ export default function CriarPage() {
                     <Copy className="h-3 w-3 mr-1" />
                     Copiar
                   </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 bg-transparent"
+                    onClick={() => setShowClearDialog(true)}
+                    disabled={!lyrics && !title && !chords}
+                  >
+                    <Trash2 className="h-3 w-3 mr-1" />
+                    Limpar
+                  </Button>
                   <Button size="sm" className="flex-1" onClick={handleSaveProject} disabled={!title || !lyrics}>
                     <Save className="h-3 w-3 mr-1" />
                     Salvar
@@ -736,6 +765,22 @@ export default function CriarPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog para Limpar Letra */}
+      <AlertDialog open={showClearDialog} onOpenChange={setShowClearDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Limpar letra?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação irá limpar o título, letra e acordes. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleClearLyrics}>Limpar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
