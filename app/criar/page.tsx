@@ -68,6 +68,7 @@ export default function CriarPage() {
   const [avoidWords, setAvoidWords] = useState("")
   const [additionalReqs, setAdditionalReqs] = useState("")
   const [useDiary, setUseDiary] = useState(true)
+  const [advancedMode, setAdvancedMode] = useState(false)
   const [creativity, setCreativity] = useState([50])
   const [inspirationText, setInspirationText] = useState("")
   const [literaryGenre, setLiteraryGenre] = useState("")
@@ -114,7 +115,8 @@ export default function CriarPage() {
           emocoes: selectedEmotions,
           titulo: title,
           formattingStyle: formattingStyle,
-          additionalRequirements: additionalReqs, // Enviando requisitos adicionais
+          additionalRequirements: additionalReqs,
+          advancedMode: advancedMode,
           metrics:
             BRAZILIAN_GENRE_METRICS[genre as keyof typeof BRAZILIAN_GENRE_METRICS] || BRAZILIAN_GENRE_METRICS.default,
         }),
@@ -179,6 +181,7 @@ export default function CriarPage() {
           genre,
           theme,
           mood,
+          advancedMode: advancedMode,
         }),
       })
 
@@ -369,6 +372,22 @@ export default function CriarPage() {
                   </Label>
                   <p className="text-xs text-muted-foreground">
                     Inclui automaticamente todas as inspirações salvas no seu diário na geração da letra.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-2">
+                <Checkbox
+                  id="advancedMode"
+                  checked={advancedMode}
+                  onCheckedChange={(checked) => setAdvancedMode(checked as boolean)}
+                />
+                <div>
+                  <Label htmlFor="advancedMode" className="text-xs cursor-pointer font-semibold">
+                    Modo Avançado
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Rimas perfeitas, métrica e ganchos premium em PT-BR, linguagem limpa e fidelidade de estilo.
                   </p>
                 </div>
               </div>

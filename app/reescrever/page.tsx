@@ -66,6 +66,7 @@ export default function ReescreverPage() {
   const [avoidWords, setAvoidWords] = useState("")
   const [additionalReqs, setAdditionalReqs] = useState("")
   const [useDiary, setUseDiary] = useState(true)
+  const [advancedMode, setAdvancedMode] = useState(false)
   const [creativity, setCreativity] = useState([50])
   const [inspirationText, setInspirationText] = useState("")
   const [literaryGenre, setLiteraryGenre] = useState("")
@@ -114,6 +115,7 @@ export default function ReescreverPage() {
           mood,
           lyrics: originalLyrics,
           additionalRequirements: additionalReqs,
+          advancedMode: advancedMode,
         }),
       })
 
@@ -206,7 +208,8 @@ export default function ReescreverPage() {
           conservarImagens: true,
           polirSemMexer: false,
           formattingStyle: formattingStyle,
-          additionalRequirements: additionalReqs, // Enviando requisitos adicionais
+          additionalRequirements: additionalReqs,
+          advancedMode: advancedMode,
           metrics:
             BRAZILIAN_GENRE_METRICS[genre as keyof typeof BRAZILIAN_GENRE_METRICS] || BRAZILIAN_GENRE_METRICS.default,
         }),
@@ -408,6 +411,22 @@ export default function ReescreverPage() {
                   </Label>
                   <p className="text-xs text-muted-foreground">
                     Inclui automaticamente todas as inspirações salvas no seu diário na reescrita.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-2">
+                <Checkbox
+                  id="advancedMode"
+                  checked={advancedMode}
+                  onCheckedChange={(checked) => setAdvancedMode(checked as boolean)}
+                />
+                <div>
+                  <Label htmlFor="advancedMode" className="text-xs cursor-pointer font-semibold">
+                    Modo Avançado
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Rimas perfeitas, métrica e ganchos premium em PT-BR, linguagem limpa e fidelidade de estilo.
                   </p>
                 </div>
               </div>

@@ -39,25 +39,35 @@ ${subGenreInfo.subGenre ? `- Seguir o ritmo de ${subGenreInfo.styleNote}` : ""}
     const universalRules = `
 🎵 REGRAS UNIVERSAIS - TERCEIRA VIA
 
-1. LINGUAGEM SIMPLES E BRASILEIRA
-   - Palavras do dia-a-dia, coloquiais
-   - PROIBIDO: rebuscado, poético, literário
-   - PERMITIDO: gírias, contrações ("tô", "cê", "pra")
+PRIORIDADES (EM ORDEM):
+1. FRASES COMPLETAS E COERENTES (NUNCA corte frases no meio)
+2. LINGUAGEM SIMPLES E BRASILEIRA
+3. MÉTRICA NATURAL (ideal 8-12 sílabas, mas frases completas são mais importantes)
+4. EMOÇÃO E GANCHO MEMORÁVEL
 
-2. MÉTRICA (12 SÍLABAS MÁXIMO - REGRA ABSOLUTA)
-   - Cada verso cabe em um fôlego natural
-   - MÁXIMO 12 SÍLABAS POÉTICAS (INVIOLÁVEL)
-   - Se necessário, simplifique para respeitar o limite
-   - Versos empilhados (um por linha)
+LINGUAGEM:
+- Palavras do dia-a-dia, coloquiais
+- PROIBIDO: rebuscado, poético, literário
+- PERMITIDO: gírias, contrações ("tô", "cê", "pra")
 
-3. PROCESSO TERCEIRA VIA PARA REFRÃO
-   - (A) Métrica/Ritmo: fluidez e respiração (máx 12 sílabas)
-   - (B) Emoção/Gancho: memorável e autêntico
-   - (C) Síntese: combine A+B = refrão grudento (RESPEITANDO 12 sílabas)
-   
+MÉTRICA (GUIDELINE, NÃO REGRA ABSOLUTA):
+- Ideal: 8-12 sílabas por verso
+- Cada verso cabe em um fôlego natural
+- Se necessário ultrapassar 12 sílabas para completar a frase, FAÇA
+- NUNCA corte uma frase no meio para respeitar sílabas
+- Versos empilhados (um por linha)
+
+PROCESSO TERCEIRA VIA PARA REFRÃO:
+- (A) Métrica/Ritmo: fluidez e respiração natural
+- (B) Emoção/Gancho: memorável, autêntico e grudento
+- (C) Síntese: combine A+B = refrão comercial perfeito
+
 IMPORTANTE NA SÍNTESE (C):
-- NUNCA exceda 12 sílabas, mesmo que precise cortar palavras
-- Priorize: 1º Limite de sílabas, 2º Emoção, 3º Rima
+- Priorize frases completas e coerentes
+- Cada linha deve fazer sentido sozinha
+- NUNCA deixe frases pela metade
+- Exemplo ERRADO: "Você me faz" (incompleto)
+- Exemplo CERTO: "Você me faz sonhar" (completo)
 `
 
     const metaforasRule = additionalRequirements
@@ -82,21 +92,22 @@ ESPECIFICAÇÕES:
 - Humor: ${mood || "neutro"}
 
 PROCESSO PARA CADA VARIAÇÃO:
-1. Gere versão (A): foco em MÉTRICA e FLUIDEZ (máx 12 sílabas/verso)
-2. Gere versão (B): foco em EMOÇÃO e GANCHO (memorável, autêntico)
+1. Gere versão (A): foco em MÉTRICA e FLUIDEZ natural
+2. Gere versão (B): foco em EMOÇÃO e GANCHO memorável
 3. Síntese (C): combine o melhor de A e B = refrão final
-   ATENÇÃO: A síntese NUNCA pode exceder 12 sílabas por verso
-   Se necessário, simplifique palavras ou use contrações
+   ATENÇÃO: Cada linha DEVE ser uma frase completa e coerente
+   NUNCA corte frases no meio para respeitar sílabas
 
 REGRAS ESTRUTURAIS:
 - 2 ou 4 linhas por refrão (NUNCA 3)
 - Versos empilhados (um por linha)
 - Máximo 4 linhas total
+- CADA LINHA DEVE SER UMA FRASE COMPLETA
 - CRIATIVIDADE: cada opção deve ser ÚNICA
 
 REGRAS DE PROSÓDIA (${genreConfig.name}):
 - Com vírgula: máx ${genreConfig.prosody_rules.syllable_count.with_comma.max_before_comma} sílabas antes, ${genreConfig.prosody_rules.syllable_count.with_comma.max_after_comma} depois
-- Sem vírgula: ${genreConfig.prosody_rules.syllable_count.without_comma.min}-${genreConfig.prosody_rules.syllable_count.without_comma.max} sílabas
+- Sem vírgula: ${genreConfig.prosody_rules.syllable_count.without_comma.min}-${genreConfig.prosody_rules.syllable_count.without_comma.max} sílabas (ideal, não absoluto)
 
 DIVERSIDADE CRIATIVA (OBRIGATÓRIA):
 - Opção 1: Chiclete radiofônico (repetição estratégica)
@@ -109,7 +120,7 @@ FORMATO JSON:
 {
   "variations": [
     {
-      "chorus": "linha 1\\nlinha 2\\nlinha 3\\nlinha 4",
+      "chorus": "linha 1 completa\\nlinha 2 completa\\nlinha 3 completa\\nlinha 4 completa",
       "style": "Descrição do estilo",
       "score": 1-10,
       "justification": "Por que funciona comercialmente",
@@ -129,6 +140,8 @@ IMPORTANTE:
 - Scores entre 7-10
 - Melhor opção: score 9-10
 - Use "\\n" para separar linhas
+- CADA LINHA DEVE SER UMA FRASE COMPLETA E COERENTE
+- NUNCA corte frases no meio
 
 Gere as 5 variações CRIATIVAS agora:`
 

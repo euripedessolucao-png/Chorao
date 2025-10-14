@@ -11,6 +11,15 @@ import { buildUniversalRulesPrompt } from "@/lib/rules/universal-rules"
 export async function POST(request: Request) {
   try {
     const body = await request.json()
+
+    if (!body.letraOriginal || body.letraOriginal.trim().length === 0) {
+      return NextResponse.json({ error: "Letra original é obrigatória para reescrita" }, { status: 400 })
+    }
+
+    if (!body.generoConversao) {
+      return NextResponse.json({ error: "Gênero é obrigatório para reescrita" }, { status: 400 })
+    }
+
     const {
       letraOriginal,
       generoConversao,
@@ -158,11 +167,12 @@ ${polirSemMexer ? "- MANTENHA a estrutura original, apenas aprimorando rimas e p
 - Preserve a mensagem emocional central EXATAMENTE
 - Mantenha os mesmos personagens e situações
 - Adapte o vocabulário para ${generoConversao}
-- ESCREVA VERSOS COMPLETOS (não apenas palavras soltas)
-- Cada linha deve ser uma frase completa e coerente
+- ESCREVA FRASES COMPLETAS E COERENTES (não corte frases no meio)
+- Cada linha deve ser uma frase completa ou parte natural de uma frase maior
 - NUNCA concatene palavras (ex: "nãsãnossas" está ERRADO, use "não são nossas")
 - SEMPRE escreva palavras completas e corretas
-${isBachata ? "- RESPEITE O LIMITE DE 12 SÍLABAS POR LINHA (máximo absoluto)" : ""}
+- PRIORIZE frases completas sobre limite de sílabas
+${isBachata ? "- IDEAL: 8-12 sílabas por linha (mas frases completas são mais importantes)" : ""}
 ${hasPerformanceMode ? "- MANTENHA as descrições performáticas detalhadas entre colchetes" : ""}
 ${originalInstruments ? `- INCLUA a lista de instrumentos no final: ${originalInstruments}` : ""}${metricInfo}
 
@@ -200,12 +210,15 @@ IMPORTANTE:
 - Mantenha a MESMA história e personagens
 - A LETRA COMPLETA (parte cantada) deve ser SEMPRE em PORTUGUÊS
 - INSTRUÇÕES e INSTRUMENTOS em INGLÊS
-- ESCREVA VERSOS COMPLETOS, não apenas palavras soltas
+- ESCREVA FRASES COMPLETAS E COERENTES
+- NUNCA corte frases no meio para respeitar sílabas
 - NUNCA concatene ou quebre palavras
 - SEMPRE escreva frases completas e gramaticalmente corretas
-${isBachata ? "- CADA LINHA DEVE TER NO MÁXIMO 12 SÍLABAS" : ""}
+${isBachata ? "- IDEAL: 8-12 sílabas por linha (mas frases completas têm prioridade)" : ""}
 - SEMPRE inclua a lista de instrumentos no final
 - Retorne APENAS a letra formatada completa, sem comentários adicionais.`
+
+    console.log("[v0] Iniciando reescrita de letra...")
 
     const { text } = await generateText({
       model: "openai/gpt-4o",
@@ -232,7 +245,6 @@ ${isBachata ? "- CADA LINHA DEVE TER NO MÁXIMO 12 SÍLABAS" : ""}
       console.error("[v0] ❌ API recusou o pedido. Tentando com prompt sanitizado...")
       console.error("[v0] 📝 Resposta da API:", text.substring(0, 200))
 
-      // Tentar novamente com prompt mais simples e sanitizado
       const simplifiedPrompt = `Você é um compositor profissional de ${generoConversao}.
 
 Reescreva esta letra mantendo a mensagem emocional:
@@ -242,7 +254,8 @@ ${letraOriginal}
 Instruções:
 - Mantenha o tema e emoção
 - Use linguagem natural e poética
-- Escreva versos completos
+- Escreva frases completas e coerentes
+- NUNCA corte frases no meio
 - Formato: Título, versos, refrão, ponte
 - Inclua instrumentos no final
 
@@ -268,7 +281,6 @@ Retorne apenas a letra formatada.`
         )
       }
 
-      // Se a segunda tentativa funcionou, usar esse resultado
       finalLyrics = retryText.trim()
     } else {
       finalLyrics = text.trim()
@@ -276,6 +288,7 @@ Retorne apenas a letra formatada.`
 
     finalLyrics = finalLyrics.replace(/^(?:Título|Title):\s*.+$/gm, "").trim()
     finalLyrics = finalLyrics.replace(/^\*\*(?:Título|Title):\s*.+\*\*$/gm, "").trim()
+    finalLyrics = finalLyrics.replace(/^#+\s*(?:Título|Title):\s*.+$/gm, "").trim()
 
     const rhymeValidation = validateRhymesForGenre(finalLyrics, generoConversao)
 
@@ -398,6 +411,8 @@ Apenas MELHORE as rimas mantendo o tema e personagens.
 
     finalLyrics = capitalizeLines(finalLyrics)
 
+    console.log("[v0] ✅ Reescrita concluída com sucesso")
+
     return NextResponse.json({
       letra: finalLyrics,
       titulo: extractedTitle,
@@ -405,14 +420,15 @@ Apenas MELHORE as rimas mantendo o tema e personagens.
       rhymeWarnings: rhymeValidation.warnings,
     })
   } catch (error) {
-    console.error("[v0] Error rewriting lyrics:", error)
+    console.error("[v0] ❌ Error rewriting lyrics:", error)
 
     const errorMessage = error instanceof Error ? error.message : "Erro desconhecido"
 
     return NextResponse.json(
       {
-        error: "Erro ao reescrever letra.",
+        error: "Erro ao reescrever letra",
         details: errorMessage,
+        suggestion: "Tente novamente ou simplifique a letra original",
       },
       { status: 500 },
     )
