@@ -142,9 +142,9 @@ function findLastTonicSyllable(line: string): number {
 }
 
 /**
- * Valida se uma linha respeita o limite de 10 sílabas
+ * Valida se uma linha respeita o limite de 12 sílabas
  */
-export function validateSyllableLimit(line: string, maxSyllables = 10): boolean {
+export function validateSyllableLimit(line: string, maxSyllables = 12): boolean {
   const count = countPoeticSyllables(line)
   return count <= maxSyllables
 }
