@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     }
 
     const genreConfig = genre ? getGenreConfig(genre) : null
-    const subGenreInfo = detectSubGenre(additionalRequirements)
+    const subGenreInfo = detectSubGenre(additionalRequirements || "")
     const defaultRhythm = genre ? getGenreRhythm(genre) : "Brasileiro"
     const finalRhythm = subGenreInfo.rhythm || defaultRhythm
 
@@ -194,14 +194,27 @@ Retorne APENAS o JSON, sem markdown.`
     const { text } = await generateText({
       model: "openai/gpt-4o",
       prompt: prompt,
-      temperature: 0.9, // Alta criatividade para hooks virais
+      temperature: 0.85, // Alta criatividade para hooks virais
+      maxTokens: 2000, // Added token limit to prevent excessive generation
     })
 
-    const cleanText = text
-      .replace(/```json\n?/g, "")
-      .replace(/```\n?/g, "")
-      .trim()
-    const parsedResult = JSON.parse(cleanText)
+    let parsedResult
+    try {
+      const cleanText = text
+        .replace(/```json\n?/g, "")
+        .replace(/```\n?/g, "")
+        .trim()
+      parsedResult = JSON.parse(cleanText)
+    } catch (parseError) {
+      console.error("[v0] ❌ Erro ao fazer parse do JSON:", parseError)
+      console.error("[v0] Texto recebido:", text)
+      return NextResponse.json({ error: "Erro ao processar resposta da IA. Tente novamente." }, { status: 500 })
+    }
+
+    if (!parsedResult.hook) {
+      console.error("[v0] ❌ Hook não encontrado na resposta")
+      return NextResponse.json({ error: "Hook não foi gerado corretamente. Tente novamente." }, { status: 500 })
+    }
 
     if (parsedResult.hook) {
       parsedResult.hook = capitalizeLines(parsedResult.hook)
@@ -223,6 +236,7 @@ Retorne APENAS o JSON, sem markdown.`
     return NextResponse.json(parsedResult)
   } catch (error) {
     console.error("[v0] ❌ Erro ao gerar hook:", error)
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 })
+    const errorMessage = error instanceof Error ? error.message : "Erro desconhecido"
+    return NextResponse.json({ error: `Erro ao gerar hook: ${errorMessage}. Tente novamente.` }, { status: 500 })
   }
 }

@@ -40,12 +40,26 @@ ${subGenreInfo.subGenre ? `- Seguir o ritmo de ${subGenreInfo.styleNote}` : ""}
     const universalRules = `
 🎯 FÓRMULA DE REFRÃO DE SUCESSO 2024-2025
 
+⚠️ FORMATO DE VERSOS EMPILHADOS (OBRIGATÓRIO):
+- Cada verso do refrão em uma linha separada
+- NUNCA junte dois versos na mesma linha
+- Use "\\n" para separar as linhas no JSON
+- Facilita contagem de versos e sílabas
+- Formato padrão brasileiro de composição
+
+EXEMPLO CORRETO:
+"chorus": "Cê me testa, olha e sorri\\nSaudade é punhal no peito\\nTô no meu flow\\nVocê me faz sonhar"
+
+EXEMPLO ERRADO (NÃO FAÇA):
+"chorus": "Cê me testa, olha e sorri, saudade é punhal no peito"
+
 PRIORIDADE ABSOLUTA:
 1. GANCHO GRUDENTO (primeira linha deve grudar na cabeça)
 2. FRASES COMPLETAS E COERENTES (NUNCA corte no meio)
 3. LINGUAGEM COLOQUIAL BRASILEIRA INTENSA
 4. FÁCIL DE CANTAR JUNTO (karaokê-friendly)
 5. REPETIÇÃO ESTRATÉGICA de palavras-chave
+6. CADA VERSO EM UMA LINHA SEPARADA
 
 CARACTERÍSTICAS DE HIT:
 - Máximo 4 linhas, cada uma com 8-10 sílabas
@@ -53,17 +67,18 @@ CARACTERÍSTICAS DE HIT:
 - Palavras do dia-a-dia ("cê", "tô", "pra", "né")
 - Cada linha faz sentido sozinha
 - Melodia implícita grudenta
+- CADA LINHA SEPARADA POR \\n
 
-EXEMPLOS DE HITS 2024-2025:
-✓ "Cê me testa, olha e sorri" (direto, visual, grudento)
-✓ "Saudade é punhal cravado no peito" (metáfora concreta, impactante)
-✓ "Tô no meu flow, meu beat é pesado" (confiante, repetitivo)
+EXEMPLOS DE HITS 2024-2025 (formato empilhado):
+✓ "Cê me testa, olha e sorri\\nSaudade é punhal no peito\\nTô no meu flow\\nVocê me faz sonhar"
+✓ "Se quer saber de mim\\nPergunte para mim\\nSe for falar do que passou\\nConta a parte que você errou"
 
 EVITE:
 ✗ Frases incompletas ("Você me faz..." - ERRADO)
 ✗ Vocabulário rebuscado ("floresço", "bonança")
 ✗ Abstrações vagas ("mar de dor", "alma perdida")
 ✗ Rimas forçadas que quebram naturalidade
+✗ Juntar versos na mesma linha
 `
 
     const advancedModeRules = advancedMode

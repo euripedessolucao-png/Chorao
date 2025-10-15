@@ -114,50 +114,72 @@ FIDELIDADE DE ESTILO:
     const structureGuide = `
 📊 ESTRUTURA COMERCIAL OTIMIZADA (3:00-3:30 minutos para streaming)
 
+⚠️ FORMATO DE VERSOS EMPILHADOS (OBRIGATÓRIO):
+- Cada verso em uma linha separada
+- NUNCA junte dois versos na mesma linha
+- Exceção: apenas quando o segundo verso é continuação DIRETA do primeiro
+- Facilita contagem de versos e sílabas
+- Formato padrão brasileiro de composição
+
+EXEMPLO CORRETO (versos empilhados):
+Se quer saber de mim
+Pergunte para mim
+Se for falar do que passou
+Conta a parte que você errou
+
+EXEMPLO ERRADO (NÃO FAÇA):
+Se quer saber de mim, pergunte para mim
+Se for falar do que passou, conta a parte que você errou
+
 [INTRO] (8-12 segundos instrumental)
 Instrução: [INTRO - Instrumental suave com ${subGenreInfo.instruments || "instrumentos principais"}, estabelecendo o clima]
 
-[VERSE 1] (8 linhas empilhadas)
+[VERSE 1] (8 linhas empilhadas - uma por linha)
 Instrução: [VERSE 1 - Voz ${genero.includes("Funk") ? "confiante e direta" : "suave e narrativa"}, estabelecendo a história com detalhes concretos]
 - Apresenta personagens, situação, contexto
 - Linguagem coloquial intensa
 - Cenas visuais claras
+- CADA VERSO EM UMA LINHA SEPARADA
 
-[PRE-CHORUS] (2-4 linhas)
+[PRE-CHORUS] (2-4 linhas empilhadas)
 Instrução: [PRE-CHORUS - Energia crescente, preparando emocionalmente para o refrão]
 - Transição suave para o refrão
 - Aumenta tensão emocional
+- CADA VERSO EM UMA LINHA SEPARADA
 
-[CHORUS] (4 linhas - O MOMENTO MAIS IMPORTANTE)
+[CHORUS] (4 linhas empilhadas - O MOMENTO MAIS IMPORTANTE)
 Instrução: [CHORUS - Energia máxima, grudento, fácil de cantar junto, repete palavras-chave]
 - GANCHO na primeira linha
 - Máximo 8-10 sílabas por linha
 - Ultra-memorável
+- CADA VERSO EM UMA LINHA SEPARADA
 
-[VERSE 2] (8 linhas)
+[VERSE 2] (8 linhas empilhadas)
 Instrução: [VERSE 2 - Desenvolve a história, novos detalhes, mantém energia]
 - Avança a narrativa
 - Novos ângulos da história
+- CADA VERSO EM UMA LINHA SEPARADA
 
-[PRE-CHORUS] (2-4 linhas - repete ou varia levemente)
+[PRE-CHORUS] (2-4 linhas empilhadas - repete ou varia levemente)
 Instrução: [PRE-CHORUS - Energia crescente novamente]
 
-[CHORUS] (4 linhas - repete exatamente)
+[CHORUS] (4 linhas empilhadas - repete exatamente)
 Instrução: [CHORUS - Repete com mesma energia, público já canta junto]
 
-[BRIDGE] (8 linhas)
+[BRIDGE] (8 linhas empilhadas)
 Instrução: [BRIDGE - Momento de reflexão profunda, pode ter solo de ${subGenreInfo.instruments?.split(",")[0] || "guitarra"}, mudança de perspectiva]
 - Quebra o padrão
 - Reflexão ou clímax emocional
 - Prepara para final explosivo
+- CADA VERSO EM UMA LINHA SEPARADA
 
 [SOLO] (8-16 segundos instrumental)
 Instrução: [SOLO - Instrumental de ${subGenreInfo.instruments?.split(",")[0] || "guitarra"}, momento de virtuosismo]
 
-[FINAL CHORUS] (4 linhas - repete com MAIS intensidade)
+[FINAL CHORUS] (4 linhas empilhadas - repete com MAIS intensidade)
 Instrução: [FINAL CHORUS - Energia MÁXIMA, todos os instrumentos, público cantando junto, apoteose]
 
-[OUTRO] (4 linhas ou fade out)
+[OUTRO] (4 linhas empilhadas ou fade out)
 Instrução: [OUTRO - Fade out suave ou frase final marcante, deixa saudade]
 
 (Instrumentos: [${subGenreInfo.instruments || (isBachata ? "electric guitar, synthesizer, electronic drums, accordion" : "guitar, bass, drums, keyboard")}] | BPM: ${subGenreInfo.bpm || metrics?.bpm || 100} | Ritmo: ${finalRhythm} | Estilo: ${genero})

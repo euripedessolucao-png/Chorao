@@ -110,47 +110,63 @@ export async function POST(request: Request) {
     const formatoEstrutura = `
 📊 FORMATO DE SAÍDA (3:00-3:30 minutos)
 
+⚠️ FORMATO DE VERSOS EMPILHADOS (OBRIGATÓRIO):
+- Cada verso em uma linha separada
+- NUNCA junte dois versos na mesma linha
+- Exceção: apenas quando o segundo verso é continuação DIRETA do primeiro
+- Facilita contagem de versos e sílabas
+- Formato padrão brasileiro de composição
+
+EXEMPLO CORRETO (versos empilhados):
+Se quer saber de mim
+Pergunte para mim
+Se for falar do que passou
+Conta a parte que você errou
+
+EXEMPLO ERRADO (NÃO FAÇA):
+Se quer saber de mim, pergunte para mim
+
 [INTRO] (8-12 segundos)
 Instrução: [INTRO - ${subGenreInfo.instruments || "instrumentos principais"}, estabelecendo clima]
 
-[VERSE 1] (8 linhas)
+[VERSE 1] (8 linhas empilhadas - uma por linha)
 Instrução: [VERSE 1 - Voz narrativa, estabelecendo história com detalhes concretos]
-[8 linhas em português]
+[8 linhas em português, CADA UMA EM LINHA SEPARADA]
 
-[PRE-CHORUS] (2-4 linhas)
+[PRE-CHORUS] (2-4 linhas empilhadas)
 Instrução: [PRE-CHORUS - Energia crescente, preparando para refrão]
-[2-4 linhas em português]
+[2-4 linhas em português, CADA UMA EM LINHA SEPARADA]
 
-[CHORUS] (4 linhas - MOMENTO MAIS IMPORTANTE)
+[CHORUS] (4 linhas empilhadas - MOMENTO MAIS IMPORTANTE)
 Instrução: [CHORUS - Energia máxima, grudento, fácil de cantar junto]
-[4 linhas em português]
+[4 linhas em português, CADA UMA EM LINHA SEPARADA]
 
-[VERSE 2] (8 linhas)
+[VERSE 2] (8 linhas empilhadas)
 Instrução: [VERSE 2 - Desenvolve história, novos detalhes]
-[8 linhas em português]
+[8 linhas em português, CADA UMA EM LINHA SEPARADA]
 
-[PRE-CHORUS] (2-4 linhas)
+[PRE-CHORUS] (2-4 linhas empilhadas)
 Instrução: [PRE-CHORUS - Energia crescente novamente]
-[2-4 linhas em português]
+[2-4 linhas em português, CADA UMA EM LINHA SEPARADA]
 
-[CHORUS] (4 linhas - repete)
+[CHORUS] (4 linhas empilhadas - repete)
 Instrução: [CHORUS - Repete com mesma energia]
-[4 linhas em português]
+[4 linhas em português, CADA UMA EM LINHA SEPARADA]
 
-[BRIDGE] (8 linhas)
+[BRIDGE] (8 linhas empilhadas)
 Instrução: [BRIDGE - Reflexão profunda, pode ter solo, mudança de perspectiva]
-[8 linhas em português]
+[8 linhas em português, CADA UMA EM LINHA SEPARADA]
 
 [SOLO] (8-16 segundos)
 Instrução: [SOLO - Instrumental de ${subGenreInfo.instruments?.split(",")[0] || "guitarra"}]
 
-[FINAL CHORUS] (4 linhas)
+[FINAL CHORUS] (4 linhas empilhadas)
 Instrução: [FINAL CHORUS - Energia MÁXIMA, apoteose]
-[4 linhas em português]
+[4 linhas em português, CADA UMA EM LINHA SEPARADA]
 
-[OUTRO] (4 linhas ou fade)
+[OUTRO] (4 linhas empilhadas ou fade)
 Instrução: [OUTRO - Fade out suave ou frase final marcante]
-[4 linhas em português ou fade]
+[4 linhas em português ou fade, CADA UMA EM LINHA SEPARADA]
 
 (Instrumentos: [${subGenreInfo.instruments || originalInstruments || "guitar, bass, drums, keyboard"}] | BPM: ${subGenreInfo.bpm || metrics?.bpm || 100} | Ritmo: ${finalRhythm} | Estilo: ${generoConversao})
 `
