@@ -11,7 +11,7 @@
     "@ai-sdk/openai": "2.0.46",
     "@radix-ui/react-avatar": "latest",
     "@radix-ui/react-checkbox": "latest",
-    "@radix-ui/react-dialog": "^1.0.5",
+    "@radix-ui/react-dialog": "latest",
     "@radix-ui/react-dropdown-menu": "latest",
     "@radix-ui/react-label": "latest",
     "@radix-ui/react-popover": "^1.0.7",
