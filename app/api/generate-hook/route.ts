@@ -195,7 +195,6 @@ Retorne APENAS o JSON, sem markdown.`
       model: "openai/gpt-4o",
       prompt: prompt,
       temperature: 0.85, // Alta criatividade para hooks virais
-      maxTokens: 2000, // Added token limit to prevent excessive generation
     })
 
     let parsedResult
