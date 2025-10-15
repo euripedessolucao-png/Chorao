@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
 import { getGenreConfig, detectSubGenre, getGenreRhythm } from "@/lib/genre-config"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
+import { validateLyricsSyllables } from "@/lib/syllable-counter"
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,12 +33,46 @@ export async function POST(request: NextRequest) {
     const defaultRhythm = getGenreRhythm(genero)
     const finalRhythm = subGenreInfo.rhythm || defaultRhythm
 
+    const syllableRule = `
+⚠️ REGRA UNIVERSAL ABSOLUTA - LIMITE DE 12 SÍLABAS (INVIOLÁVEL)
+
+🎵 CONTAGEM DE SÍLABAS POÉTICAS:
+- MÁXIMO ABSOLUTO: 12 sílabas poéticas por verso
+- Este é o LIMITE HUMANO do canto
+- Conta até a última sílaba tônica
+- Elisão/Sinalefa: une vogais entre palavras (ex: "de amor" = "dea-mor" = 2 sílabas)
+
+✅ EXEMPLOS CORRETOS (≤12 sílabas):
+- "Lem-bro-bem-lá-do-fo-gão" = 7 sílabas ✓
+- "O-rá-dio-to-can-do-um-som-de-pe-ão" = 11 sílabas ✓
+- "Mú-si-ca-de-es-tra-da-cau-so-do-cu-rral" = 12 sílabas ✓
+- "Sau-da-de-é-pu-nhal-cra-va-do-no-pei-to" = 12 sílabas ✓
+
+❌ EXEMPLOS ERRADOS (>12 sílabas - NUNCA FAÇA):
+- "Os-ó-io-de-le-ma-re-ja-vam-que-ren-do-o-cul-tar" = 15 sílabas ✗
+- "A-bra-ce-for-te-com-to-do-o-ca-lor-que-a-al-ma-tem" = 16 sílabas ✗
+
+🎯 COMO SER CRIATIVO DENTRO DO LIMITE:
+- Use contrações: "você" → "cê", "está" → "tá", "para" → "pra"
+- Elisão natural: "de amor" → "d'amor", "que eu" → "qu'eu"
+- Frases diretas e simples
+- Corte palavras desnecessárias
+- Priorize impacto emocional em poucas sílabas
+
+🔥 PRIORIDADE: FRASE COMPLETA + ≤12 SÍLABAS
+- Nunca corte frase no meio
+- Se não couber em 12 sílabas, REESCREVA a frase inteira
+- Use criatividade para expressar a mesma emoção em menos sílabas
+`
+
     const universalRules = `
 🎯 FÓRMULA DE SUCESSO 2024-2025 (PRIORIDADES ABSOLUTAS)
 
+${syllableRule}
+
 1. REFRÃO ULTRA-MEMORÁVEL (PRIORIDADE #1)
    - Primeira linha = GANCHO GRUDENTO que não sai da cabeça
-   - Máximo 4 linhas, cada uma com 8-10 sílabas
+   - Máximo 4 linhas, cada uma com 8-10 sílabas (NUNCA mais de 12)
    - Frases simples, diretas, fáceis de cantar junto
    - Repetição estratégica de palavras-chave
    - TESTE: Se não grudar na primeira escuta, refaça!
@@ -86,9 +121,10 @@ RIMAS PERFEITAS OBRIGATÓRIAS:
 - Rimas naturais que surgem da narrativa
 
 MÉTRICA RIGOROSA:
-- Máximo 12 sílabas ABSOLUTO
+- Máximo 12 sílabas ABSOLUTO (sem exceções)
 - Contagem precisa em cada verso
 - Respiração natural garantida
+- Validação automática de sílabas
 
 GANCHOS PREMIUM:
 - Refrão com hook na primeira linha
@@ -121,15 +157,7 @@ FIDELIDADE DE ESTILO:
 - Facilita contagem de versos e sílabas
 - Formato padrão brasileiro de composição
 
-EXEMPLO CORRETO (versos empilhados):
-Se quer saber de mim
-Pergunte para mim
-Se for falar do que passou
-Conta a parte que você errou
-
-EXEMPLO ERRADO (NÃO FAÇA):
-Se quer saber de mim, pergunte para mim
-Se for falar do que passou, conta a parte que você errou
+⚠️ CADA VERSO: MÁXIMO 12 SÍLABAS POÉTICAS (ABSOLUTO)
 
 [INTRO] (8-12 segundos instrumental)
 Instrução: [INTRO - Instrumental suave com ${subGenreInfo.instruments || "instrumentos principais"}, estabelecendo o clima]
@@ -206,28 +234,58 @@ ${chorusContext}
 ${structureGuide}
 
 🎯 REGRAS DE PROSÓDIA (${genreConfig.name}):
-- Alvo: 8-12 sílabas por verso (pode chegar a 13 se frase completa)
+- MÁXIMO ABSOLUTO: 12 sílabas poéticas por verso
 - Respiração natural ao cantar
-- Frases completas > Contagem exata
+- Frases completas sempre
+- Use contrações e elisão para caber no limite
 
 🔥 LEMBRE-SE:
-1. REFRÃO GRUDENTO é prioridade #1
-2. LINGUAGEM COLOQUIAL BRASILEIRA intensa
-3. EMOÇÃO AUTÊNTICA > Técnica perfeita
-4. FRASES COMPLETAS sempre
-5. INSTRUÇÕES MUSICAIS detalhadas em cada seção
+1. MÁXIMO 12 SÍLABAS POR VERSO (INVIOLÁVEL)
+2. REFRÃO GRUDENTO é prioridade #1
+3. LINGUAGEM COLOQUIAL BRASILEIRA intensa
+4. EMOÇÃO AUTÊNTICA > Técnica perfeita
+5. FRASES COMPLETAS sempre
+6. INSTRUÇÕES MUSICAIS detalhadas em cada seção
 
 Escreva a letra completa AGORA, focando em criar um HIT:`
 
     console.log("[v0] Gerando letra otimizada para hit 2024-2025...")
 
-    const { text } = await generateText({
-      model: "openai/gpt-4o",
-      prompt,
-      temperature: 0.85, // Aumentado para mais criatividade
-    })
+    let finalLyrics = ""
+    let attempts = 0
+    const maxAttempts = 3
 
-    let finalLyrics = text.trim()
+    while (attempts < maxAttempts) {
+      const { text } = await generateText({
+        model: "openai/gpt-4o",
+        prompt:
+          attempts > 0
+            ? `${prompt}\n\n⚠️ ATENÇÃO: A tentativa anterior teve versos com MAIS DE 12 SÍLABAS. Isso é INACEITÁVEL.\nREGENERE garantindo que TODOS os versos tenham NO MÁXIMO 12 sílabas poéticas.\nUse contrações, elisão e criatividade para caber no limite.`
+            : prompt,
+        temperature: 0.85,
+      })
+
+      finalLyrics = text.trim()
+
+      // Valida sílabas
+      const validation = validateLyricsSyllables(finalLyrics, 12)
+
+      if (validation.valid) {
+        console.log("[v0] ✓ Letra aprovada - todos os versos dentro do limite de 12 sílabas")
+        break
+      } else {
+        attempts++
+        console.log(`[v0] ✗ Tentativa ${attempts}: ${validation.violations.length} versos excedem 12 sílabas`)
+
+        if (attempts < maxAttempts) {
+          console.log("[v0] Regenerando letra...")
+        } else {
+          console.log("[v0] ⚠️ Máximo de tentativas atingido. Retornando melhor resultado com avisos.")
+          // Adiciona aviso ao usuário
+          finalLyrics = `⚠️ AVISO: Alguns versos podem exceder 12 sílabas. Revise manualmente.\n\n${finalLyrics}`
+        }
+      }
+    }
 
     finalLyrics = finalLyrics.replace(/^(?:Título|Title):\s*.+$/gm, "").trim()
     finalLyrics = finalLyrics.replace(/^\*\*(?:Título|Title):\s*.+\*\*$/gm, "").trim()
