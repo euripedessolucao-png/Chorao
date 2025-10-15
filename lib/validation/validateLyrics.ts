@@ -1,5 +1,7 @@
+// lib/validation/validateLyrics.ts - VERSÃO ATUALIZADA
 import type { ParsedSection } from "./parser"
 import { SERTANEJO_RULES, countSyllables, hasForbiddenElement, hasVisualElement } from "./sertanejoRules"
+import { validateLyricsSyllables, SyllableValidationResult } from "./syllable-validator"
 
 export interface ValidationResult {
   isValid: boolean
@@ -11,6 +13,7 @@ export interface ValidationResult {
     valid: boolean
     issues: string[]
   }[]
+  syllableValidation: SyllableValidationResult // ✅ NOVO
 }
 
 export function validateSertanejoLyrics(sections: ParsedSection[]): ValidationResult {
@@ -18,6 +21,16 @@ export function validateSertanejoLyrics(sections: ParsedSection[]): ValidationRe
   const warnings: string[] = []
   const sectionResults: ValidationResult["sections"] = []
   let score = 100
+
+  // ✅ PRIMEIRO: Validação universal de sílabas
+  const fullLyrics = sections.map(section => section.lines.join('\n')).join('\n')
+  const syllableValidation = validateLyricsSyllables(fullLyrics, 12)
+
+  // Adiciona violações de sílabas aos erros
+  syllableValidation.violations.forEach(violation => {
+    errors.push(`Linha ${violation.lineNumber}: "${violation.line}" (${violation.syllableCount} sílabas) → ${violation.suggestion}`)
+    score -= 8 // Penalidade por violação de sílaba
+  })
 
   // Verifica estrutura mínima
   const hasVerse = sections.some((s) => s.type === "verse")
@@ -64,7 +77,7 @@ export function validateSertanejoLyrics(sections: ParsedSection[]): ValidationRe
         score -= 10
       }
 
-      // Verifica métrica
+      // ✅ VALIDAÇÃO DE SÍLABAS ESPECÍFICA PARA REFRÃO
       for (const line of section.lines) {
         const syllables = countSyllables(line)
         if (syllables > SERTANEJO_RULES.chorusStructure.maxSyllablesPerLine) {
@@ -91,5 +104,41 @@ export function validateSertanejoLyrics(sections: ParsedSection[]): ValidationRe
     errors,
     warnings,
     sections: sectionResults,
+    syllableValidation // ✅ INCLUI VALIDAÇÃO DE SÍLABAS
+  }
+}
+
+// ✅ VALIDADOR UNIVERSAL PARA TODOS OS GÊNEROS
+export function validateLyricsUniversal(lyrics: string, genre?: string): ValidationResult {
+  const syllableValidation = validateLyricsSyllables(lyrics, 12)
+  
+  const errors: string[] = []
+  const warnings: string[] = []
+  let score = 100
+
+  // Penalidades por violações de sílabas
+  syllableValidation.violations.forEach(violation => {
+    errors.push(`SÍLABAS: "${violation.line}" (${violation.syllableCount} sílabas)`)
+    score -= 10
+  })
+
+  // Verificações básicas universais
+  if (!lyrics.includes('[CHORUS]') && !lyrics.includes('[REFRÃO]')) {
+    warnings.push('Possível falta de refrão identificável')
+    score -= 15
+  }
+
+  if (lyrics.length < 100) {
+    warnings.push('Letra muito curta para uma música completa')
+    score -= 10
+  }
+
+  return {
+    isValid: syllableValidation.isValid && score >= 70,
+    score,
+    errors,
+    warnings,
+    sections: [], // Seções seriam parseadas separadamente
+    syllableValidation
   }
 }
