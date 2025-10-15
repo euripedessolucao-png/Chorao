@@ -1,62 +1,156 @@
 /**
- * CONTADOR SIMPLES E EFICAZ DE SÍLABAS
- * 
- * REGRA: Cada vogal = 1 sílaba (método conservador)
- * Isso evita que a IA "engane" o sistema com regras complexas
+ * Contador de Sílabas Poéticas em Português Brasileiro
+ *
+ * REGRAS:
+ * 1. Conta até a última sílaba tônica (ignora átonas finais)
+ * 2. Elisão/Sinalefa: une vogais entre palavras
+ * 3. Crase: une vogais idênticas
+ * 4. Ditongos e tritongos contam como 1 sílaba
  */
 
-// Todas as vogais (com e sem acento)
-const VOWELS = "aeiouáéíóúâêîôûàèìòùãõ"
+// Vogais para detecção de elisão
+const VOWELS = "aeiouáàâãéèêíìîóòôõúùû"
+const VOWEL_REGEX = /[aeiouáàâãéèêíìîóòôõúùû]/i
+
+// Sílabas tônicas comuns em português
+const TONIC_PATTERNS = [
+  /á|é|í|ó|ú/i, // Vogais acentuadas são sempre tônicas
+  /ão|ões|ãe/i, // Terminações nasais tônicas
+]
 
 /**
- * Conta sílabas de forma SIMPLES e CONSERVADORA
- * @param text Texto para contar
- * @returns Número de sílabas (sempre igual ou MAIOR que a contagem real)
+ * Conta sílabas poéticas de uma linha
+ * @param line Linha de texto para contar
+ * @returns Número de sílabas poéticas
  */
-export function countPoeticSyllables(text: string): number {
-  if (!text.trim()) return 0
-
-  const cleanText = text
-    .toLowerCase()
-    .normalize("NFD") // Separa acentos: "á" → "a" + "´"
-    .replace(/[\u0300-\u036f]/g, "") // Remove acentos
-    .replace(/[^a-z\s]/g, "") // Mantém apenas letras e espaços
+export function countPoeticSyllables(line: string): number {
+  // Remove marcadores estruturais e limpa a linha
+  const cleanLine = line
+    .replace(/\[.*?\]/g, "") // Remove [VERSE], [CHORUS], etc.
+    .replace(/$$.*?$$/g, "") // Remove (instruções)
     .trim()
 
-  if (!cleanText) return 0
+  if (!cleanLine) return 0
 
-  let syllableCount = 0
-  let previousWasVowel = false
+  // Separa em palavras
+  const words = cleanLine.split(/\s+/).filter((w) => w.length > 0)
+  if (words.length === 0) return 0
 
-  for (let i = 0; i < cleanText.length; i++) {
-    const char = cleanText[i]
-    
-    if (VOWELS.includes(char)) {
-      // ✅ REGRA SIMPLES: cada vogal = 1 sílaba
-      // Isso evita que ditongos sejam contados como 1 sílaba
-      if (!previousWasVowel) {
-        syllableCount++
-      }
-      previousWasVowel = true
-    } else {
-      previousWasVowel = false
+  let totalSyllables = 0
+
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i].toLowerCase()
+    const nextWord = i < words.length - 1 ? words[i + 1].toLowerCase() : ""
+
+    // Conta sílabas gramaticais da palavra
+    let wordSyllables = countGrammaticalSyllables(word)
+
+    // Aplica elisão/sinalefa se a palavra termina com vogal
+    // e a próxima começa com vogal
+    if (nextWord && endsWithVowel(word) && startsWithVowel(nextWord)) {
+      // Une as vogais, reduz 1 sílaba
+      wordSyllables -= 0.5 // Redução parcial para não ser muito agressivo
     }
+
+    totalSyllables += wordSyllables
   }
 
-  // ✅ MÍNIMO 1 sílaba, mesmo para palavras monossilábicas
-  return Math.max(1, syllableCount)
+  // Encontra a última sílaba tônica e conta até ela
+  const lastTonicPosition = findLastTonicSyllable(cleanLine)
+
+  // Arredonda e garante que não conta além da última tônica
+  return Math.round(Math.min(totalSyllables, lastTonicPosition))
 }
 
 /**
- * Valida se uma linha respeita o limite de sílabas
+ * Conta sílabas gramaticais de uma palavra
  */
-export function validateSyllableLimit(line: string, maxSyllables = 12): boolean {
+function countGrammaticalSyllables(word: string): number {
+  // Remove pontuação
+  const clean = word.replace(/[^\wáàâãéèêíìîóòôõúùûç]/gi, "")
+  if (!clean) return 0
+
+  let count = 0
+  let inVowelGroup = false
+
+  for (let i = 0; i < clean.length; i++) {
+    const char = clean[i].toLowerCase()
+    const isVowel = VOWEL_REGEX.test(char)
+
+    if (isVowel) {
+      if (!inVowelGroup) {
+        count++
+        inVowelGroup = true
+      }
+      // Ditongos e tritongos contam como 1 sílaba
+      // Já estamos em grupo de vogais, não incrementa
+    } else {
+      inVowelGroup = false
+    }
+  }
+
+  return Math.max(1, count) // Mínimo 1 sílaba por palavra
+}
+
+/**
+ * Verifica se palavra termina com vogal
+ */
+function endsWithVowel(word: string): boolean {
+  const clean = word.replace(/[^\wáàâãéèêíìîóòôõúùûç]/gi, "")
+  if (!clean) return false
+  return VOWEL_REGEX.test(clean[clean.length - 1])
+}
+
+/**
+ * Verifica se palavra começa com vogal (ou H mudo + vogal)
+ */
+function startsWithVowel(word: string): boolean {
+  const clean = word.replace(/[^\wáàâãéèêíìîóòôõúùûç]/gi, "")
+  if (!clean) return false
+
+  // H inicial é mudo em português
+  if (clean[0].toLowerCase() === "h" && clean.length > 1) {
+    return VOWEL_REGEX.test(clean[1])
+  }
+
+  return VOWEL_REGEX.test(clean[0])
+}
+
+/**
+ * Encontra a posição da última sílaba tônica
+ */
+function findLastTonicSyllable(line: string): number {
+  const words = line.split(/\s+/)
+  let syllableCount = 0
+  let lastTonicPosition = 0
+
+  for (const word of words) {
+    const wordSyllables = countGrammaticalSyllables(word)
+
+    // Verifica se tem vogal acentuada (sempre tônica)
+    if (/[áàâãéèêíìîóòôõúùû]/i.test(word)) {
+      lastTonicPosition = syllableCount + wordSyllables
+    } else {
+      // Assume que a última palavra tem tônica na penúltima sílaba (padrão português)
+      lastTonicPosition = syllableCount + Math.max(1, wordSyllables - 1)
+    }
+
+    syllableCount += wordSyllables
+  }
+
+  return Math.max(1, lastTonicPosition)
+}
+
+/**
+ * Valida se uma linha respeita o limite de 10 sílabas
+ */
+export function validateSyllableLimit(line: string, maxSyllables = 10): boolean {
   const count = countPoeticSyllables(line)
   return count <= maxSyllables
 }
 
 /**
- * Valida todas as linhas de uma letra - FILTRO MELHORADO
+ * Valida todas as linhas de uma letra
  */
 export function validateLyricsSyllables(
   lyrics: string,
@@ -69,29 +163,22 @@ export function validateLyricsSyllables(
   const violations: Array<{ line: string; syllables: number; lineNumber: number }> = []
 
   lines.forEach((line, index) => {
-    const cleanLine = line.trim()
-    
-    // ✅ FILTRO MAIS RESTRITIVO - ignora TUDO que não é verso
-    if (!cleanLine) return // Linha vazia
-    if (cleanLine.startsWith('[') && cleanLine.endsWith(']')) return // [SECTION]
-    if (cleanLine.startsWith('(') && cleanLine.endsWith(')')) return // (instruction)
-    if (cleanLine.startsWith('Título:')) return
-    if (cleanLine.includes('Instrumentos:')) return
-    if (cleanLine.includes('BPM:')) return
-    if (cleanLine.includes('Estilo:')) return
-    if (cleanLine.includes('| Style:')) return
-    if (cleanLine.includes('Instruments:')) return
-    if (cleanLine.length < 3) return // Linhas muito curtas
-
-    // ✅ CONTA SÍLABAS
-    const syllables = countPoeticSyllables(cleanLine)
-    
-    if (syllables > maxSyllables) {
-      violations.push({
-        line: cleanLine,
-        syllables,
-        lineNumber: index + 1,
-      })
+    // Ignora linhas estruturais
+    if (
+      line.trim() &&
+      !line.startsWith("[") &&
+      !line.startsWith("(") &&
+      !line.startsWith("Title:") &&
+      !line.startsWith("Instrumentos:")
+    ) {
+      const syllables = countPoeticSyllables(line)
+      if (syllables > maxSyllables) {
+        violations.push({
+          line: line.trim(),
+          syllables,
+          lineNumber: index + 1,
+        })
+      }
     }
   })
 
@@ -99,22 +186,4 @@ export function validateLyricsSyllables(
     valid: violations.length === 0,
     violations,
   }
-}
-
-/**
- * Função auxiliar para debug - mostra contagem linha por linha
- */
-export function debugSyllableCount(lyrics: string): void {
-  console.log('🔍 DEBUG DE SÍLABAS:')
-  const lines = lyrics.split('\n')
-  
-  lines.forEach((line, index) => {
-    const cleanLine = line.trim()
-    if (!cleanLine) return
-    
-    const syllables = countPoeticSyllables(cleanLine)
-    const status = syllables > 12 ? '❌' : '✅'
-    
-    console.log(`${status} Linha ${index + 1}: ${syllables} sílabas - "${cleanLine}"`)
-  })
 }
