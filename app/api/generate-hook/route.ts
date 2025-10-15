@@ -5,7 +5,7 @@ import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 
 export async function POST(request: Request) {
   try {
-    const { lyrics, genre, additionalRequirements } = await request.json()
+    const { lyrics, genre, additionalRequirements, advancedMode } = await request.json()
 
     if (!lyrics) {
       return NextResponse.json({ error: "Letra é obrigatória" }, { status: 400 })
@@ -17,131 +17,184 @@ export async function POST(request: Request) {
     const finalRhythm = subGenreInfo.rhythm || defaultRhythm
 
     const universalRules = `
-🎵 REGRAS UNIVERSAIS - TERCEIRA VIA PARA HOOKS
+🎯 FÓRMULA DE HOOK DE SUCESSO 2024-2025
 
-1. LINGUAGEM SIMPLES E BRASILEIRA
-   - Palavras do dia-a-dia, coloquiais
-   - PROIBIDO: rebuscado, poético, literário
-   - PERMITIDO: gírias, contrações ("tô", "cê", "pra")
+CARACTERÍSTICAS DE HOOK DE HIT:
+1. ULTRA-CURTO: 4-8 palavras (máximo 10 sílabas)
+2. GRUDENTO: Gruda na cabeça na primeira escuta
+3. REPETÍVEL: Fácil de repetir e lembrar
+4. QUOTABLE: Vira bordão, citável
+5. VIRAL: Potencial para TikTok/Reels
 
-2. MÉTRICA (MÁXIMO 12 SÍLABAS - REGRA ABSOLUTA)
-   - Hook deve ser curto e memorável
-   - MÁXIMO 12 SÍLABAS POÉTICAS (INVIOLÁVEL)
-   - Preferência por 6-8 palavras
-   - Se necessário, corte palavras para respeitar o limite
+EXEMPLOS DE HOOKS DE HITS 2024-2025:
+✓ "Cê me testa, olha e sorri" (visual, direto, 7 palavras)
+✓ "Tô no meu flow" (confiante, curto, 4 palavras)
+✓ "Saudade é punhal no peito" (metáfora concreta, 5 palavras)
+✓ "Você me faz sonhar" (simples, emocional, 4 palavras)
 
-3. PROCESSO TERCEIRA VIA PARA HOOKS
-   - (A) Métrica/Ritmo: fluidez e brevidade (máx 12 sílabas)
-   - (B) Emoção/Impacto: memorável e viral
-   - (C) Síntese: combine A+B = hook perfeito (RESPEITANDO 12 sílabas)
+LINGUAGEM:
+- Coloquial brasileira INTENSA
+- Gírias e contrações ("cê", "tô", "pra", "né")
+- Palavras do dia-a-dia
+- ZERO vocabulário rebuscado
 
-IMPORTANTE NA SÍNTESE (C):
-- NUNCA exceda 12 sílabas
-- Hooks devem ser ainda mais curtos (6-8 palavras ideal)
-- Priorize brevidade e impacto sobre complexidade
-${subGenreInfo.subGenre ? `\n- Adapte ao ritmo de ${subGenreInfo.styleNote}` : `\n- Adapte ao ritmo de ${finalRhythm}`}
+MÉTRICA:
+- Ideal: 4-8 palavras
+- Máximo: 10 sílabas
+- Deve caber em 2-3 segundos ao falar
+- Respiração natural
+
+TESTE DE QUALIDADE:
+- Consegue repetir 3x seguidas sem esquecer? ✓
+- Soa natural em conversa? ✓
+- Tem potencial viral? ✓
+- Conecta com a letra? ✓
+${subGenreInfo.subGenre ? `\n- Adapta ao ritmo de ${subGenreInfo.styleNote}? ✓` : `\n- Adapta ao ritmo de ${finalRhythm}? ✓`}
 `
 
+    const advancedModeRules = advancedMode
+      ? `
+🔥 MODO AVANÇADO - HOOK PREMIUM
+
+CRITÉRIOS DE HIT:
+- Score mínimo: 90/100 (padrão de hit)
+- TikTok score mínimo: 9/10
+- Viralidade garantida
+- Quotable e memorável
+- Adequado para rádio
+
+TESTE RIGOROSO:
+- Gruda em 3 segundos? ✓
+- Vira bordão? ✓
+- Funciona em karaokê? ✓
+- Potencial de meme? ✓
+`
+      : ""
+
     const metaforasRule = additionalRequirements
-      ? `\nREQUISITOS ADICIONAIS (PRIORIDADE ABSOLUTA):
+      ? `\n⚡ REQUISITOS ESPECIAIS (PRIORIDADE MÁXIMA):
 ${additionalRequirements}
 
-METÁFORAS: Se especificadas, são OBRIGATÓRIAS no hook.`
+Se metáforas especificadas, são OBRIGATÓRIAS no hook.`
       : ""
 
     const prosodyRules = genreConfig
       ? `
-REGRAS DE PROSÓDIA (${genreConfig.name}):
+📊 REGRAS DO GÊNERO (${genreConfig.name}):
 - Ritmo: ${finalRhythm}
-- Máximo 12 sílabas poéticas
-- Deve caber em um fôlego natural
-- Preferência por 6-8 palavras
+- Máximo: 10 sílabas
+- Ideal: 4-8 palavras
+- Estilo: ${genre}
 `
       : ""
 
-    const prompt = `${universalRules}${metaforasRule}
+    const prompt = `${universalRules}
+${advancedModeRules}
+${metaforasRule}
 
-LETRA PARA ANALISAR:
+📝 LETRA PARA ANALISAR:
 ${lyrics}
 
-CONTEXTO IMPORTANTE:
-- Analise TODA a letra para entender tema, emoção e narrativa
-- O hook deve REFLETIR e AMPLIFICAR a essência desta letra
-- NÃO crie hook genérico - único para ESTA composição
-- Mantenha coerência com tom emocional e estilo
-- Ritmo da composição: ${finalRhythm}
+🎯 CONTEXTO CRÍTICO:
+- Analise TODA a letra para capturar essência
+- Hook deve ser a ALMA desta composição em 4-8 palavras
+- NÃO crie hook genérico - único para ESTA letra
+- Mantenha coerência total com tom e estilo
+- Ritmo: ${finalRhythm}
 
 ${prosodyRules}
 
-SUA TAREFA - APLICANDO TERCEIRA VIA:
+🎵 SUA TAREFA - CRIAR HOOK DE HIT:
 
 1. GANCHÔMETRO (0-100)
-   - Nota baseada em: memorabilidade, repetição, apelo emocional, viralidade
+   - Avalie: memorabilidade, repetibilidade, apelo emocional, viralidade
+   - Padrão de hit: 85-100
+   ${advancedMode ? "- Modo avançado: mínimo 90" : ""}
 
-2. HOOK PRINCIPAL (Gerado via Terceira Via)
-   - Gere 3 variações do hook (máx 8 palavras cada):
-     * Variação A: foco em MÉTRICA e FLUIDEZ (máx 12 sílabas)
-     * Variação B: foco em EMOÇÃO e IMPACTO (máx 12 sílabas)
-     * Variação C: SÍNTESE (combine melhor de A e B, MÁXIMO 12 sílabas)
-   - Resultado final: hook principal otimizado (versão C, respeitando limite)
+2. HOOK PRINCIPAL (4-8 palavras)
+   - Gere 3 variações ultra-curtas:
+     * Variação A: CHICLETE (repetitivo, grudento)
+     * Variação B: BORDÃO (quotable, impactante)
+     * Variação C: VIRAL (potencial TikTok máximo)
+   - Escolha a MELHOR (score mais alto)
 
 3. TRANSFORMAÇÕES SUGERIDAS
    - Pegue 2-3 trechos da letra
-   - Para cada um, aplique Terceira Via:
-     * Original → Variação A (métrica) → Variação B (emoção) → Síntese C
-   - Mostre: Original → Transformado + Razão
+   - Transforme em hooks potenciais (4-8 palavras cada)
+   - Mostre: Original → Hook + Razão
 
 4. ESTRATÉGIA DE POSICIONAMENTO
-   - Onde posicionar (intro, refrão, ponte)
-   - Quantas repetições
+   - Onde usar (intro, refrão, ponte, outro)
+   - Quantas repetições (mínimo 3x na música)
+   - Como maximizar impacto
 
-5. TESTE TIKTOK
+5. TESTE TIKTOK/REELS
    - Como soaria em clipe de 5 segundos
-   - Potencial de viralidade (1-10)
+   - Potencial viral (1-10)
+   ${advancedMode ? "- Modo avançado: mínimo 9/10" : ""}
+   - Hashtags sugeridas
 
 6. SUGESTÕES DE MELHORIA
-   - 3-4 sugestões específicas para aumentar ganchômetro
-   - Baseadas em linguagem simples e coloquial
+   - 3-4 sugestões para aumentar ganchômetro
+   - Foco em simplicidade e viralidade
 
 FORMATO JSON:
 {
-  "hook": "hook principal otimizado (síntese C)",
-  "hookVariations": ["variação A (métrica)", "variação B (emoção)", "variação C (síntese)"],
-  "score": 85,
+  "hook": "hook principal escolhido (4-8 palavras)",
+  "hookVariations": [
+    "variação A (chiclete)",
+    "variação B (bordão)", 
+    "variação C (viral)"
+  ],
+  "score": 90,
+  "viralPotential": "alto/médio/baixo",
   "suggestions": ["sugestão 1", "sugestão 2", "sugestão 3"],
-  "placement": ["posicionamento 1", "posicionamento 2"],
-  "tiktokTest": "descrição do teste",
-  "tiktokScore": 8,
+  "placement": {
+    "positions": ["intro", "refrão", "outro"],
+    "repetitions": 4,
+    "strategy": "estratégia de maximização"
+  },
+  "tiktokTest": {
+    "description": "como soaria em 5 segundos",
+    "score": 9,
+    "hashtags": ["#hook1", "#hook2", "#hook3"]
+  },
   "transformations": [
     {
-      "original": "trecho original",
-      "variations": ["var A (métrica)", "var B (emoção)", "var C (síntese)"],
-      "transformed": "melhor transformação (C)", 
-      "reason": "razão da transformação"
+      "original": "trecho original da letra",
+      "hookVersion": "versão hook (4-8 palavras)",
+      "reason": "por que funciona como hook"
     }
   ],
-  "terceiraViaProcess": {
-    "metricFocus": "análise do foco métrico",
-    "emotionalFocus": "análise do foco emocional",
-    "synthesis": "como A+B foram combinados"
+  "commercialAnalysis": {
+    "radioFriendly": true/false,
+    "karaokeFriendly": true/false,
+    "quotable": true/false,
+    "memePotential": true/false
   }
 }
 
+CRITÉRIOS DE SCORE:
+- 95-100: Hit garantido, viral instantâneo
+- 90-94: Muito forte, alto potencial comercial
+- 85-89: Bom comercialmente, funciona bem
+- <85: Refaça, não atinge padrão de hit
+
 IMPORTANTE:
-- Use linguagem simples e coloquial brasileira
-- Evite metáforas abstratas
-- Foque em palavras do dia-a-dia
-- Hook deve soar natural
-- Aplique Terceira Via em cada transformação
+- Hook DEVE ter 4-8 palavras (máximo 10 sílabas)
+- Linguagem coloquial brasileira intensa
+- Conecta perfeitamente com a letra
+- Potencial viral máximo
+- Fácil de repetir e lembrar
 
 Retorne APENAS o JSON, sem markdown.`
 
-    console.log("[v0] Gerando hook com Terceira Via e contexto da letra...")
+    console.log("[v0] Gerando hook otimizado para hit 2024-2025...")
 
     const { text } = await generateText({
       model: "openai/gpt-4o",
       prompt: prompt,
-      temperature: 0.85,
+      temperature: 0.9, // Alta criatividade para hooks virais
     })
 
     const cleanText = text
@@ -159,16 +212,17 @@ Retorne APENAS o JSON, sem markdown.`
     if (parsedResult.transformations && Array.isArray(parsedResult.transformations)) {
       parsedResult.transformations = parsedResult.transformations.map((t: any) => ({
         ...t,
-        transformed: capitalizeLines(t.transformed),
-        variations: t.variations?.map((v: string) => capitalizeLines(v)) || t.variations,
+        hookVersion: capitalizeLines(t.hookVersion),
       }))
     }
 
-    console.log("[v0] Hook gerado com sucesso usando Terceira Via")
+    console.log("[v0] ✅ Hook de hit gerado com sucesso!")
+    console.log(`[v0] 📊 Score: ${parsedResult.score}/100`)
+    console.log(`[v0] 🎯 TikTok Score: ${parsedResult.tiktokTest?.score || 0}/10`)
 
     return NextResponse.json(parsedResult)
   } catch (error) {
-    console.error("[v0] Erro ao gerar hook:", error)
+    console.error("[v0] ❌ Erro ao gerar hook:", error)
     return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 })
   }
 }

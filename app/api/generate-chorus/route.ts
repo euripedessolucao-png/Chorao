@@ -5,7 +5,7 @@ import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 
 export async function POST(request: NextRequest) {
   try {
-    const { genre, theme, mood, additionalRequirements, lyrics } = await request.json()
+    const { genre, theme, mood, additionalRequirements, lyrics, advancedMode } = await request.json()
 
     if (!genre || !theme) {
       return NextResponse.json({ error: "Gênero e tema são obrigatórios" }, { status: 400 })
@@ -24,66 +24,90 @@ export async function POST(request: NextRequest) {
     const finalRhythm = subGenreInfo.rhythm || defaultRhythm
 
     const lyricsContext = `
-LETRA EXISTENTE (CONTEXTO OBRIGATÓRIO):
+📝 LETRA EXISTENTE (CONTEXTO OBRIGATÓRIO):
 ${lyrics}
 
-IMPORTANTE: O refrão DEVE:
-- Conectar-se tematicamente com esta letra
-- Usar o mesmo tom emocional
-- Manter coerência com a história/narrativa
-- Parecer parte natural desta composição
-- Respeitar o estilo e linguagem estabelecidos
+🎯 O REFRÃO DEVE:
+- Conectar-se PERFEITAMENTE com esta letra
+- Usar o MESMO tom emocional e linguagem
+- Manter TOTAL coerência com a história
+- Parecer parte NATURAL desta composição
+- Ser o MOMENTO MAIS MEMORÁVEL da música
+- GRUDAR NA CABEÇA na primeira escuta
 ${subGenreInfo.subGenre ? `- Seguir o ritmo de ${subGenreInfo.styleNote}` : ""}
 `
 
     const universalRules = `
-🎵 REGRAS UNIVERSAIS - TERCEIRA VIA
+🎯 FÓRMULA DE REFRÃO DE SUCESSO 2024-2025
 
-PRIORIDADES (EM ORDEM):
-1. FRASES COMPLETAS E COERENTES (NUNCA corte frases no meio)
-2. LINGUAGEM SIMPLES E BRASILEIRA
-3. MÉTRICA NATURAL (ideal 8-12 sílabas, mas frases completas são mais importantes)
-4. EMOÇÃO E GANCHO MEMORÁVEL
+PRIORIDADE ABSOLUTA:
+1. GANCHO GRUDENTO (primeira linha deve grudar na cabeça)
+2. FRASES COMPLETAS E COERENTES (NUNCA corte no meio)
+3. LINGUAGEM COLOQUIAL BRASILEIRA INTENSA
+4. FÁCIL DE CANTAR JUNTO (karaokê-friendly)
+5. REPETIÇÃO ESTRATÉGICA de palavras-chave
 
-LINGUAGEM:
-- Palavras do dia-a-dia, coloquiais
-- PROIBIDO: rebuscado, poético, literário
-- PERMITIDO: gírias, contrações ("tô", "cê", "pra")
+CARACTERÍSTICAS DE HIT:
+- Máximo 4 linhas, cada uma com 8-10 sílabas
+- Frases simples, diretas, memoráveis
+- Palavras do dia-a-dia ("cê", "tô", "pra", "né")
+- Cada linha faz sentido sozinha
+- Melodia implícita grudenta
 
-MÉTRICA (GUIDELINE, NÃO REGRA ABSOLUTA):
-- Ideal: 8-12 sílabas por verso
-- Cada verso cabe em um fôlego natural
-- Se necessário ultrapassar 12 sílabas para completar a frase, FAÇA
-- NUNCA corte uma frase no meio para respeitar sílabas
-- Versos empilhados (um por linha)
+EXEMPLOS DE HITS 2024-2025:
+✓ "Cê me testa, olha e sorri" (direto, visual, grudento)
+✓ "Saudade é punhal cravado no peito" (metáfora concreta, impactante)
+✓ "Tô no meu flow, meu beat é pesado" (confiante, repetitivo)
 
-PROCESSO TERCEIRA VIA PARA REFRÃO:
-- (A) Métrica/Ritmo: fluidez e respiração natural
-- (B) Emoção/Gancho: memorável, autêntico e grudento
-- (C) Síntese: combine A+B = refrão comercial perfeito
-
-IMPORTANTE NA SÍNTESE (C):
-- Priorize frases completas e coerentes
-- Cada linha deve fazer sentido sozinha
-- NUNCA deixe frases pela metade
-- Exemplo ERRADO: "Você me faz" (incompleto)
-- Exemplo CERTO: "Você me faz sonhar" (completo)
+EVITE:
+✗ Frases incompletas ("Você me faz..." - ERRADO)
+✗ Vocabulário rebuscado ("floresço", "bonança")
+✗ Abstrações vagas ("mar de dor", "alma perdida")
+✗ Rimas forçadas que quebram naturalidade
 `
 
-    const metaforasRule = additionalRequirements
-      ? `\nREQUISITOS ADICIONAIS (PRIORIDADE ABSOLUTA):
-${additionalRequirements}
+    const advancedModeRules = advancedMode
+      ? `
+🔥 MODO AVANÇADO - CRITÉRIOS DE HIT
 
-METÁFORAS: Se especificadas, são OBRIGATÓRIAS no refrão.`
+GANCHO PREMIUM:
+- Primeira linha DEVE ser o gancho principal
+- Teste: Se não grudar em 3 segundos, refaça
+- Melodia implícita clara e memorável
+
+RIMAS PERFEITAS:
+- Mínimo 50% de rimas ricas
+- Zero rimas falsas ou forçadas
+- Rimas naturais da narrativa
+
+LINGUAGEM LIMPA:
+- Adequado para rádio e streaming
+- Zero palavrões pesados
+- Respeito e bom gosto
+
+MÉTRICA COMERCIAL:
+- 8-10 sílabas por linha (ideal para melodia)
+- Respiração natural garantida
+- Fácil de cantar em karaokê
+`
       : ""
 
-    const prompt = `${universalRules}${metaforasRule}
+    const metaforasRule = additionalRequirements
+      ? `\n⚡ REQUISITOS ESPECIAIS (PRIORIDADE MÁXIMA):
+${additionalRequirements}
+
+Se metáforas especificadas, são OBRIGATÓRIAS no refrão.`
+      : ""
+
+    const prompt = `${universalRules}
+${advancedModeRules}
+${metaforasRule}
 
 ${lyricsContext}
 
-Você é um compositor profissional especializado em refrões comerciais.
+🎵 Você é um compositor PROFISSIONAL especializado em criar REFRÕES DE HIT.
 
-TAREFA: Gere 5 variações de refrão aplicando TERCEIRA VIA.
+Seu objetivo: Criar refrões que GRUDEM NA CABEÇA e façam SUCESSO nas plataformas.
 
 ESPECIFICAÇÕES:
 - Gênero: ${genre}
@@ -92,65 +116,62 @@ ESPECIFICAÇÕES:
 - Humor: ${mood || "neutro"}
 
 PROCESSO PARA CADA VARIAÇÃO:
-1. Gere versão (A): foco em MÉTRICA e FLUIDEZ natural
-2. Gere versão (B): foco em EMOÇÃO e GANCHO memorável
-3. Síntese (C): combine o melhor de A e B = refrão final
-   ATENÇÃO: Cada linha DEVE ser uma frase completa e coerente
-   NUNCA corte frases no meio para respeitar sílabas
+1. Identifique o GANCHO principal (frase que vai grudar)
+2. Construa em torno do gancho com frases completas
+3. Teste mental: É fácil de cantar junto?
+4. Verifique: Conecta com a letra existente?
 
 REGRAS ESTRUTURAIS:
-- 2 ou 4 linhas por refrão (NUNCA 3)
-- Versos empilhados (um por linha)
-- Máximo 4 linhas total
-- CADA LINHA DEVE SER UMA FRASE COMPLETA
-- CRIATIVIDADE: cada opção deve ser ÚNICA
+- 4 linhas por refrão (padrão comercial)
+- Cada linha: 8-10 sílabas (ideal para melodia)
+- CADA LINHA = FRASE COMPLETA
+- Primeira linha = GANCHO PRINCIPAL
+- Repetição estratégica de palavras-chave
 
-REGRAS DE PROSÓDIA (${genreConfig.name}):
-- Com vírgula: máx ${genreConfig.prosody_rules.syllable_count.with_comma.max_before_comma} sílabas antes, ${genreConfig.prosody_rules.syllable_count.with_comma.max_after_comma} depois
-- Sem vírgula: ${genreConfig.prosody_rules.syllable_count.without_comma.min}-${genreConfig.prosody_rules.syllable_count.without_comma.max} sílabas (ideal, não absoluto)
-
-DIVERSIDADE CRIATIVA (OBRIGATÓRIA):
-- Opção 1: Chiclete radiofônico (repetição estratégica)
-- Opção 2: Visual e direto (cena clara)
-- Opção 3: Bordão impactante (frase marcante)
-- Opção 4: Emocional e leve (vulnerabilidade)
-- Opção 5: Surpreendente (abordagem inesperada)
+DIVERSIDADE CRIATIVA (5 ESTILOS):
+1. CHICLETE RADIOFÔNICO: Repetição estratégica, grudento
+2. VISUAL E DIRETO: Cena clara, imagem concreta
+3. BORDÃO IMPACTANTE: Frase marcante, quotable
+4. EMOCIONAL E LEVE: Vulnerabilidade autêntica
+5. SURPREENDENTE: Abordagem inesperada, criativa
 
 FORMATO JSON:
 {
   "variations": [
     {
-      "chorus": "linha 1 completa\\nlinha 2 completa\\nlinha 3 completa\\nlinha 4 completa",
-      "style": "Descrição do estilo",
-      "score": 1-10,
-      "justification": "Por que funciona comercialmente",
-      "terceiraViaProcess": {
-        "metricVersion": "versão A (métrica)",
-        "emotionalVersion": "versão B (emoção)",
-        "synthesis": "versão C final (síntese)"
-      }
+      "chorus": "linha 1 (GANCHO)\\nlinha 2 completa\\nlinha 3 completa\\nlinha 4 completa",
+      "style": "Estilo (ex: Chiclete Radiofônico)",
+      "score": 8-10,
+      "hookLine": "A linha que vai grudar na cabeça",
+      "commercialAppeal": "Por que vai fazer sucesso",
+      "singAlongFactor": "Por que é fácil cantar junto"
     }
   ],
   "bestCommercialOptionIndex": 0-4
 }
 
+CRITÉRIOS DE SCORE:
+- 10: Hit garantido, gruda na primeira escuta
+- 9: Muito forte, potencial de sucesso alto
+- 8: Bom comercialmente, funciona bem
+- <8: Refaça, não atinge padrão de hit
+
 IMPORTANTE:
-- Use o contexto da letra existente
-- Cada variação COMPLETAMENTE DIFERENTE
-- Scores entre 7-10
-- Melhor opção: score 9-10
-- Use "\\n" para separar linhas
-- CADA LINHA DEVE SER UMA FRASE COMPLETA E COERENTE
-- NUNCA corte frases no meio
+- Use contexto da letra existente
+- Cada variação TOTALMENTE DIFERENTE
+- Todos scores 8-10 (padrão de hit)
+- Melhor opção: score 10
+- GANCHO na primeira linha sempre
+- Frases completas e coerentes
 
-Gere as 5 variações CRIATIVAS agora:`
+Gere as 5 variações de REFRÃO DE HIT agora:`
 
-    console.log("[v0] Gerando refrão com Terceira Via e contexto da letra...")
+    console.log("[v0] Gerando refrão otimizado para hit 2024-2025...")
 
     const { text } = await generateText({
       model: "openai/gpt-4o",
       prompt,
-      temperature: 0.9,
+      temperature: 0.9, // Alta criatividade para hits
     })
 
     const jsonMatch = text.match(/\{[\s\S]*\}/)
@@ -167,11 +188,11 @@ Gere as 5 variações CRIATIVAS agora:`
       }))
     }
 
-    console.log("[v0] Refrão gerado com sucesso usando Terceira Via")
+    console.log("[v0] ✅ Refrão de hit gerado com sucesso!")
 
     return NextResponse.json(result)
   } catch (error) {
-    console.error("[v0] Erro ao gerar refrão:", error)
+    console.error("[v0] ❌ Erro ao gerar refrão:", error)
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : "Erro ao gerar refrão",

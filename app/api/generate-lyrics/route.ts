@@ -17,6 +17,7 @@ export async function POST(request: NextRequest) {
       formattingStyle,
       additionalRequirements,
       metrics,
+      advancedMode,
     } = await request.json()
 
     if (!genero) {
@@ -32,108 +33,183 @@ export async function POST(request: NextRequest) {
     const finalRhythm = subGenreInfo.rhythm || defaultRhythm
 
     const universalRules = `
-🎵 REGRAS UNIVERSAIS DO SISTEMA
+🎯 FÓRMULA DE SUCESSO 2024-2025 (PRIORIDADES ABSOLUTAS)
 
-1. LINGUAGEM BRASILEIRA SIMPLES E COLOQUIAL
-   - Use palavras do dia-a-dia, como um brasileiro fala naturalmente
-   - PROIBIDO: vocabulário rebuscado, poético, literário
-   - PERMITIDO: gírias, contrações, expressões populares ("tô", "cê", "pra", "né")
+1. REFRÃO ULTRA-MEMORÁVEL (PRIORIDADE #1)
+   - Primeira linha = GANCHO GRUDENTO que não sai da cabeça
+   - Máximo 4 linhas, cada uma com 8-10 sílabas
+   - Frases simples, diretas, fáceis de cantar junto
+   - Repetição estratégica de palavras-chave
+   - TESTE: Se não grudar na primeira escuta, refaça!
 
-2. MÉTRICA E RESPIRAÇÃO
-   - Cada verso deve caber em um fôlego natural ao cantar
-   - Máximo 12 sílabas poéticas por verso
-   - Versos empilhados (um por linha, sem parágrafos longos)
+2. LINGUAGEM COLOQUIAL BRASILEIRA INTENSA
+   - Fale como brasileiro fala na rua, no bar, na festa
+   - Use MUITO: "cê", "tô", "pra", "né", "véio", "mano", "bicho"
+   - Gírias regionais autênticas do gênero
+   - ZERO vocabulário rebuscado ou poético demais
+   - Parece conversa real, não poesia escrita
 
-3. ESTRUTURA DE VERSOS
-   - Um verso por linha (empilhamento vertical)
-   - Facilita contagem de sílabas e respiração
+3. EMOÇÃO AUTÊNTICA > TÉCNICA
+   - Sentimento genuíno é mais importante que rima perfeita
+   - Conte história REAL com detalhes concretos
+   - Cenas visuais claras (não abstrações)
+   - Frases completas e coerentes (NUNCA corte no meio)
+   - Se precisar escolher: EMOÇÃO vence MÉTRICA
 
-4. RIMAS NATURAIS (NÃO FORÇADAS)
-   - Rimas devem surgir naturalmente da narrativa
-   - Prefira rimas ricas (classes gramaticais diferentes)
-   - Evite rimas óbvias ou clichês
+4. ESTRUTURA COMERCIAL (3:00-3:30 minutos)
+   - INTRO curta (8-12 segundos)
+   - VERSE 1 (8 linhas) → PRE-CHORUS (2-4 linhas) → CHORUS (4 linhas)
+   - VERSE 2 (8 linhas) → PRE-CHORUS → CHORUS (repete)
+   - BRIDGE (8 linhas) → SOLO instrumental (8-16 segundos)
+   - FINAL CHORUS (4 linhas com mais energia) → OUTRO (4 linhas ou fade)
 
-5. EMOÇÃO AUTÊNTICA
-   - Sentimentos diretos e honestos
-   - Metáforas concretas (não abstratas)
-   - Cenas visuais claras
+5. MÉTRICA FLEXÍVEL (NÃO RÍGIDA)
+   - Alvo: 8-12 sílabas por verso
+   - Pode chegar a 13 se a frase estiver completa e natural
+   - PRIORIDADE: Frase completa > Contagem exata
+   - Respiração natural ao cantar
+
+6. INSTRUÇÕES MUSICAIS DETALHADAS (ESTILO CLONE)
+   - Cada seção tem nota de performance
+   - Exemplo: [VERSE 1 - Voz suave, quase falada, ritmo de prosa sertaneja, foco na nostalgia]
+   - Especifique: vocal, instrumentação, energia, emoção
+   - Guie o intérprete com precisão
 `
 
+    const advancedModeRules = advancedMode
+      ? `
+🔥 MODO AVANÇADO ATIVADO
+
+RIMAS PERFEITAS OBRIGATÓRIAS:
+- Mínimo 50% de rimas ricas (classes gramaticais diferentes)
+- Zero rimas falsas ou forçadas
+- Rimas naturais que surgem da narrativa
+
+MÉTRICA RIGOROSA:
+- Máximo 12 sílabas ABSOLUTO
+- Contagem precisa em cada verso
+- Respiração natural garantida
+
+GANCHOS PREMIUM:
+- Refrão com hook na primeira linha
+- Melodia grudenta e memorável
+- Fácil de cantar em karaokê
+
+LINGUAGEM LIMPA:
+- Zero palavrões pesados
+- Respeito e bom gosto
+- Adequado para rádio
+
+FIDELIDADE DE ESTILO:
+- 100% fiel ao gênero escolhido
+- Instrumentação autêntica
+- Referências culturais corretas
+`
+      : ""
+
     const chorusContext = additionalRequirements?.match(/\[CHORUS\]\s*([\s\S]+?)(?=\n\n|\[|$)/i)?.[1]
-      ? `\n\nREFRÃO PRÉ-DEFINIDO (use exatamente):\n${additionalRequirements.match(/\[CHORUS\]\s*([\s\S]+?)(?=\n\n|\[|$)/i)![1].trim()}\n\nConstrua a narrativa em torno deste refrão.`
+      ? `\n\n✨ REFRÃO PRÉ-DEFINIDO (use exatamente como está):\n${additionalRequirements.match(/\[CHORUS\]\s*([\s\S]+?)(?=\n\n|\[|$)/i)![1].trim()}\n\n🎯 Construa toda a narrativa em torno deste refrão, fazendo os versos levarem naturalmente até ele.`
       : ""
 
     const structureGuide = `
-ESTRUTURA COMERCIAL (3:30 de duração):
-[INTRO] (instrumental, 8-12 segundos)
-[VERSE 1] (8 linhas empilhadas) - estabelece a história
-[PRE-CHORUS] (2-4 linhas) - preparação emocional
-[CHORUS] (4 linhas) - grudento e memorável
-[VERSE 2] (8 linhas) - desenvolve a história
+📊 ESTRUTURA COMERCIAL OTIMIZADA (3:00-3:30 minutos para streaming)
+
+[INTRO] (8-12 segundos instrumental)
+Instrução: [INTRO - Instrumental suave com ${subGenreInfo.instruments || "instrumentos principais"}, estabelecendo o clima]
+
+[VERSE 1] (8 linhas empilhadas)
+Instrução: [VERSE 1 - Voz ${genero.includes("Funk") ? "confiante e direta" : "suave e narrativa"}, estabelecendo a história com detalhes concretos]
+- Apresenta personagens, situação, contexto
+- Linguagem coloquial intensa
+- Cenas visuais claras
+
 [PRE-CHORUS] (2-4 linhas)
-[CHORUS] (4 linhas) - repete
-[BRIDGE] (8 linhas) - momento de reflexão profunda
-[SOLO] (instrumental, 8-16 segundos) - momento instrumental
-[FINAL CHORUS] (4 linhas) - repete com mais intensidade
+Instrução: [PRE-CHORUS - Energia crescente, preparando emocionalmente para o refrão]
+- Transição suave para o refrão
+- Aumenta tensão emocional
+
+[CHORUS] (4 linhas - O MOMENTO MAIS IMPORTANTE)
+Instrução: [CHORUS - Energia máxima, grudento, fácil de cantar junto, repete palavras-chave]
+- GANCHO na primeira linha
+- Máximo 8-10 sílabas por linha
+- Ultra-memorável
+
+[VERSE 2] (8 linhas)
+Instrução: [VERSE 2 - Desenvolve a história, novos detalhes, mantém energia]
+- Avança a narrativa
+- Novos ângulos da história
+
+[PRE-CHORUS] (2-4 linhas - repete ou varia levemente)
+Instrução: [PRE-CHORUS - Energia crescente novamente]
+
+[CHORUS] (4 linhas - repete exatamente)
+Instrução: [CHORUS - Repete com mesma energia, público já canta junto]
+
+[BRIDGE] (8 linhas)
+Instrução: [BRIDGE - Momento de reflexão profunda, pode ter solo de ${subGenreInfo.instruments?.split(",")[0] || "guitarra"}, mudança de perspectiva]
+- Quebra o padrão
+- Reflexão ou clímax emocional
+- Prepara para final explosivo
+
+[SOLO] (8-16 segundos instrumental)
+Instrução: [SOLO - Instrumental de ${subGenreInfo.instruments?.split(",")[0] || "guitarra"}, momento de virtuosismo]
+
+[FINAL CHORUS] (4 linhas - repete com MAIS intensidade)
+Instrução: [FINAL CHORUS - Energia MÁXIMA, todos os instrumentos, público cantando junto, apoteose]
+
 [OUTRO] (4 linhas ou fade out)
+Instrução: [OUTRO - Fade out suave ou frase final marcante, deixa saudade]
+
+(Instrumentos: [${subGenreInfo.instruments || (isBachata ? "electric guitar, synthesizer, electronic drums, accordion" : "guitar, bass, drums, keyboard")}] | BPM: ${subGenreInfo.bpm || metrics?.bpm || 100} | Ritmo: ${finalRhythm} | Estilo: ${genero})
 `
 
-    const performanceInstructions = isPerformanceMode
-      ? `\n\nFORMATO PERFORMÁTICO:
-- Adicione descrições: (sobe o tom), (pausa dramática), (repete 2x)
-- Momentos instrumentais: [GUITAR SOLO], [DRUM BREAK]
-- Dinâmicas: (suave), (crescendo), (explosivo)
-- Final: (Instrumentos: [${subGenreInfo.instruments || (isBachata ? "electric guitar, synthesizer, electronic drums, accordion" : "guitar, bass, drums, keyboard")}] | BPM: ${subGenreInfo.bpm || metrics?.bpm || 100} | Ritmo: ${finalRhythm} | Estilo: ${genero})`
-      : `\n\nFORMATO PADRÃO:
-- Marcadores em inglês: [INTRO], [VERSE], [CHORUS], [BRIDGE], [OUTRO]
-- Letra limpa e direta em português brasileiro
-- Final: (Instrumentos: [${subGenreInfo.instruments || (isBachata ? "electric guitar, synthesizer, electronic drums, accordion" : "guitar, bass, drums, keyboard")}] | BPM: ${subGenreInfo.bpm || metrics?.bpm || 100} | Ritmo: ${finalRhythm} | Estilo: ${genero})`
-
     const prompt = `${universalRules}
+${advancedModeRules}
 
-Você é um compositor profissional brasileiro especializado em ${genero}.
+🎵 Você é um compositor PROFISSIONAL brasileiro especializado em criar HITS de ${genero}.
 
-TAREFA: Escreva uma letra completa aplicando o processo TERCEIRA VIA em cada verso.
+Seu objetivo: Criar uma música que GRUDE NA CABEÇA e faça SUCESSO nas plataformas de streaming.
 
-PROCESSO TERCEIRA VIA:
-- Para cada verso, considere: (A) Métrica/Fluidez + (B) Emoção/Autenticidade = (C) Síntese Final
-- Cada linha deve ter ritmo natural E emoção autêntica
-- Máximo 12 sílabas por verso
-- Linguagem simples brasileira
-
-ESPECIFICAÇÕES:
-TEMA: ${tema || "amor e relacionamento"}
-HUMOR: ${humor || "neutro"}
-CRIATIVIDADE: ${criatividade}
-${inspiracao ? `INSPIRAÇÃO: ${inspiracao}` : ""}
-${metaforas ? `METÁFORAS (PRIORIDADE): ${metaforas}\nInsira naturalmente na letra.` : ""}
-${emocoes?.length ? `EMOÇÕES: ${emocoes.join(", ")}` : ""}
-${titulo ? `TÍTULO: ${titulo}` : ""}
-${additionalRequirements ? `\nREQUISITOS ADICIONAIS (PRIORIDADE ABSOLUTA):\n${additionalRequirements}` : ""}
+ESPECIFICAÇÕES DO CLIENTE:
+📌 TEMA: ${tema || "amor e relacionamento"}
+🎭 HUMOR: ${humor || "neutro"}
+🎨 CRIATIVIDADE: ${criatividade}/10
+${inspiracao ? `💡 INSPIRAÇÃO: ${inspiracao}` : ""}
+${metaforas ? `🌟 METÁFORAS (use naturalmente): ${metaforas}` : ""}
+${emocoes?.length ? `❤️ EMOÇÕES: ${emocoes.join(", ")}` : ""}
+${titulo ? `📝 TÍTULO: ${titulo}` : ""}
+${additionalRequirements ? `\n⚡ REQUISITOS ESPECIAIS (PRIORIDADE MÁXIMA):\n${additionalRequirements}` : ""}
 ${chorusContext}
 
 ${structureGuide}
 
-REGRAS DE PROSÓDIA (${genreConfig.name}):
-- Com vírgula: máx ${genreConfig.prosody_rules.syllable_count.with_comma.max_before_comma} sílabas antes, ${genreConfig.prosody_rules.syllable_count.with_comma.max_after_comma} depois
-- Sem vírgula: ${genreConfig.prosody_rules.syllable_count.without_comma.min}-${genreConfig.prosody_rules.syllable_count.without_comma.max} sílabas
+🎯 REGRAS DE PROSÓDIA (${genreConfig.name}):
+- Alvo: 8-12 sílabas por verso (pode chegar a 13 se frase completa)
+- Respiração natural ao cantar
+- Frases completas > Contagem exata
 
-${performanceInstructions}
+🔥 LEMBRE-SE:
+1. REFRÃO GRUDENTO é prioridade #1
+2. LINGUAGEM COLOQUIAL BRASILEIRA intensa
+3. EMOÇÃO AUTÊNTICA > Técnica perfeita
+4. FRASES COMPLETAS sempre
+5. INSTRUÇÕES MUSICAIS detalhadas em cada seção
 
-Escreva a letra completa agora, aplicando Terceira Via em cada verso:`
+Escreva a letra completa AGORA, focando em criar um HIT:`
 
-    console.log("[v0] Gerando letra com Terceira Via...")
+    console.log("[v0] Gerando letra otimizada para hit 2024-2025...")
 
     const { text } = await generateText({
       model: "openai/gpt-4o",
       prompt,
-      temperature: 0.8,
+      temperature: 0.85, // Aumentado para mais criatividade
     })
 
     let finalLyrics = text.trim()
 
     finalLyrics = finalLyrics.replace(/^(?:Título|Title):\s*.+$/gm, "").trim()
     finalLyrics = finalLyrics.replace(/^\*\*(?:Título|Title):\s*.+\*\*$/gm, "").trim()
+    finalLyrics = finalLyrics.replace(/^#+\s*(?:Título|Title):\s*.+$/gm, "").trim()
 
     let extractedTitle = titulo || ""
 
@@ -150,7 +226,7 @@ Escreva a letra completa agora, aplicando Terceira Via em cada verso:`
 
     finalLyrics = capitalizeLines(finalLyrics)
 
-    console.log("[v0] Letra gerada com sucesso usando Terceira Via")
+    console.log("[v0] Letra gerada com sucesso - otimizada para hit!")
 
     return NextResponse.json({
       letra: finalLyrics,
