@@ -4,6 +4,7 @@ import { BACHATA_BRASILEIRA_2024 } from "@/lib/genres/bachata_brasileira_2024"
 import { SERTANEJO_MODERNO_2024 } from "@/lib/genres/sertanejo_moderno_2024"
 import { GENRE_CONFIGS, detectSubGenre, getGenreRhythm } from "@/lib/genre-config"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
+import { validateLyricsSyllables } from "@/lib/validation/syllableUtils"
 
 export async function POST(request: Request) {
   try {
@@ -211,6 +212,31 @@ ${advancedModeRules}
 LETRA ORIGINAL PARA REESCREVER:
 ${letraOriginal}
 
+⚠️ REGRA ABSOLUTA DE 12 SÍLABAS (INVIOLÁVEL):
+- CADA VERSO: MÁXIMO 12 SÍLABAS POÉTICAS
+- Contagem até última sílaba tônica
+- Use elisões naturais do canto brasileiro
+- NUNCA exceda 12 sílabas por verso
+
+EXEMPLOS CORRETOS (≤12 sílabas):
+✅ "O sol risca o céu do cerrado" (10 sílabas)
+✅ "A viola manda seu recado" (10 sílabas)
+✅ "Na festa de peão ou no boteco" (11 sílabas)
+✅ "A mesma canção une, ô louco" (10 sílabas)
+✅ "Pode rodar o mundo... mas o peito sabe:" (12 sílabas com pausa)
+
+EXEMPLOS ERRADOS (>12 sílabas - NUNCA FAÇA):
+❌ "A mesma canção une de tudo um pouco" (13 sílabas)
+❌ "Pode rodar o mundo, mas meu coração sabe" (14 sílabas)
+❌ "E a viola já manda o recado" (11 sílabas - OK, mas "A viola manda seu recado" é melhor)
+
+ESTRATÉGIAS PARA MANTER ≤12 SÍLABAS:
+1. Use contrações: "você" → "cê", "para" → "pra", "estou" → "tô"
+2. Simplifique frases: "de tudo um pouco" → "ô louco"
+3. Use pausas (...) para dividir frases longas
+4. Corte palavras desnecessárias: "já manda" → "manda"
+5. Seja CRIATIVO para expressar a mesma ideia em menos sílabas
+
 INSTRUÇÕES DE REESCRITA:
 ${conservarImagens ? "- CONSERVE as imagens e metáforas originais EXATAMENTE" : "- MELHORE as imagens mantendo o tema"}
 ${polirSemMexer ? "- MANTENHA a estrutura original, apenas aprimorando" : "- ADAPTE para estrutura de HIT (3:00-3:30)"}
@@ -218,7 +244,7 @@ ${polirSemMexer ? "- MANTENHA a estrutura original, apenas aprimorando" : "- ADA
 - Mantenha personagens e situações
 - Adapte vocabulário para ${generoConversao}
 - ESCREVA FRASES COMPLETAS (não corte no meio)
-- PRIORIZE: Frase completa > Limite de sílabas
+- MÁXIMO 12 SÍLABAS POR VERSO (ABSOLUTO)
 - REFRÃO GRUDENTO é prioridade #1
 - LINGUAGEM COLOQUIAL BRASILEIRA intensa
 - INSTRUÇÕES MUSICAIS detalhadas em cada seção
@@ -238,28 +264,61 @@ ${
 ${formatoEstrutura}
 
 🔥 LEMBRE-SE:
-1. REFRÃO GRUDENTO é prioridade #1
-2. LINGUAGEM COLOQUIAL BRASILEIRA intensa
-3. EMOÇÃO AUTÊNTICA > Técnica perfeita
-4. FRASES COMPLETAS sempre
-5. INSTRUÇÕES MUSICAIS detalhadas
+1. MÁXIMO 12 SÍLABAS POR VERSO (ABSOLUTO)
+2. REFRÃO GRUDENTO é prioridade #1
+3. LINGUAGEM COLOQUIAL BRASILEIRA intensa
+4. EMOÇÃO AUTÊNTICA > Técnica perfeita
+5. FRASES COMPLETAS sempre
+6. INSTRUÇÕES MUSICAIS detalhadas
 
 Reescreva a letra AGORA, transformando em HIT:`
 
     console.log("[v0] Iniciando reescrita otimizada para hit...")
 
-    const { text } = await generateText({
-      model: "openai/gpt-4o",
-      prompt: prompt,
-      temperature: 0.8, // Aumentado para mais criatividade
-    })
+    let finalLyrics = ""
+    let attempt = 0
+    const maxAttempts = 3
 
-    let finalLyrics = text.trim()
+    while (attempt < maxAttempts) {
+      attempt++
+      console.log(`[v0] 🔄 Tentativa ${attempt}/${maxAttempts} de reescrita...`)
 
-    finalLyrics = finalLyrics.replace(/^(?:Título|Title):\s*.+$/gm, "").trim()
-    finalLyrics = finalLyrics.replace(/^\*\*(?:Título|Title):\s*.+\*\*$/gm, "").trim()
-    finalLyrics = finalLyrics.replace(/^#+\s*(?:Título|Title):\s*.+$/gm, "").trim()
+      const { text } = await generateText({
+        model: "openai/gpt-4o",
+        prompt: prompt,
+        temperature: 0.8,
+      })
 
+      let lyrics = text.trim()
+
+      // Remove títulos duplicados
+      lyrics = lyrics.replace(/^(?:Título|Title):\s*.+$/gm, "").trim()
+      lyrics = lyrics.replace(/^\*\*(?:Título|Title):\s*.+\*\*$/gm, "").trim()
+      lyrics = lyrics.replace(/^#+\s*(?:Título|Title):\s*.+$/gm, "").trim()
+
+      // Valida sílabas
+      const validation = validateLyricsSyllables(lyrics, 12)
+
+      if (validation.valid) {
+        console.log(`[v0] ✅ Validação de sílabas passou na tentativa ${attempt}!`)
+        finalLyrics = lyrics
+        break
+      } else {
+        console.log(`[v0] ⚠️ Tentativa ${attempt} falhou - ${validation.linesWithIssues} versos excedem 12 sílabas:`)
+        validation.violations.forEach((v) => {
+          console.log(`[v0]   Linha ${v.line}: "${v.text}" (${v.syllables} sílabas)`)
+        })
+
+        if (attempt === maxAttempts) {
+          console.log(`[v0] ⚠️ Máximo de tentativas atingido. Retornando melhor resultado.`)
+          finalLyrics = lyrics
+        } else {
+          console.log(`[v0] 🔄 Regenerando com ênfase em limite de sílabas...`)
+        }
+      }
+    }
+
+    // Adiciona instrumentos se não existir
     if (!finalLyrics.includes("(Instrumentos:")) {
       const instrumentList = `(Instrumentos: [${subGenreInfo.instruments || originalInstruments || "guitar, bass, drums, keyboard"}] | BPM: ${subGenreInfo.bpm || metrics?.bpm || 100} | Ritmo: ${finalRhythm} | Estilo: ${generoConversao})`
       finalLyrics = finalLyrics.trim() + "\n\n" + instrumentList
