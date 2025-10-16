@@ -254,7 +254,60 @@ Instrução: [OUTRO - Fade out suave ou frase final marcante, deixa saudade]
 (Instrumentos: [${subGenreInfo.instruments || (isBachata ? "electric guitar, synthesizer, electronic drums, accordion" : "guitar, bass, drums, keyboard")}] | BPM: ${subGenreInfo.bpm || metrics?.bpm || 100} | Ritmo: ${finalRhythm} | Estilo: ${genero})
 `
 
-    const prompt = `${universalRules}
+    const universalLanguageRules = `
+🌍 REGRAS UNIVERSAIS DE IDIOMA (OBRIGATÓRIO)
+
+✅ PORTUGUÊS BRASILEIRO:
+- LETRAS CANTADAS: 100% em português do Brasil
+- Linguagem coloquial autêntica
+- Gírias e expressões regionais
+
+✅ INGLÊS:
+- INSTRUÇÕES DE PERFORMANCE: sempre em inglês
+  Exemplo: [VERSE 1 - Soft voice, narrative style, building emotion]
+- LISTA DE INSTRUMENTOS: sempre em inglês
+  Exemplo: (Instrumentos: acoustic guitar, bass, drums, keyboard | ...)
+- BACKING VOCALS: sempre em inglês
+  Exemplo: (Backing: "Oh, oh, oh"), (Backing: "Yeah, yeah")
+- LABELS DE ESTRUTURA: sempre em inglês
+  Exemplo: INTRO, VERSE 1, PRE-CHORUS, CHORUS, BRIDGE, SOLO, OUTRO
+
+❌ NUNCA MISTURE:
+- Não escreva letras em inglês
+- Não escreva instruções em português
+- Mantenha separação clara
+
+📝 EXEMPLO CORRETO:
+
+INTRO
+[Soft acoustic guitar, building anticipation]
+
+VERSE 1
+[Narrative voice, intimate and emotional]
+Eu te amei demais
+Mas você não quis ficar
+Agora a saudade dói
+E não consigo te esquecer
+
+PRE-CHORUS
+[Energy building, drums enter]
+Tudo que eu queria
+Era você do meu lado
+
+CHORUS
+[Full band, emotional peak, singalong energy]
+(Backing: "Oh, oh, oh")
+Volta pra mim, meu amor
+Sem você não sei viver
+Volta pra mim, por favor
+Você é tudo que eu quero ter
+
+(Instrumentos: acoustic guitar, electric guitar, bass, drums, keyboard | BPM: 85 | Ritmo: Balada Sertaneja | Estilo: Sertanejo Romântico)
+`
+
+    const prompt = `${universalLanguageRules}
+
+${universalRules}
 ${advancedModeRules}
 
 🎵 Você é um compositor PROFISSIONAL brasileiro especializado em criar HITS de ${genero}.

@@ -17,7 +17,23 @@ export async function POST(request: Request) {
     const defaultRhythm = genre ? getGenreRhythm(genre) : "Brasileiro"
     const finalRhythm = subGenreInfo.rhythm || defaultRhythm
 
-    const prompt = `Você é um especialista em criar hooks comerciais para música brasileira.
+    const prompt = `🌍 REGRAS UNIVERSAIS DE IDIOMA (OBRIGATÓRIO)
+
+✅ PORTUGUÊS BRASILEIRO:
+- HOOKS: 100% em português do Brasil
+- Linguagem coloquial autêntica
+- Gírias e expressões regionais
+
+✅ INGLÊS:
+- BACKING VOCALS (se houver): sempre em inglês
+  Exemplo: (Backing: "Oh, oh, oh")
+- INSTRUÇÕES: sempre em inglês
+
+❌ NUNCA MISTURE:
+- Não escreva hooks em inglês
+- Mantenha separação clara
+
+Você é um especialista em criar hooks comerciais para música brasileira.
 
 TAREFA: Analise a letra abaixo e crie 3 variações de hooks ultra-memoráveis.
 
@@ -42,14 +58,28 @@ REGRAS DE HOOK DE HIT:
 - Fácil de repetir
 - Potencial viral
 - CADA VARIAÇÃO ≤ 12 SÍLABAS
+- 100% em PORTUGUÊS BRASILEIRO
+
+${
+  advancedMode
+    ? `
+🔥 MODO AVANÇADO - HOOK PREMIUM:
+- Gancho instantâneo (gruda em 3 segundos)
+- Linguagem limpa (adequado para rádio)
+- Potencial de bordão viral
+- Fácil de cantar em karaokê
+- Score mínimo: 90/100
+`
+    : ""
+}
 
 FORMATO DE RESPOSTA (JSON):
 {
-  "hook": "melhor hook escolhido (≤12 sílabas)",
+  "hook": "melhor hook escolhido (≤12 sílabas, em português)",
   "hookVariations": [
-    "variação 1 (≤12 sílabas)",
-    "variação 2 (≤12 sílabas)",
-    "variação 3 (≤12 sílabas)"
+    "variação 1 (≤12 sílabas, em português)",
+    "variação 2 (≤12 sílabas, em português)",
+    "variação 3 (≤12 sílabas, em português)"
   ],
   "score": 85,
   "suggestions": [
@@ -67,7 +97,7 @@ FORMATO DE RESPOSTA (JSON):
   "transformations": [
     {
       "original": "trecho da letra original",
-      "transformed": "versão otimizada como hook (≤12 sílabas)",
+      "transformed": "versão otimizada como hook (≤12 sílabas, em português)",
       "reason": "por que funciona melhor"
     }
   ]
@@ -75,6 +105,7 @@ FORMATO DE RESPOSTA (JSON):
 
 IMPORTANTE:
 - Hook deve ter 4-8 palavras (MÁXIMO 12 SÍLABAS)
+- 100% em PORTUGUÊS BRASILEIRO
 - Score mínimo: 80/100
 - TikTok score mínimo: 7/10
 - Retorne APENAS o JSON, sem markdown`

@@ -58,6 +58,30 @@ export async function POST(request: Request) {
     const instrumentMatch = letraOriginal.match(/\(Instruments?:\s*\[([^\]]+)\]/i)
     const originalInstruments = instrumentMatch ? instrumentMatch[1].trim() : null
 
+    const universalLanguageRules = `
+🌍 REGRAS UNIVERSAIS DE IDIOMA (OBRIGATÓRIO)
+
+✅ PORTUGUÊS BRASILEIRO:
+- LETRAS CANTADAS: 100% em português do Brasil
+- Linguagem coloquial autêntica
+- Gírias e expressões regionais
+
+✅ INGLÊS:
+- INSTRUÇÕES DE PERFORMANCE: sempre em inglês
+  Exemplo: [VERSE 1 - Soft voice, narrative style, building emotion]
+- LISTA DE INSTRUMENTOS: sempre em inglês
+  Exemplo: (Instrumentos: acoustic guitar, bass, drums, keyboard | ...)
+- BACKING VOCALS: sempre em inglês
+  Exemplo: (Backing: "Oh, oh, oh"), (Backing: "Yeah, yeah")
+- LABELS DE ESTRUTURA: sempre em inglês
+  Exemplo: INTRO, VERSE 1, PRE-CHORUS, CHORUS, BRIDGE, SOLO, OUTRO
+
+❌ NUNCA MISTURE:
+- Não escreva letras em inglês
+- Não escreva instruções em português
+- Mantenha separação clara
+`
+
     const universalRulesPrompt = `
 🎯 FÓRMULA DE SUCESSO 2024-2025 (REESCRITA)
 
@@ -171,7 +195,9 @@ Instrução: [OUTRO - Fade out suave ou frase final marcante]
 (Instrumentos: [${subGenreInfo.instruments || originalInstruments || "guitar, bass, drums, keyboard"}] | BPM: ${subGenreInfo.bpm || metrics?.bpm || 100} | Ritmo: ${finalRhythm} | Estilo: ${generoConversao})
 `
 
-    const prompt = `${universalRulesPrompt}
+    const prompt = `${universalLanguageRules}
+
+${universalRulesPrompt}
 ${advancedModeRules}
 
 🎵 Você é um compositor PROFISSIONAL especializado em criar HITS de ${generoConversao}.

@@ -39,6 +39,23 @@ ${subGenreInfo.subGenre ? `- Seguir o ritmo de ${subGenreInfo.styleNote}` : ""}
 `
 
     const universalRules = `
+🌍 REGRAS UNIVERSAIS DE IDIOMA (OBRIGATÓRIO)
+
+✅ PORTUGUÊS BRASILEIRO:
+- LETRAS DO REFRÃO: 100% em português do Brasil
+- Linguagem coloquial autêntica
+- Gírias e expressões regionais
+
+✅ INGLÊS:
+- BACKING VOCALS: sempre em inglês
+  Exemplo: (Backing: "Oh, oh, oh"), (Backing: "Yeah, yeah")
+- INSTRUÇÕES (se houver): sempre em inglês
+  Exemplo: [CHORUS - Full energy, singalong moment]
+
+❌ NUNCA MISTURE:
+- Não escreva refrão em inglês
+- Mantenha separação clara
+
 🎯 FÓRMULA DE REFRÃO DE SUCESSO 2024-2025
 
 ⚠️ REGRA ABSOLUTA DE SÍLABAS (INVIOLÁVEL):
