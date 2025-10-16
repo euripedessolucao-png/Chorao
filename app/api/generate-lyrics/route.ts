@@ -65,8 +65,49 @@ export async function POST(request: NextRequest) {
 - Use criatividade para expressar a mesma emoção em menos sílabas
 `
 
+    const stackingRules = `
+🎵 FORMATO BRASILEIRO DE EMPILHAMENTO (OBRIGATÓRIO)
+
+📝 REGRA ABSOLUTA DE ESTRUTURA:
+• CADA VERSO EM UMA LINHA SEPARADA
+• NUNCA junte dois versos na mesma linha
+• EXCEÇÃO: apenas quando o segundo verso é continuação DIRETA do primeiro
+
+✅ EXEMPLO CORRETO (EMPILHADO):
+[VERSE 1]
+Se quer saber de mim
+Pergunte para mim
+Se for falar do que passou
+Conta a parte que você errou
+Não vem com esse papo furado
+Dizendo que foi enganado
+
+❌ EXEMPLO ERRADO (NÃO EMPILHADO):
+[VERSE 1]
+Se quer saber de mim, pergunte para mim
+Se for falar do que passou, conta a parte que você errou
+Não vem com esse papo furado dizendo que foi enganado
+
+🎼 POR QUE EMPILHAR?
+• Facilita contagem de sílabas
+• Formato padrão da indústria brasileira
+• Melhor visualização da estrutura
+• Mais fácil para o cantor ler
+
+🔥 ESTRUTURA POR SEÇÃO:
+• VERSE: 6-8 linhas empilhadas
+• PRE-CHORUS: 2-4 linhas empilhadas
+• CHORUS: 4 linhas empilhadas (PADRÃO OURO)
+• BRIDGE: 4-6 linhas empilhadas
+• OUTRO: 2-4 linhas empilhadas
+
+ESCREVA SEMPRE NO FORMATO EMPILHADO BRASILEIRO!
+`
+
     const universalRules = `
 🎯 FÓRMULA DE SUCESSO 2024-2025 (PRIORIDADES ABSOLUTAS)
+
+${stackingRules}
 
 ${syllableRule}
 
