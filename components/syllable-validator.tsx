@@ -121,7 +121,10 @@ export function SyllableValidator({ lyrics, maxSyllables = 12, onValidate }: Syl
 
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Versos com problemas:</span>
-              <Badge variant={validationResult.valid ? "default" : "destructive"}>
+              <Badge
+                variant="secondary"
+                className={validationResult.valid ? "" : "bg-red-100 text-red-800 border-red-200"}
+              >
                 {validationResult.linesWithIssues}
               </Badge>
             </div>
