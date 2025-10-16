@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
 import { getGenreConfig, detectSubGenre, getGenreRhythm } from "@/lib/genre-config"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
+import { countSyllables } from "@/lib/validation/syllableUtils"
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,6 +41,13 @@ ${subGenreInfo.subGenre ? `- Seguir o ritmo de ${subGenreInfo.styleNote}` : ""}
     const universalRules = `
 🎯 FÓRMULA DE REFRÃO DE SUCESSO 2024-2025
 
+⚠️ REGRA ABSOLUTA DE SÍLABAS (INVIOLÁVEL):
+- CADA VERSO: MÁXIMO 12 SÍLABAS POÉTICAS
+- Este é o LIMITE HUMANO do canto
+- NUNCA exceda 12 sílabas por verso
+- Se precisar de mais espaço, divida em dois versos
+- Criatividade DENTRO do limite, não burlando ele
+
 ⚠️ FORMATO DE VERSOS EMPILHADOS (OBRIGATÓRIO):
 - Cada verso do refrão em uma linha separada
 - NUNCA junte dois versos na mesma linha
@@ -47,33 +55,35 @@ ${subGenreInfo.subGenre ? `- Seguir o ritmo de ${subGenreInfo.styleNote}` : ""}
 - Facilita contagem de versos e sílabas
 - Formato padrão brasileiro de composição
 
-EXEMPLO CORRETO:
+EXEMPLO CORRETO (cada verso ≤12 sílabas):
 "chorus": "Cê me testa, olha e sorri\\nSaudade é punhal no peito\\nTô no meu flow\\nVocê me faz sonhar"
 
 EXEMPLO ERRADO (NÃO FAÇA):
-"chorus": "Cê me testa, olha e sorri, saudade é punhal no peito"
+"chorus": "Cê me testa, olha e sorri, saudade é punhal no peito" ❌ (versos juntos)
+"chorus": "Você me deixou sozinho aqui pensando em tudo que passou" ❌ (mais de 12 sílabas)
 
 PRIORIDADE ABSOLUTA:
-1. GANCHO GRUDENTO (primeira linha deve grudar na cabeça)
-2. FRASES COMPLETAS E COERENTES (NUNCA corte no meio)
-3. LINGUAGEM COLOQUIAL BRASILEIRA INTENSA
-4. FÁCIL DE CANTAR JUNTO (karaokê-friendly)
-5. REPETIÇÃO ESTRATÉGICA de palavras-chave
+1. MÁXIMO 12 SÍLABAS POR VERSO (INVIOLÁVEL)
+2. GANCHO GRUDENTO (primeira linha deve grudar na cabeça)
+3. FRASES COMPLETAS E COERENTES (NUNCA corte no meio)
+4. LINGUAGEM COLOQUIAL BRASILEIRA INTENSA
+5. FÁCIL DE CANTAR JUNTO (karaokê-friendly)
 6. CADA VERSO EM UMA LINHA SEPARADA
 
 CARACTERÍSTICAS DE HIT:
-- Máximo 4 linhas, cada uma com 8-10 sílabas
+- Máximo 4 linhas, cada uma com 8-10 sílabas (NUNCA mais de 12)
 - Frases simples, diretas, memoráveis
 - Palavras do dia-a-dia ("cê", "tô", "pra", "né")
 - Cada linha faz sentido sozinha
 - Melodia implícita grudenta
 - CADA LINHA SEPARADA POR \\n
 
-EXEMPLOS DE HITS 2024-2025 (formato empilhado):
+EXEMPLOS DE HITS 2024-2025 (formato empilhado, ≤12 sílabas):
 ✓ "Cê me testa, olha e sorri\\nSaudade é punhal no peito\\nTô no meu flow\\nVocê me faz sonhar"
 ✓ "Se quer saber de mim\\nPergunte para mim\\nSe for falar do que passou\\nConta a parte que você errou"
 
 EVITE:
+✗ Versos com mais de 12 sílabas
 ✗ Frases incompletas ("Você me faz..." - ERRADO)
 ✗ Vocabulário rebuscado ("floresço", "bonança")
 ✗ Abstrações vagas ("mar de dor", "alma perdida")
@@ -133,12 +143,13 @@ ESPECIFICAÇÕES:
 PROCESSO PARA CADA VARIAÇÃO:
 1. Identifique o GANCHO principal (frase que vai grudar)
 2. Construa em torno do gancho com frases completas
-3. Teste mental: É fácil de cantar junto?
-4. Verifique: Conecta com a letra existente?
+3. VERIFIQUE: Cada verso tem no máximo 12 sílabas?
+4. Teste mental: É fácil de cantar junto?
+5. Verifique: Conecta com a letra existente?
 
 REGRAS ESTRUTURAIS:
 - 4 linhas por refrão (padrão comercial)
-- Cada linha: 8-10 sílabas (ideal para melodia)
+- Cada linha: 8-10 sílabas (NUNCA mais de 12)
 - CADA LINHA = FRASE COMPLETA
 - Primeira linha = GANCHO PRINCIPAL
 - Repetição estratégica de palavras-chave
@@ -183,18 +194,65 @@ Gere as 5 variações de REFRÃO DE HIT agora:`
 
     console.log("[v0] Gerando refrão otimizado para hit 2024-2025...")
 
-    const { text } = await generateText({
-      model: "openai/gpt-4o",
-      prompt,
-      temperature: 0.9, // Alta criatividade para hits
-    })
+    let attempts = 0
+    let result: any = null
+    let allValid = false
 
-    const jsonMatch = text.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) {
-      throw new Error("Resposta da IA não está no formato JSON esperado")
+    while (attempts < 3 && !allValid) {
+      attempts++
+      console.log(`[v0] Tentativa ${attempts}/3 de geração de refrão...`)
+
+      const { text } = await generateText({
+        model: "openai/gpt-4o",
+        prompt,
+        temperature: 0.9,
+      })
+
+      const jsonMatch = text.match(/\{[\s\S]*\}/)
+      if (!jsonMatch) {
+        if (attempts === 3) {
+          throw new Error("Resposta da IA não está no formato JSON esperado")
+        }
+        continue
+      }
+
+      result = JSON.parse(jsonMatch[0])
+
+      if (result.variations && Array.isArray(result.variations)) {
+        allValid = true
+        const violations: string[] = []
+
+        for (let i = 0; i < result.variations.length; i++) {
+          const variation = result.variations[i]
+          const lines = variation.chorus.split("\\n")
+
+          for (let j = 0; j < lines.length; j++) {
+            const line = lines[j].trim()
+            if (!line) continue
+
+            const syllables = countSyllables(line)
+            if (syllables > 12) {
+              allValid = false
+              violations.push(`Variação ${i + 1}, linha ${j + 1}: "${line}" = ${syllables} sílabas (máx: 12)`)
+            }
+          }
+        }
+
+        if (!allValid) {
+          console.log(`[v0] ⚠️ Tentativa ${attempts} falhou - violações de sílabas:`)
+          violations.forEach((v) => console.log(`[v0]   - ${v}`))
+          if (attempts < 3) {
+            console.log(`[v0] 🔄 Regenerando...`)
+          }
+        } else {
+          console.log(`[v0] ✅ Todas as variações respeitam o limite de 12 sílabas!`)
+        }
+      }
     }
 
-    const result = JSON.parse(jsonMatch[0])
+    if (!allValid) {
+      console.log(`[v0] ⚠️ Após 3 tentativas, ainda há violações. Retornando melhor resultado.`)
+    }
 
     if (result.variations && Array.isArray(result.variations)) {
       result.variations = result.variations.map((variation: any) => ({

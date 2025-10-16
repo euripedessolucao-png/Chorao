@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { generateText } from "ai"
 import { getGenreConfig, detectSubGenre, getGenreRhythm } from "@/lib/genre-config"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
+import { countSyllables } from "@/lib/validation/syllableUtils"
 
 export async function POST(request: Request) {
   try {
@@ -27,20 +28,28 @@ GÊNERO: ${genre || "Brasileiro"}
 RITMO: ${finalRhythm}
 ${additionalRequirements ? `REQUISITOS: ${additionalRequirements}` : ""}
 
+⚠️ REGRA ABSOLUTA DE SÍLABAS (INVIOLÁVEL):
+- Hook: MÁXIMO 12 SÍLABAS POÉTICAS
+- Este é o LIMITE HUMANO do canto
+- NUNCA exceda 12 sílabas
+- Se precisar de mais espaço, use menos palavras
+- Criatividade DENTRO do limite
+
 REGRAS DE HOOK DE HIT:
-- 4-8 palavras (máximo 10 sílabas)
+- 4-8 palavras (máximo 12 sílabas)
 - Grudento e memorável
 - Linguagem coloquial brasileira
 - Fácil de repetir
 - Potencial viral
+- CADA VARIAÇÃO ≤ 12 SÍLABAS
 
 FORMATO DE RESPOSTA (JSON):
 {
-  "hook": "melhor hook escolhido (4-8 palavras)",
+  "hook": "melhor hook escolhido (≤12 sílabas)",
   "hookVariations": [
-    "variação 1 (chiclete)",
-    "variação 2 (bordão)",
-    "variação 3 (viral)"
+    "variação 1 (≤12 sílabas)",
+    "variação 2 (≤12 sílabas)",
+    "variação 3 (≤12 sílabas)"
   ],
   "score": 85,
   "suggestions": [
@@ -58,42 +67,84 @@ FORMATO DE RESPOSTA (JSON):
   "transformations": [
     {
       "original": "trecho da letra original",
-      "transformed": "versão otimizada como hook",
+      "transformed": "versão otimizada como hook (≤12 sílabas)",
       "reason": "por que funciona melhor"
     }
   ]
 }
 
 IMPORTANTE:
-- Hook deve ter 4-8 palavras
+- Hook deve ter 4-8 palavras (MÁXIMO 12 SÍLABAS)
 - Score mínimo: 80/100
 - TikTok score mínimo: 7/10
 - Retorne APENAS o JSON, sem markdown`
 
-    console.log("[v0] Gerando hook otimizado...")
+    let attempts = 0
+    let parsedResult: any = null
+    let allValid = false
 
-    const { text } = await generateText({
-      model: "openai/gpt-4o",
-      prompt: prompt,
-      temperature: 0.85,
-    })
+    while (attempts < 3 && !allValid) {
+      attempts++
+      console.log(`[v0] Tentativa ${attempts}/3 de geração de hook...`)
 
-    let parsedResult
-    try {
-      const cleanText = text
-        .replace(/```json\n?/g, "")
-        .replace(/```\n?/g, "")
-        .trim()
-      parsedResult = JSON.parse(cleanText)
-    } catch (parseError) {
-      console.error("[v0] ❌ Erro ao fazer parse do JSON:", parseError)
-      console.error("[v0] Texto recebido:", text)
-      return NextResponse.json({ error: "Erro ao processar resposta da IA. Tente novamente." }, { status: 500 })
+      const { text } = await generateText({
+        model: "openai/gpt-4o",
+        prompt: prompt,
+        temperature: 0.85,
+      })
+
+      try {
+        const cleanText = text
+          .replace(/```json\n?/g, "")
+          .replace(/```\n?/g, "")
+          .trim()
+        parsedResult = JSON.parse(cleanText)
+      } catch (parseError) {
+        if (attempts === 3) {
+          console.error("[v0] ❌ Erro ao fazer parse do JSON:", parseError)
+          return NextResponse.json({ error: "Erro ao processar resposta da IA. Tente novamente." }, { status: 500 })
+        }
+        continue
+      }
+
+      if (!parsedResult.hook || !Array.isArray(parsedResult.hookVariations)) {
+        if (attempts === 3) {
+          console.error("[v0] ❌ Estrutura JSON inválida:", parsedResult)
+          return NextResponse.json({ error: "Resposta da IA em formato inválido. Tente novamente." }, { status: 500 })
+        }
+        continue
+      }
+
+      allValid = true
+      const violations: string[] = []
+
+      const mainHookSyllables = countSyllables(parsedResult.hook)
+      if (mainHookSyllables > 12) {
+        allValid = false
+        violations.push(`Hook principal: "${parsedResult.hook}" = ${mainHookSyllables} sílabas (máx: 12)`)
+      }
+
+      parsedResult.hookVariations.forEach((variation: string, index: number) => {
+        const syllables = countSyllables(variation)
+        if (syllables > 12) {
+          allValid = false
+          violations.push(`Variação ${index + 1}: "${variation}" = ${syllables} sílabas (máx: 12)`)
+        }
+      })
+
+      if (!allValid) {
+        console.log(`[v0] ⚠️ Tentativa ${attempts} falhou - violações de sílabas:`)
+        violations.forEach((v) => console.log(`[v0]   - ${v}`))
+        if (attempts < 3) {
+          console.log(`[v0] 🔄 Regenerando...`)
+        }
+      } else {
+        console.log(`[v0] ✅ Todos os hooks respeitam o limite de 12 sílabas!`)
+      }
     }
 
-    if (!parsedResult.hook || !Array.isArray(parsedResult.hookVariations)) {
-      console.error("[v0] ❌ Estrutura JSON inválida:", parsedResult)
-      return NextResponse.json({ error: "Resposta da IA em formato inválido. Tente novamente." }, { status: 500 })
+    if (!allValid) {
+      console.log(`[v0] ⚠️ Após 3 tentativas, ainda há violações. Retornando melhor resultado.`)
     }
 
     if (parsedResult.hook) {
