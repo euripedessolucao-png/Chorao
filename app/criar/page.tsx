@@ -27,6 +27,7 @@ import { Star, Trophy, Wand2 } from "lucide-react"
 import { EMOTIONS } from "@/lib/genres"
 import { GenreSelect } from "@/components/genre-select"
 import { HookGenerator } from "@/components/hook-generator"
+import { SyllableValidator } from "@/components/syllable-validator"
 
 const BRAZILIAN_GENRE_METRICS = {
   "Sertanejo Moderno": { syllablesPerLine: 6, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
@@ -645,6 +646,18 @@ export default function CriarPage() {
                     onChange={(e) => setLyrics(e.target.value)}
                     rows={12}
                     className="font-mono text-xs"
+                  />
+                  <SyllableValidator
+                    lyrics={lyrics}
+                    maxSyllables={12}
+                    onValidate={(result) => {
+                      if (!result.valid) {
+                        console.log(`⚠️ ${result.linesWithIssues} versos com problemas:`)
+                        result.violations.forEach((v) => {
+                          console.log(`  Linha ${v.line}: "${v.text}" → ${v.syllables} sílabas`)
+                        })
+                      }
+                    }}
                   />
                 </div>
 

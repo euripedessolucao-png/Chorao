@@ -16,6 +16,7 @@ import { toast } from "sonner"
 import { GENRE_CONFIGS } from "@/lib/genre-config"
 import { EMOTIONS } from "@/lib/genres"
 import { GenreSelect } from "@/components/genre-select"
+import { SyllableValidator } from "@/components/syllable-validator"
 import {
   Dialog,
   DialogContent,
@@ -678,6 +679,18 @@ export default function ReescreverPage() {
                     onChange={(e) => setLyrics(e.target.value)}
                     rows={12}
                     className="font-mono text-xs"
+                  />
+                  <SyllableValidator
+                    lyrics={lyrics}
+                    maxSyllables={12}
+                    onValidate={(result) => {
+                      if (!result.valid) {
+                        console.log(`⚠️ ${result.linesWithIssues} versos com problemas:`)
+                        result.violations.forEach((v) => {
+                          console.log(`  Linha ${v.line}: "${v.text}" → ${v.syllables} sílabas`)
+                        })
+                      }
+                    }}
                   />
                 </div>
 

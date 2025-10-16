@@ -10,64 +10,91 @@
 export function countSyllables(line: string): number {
   if (!line.trim()) return 0
 
-  // Remove pontuação e formatação
+  // Remove pontuação e formatação, mas mantém espaços para elisão
   let clean = line
     .toLowerCase()
-    .replace(/[^\w\sáéíóúâêîôûãõàèìòù]/g, " ")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Remove acentos
+    .replace(/[^\w\sàèìòùáéíóúâêîôûãõ]/g, " ") // Mantém letras, espaços e vogais com acento
+    .replace(/\s+/g, " ")
     .trim()
 
-  // Casos especiais: "cê", "tô", "você", etc.
-  clean = clean
-    .replace(/\bcê\b/g, "você")
-    .replace(/\btô\b/g, "estou")
-    .replace(/\bnum\b/g, "em um")
-    .replace(/\bné\b/g, "não é")
+  // Aplica elisões (sinalefa) - CRÍTICO para canto!
+  clean = applyElisions(clean)
 
   // Divide em palavras
   const words = clean.split(/\s+/).filter((w) => w.length > 0)
-  let total = 0
+  let totalSyllables = 0
 
   for (const word of words) {
-    let syllables = 0
-    const vowels = "aeiouáéíóúâêîôûãõàèìòù"
-    let i = 0
-
-    while (i < word.length) {
-      if (vowels.includes(word[i])) {
-        syllables++
-        // Trata ditongos e tritongos (ex: "au", "uai")
-        if (i + 1 < word.length && vowels.includes(word[i + 1])) {
-          // Ditongo decrescente (ai, ei, oi, au, eu, ou) = 1 sílaba
-          if (["a", "e", "o"].includes(word[i]) && ["i", "u"].includes(word[i + 1])) {
-            i += 2
-            continue
-          }
-          // Ditongo crescente (ia, ie, io, ua, ue, uo) = 1 sílaba
-          if (["i", "u"].includes(word[i]) && ["a", "e", "i", "o", "u"].includes(word[i + 1])) {
-            i += 2
-            continue
-          }
-        }
-        // Tritongos (uai, uei, uoi) = 1 sílaba
-        if (
-          i + 2 < word.length &&
-          word[i] === "u" &&
-          ["a", "e", "o"].includes(word[i + 1]) &&
-          ["i"].includes(word[i + 2])
-        ) {
-          i += 3
-          continue
-        }
-      }
-      i++
-    }
-
-    // Palavras sem vogais (ex: "psst") contam como 1
-    if (syllables === 0) syllables = 1
-    total += syllables
+    totalSyllables += countWordSyllables(word)
   }
 
-  return total
+  return totalSyllables
+}
+
+/**
+ * Aplica elisões (sinalefa) entre palavras
+ */
+function applyElisions(text: string): string {
+  return (
+    text
+      // Elisões comuns no canto brasileiro
+      .replace(/\b(eu)\s+(vou)\b/gi, "euvou")
+      .replace(/\b(meu)\s+(amor)\b/gi, "meuamor")
+      .replace(/\b(sou)\s+(eu)\b/gi, "soueu")
+      .replace(/\b(que)\s+(eu)\b/gi, "queeu")
+      .replace(/\b(se)\s+(eu)\b/gi, "seeu")
+      .replace(/\b(de)\s+(a|e|i|o|u|amor|abraço|outro|essa|aquele)/gi, (match, p1, p2) => `d${p2}`)
+      .replace(/\b(em)\s+(a|e|i|o|u|um|uns)/gi, (match, p1, p2) => `n${p2}`)
+      .replace(/\b(com)\s+(a|e|i|o|u|igo)/gi, (match, p1, p2) => `co${p2}`)
+      .replace(/\b(por)\s+(a|e|i|o|u)/gi, (match, p1, p2) => `po${p2}`)
+      // Contrações obrigatórias
+      .replace(/\bvocê\b/gi, "cê")
+      .replace(/\bestou\b/gi, "tô")
+      .replace(/\bpara\b/gi, "pra")
+      .replace(/\bestá\b/gi, "tá")
+      .replace(/\bcomigo\b/gi, "comigo") // mantém 3 sílabas: co-mi-go
+      .replace(/\bcontigo\b/gi, "contigo")
+  ) // mantém 3 sílabas: con-ti-go
+}
+
+/**
+ * Conta sílabas em uma única palavra
+ */
+function countWordSyllables(word: string): number {
+  if (word.length === 0) return 0
+
+  const vowels = "aeiouàèìòùáéíóúâêîôûãõ"
+  let syllableCount = 0
+  let i = 0
+
+  while (i < word.length) {
+    const currentChar = word[i]
+
+    if (vowels.includes(currentChar)) {
+      syllableCount++
+
+      // Verifica ditongos decrescentes (vogal + semivogal)
+      if (i + 1 < word.length && "iu".includes(word[i + 1])) {
+        if ("aeoáéíóúâêô".includes(currentChar)) {
+          i++ // Pula a semivogal (ditongo = 1 sílaba)
+        }
+      }
+      // Verifica ditongos crescentes (semivogal + vogal)
+      else if (i > 0 && "iu".includes(word[i - 1]) && vowels.includes(currentChar)) {
+        // Já contamos na vogal anterior, não faz nada
+      }
+      // Verifica tritongos
+      else if (i + 2 < word.length && word[i] === "u" && "aeo".includes(word[i + 1]) && word[i + 2] === "i") {
+        i += 2 // Pula duas letras do tritongo
+      }
+    }
+    i++
+  }
+
+  // Palavra sem vogais conta como 1 sílaba
+  return syllableCount || 1
 }
 
 /**
@@ -96,6 +123,46 @@ export function splitAtCaesura(line: string): [string, string | null] {
   }
 
   return [trimmed, null]
+}
+
+/**
+ * Valida se uma letra inteira está dentro do limite de sílabas
+ */
+export function validateLyricsSyllables(lyrics: string, maxSyllables = 12) {
+  const lines = lyrics.split("\n").filter((line) => {
+    const trimmed = line.trim()
+    return (
+      trimmed &&
+      !trimmed.startsWith("[") &&
+      !trimmed.startsWith("(") &&
+      !trimmed.startsWith("Título:") &&
+      !trimmed.startsWith("Instrução:") &&
+      !trimmed.match(/^Instrução:/)
+    )
+  })
+
+  const violations = []
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim()
+    const syllables = countSyllables(line)
+
+    if (syllables > maxSyllables) {
+      violations.push({
+        line: i + 1,
+        text: line,
+        syllables,
+        expected: maxSyllables,
+      })
+    }
+  }
+
+  return {
+    valid: violations.length === 0,
+    violations,
+    totalLines: lines.length,
+    linesWithIssues: violations.length,
+  }
 }
 
 /**
