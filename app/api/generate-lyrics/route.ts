@@ -1,181 +1,169 @@
-import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
-import { getGenreConfig, detectSubGenre, getGenreRhythm } from "@/lib/genre-config"
+import { NextResponse } from "next/server"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
-import { validateLyricsSyllables } from "@/lib/validation/syllable-counter" // ← CORRIGIDO
+import { SyllableEnforcer } from "@/lib/validation/syllableEnforcer"
 
-// ⚠️ REMOVA ESTAS 6 LINHAS - SÓ PODE TER UMA FUNÇÃO POST!
-/*
 export async function POST(request: Request) {
-  // ... resto do código que usa countPoeticSyllables
-}
-
-export async function POST(request: NextRequest) {
-*/
-
-// ⚠️ MANTENHA APENAS ESTA FUNÇÃO POST:
-export async function POST(request: NextRequest) {
   try {
+    const body = await request.json()
+
     const {
       genero,
       humor,
       tema,
-      criatividade,
+      criatividade = "equilibrado",
       inspiracao,
       metaforas,
-      emocoes,
+      emocoes = [],
       titulo,
-      formattingStyle,
+      formattingStyle = "performatico",
       additionalRequirements,
-      metrics,
-      advancedMode,
-    } = await request.json()
+      advancedMode = false,
+      syllableTarget = { min: 7, max: 11, ideal: 9 },
+      metrics = { bpm: 100, structure: "VERSO-REFRAO" },
+    } = body
 
     if (!genero) {
       return NextResponse.json({ error: "Gênero é obrigatório" }, { status: 400 })
     }
 
-    const genreConfig = getGenreConfig(genero)
-    const isPerformanceMode = formattingStyle === "performatico"
-    const isBachata = genero.toLowerCase().includes("bachata")
-    const isSertanejoModerno = genero.toLowerCase().includes("sertanejo moderno")
+    if (!tema) {
+      return NextResponse.json({ error: "Tema é obrigatório" }, { status: 400 })
+    }
 
-    const subGenreInfo = detectSubGenre(additionalRequirements)
-    const defaultRhythm = getGenreRhythm(genero)
-    const finalRhythm = subGenreInfo.rhythm || defaultRhythm
+    console.log(`[Generate] Gerando letra para: ${genero} - ${tema}`)
 
-    const prompt = `🎵 Você é um compositor PROFISSIONAL brasileiro especializado em criar HITS de ${genero}.
+    const temperature = criatividade === "conservador" ? 0.5 : criatividade === "ousado" ? 0.9 : 0.7
 
-⚠️ REGRAS UNIVERSAIS ABSOLUTAS:
+    const emotionsText = emocoes.length > 0 ? `Emoções: ${emocoes.join(", ")}` : ""
+    const inspirationText = inspiracao ? `Inspiração: ${inspiracao}` : ""
+    const metaphorsText = metaforas ? `Metáforas relacionadas: ${metaforas}` : ""
 
-1. IDIOMA:
-   - LETRAS: 100% português brasileiro coloquial
-   - INSTRUÇÕES: 100% inglês dentro de [colchetes]
-   - BACKING VOCALS: (Backing: "texto") em parênteses
-   - INSTRUMENTOS: inglês na linha final
+    const prompt = `You are a professional Brazilian music composer specializing in ${genero}.
 
-2. FORMATO LIMPO:
+TASK: Create an original song lyrics based on the theme and requirements below.
+
+THEME: ${tema}
+MOOD: ${humor || "varies with the story"}
+${emotionsText}
+${inspirationText}
+${metaphorsText}
+
+UNIVERSAL RULES:
+
+1. LANGUAGE:
+   - Sung lyrics: Brazilian Portuguese (colloquial)
+   - Performance instructions: English in [brackets]
+   - Backing vocals: (Backing: "text") in parentheses
+   - Instruments: English in final line
+
+2. CLEAN FORMAT:
    - [SECTION - Performance instructions in English]
-   - Letra em português (sem colchetes)
-   - Um verso por linha (empilhado)
-   - (Backing: "text") quando necessário
+   - Lyrics in Portuguese (no brackets)
+   - One verse per line (stacked)
+   - (Backing: "text") when needed
 
-3. LIMITE DE 12 SÍLABAS (INVIOLÁVEL):
-   - MÁXIMO ABSOLUTO: 12 sílabas poéticas por verso
-   - Use contrações: você→cê, está→tá, para→pra
-   - Frases completas sempre
+3. SYLLABLE LIMIT (12 maximum):
+   - Maximum 12 poetic syllables per verse
+   - Use contractions: você→cê, está→tá, para→pra
+   - Complete phrases always
 
-4. ESTRUTURA ${isSertanejoModerno ? "A, B, C" : "PADRÃO"} (3:00-3:30):
+4. STANDARD STRUCTURE (3:00-3:30):
    - [INTRO - Instructions, (8-12 SECONDS)]
-   - [VERSE 1${isSertanejoModerno ? " - A" : ""} - Instructions] (4-8 linhas)
-   - [PRE-CHORUS - Instructions] (2-4 linhas)
-   - [CHORUS${isSertanejoModerno ? " - B" : ""} - Instructions] (4 linhas)
-   - [VERSE 2${isSertanejoModerno ? " - A" : ""} - Instructions] (4-8 linhas)
+   - [VERSE 1 - Instructions] (4-8 lines)
+   - [PRE-CHORUS - Instructions] (2-4 lines)
+   - [CHORUS - Instructions] (4 lines)
+   - [VERSE 2 - Instructions] (4-8 lines)
    - [PRE-CHORUS - Instructions]
-   - [CHORUS${isSertanejoModerno ? " - B" : ""} - Instructions]
-   - [BRIDGE${isSertanejoModerno ? " - C" : ""} - Instructions] (4-6 linhas)
+   - [CHORUS - Instructions]
+   - [BRIDGE - Instructions] (4-6 lines)
    - [SOLO - Instrument, (8-16 SECONDS)]
-   - [FINAL CHORUS${isSertanejoModerno ? " - B" : ""} - Instructions]
-   - [OUTRO - Instructions] (2-4 linhas)
-   - (Instrumentos: list | BPM: number | Ritmo: ${finalRhythm} | Estilo: ${genero})
+   - [FINAL CHORUS - Instructions]
+   - [OUTRO - Instructions] (2-4 lines)
+   - (Instrumentos: list | BPM: ${metrics.bpm || 100} | Ritmo: ${genero} | Estilo: ${genero})
 
-5. REFRÃO GRUDENTO (PRIORIDADE #1):
-   - Primeira linha = gancho memorável
-   - 4 linhas máximo, 8-10 sílabas cada
-   - Simples, direto, fácil de cantar
+5. CATCHY CHORUS (Priority):
+   - First line = memorable hook
+   - 4 lines maximum, 8-10 syllables each
+   - Simple, direct, easy to sing
 
-ESPECIFICAÇÕES:
-- TEMA: ${tema || "amor e relacionamento"}
-- HUMOR: ${humor || "neutro"}
-- CRIATIVIDADE: ${criatividade}/10
-${inspiracao ? `- INSPIRAÇÃO: ${inspiracao}` : ""}
-${metaforas ? `- METÁFORAS: ${metaforas}` : ""}
-${emocoes?.length ? `- EMOÇÕES: ${emocoes.join(", ")}` : ""}
-${titulo ? `- TÍTULO: ${titulo}` : ""}
-${additionalRequirements ? `\n⚡ REQUISITOS ESPECIAIS:\n${additionalRequirements}` : ""}
+CREATIVITY LEVEL: ${criatividade}
+${additionalRequirements ? `\nSPECIAL REQUIREMENTS:\n${additionalRequirements}` : ""}
 
-Escreva a letra completa AGORA:`
+Create the original song now:`
 
-    console.log("[v0] 🎵 Gerando letra...")
+    console.log("[Generate] Iniciando geração...")
 
-    let finalLyrics = ""
-    let attempts = 0
-    const maxAttempts = 3
+    const { text } = await generateText({
+      model: "openai/gpt-4o",
+      prompt,
+      temperature,
+    })
 
-    while (attempts < maxAttempts) {
-      attempts++
-      console.log(`[v0] 🔄 Tentativa ${attempts}/${maxAttempts}`)
+    let lyrics = text.trim()
 
-      try {
-        const { text } = await generateText({
-          model: "openai/gpt-4o",
-          prompt:
-            attempts > 0
-              ? `${prompt}\n\n⚠️ ATENÇÃO: Tentativa anterior teve versos >12 sílabas. REGENERE com MÁXIMO 12 sílabas por verso.`
-              : prompt,
-          temperature: 0.85,
-        })
+    // Remove duplicate titles
+    lyrics = lyrics.replace(/^(?:Título|Title):\s*.+$/gm, "").trim()
+    lyrics = lyrics.replace(/^\*\*(?:Título|Title):\s*.+\*\*$/gm, "").trim()
 
-        finalLyrics = text.trim()
+    // ✅ VALIDAÇÃO E CORREÇÃO AUTOMÁTICA DE SÍLABAS
+    console.log(`[Generate] Aplicando imposição rigorosa de sílabas...`)
+    const syllableEnforcement = syllableTarget
 
-        // Remove duplicate titles
-        finalLyrics = finalLyrics.replace(/^(?:Título|Title):\s*.+$/gm, "").trim()
-        finalLyrics = finalLyrics.replace(/^\*\*(?:Título|Title):\s*.+\*\*$/gm, "").trim()
+    const enforcedResult = await SyllableEnforcer.enforceSyllableLimits(
+      lyrics,
+      syllableEnforcement,
+      genero
+    )
 
-        // Validate syllables - USANDO O NOVO SISTEMA
-        const validation = validateLyricsSyllables(finalLyrics, 12)
-
-        if (validation.valid) {
-          console.log(`[v0] ✅ Validação passou na tentativa ${attempts}`)
-          break
-        } else {
-          console.log(`[v0] ⚠️ ${validation.violations.length} versos excedem 12 sílabas`)
-          validation.violations.forEach((v) => {
-            console.log(`[v0]   Linha ${v.lineNumber}: "${v.line}" (${v.syllables} sílabas)`)
-          })
-
-          if (attempts === maxAttempts) {
-            console.log(`[v0] ⚠️ Máximo de tentativas. Retornando melhor resultado.`)
-          }
-        }
-      } catch (error) {
-        console.error(`[v0] ❌ Erro na tentativa ${attempts}:`, error)
-        if (attempts === maxAttempts) {
-          throw error
-        }
-      }
+    if (enforcedResult.corrections > 0) {
+      console.log(`[Generate] ${enforcedResult.corrections} linhas corrigidas automaticamente`)
+      enforcedResult.violations.forEach(v => {
+        console.log(`[Generate] CORRIGIDO: ${v}`)
+      })
+      lyrics = enforcedResult.correctedLyrics
+    } else {
+      console.log(`[Generate] Todas as linhas respeitam o limite de sílabas!`)
     }
 
-    // Extract title
-    let extractedTitle = titulo || ""
-    if (!extractedTitle) {
-      const chorusMatch = finalLyrics.match(/\[(?:CHORUS|REFRÃO)[^\]]*\]\s*\n([^\n]+)/i)
-      if (chorusMatch?.[1]) {
-        extractedTitle = chorusMatch[1].trim().split(" ").slice(0, 4).join(" ")
-      }
+    // Add instruments if missing
+    if (!lyrics.includes("(Instrumentos:")) {
+      const instrumentList = `(Instrumentos: guitar, bass, drums, keyboard | BPM: ${metrics.bpm || 100} | Ritmo: ${genero} | Estilo: ${genero})`
+      lyrics = lyrics.trim() + "\n\n" + instrumentList
     }
 
-    if (extractedTitle) {
-      finalLyrics = `Título: ${extractedTitle}\n\n${finalLyrics}`
-    }
+    lyrics = capitalizeLines(lyrics)
 
-    finalLyrics = capitalizeLines(finalLyrics)
-
-    console.log("[v0] ✅ Letra gerada com sucesso!")
+    console.log("[Generate] Geração concluída!")
 
     return NextResponse.json({
-      letra: finalLyrics,
-      titulo: extractedTitle,
+      letra: lyrics,
+      titulo: titulo || extractTitleFromLyrics(lyrics),
     })
   } catch (error) {
-    console.error("[v0] ❌ Erro ao gerar letra:", error)
+    console.error("[Generate] Erro ao gerar letra:", error)
+
+    const errorMessage = error instanceof Error ? error.message : "Erro desconhecido"
+
     return NextResponse.json(
       {
         error: "Erro ao gerar letra",
-        details: error instanceof Error ? error.message : "Erro desconhecido",
-        suggestion: "Tente novamente ou simplifique os requisitos",
+        details: errorMessage,
+        suggestion: "Tente novamente com um tema mais específico",
       },
       { status: 500 },
     )
   }
+}
+
+function extractTitleFromLyrics(lyrics: string): string {
+  const titleMatch = lyrics.match(/^Titulo:\s*(.+)$/m)
+  if (titleMatch?.[1]) return titleMatch[1].trim()
+
+  const chorusMatch = lyrics.match(/\[(?:CHORUS|REFRÃO)[^\]]*\]\s*\n([^\n]+)/i)
+  if (chorusMatch?.[1]) {
+    return chorusMatch[1].trim().split(" ").slice(0, 4).join(" ")
+  }
+
+  return "Sem Título"
 }
