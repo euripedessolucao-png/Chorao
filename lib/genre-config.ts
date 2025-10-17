@@ -39,22 +39,22 @@ export const GENRE_CONFIGS = {
       style: "Coloquial, direto, como conversa real entre amigas. Evite poesia rebuscada.",
     },
     structure_rules: {
-      verse: { lines: 4, purpose: "Apresentar conflito ou transformação com detalhes concretos" },
+      verse: { lines: "4-5", purpose: "Apresentar conflito ou transformação com detalhes concretos" },
       chorus: {
-        lines_options: [2, 4],
-        forbidden_lines: 3,
-        required_elements: ["Gancho grudento", "Contraste claro", "Afirmação de liberdade"],
+        lines_options: [4],
+        forbidden_lines: [2, 3],
+        required_elements: ["Gancho grudento", "Contraste claro", "Afirmação de liberdade", "MUITO REPETITIVO"],
       },
-      bridge: { lines_min: 2, lines_max: 4, purpose: "Clímax de libertação — foco em ação, não em drama" },
+      bridge: { lines_min: 4, lines_max: 4, purpose: "Clímax de libertação — foco em ação, não em drama" },
+      duration: "2:30-3:00 (estrutura lean para streaming)",
     },
     prosody_rules: {
       syllable_count: {
-        with_comma: { max_before_comma: 7, max_after_comma: 5, total_max: 12 },
-        without_comma: { min: 5, max: 7, acceptable_up_to: 8 },
+        absolute_max: 12,
+        rule: "NUNCA exceder 12 sílabas poéticas por verso - limite humano de canto",
       },
       breathability: "Toda linha deve caber em um fôlego natural ao cantar (máximo 12 sílabas)",
-      verse_counting_rule:
-        "Uma linha com vírgula (ex: 6+6, 7+5 ou 5+7 sílabas) conta como 2 VERSOS na estrutura total, não 1 verso",
+      verse_stacking: "UM VERSO POR LINHA (empilhamento brasileiro) - exceto quando segundo é continuação direta",
     },
     harmony_and_rhythm: {
       key: "C major",
@@ -108,20 +108,27 @@ export const GENRE_CONFIGS = {
       style: "Direto, honesto, com toque de poesia cotidiana. Pode ser romântico, mas nunca possessivo ou dramático.",
     },
     structure_rules: {
-      verse: { lines: 4, purpose: "Contar uma história real: erro, saudade saudável, ou momento de cura" },
+      verse: { lines: "4-5", purpose: "Contar uma história real: erro, saudade saudável, ou momento de cura" },
       chorus: {
-        lines_options: [2, 4],
-        forbidden_lines: 3,
-        required_elements: ["Gancho emocional ou celebratório", "Referência concreta", "Mensagem de superação"],
+        lines_options: [4],
+        forbidden_lines: [2, 3],
+        required_elements: [
+          "Gancho emocional ou celebratório",
+          "Referência concreta",
+          "Mensagem de superação",
+          "MUITO REPETITIVO",
+        ],
       },
+      bridge: { lines_min: 4, lines_max: 4, purpose: "Momento de reflexão ou virada emocional" },
+      duration: "2:30-3:00 (estrutura lean para streaming)",
     },
     prosody_rules: {
       syllable_count: {
-        with_comma: { max_before_comma: 7, max_after_comma: 5, total_max: 12 },
-        without_comma: { min: 5, max: 8, acceptable_up_to: 9 },
+        absolute_max: 12,
+        rule: "NUNCA exceder 12 sílabas poéticas por verso - limite humano de canto",
       },
-      verse_counting_rule:
-        "Uma linha com vírgula (ex: 6+6, 7+5 ou 5+7 sílabas) conta como 2 VERSOS na estrutura total, não 1 verso",
+      breathability: "Toda linha deve caber em um fôlego natural ao cantar (máximo 12 sílabas)",
+      verse_stacking: "UM VERSO POR LINHA (empilhamento brasileiro) - exceto quando segundo é continuação direta",
     },
     harmony_and_rhythm: {
       key: "G major",

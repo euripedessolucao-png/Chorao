@@ -18,6 +18,8 @@ export function validateBrazilianStructure(lyrics: string, genre = "Sertanejo"):
   const recommendations: string[] = []
   const structure: SectionAnalysis[] = []
 
+  const isSertanejoModerno2024 = genre.toLowerCase().includes("sertanejo moderno")
+
   for (const section of sections) {
     const lines = section.split("\n").filter((line) => line.trim())
 
@@ -43,15 +45,31 @@ export function validateBrazilianStructure(lyrics: string, genre = "Sertanejo"):
     let expectedLines = ""
     let hasIssue = false
 
-    // Validate VERSE structure
     if (sectionNameLower.includes("verso") || sectionNameLower.includes("verse")) {
-      expectedLines = "6-8 linhas"
+      if (isSertanejoModerno2024) {
+        expectedLines = "4-5 linhas (Sertanejo Moderno 2024)"
 
-      if (verseLines.length < 6) {
-        issues.push(`${sectionName}: muito curto com ${verseLines.length} linhas (mínimo 6)`)
-        hasIssue = true
-      } else if (verseLines.length > 8) {
-        recommendations.push(`${sectionName}: ${verseLines.length} linhas (ideal 6-8)`)
+        if (verseLines.length < 4) {
+          issues.push(`${sectionName}: muito curto com ${verseLines.length} linhas (mínimo 4)`)
+          hasIssue = true
+        } else if (verseLines.length > 6) {
+          issues.push(
+            `${sectionName}: muito longo com ${verseLines.length} linhas (máximo 6 para Sertanejo Moderno 2024)`,
+          )
+          hasIssue = true
+        } else if (verseLines.length === 6) {
+          recommendations.push(`${sectionName}: ${verseLines.length} linhas (ideal 4-5 para hits 2024)`)
+        }
+      } else {
+        // Outros gêneros mantêm estrutura tradicional
+        expectedLines = "6-8 linhas"
+
+        if (verseLines.length < 6) {
+          issues.push(`${sectionName}: muito curto com ${verseLines.length} linhas (mínimo 6)`)
+          hasIssue = true
+        } else if (verseLines.length > 8) {
+          recommendations.push(`${sectionName}: ${verseLines.length} linhas (ideal 6-8)`)
+        }
       }
 
       // Check if verses are properly stacked (not joined)
@@ -77,28 +95,45 @@ export function validateBrazilianStructure(lyrics: string, genre = "Sertanejo"):
       }
     }
 
-    // Validate PRE-CHORUS structure
     if (sectionNameLower.includes("pré-refrão") || sectionNameLower.includes("pre-chorus")) {
-      expectedLines = "2-4 linhas"
+      if (isSertanejoModerno2024) {
+        expectedLines = "2 linhas (EXATO para Sertanejo Moderno 2024)"
 
-      if (verseLines.length < 2) {
-        issues.push(`${sectionName}: muito curto com ${verseLines.length} linhas (mínimo 2)`)
-        hasIssue = true
-      } else if (verseLines.length > 4) {
-        issues.push(`${sectionName}: muito longo com ${verseLines.length} linhas (máximo 4)`)
-        hasIssue = true
+        if (verseLines.length !== 2) {
+          issues.push(`${sectionName}: ${verseLines.length} linhas (deve ter EXATAMENTE 2 para Sertanejo Moderno 2024)`)
+          hasIssue = true
+        }
+      } else {
+        expectedLines = "2-4 linhas"
+
+        if (verseLines.length < 2) {
+          issues.push(`${sectionName}: muito curto com ${verseLines.length} linhas (mínimo 2)`)
+          hasIssue = true
+        } else if (verseLines.length > 4) {
+          issues.push(`${sectionName}: muito longo com ${verseLines.length} linhas (máximo 4)`)
+          hasIssue = true
+        }
       }
     }
 
-    // Validate BRIDGE structure
     if (sectionNameLower.includes("ponte") || sectionNameLower.includes("bridge")) {
-      expectedLines = "4-6 linhas"
+      if (isSertanejoModerno2024) {
+        expectedLines = "4 linhas (EXATO para Sertanejo Moderno 2024)"
 
-      if (verseLines.length < 4) {
-        issues.push(`${sectionName}: muito curto com ${verseLines.length} linhas (mínimo 4)`)
-        hasIssue = true
-      } else if (verseLines.length > 6) {
-        recommendations.push(`${sectionName}: ${verseLines.length} linhas (ideal 4-6)`)
+        if (verseLines.length !== 4) {
+          recommendations.push(
+            `${sectionName}: ${verseLines.length} linhas (ideal EXATAMENTE 4 para Sertanejo Moderno 2024)`,
+          )
+        }
+      } else {
+        expectedLines = "4-6 linhas"
+
+        if (verseLines.length < 4) {
+          issues.push(`${sectionName}: muito curto com ${verseLines.length} linhas (mínimo 4)`)
+          hasIssue = true
+        } else if (verseLines.length > 6) {
+          recommendations.push(`${sectionName}: ${verseLines.length} linhas (ideal 4-6)`)
+        }
       }
     }
 
