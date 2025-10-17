@@ -212,62 +212,110 @@ ${
 
 📝 EXEMPLO DE FORMATO CORRETO:
 
-[INTRO - ${subGenreInfo.instruments?.split(",")[0] || "guitar"} and keyboard creating anticipation, (8-12 SECONDS)]
+[INTRO - ${subGenreInfo.instruments?.split(",")[0] || "Acoustic guitar"} with subtle percussion, setting nostalgic tone, (8-12 SECONDS)]
 
-[VERSE 1${isSertanejoModerno ? " - A" : ""} - Narrative voice, establishing story with concrete details]
+[VERSE 1${isSertanejoModerno ? " - A" : ""} - Narrative voice, intimate vocal delivery, establishing story with concrete details]
 Primeira linha da letra em português
 Segunda linha da letra em português
 Terceira linha da letra em português
 Quarta linha da letra em português
 
-[PRE-CHORUS - Building energy, preparing for chorus]
+[PRE-CHORUS - Building energy, drums and bass enter, preparing emotional peak]
 Linha do pré-refrão em português
 Outra linha do pré-refrão em português
 
-[CHORUS${isSertanejoModerno ? " - B" : ""} - Maximum energy, catchy, easy to sing along]
+[CHORUS${isSertanejoModerno ? " - B" : ""} - Full instrumentation, emotional and anthemic, maximum energy, crowd sing-along feel]
 (Backing: "Oh, oh, oh")
 Primeira linha do refrão em português
 Segunda linha do refrão em português
 Terceira linha do refrão em português
 Quarta linha do refrão em português
 
-[VERSE 2${isSertanejoModerno ? " - A" : ""} - Develops story, new details]
+[VERSE 2${isSertanejoModerno ? " - A" : ""} - Return to softer arrangement, intimate feel, develops story with new details]
 Primeira linha do segundo verso
 Segunda linha do segundo verso
 Terceira linha do segundo verso
 Quarta linha do segundo verso
 
-[PRE-CHORUS - Building energy again]
+[PRE-CHORUS - Energy building again, tension rising]
 Linha do pré-refrão em português
 Outra linha do pré-refrão em português
 
-[CHORUS${isSertanejoModerno ? " - B" : ""} - Repeat with same energy]
+[CHORUS${isSertanejoModerno ? " - B" : ""} - Full band, celebratory energy, repeat with same intensity]
 (Backing: "Oh, oh, oh")
 Primeira linha do refrão em português
 Segunda linha do refrão em português
 Terceira linha do refrão em português
 Quarta linha do refrão em português
 
-[BRIDGE${isSertanejoModerno ? " - C" : ""} - Deep reflection, can have solo, perspective change]
+[BRIDGE${isSertanejoModerno ? " - C" : ""} - Stripped down arrangement, reflective mood, perspective change, can include solo]
 Primeira linha da ponte em português
 Segunda linha da ponte em português
 Terceira linha da ponte em português
 Quarta linha da ponte em português
 
-[SOLO - ${subGenreInfo.instruments?.split(",")[0] || "Guitar"} instrumental, (8-16 SECONDS)]
+[SOLO - ${subGenreInfo.instruments?.split(",")[0] || "Guitar"} instrumental solo, emotional peak, (8-16 SECONDS)]
 
-[FINAL CHORUS${isSertanejoModerno ? " - B" : ""} - MAXIMUM energy, apotheosis]
+[FINAL CHORUS${isSertanejoModerno ? " - B" : ""} - Maximum energy, apotheosis, vocal ad-libs and harmonies, explosive finish]
 (Backing: "Oh, oh, oh")
 Primeira linha do refrão em português
 Segunda linha do refrão em português
 Terceira linha do refrão em português
 Quarta linha do refrão em português
+(repeat last two lines with vocal ad-libs)
 
-[OUTRO - Soft fade out or striking final phrase]
+[OUTRO - Gradual fade with soft instrumentation or striking final phrase]
 Linha final em português
 Outra linha final em português
 
-(Instrumentos: ${subGenreInfo.instruments || "guitar, bass, drums, keyboard"} | BPM: ${subGenreInfo.bpm || metrics?.bpm || 100} | Ritmo: ${finalRhythm} | Estilo: ${genero})
+(Instrumentos: ${subGenreInfo.instruments || "acoustic guitar, electric guitar, bass, drums, keyboard"} | BPM: ${subGenreInfo.bpm || metrics?.bpm || 100} | Ritmo: ${finalRhythm} | Estilo: ${genero})
+
+🎯 GUIA DE INSTRUÇÕES DE PERFORMANCE:
+
+DINÂMICAS (Dynamics):
+- Soft: suave, delicado, íntimo
+- Moderate: equilibrado, médio
+- Loud: forte, potente
+- Building: crescendo, aumentando
+- Fading: diminuindo, desvanecendo
+
+ENERGIA (Energy Levels):
+- Low energy: calmo, reflexivo
+- Building energy: aumentando tensão
+- High energy: intenso, vibrante
+- Maximum energy: explosivo, climático
+- Explosive: pico emocional
+
+INSTRUMENTAÇÃO:
+- Especifique quais instrumentos estão ativos
+- Indique quando instrumentos entram/saem
+- Exemplo: "Full band enters: driving drums, pop bassline, synth lead"
+- Exemplo: "Stripped down to acoustic guitar and voice"
+
+DIREÇÃO EMOCIONAL:
+- Intimate: íntimo, pessoal
+- Reflective: reflexivo, pensativo
+- Celebratory: celebrativo, festivo
+- Anthemic: grandioso, hino
+- Nostalgic: nostálgico, saudoso
+
+TÉCNICAS VOCAIS:
+- Narrative voice: voz narrativa, contando história
+- Emotional delivery: entrega emocional intensa
+- Vocal ad-libs: improvisações vocais
+- Belted vocals: voz potente, projetada
+- Whispered: sussurrado
+
+RITMO E GROOVE:
+- Driving rhythm: ritmo pulsante, energético
+- Laid-back groove: groove relaxado
+- Four-on-the-floor: batida constante em 4/4
+
+TRANSIÇÕES:
+- Smooth transition: transição suave
+- Build-up: construção gradual
+- Break down: quebra, redução
+- Drop: queda, entrada forte
 
 🎯 REGRAS CRÍTICAS:
 1. INSTRUÇÕES sempre em INGLÊS dentro de [colchetes]
@@ -278,6 +326,8 @@ Outra linha final em português
 6. ${isSertanejoModerno ? "Labels A, B, C para Sertanejo Moderno" : "Sem labels A, B, C para este gênero"}
 7. Tempo em SEGUNDOS: (8-12 SECONDS), (8-16 SECONDS)
 8. INSTRUMENTOS em INGLÊS na linha final
+9. INSTRUÇÕES DETALHADAS: especifique dinâmica, energia, instrumentação, emoção
+10. SEJA PROFISSIONAL: use terminologia de produção musical
 `
 
     const universalLanguageRules = `
