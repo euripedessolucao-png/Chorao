@@ -20,7 +20,6 @@
  * Pode ser desativado via flag ENABLE_META_COMPOSER=false
  * ============================================================================
  */
-
 /**
  * ============================================================================
  * META-COMPOSITOR CORRIGIDO - CONTROLE RÍGIDO DE SÍLABAS
@@ -31,7 +30,7 @@ import { generateText } from "ai"
 import { ThirdWayEngine } from "@/lib/third-way-converter"
 import { getGenreConfig } from "@/lib/genre-config"
 import { validateFullLyricAgainstForcing } from "@/lib/validation/anti-forcing-validator"
-import { countSyllables, validateLyricsSyllables } from "@/lib/validation/syllableUtils"
+import { countSyllables } from "@/lib/validation/syllableUtils"
 
 export interface CompositionRequest {
   genre: string
@@ -116,7 +115,7 @@ export class MetaComposer {
         bestScore = qualityScore
         bestResult = {
           lyrics: rawLyrics,
-          title: this.extractTitle(rawLyrics, request),
+          title: this.extractTitle(rawLyrics, request), // MÉTODO CORRIGIDO
           validation,
           metadata: {
             iterations,
@@ -400,6 +399,47 @@ export class MetaComposer {
   }
 
   /**
+   * MÉTODO extractTitle CORRIGIDO - estava faltando
+   */
+  private static extractTitle(lyrics: string, request: CompositionRequest): string {
+    if (request.title) return request.title
+
+    const titleMatch = lyrics.match(/^Título:\s*(.+)$/m)
+    if (titleMatch?.[1]) return titleMatch[1].trim()
+
+    const chorusMatch = lyrics.match(/\[(?:CHORUS|REFRÃO)[^\]]*\]\s*\n([^\n]+)/i)
+    if (chorusMatch?.[1]) {
+      return chorusMatch[1].trim().split(" ").slice(0, 4).join(" ")
+    }
+
+    return "Sem Título"
+  }
+
+  /**
+   * MÉTODO autonomousRefinement CORRIGIDO - estava faltando
+   */
+  private static async autonomousRefinement(
+    request: CompositionRequest,
+    validation: { passed: boolean; errors: string[]; warnings: string[] },
+    syllableTarget: { min: number; max: number; ideal: number }
+  ): Promise<CompositionRequest> {
+    // Adicionar instruções específicas baseadas nos erros
+    const refinementInstructions = [
+      ...validation.errors.map((error) => `CORRIGIR: ${error}`),
+      ...validation.warnings.map((warning) => `MELHORAR: ${warning}`),
+      `GARANTIR: ${syllableTarget.min}-${syllableTarget.max} sílabas por verso (alvo: ${syllableTarget.ideal})`,
+      `USAR: contrações "cê", "tô", "pra", "tá" e elisões "d'amor", "qu'eu"`,
+    ].join("\n")
+
+    return {
+      ...request,
+      additionalRequirements: request.additionalRequirements
+        ? `${request.additionalRequirements}\n\nREFINAMENTOS NECESSÁRIOS:\n${refinementInstructions}`
+        : `REFINAMENTOS NECESSÁRIOS:\n${refinementInstructions}`,
+    }
+  }
+
+  /**
    * PROMPT CORRIGIDO com regras explícitas de sílabas
    */
   private static buildMasterPromptWithSyllableRules(
@@ -486,5 +526,44 @@ REESCREVA AGORA: "${line}"
 →`
   }
 
-  // ... (outros métodos mantidos, mas com melhorias)
+  /**
+   * MÉTODO calculateStackingRatio CORRIGIDO - estava faltando
+   */
+  private static calculateStackingRatio(lyrics: string): number {
+    const lines = lyrics.split("\n").filter((line) => line.trim() && !line.startsWith("[") && !line.startsWith("("))
+    const linesWithComma = lines.filter((line) => line.includes(",")).length
+    const totalLines = lines.length
+    return totalLines > 0 ? 1 - linesWithComma / totalLines : 1
+  }
+
+  /**
+   * MÉTODO assessNarrativeCoherence CORRIGIDO - estava faltando
+   */
+  private static assessNarrativeCoherence(lyrics: string): number {
+    // Análise simples: verificar se há progressão narrativa
+    const hasIntro = /\[INTRO\]/i.test(lyrics)
+    const hasVerse = /\[VERS[OE]/i.test(lyrics)
+    const hasChorus = /\[(?:CHORUS|REFRÃO)\]/i.test(lyrics)
+    const hasOutro = /\[OUTRO\]/i.test(lyrics)
+
+    let score = 0
+    if (hasIntro) score += 0.25
+    if (hasVerse) score += 0.25
+    if (hasChorus) score += 0.25
+    if (hasOutro) score += 0.25
+
+    return score
+  }
+
+  /**
+   * MÉTODO assessLanguageSimplicity CORRIGIDO - estava faltando
+   */
+  private static assessLanguageSimplicity(lyrics: string): number {
+    // Palavras complexas que indicam linguagem rebuscada
+    const complexWords = ["outono", "primavera", "florescer", "bonança", "alvorada", "crepúsculo", "efêmero", "sublime"]
+    const lyricsLower = lyrics.toLowerCase()
+    const complexCount = complexWords.filter((word) => lyricsLower.includes(word)).length
+
+    return Math.max(0, 1 - complexCount * 0.1)
+  }
 }
