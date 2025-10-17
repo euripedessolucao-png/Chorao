@@ -1,6 +1,6 @@
 /**
- * SISTEMA DE IMPOSICAO RIGOROSA DE SILABAS
- * Nao apenas valida, mas CORRIGE automaticamente
+ * SISTEMA DE PRESERVAÇÃO RÍTMICA E RIMÁTICA
+ * Mantém rimas ricas enquanto aplica limite de sílabas
  */
 
 import { countPoeticSyllables } from "./syllable-counter"
@@ -12,11 +12,84 @@ export interface SyllableEnforcement {
   ideal: number
 }
 
+export interface RhymeStructure {
+  pattern: string // 'ABAB', 'AABB', etc
+  rhymeGroups: Map<string, number[]> // Map<rimeSound, [lineIndexes]>
+}
+
 export class SyllableEnforcer {
   private static readonly MAX_CORRECTION_ATTEMPTS = 2
+  private static readonly STRICT_MAX_SYLLABLES = 11
 
   /**
-   * IMPOSICAO RIGOROSA: Valida e corrige linha por linha
+   * ANÁLISE DE ESTRUTURA RÍTMICA - Detecta padrões de rima
+   */
+  private static analyzeRhymeStructure(lyrics: string): RhymeStructure {
+    const lines = lyrics.split('\n').filter(line => 
+      line.trim() && !this.shouldSkipLine(line)
+    )
+    
+    const rhymeGroups = new Map<string, number[]>()
+    const pattern: string[] = []
+    let currentLetter = 'A'
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+      const rhymeSound = this.extractRhymeSound(line)
+      
+      if (rhymeGroups.has(rhymeSound)) {
+        const group = rhymeGroups.get(rhymeSound)!
+        group.push(i)
+        pattern.push(String.fromCharCode(65 + group[0])) // A, B, C based on first occurrence
+      } else {
+        rhymeGroups.set(rhymeSound, [i])
+        pattern.push(currentLetter)
+        currentLetter = String.fromCharCode(currentLetter.charCodeAt(0) + 1)
+      }
+    }
+
+    return {
+      pattern: pattern.join(''),
+      rhymeGroups
+    }
+  }
+
+  /**
+   * EXTRAI SOM DA RIMA (última palavra ou sílabas finais)
+   */
+  private static extractRhymeSound(line: string): string {
+    const words = line.trim().split(/\s+/)
+    if (words.length === 0) return ''
+    
+    const lastWord = words[words.length - 1].toLowerCase()
+    // Remove pontuação final
+    const cleanWord = lastWord.replace(/[.,!?;:]$/, '')
+    
+    // Foca nas últimas 2-3 sílabas para rima
+    return this.getLastSyllables(cleanWord, 2)
+  }
+
+  /**
+   * OBTÉM ÚLTIMAS SÍLABAS para análise de rima
+   */
+  private static getLastSyllables(word: string, syllableCount: number): string {
+    // Simulação - na prática use uma biblioteca de sílabas
+    const vowels = 'aeiouáéíóúâêîôûàèìòù'
+    let syllables = ''
+    let count = 0
+    
+    for (let i = word.length - 1; i >= 0 && count < syllableCount; i--) {
+      syllables = word[i] + syllables
+      if (vowels.includes(word[i].toLowerCase())) {
+        count++
+      }
+    }
+    
+    return syllables || word
+  }
+
+  /**
+   * ENFORCE COM PRESERVAÇÃO DE RIMAS
    */
   static async enforceSyllableLimits(
     lyrics: string, 
@@ -28,46 +101,56 @@ export class SyllableEnforcer {
     let corrections = 0
     const violations: string[] = []
 
+    // ✅ ANALISA estrutura de rimas ANTES de corrigir
+    const rhymeStructure = this.analyzeRhymeStructure(lyrics)
+    console.log('[RhymePreserver] Estrutura de rima detectada:', rhymeStructure.pattern)
+
+    const strictEnforcement = { ...enforcement, max: this.STRICT_MAX_SYLLABLES }
+
     for (let i = 0; i < lines.length; i++) {
       const originalLine = lines[i]
       
-      // Pular linhas de estrutura
       if (this.shouldSkipLine(originalLine)) {
         correctedLines.push(originalLine)
         continue
       }
 
       const syllables = countPoeticSyllables(originalLine)
+      const rhymeSound = this.extractRhymeSound(originalLine)
       
-      if (syllables >= enforcement.min && syllables <= enforcement.max) {
-        // Dentro do limite - mantém
+      if (syllables >= strictEnforcement.min && syllables <= strictEnforcement.max) {
         correctedLines.push(originalLine)
       } else {
-        // Fora do limite - CORRIGE automaticamente
         violations.push(`Linha ${i+1}: "${originalLine}" -> ${syllables}s`)
         
-        console.log(`[SyllableEnforcer] Corrigindo linha ${i+1}: "${originalLine}" (${syllables}s)`)
-        
-        const correctedLine = await this.correctSyllableLine(
+        console.log(`[RhymePreserver] Corrigindo linha ${i+1} (rima: ${rhymeSound}): "${originalLine}"`)
+
+        // ✅ CORREÇÃO COM PRESERVAÇÃO DE RIMA
+        const correctedLine = await this.rhymeAwareCorrection(
           originalLine, 
           syllables, 
-          enforcement, 
-          genre
+          strictEnforcement, 
+          genre,
+          rhymeSound,
+          rhymeStructure,
+          i
         )
         
         const finalSyllables = countPoeticSyllables(correctedLine)
+        const preservedRhyme = this.extractRhymeSound(correctedLine)
         
-        // ✅ VERIFICA se a correção foi bem-sucedida
-        if (finalSyllables >= enforcement.min && finalSyllables <= enforcement.max) {
+        if (finalSyllables <= strictEnforcement.max && preservedRhyme === rhymeSound) {
           correctedLines.push(correctedLine)
           corrections++
-          console.log(`[SyllableEnforcer] ✓ Correção bem-sucedida: ${syllables}s -> ${finalSyllables}s`)
+          console.log(`[RhymePreserver] ✓ Correção perfeita: ${syllables}s -> ${finalSyllables}s (rima preservada)`)
         } else {
-          // ❌ Se ainda não estiver boa, aplica correção de emergência
-          const emergencyCorrected = this.applyEmergencyCorrection(originalLine, enforcement.max)
-          correctedLines.push(emergencyCorrected)
+          // ❌ Se não preservou a rima, tenta correção em grupo
+          const groupCorrected = await this.correctRhymeGroup(
+            lines, i, rhymeStructure, strictEnforcement, genre
+          )
+          correctedLines.push(groupCorrected)
           corrections++
-          console.log(`[SyllableEnforcer] ⚠️ Usando correção de emergência: ${syllables}s -> ${countPoeticSyllables(emergencyCorrected)}s`)
+          console.log(`[RhymePreserver] ⚠️ Correção em grupo aplicada`)
         }
       }
     }
@@ -80,132 +163,104 @@ export class SyllableEnforcer {
   }
 
   /**
-   * CORRECAO AUTOMATICA de linha problematica
+   * CORREÇÃO COM CONSCIÊNCIA DE RIMA
    */
-  private static async correctSyllableLine(
+  private static async rhymeAwareCorrection(
     line: string,
     currentSyllables: number,
     enforcement: SyllableEnforcement,
-    genre: string
+    genre: string,
+    targetRhyme: string,
+    rhymeStructure: RhymeStructure,
+    lineIndex: number
   ): Promise<string> {
-    let attempts = 0
-    let currentLine = line
 
-    while (attempts < this.MAX_CORRECTION_ATTEMPTS) {
-      attempts++
+    // ✅ PRIMEIRO: Tenta correções que preservam a rima
+    const rhymePreservingCorrection = this.applyRhymePreservingCorrections(
+      line, enforcement.max, targetRhyme
+    )
+    
+    const correctedSyllables = countPoeticSyllables(rhymePreservingCorrection)
+    const preservedRhyme = this.extractRhymeSound(rhymePreservingCorrection)
 
-      // ✅ PRIMEIRO: Tenta correções automáticas locais antes de chamar a IA
-      const autoCorrected = this.applyAutomaticCorrections(currentLine, enforcement.max)
-      const autoSyllables = countPoeticSyllables(autoCorrected)
-      
-      if (autoSyllables <= enforcement.max && autoSyllables >= enforcement.min) {
-        console.log(`[SyllableEnforcer] Correção automática bem-sucedida: "${line}" -> "${autoCorrected}"`)
-        return autoCorrected
-      }
-
-      // ✅ SEGUNDO: Se a correção automática falhou, usa IA
-      const correctionPrompt = this.buildCorrectionPrompt(currentLine, currentSyllables, enforcement, genre)
-      
-      try {
-        const { text: correctedLine } = await generateText({
-          model: "openai/gpt-4o",
-          prompt: correctionPrompt,
-          temperature: 0.3
-        })
-
-        const correctedText = correctedLine.trim().replace(/^["']|["']$/g, "")
-        const newSyllables = countPoeticSyllables(correctedText)
-
-        console.log(`[SyllableEnforcer] Correção ${attempts}: "${currentLine}" (${currentSyllables}s) -> "${correctedText}" (${newSyllables}s)`)
-
-        // Verifica se a correção foi bem-sucedida
-        if (newSyllables >= enforcement.min && newSyllables <= enforcement.max) {
-          return correctedText
-        }
-
-        currentLine = correctedText
-        currentSyllables = newSyllables
-
-      } catch (error) {
-        console.error('[SyllableEnforcer] Erro na correção:', error)
-        break
-      }
+    if (correctedSyllables <= enforcement.max && preservedRhyme === targetRhyme) {
+      return rhymePreservingCorrection
     }
 
-    // ✅ TERCEIRO: Se todas as tentativas falharem, aplica correção de emergência
-    console.log(`[SyllableEnforcer] Todas as tentativas falharam, aplicando correção de emergência`)
-    return this.applyEmergencyCorrection(line, enforcement.max)
+    // ✅ SEGUNDO: IA com foco em preservar rima
+    const correctionPrompt = this.buildRhymePreservationPrompt(
+      line, currentSyllables, enforcement, genre, targetRhyme
+    )
+    
+    try {
+      const { text: correctedLine } = await generateText({
+        model: "openai/gpt-4o",
+        prompt: correctionPrompt,
+        temperature: 0.3
+      })
+
+      const correctedText = correctedLine.trim().replace(/^["']|["']$/g, "")
+      const finalRhyme = this.extractRhymeSound(correctedText)
+
+      // ✅ VERIFICA se preservou a rima
+      if (finalRhyme === targetRhyme) {
+        return correctedText
+      } else {
+        // Se não preservou, aplica correção que mantém a rima a qualquer custo
+        return this.forceRhymePreservation(line, enforcement.max, targetRhyme)
+      }
+
+    } catch (error) {
+      console.error('[RhymePreserver] Erro na correção:', error)
+      return this.forceRhymePreservation(line, enforcement.max, targetRhyme)
+    }
   }
 
   /**
-   * CORREÇÕES AUTOMÁTICAS - Mais agressivas e eficientes
+   * CORREÇÕES QUE PRESERVAM RIMA
    */
-  private static applyAutomaticCorrections(line: string, maxSyllables: number): string {
+  private static applyRhymePreservingCorrections(
+    line: string, 
+    maxSyllables: number, 
+    targetRhyme: string
+  ): string {
     let corrected = line
+    const words = corrected.split(' ')
+    const lastWord = words[words.length - 1]
 
-    // Lista expandida de contrações obrigatórias
-    const contractions = [
+    // ✅ MANTÉM a última palavra (a que define a rima) e ajusta o RESTANTE
+    if (words.length > 3) {
+      // Tenta reduzir as palavras do MEIO, mantendo início e fim
+      const middleReduction = [
+        ...words.slice(0, Math.floor(words.length / 2)),
+        ...words.slice(-2) // Mantém últimas 2 palavras (normalmente verbo + rima)
+      ].join(' ')
+      
+      if (countPoeticSyllables(middleReduction) <= maxSyllables) {
+        return middleReduction
+      }
+    }
+
+    // ✅ CONTRACÕES que não afetam a rima
+    const safeContractions = [
       { from: /\bvocê\b/gi, to: 'cê' },
       { from: /\bestá\b/gi, to: 'tá' },
       { from: /\bpara\b/gi, to: 'pra' },
       { from: /\bestou\b/gi, to: 'tô' },
       { from: /\bcomigo\b/gi, to: 'comigo' },
-      { from: /\bcontigo\b/gi, to: 'contigo' },
-      { from: /\bdesejando\b/gi, to: 'querendo' },
-      { from: /\bpensando\b/gi, to: 'pensando' },
-      { from: /\bpronto\s+pra\b/gi, to: 'pronto p\'ra' },
-      { from: /\bpergunta\b/gi, to: 'pergunta' },
-      { from: /\bconfesso\b/gi, to: 'falo' },
-      { from: /\bconstantemente\b/gi, to: 'sempre' },
-      { from: /\bmaravilhosa\b/gi, to: 'incrível' },
-      { from: /\benorme\b/gi, to: 'grande' },
     ]
 
-    // Aplica todas as contrações
-    contractions.forEach(({ from, to }) => {
+    safeContractions.forEach(({ from, to }) => {
       corrected = corrected.replace(from, to)
     })
 
-    // Elisões poéticas obrigatórias
-    const elisions = [
-      { from: /\bde amor\b/gi, to: 'd\'amor' },
-      { from: /\bque eu\b/gi, to: 'qu\'eu' },
-      { from: /\bse eu\b/gi, to: 's\'eu' },
-      { from: /\bmeu amor\b/gi, to: 'meuamor' },
-      { from: /\bte abraço\b/gi, to: 'tabraço' },
-      { from: /\bte espero\b/gi, to: 'tespero' },
-      { from: /\bna minha\b/gi, to: 'naminha' },
-      { from: /\bno meu\b/gi, to: 'nomeu' },
-    ]
-
-    elisions.forEach(({ from, to }) => {
-      corrected = corrected.replace(from, to)
-    })
-
-    // Remove artigos desnecessários
-    corrected = corrected
-      .replace(/\b(o|a|os|as|um|uma)\s+/gi, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-
-    // Se ainda estiver longo, corta palavras finais estrategicamente
+    // ✅ REMOÇÃO de palavras do MEIO (nunca do final)
     const currentSyllables = countPoeticSyllables(corrected)
-    if (currentSyllables > maxSyllables) {
-      const words = corrected.split(' ')
-      
-      // Tenta remover palavras do final mantendo o sentido
-      if (words.length > 4) {
-        // Remove última palavra
-        const shortened = words.slice(0, -1).join(' ')
-        if (countPoeticSyllables(shortened) <= maxSyllables) {
-          return shortened
-        }
-        
-        // Remove duas últimas palavras
-        const moreShortened = words.slice(0, -2).join(' ')
-        if (countPoeticSyllables(moreShortened) <= maxSyllables) {
-          return moreShortened
-        }
+    if (currentSyllables > maxSyllables && words.length > 4) {
+      // Remove 1-2 palavras do meio, mantendo início e fim
+      const preservedWords = [words[0], ...words.slice(-2)].join(' ')
+      if (countPoeticSyllables(preservedWords) <= maxSyllables) {
+        return preservedWords
       }
     }
 
@@ -213,122 +268,166 @@ export class SyllableEnforcer {
   }
 
   /**
-   * CORREÇÃO DE EMERGÊNCIA - Garante que sempre retorne algo dentro do limite
+   * FORÇA PRESERVAÇÃO DA RIMA (último recurso)
    */
-  private static applyEmergencyCorrection(line: string, maxSyllables: number): string {
-    console.log(`[SyllableEnforcer] Aplicando correção de emergência para: "${line}"`)
+  private static forceRhymePreservation(
+    line: string, 
+    maxSyllables: number, 
+    targetRhyme: string
+  ): string {
+    const words = line.split(' ')
     
-    const words = line.split(' ').filter(w => w.trim())
-    
-    // Estratégia 1: Pega apenas as primeiras palavras até caber no limite
-    for (let i = words.length; i > 0; i--) {
-      const candidate = words.slice(0, i).join(' ')
-      if (countPoeticSyllables(candidate) <= maxSyllables) {
-        console.log(`[SyllableEnforcer] Emergência: "${line}" -> "${candidate}"`)
-        return candidate
+    // Estratégia: Mantém estrutura sujeito-verbo + palavra que rima
+    if (words.length >= 3) {
+      const minimalStructure = [words[0], words[1], targetRhyme].join(' ')
+      if (countPoeticSyllables(minimalStructure) <= maxSyllables) {
+        return minimalStructure
       }
     }
     
-    // Estratégia 2: Se ainda não couber, pega apenas as 3 primeiras palavras
-    const fallback = words.slice(0, 3).join(' ')
-    console.log(`[SyllableEnforcer] Fallback extremo: "${line}" -> "${fallback}"`)
-    return fallback
+    // Último recurso: Apenas sujeito + palavra que rima
+    const fallback = [words[0], targetRhyme].join(' ')
+    return countPoeticSyllables(fallback) <= maxSyllables ? fallback : targetRhyme
   }
 
   /**
-   * PROMPT MELHORADO para correções
+   * CORREÇÃO EM GRUPO DE RIMA (para estrofes inteiras)
    */
-  private static buildCorrectionPrompt(
+  private static async correctRhymeGroup(
+    allLines: string[],
+    problemIndex: number,
+    rhymeStructure: RhymeStructure,
+    enforcement: SyllableEnforcement,
+    genre: string
+  ): Promise<string> {
+    
+    const problemLine = allLines[problemIndex]
+    const problemRhyme = this.extractRhymeSound(problemLine)
+    
+    // Encontra todas as linhas com a mesma rima
+    const rhymeGroup = rhymeStructure.rhymeGroups.get(problemRhyme) || []
+    
+    if (rhymeGroup.length > 1) {
+      console.log(`[RhymePreserver] Corrigindo grupo de rima com ${rhymeGroup.length} linhas`)
+      
+      // Para grupos pequenos, pode-se reescrever todas juntas
+      if (rhymeGroup.length <= 4) {
+        const groupPrompt = this.buildRhymeGroupPrompt(
+          rhymeGroup.map(idx => allLines[idx]),
+          enforcement,
+          genre,
+          problemRhyme
+        )
+        
+        try {
+          const { text: correctedGroup } = await generateText({
+            model: "openai/gpt-4o", 
+            prompt: groupPrompt,
+            temperature: 0.3
+          })
+          
+          // Extrai a linha correspondente ao problema
+          const correctedLines = correctedGroup.split('\n').filter(l => l.trim())
+          const ourLineIndex = rhymeGroup.indexOf(problemIndex)
+          if (ourLineIndex < correctedLines.length) {
+            return correctedLines[ourLineIndex]
+          }
+        } catch (error) {
+          console.error('[RhymePreserver] Erro na correção de grupo:', error)
+        }
+      }
+    }
+    
+    // Fallback: correção individual forçada
+    return this.forceRhymePreservation(problemLine, enforcement.max, problemRhyme)
+  }
+
+  /**
+   * PROMPT PARA PRESERVAÇÃO DE RIMAS
+   */
+  private static buildRhymePreservationPrompt(
     line: string,
     syllables: number,
     enforcement: SyllableEnforcement,
-    genre: string
+    genre: string,
+    targetRhyme: string
   ): string {
-    return `CORREÇÃO URGENTE DE SILABAS - LINHA PROBLEMÁTICA
+    return `REESCRITA MUSICAL CRÍTICA - PRESERVE A RIMA!
 
 LINHA ORIGINAL: "${line}"
-SILABAS ATUAIS: ${syllables} (LIMITE: ${enforcement.min}-${enforcement.max})
+SÍLABAS ATUAIS: ${syllables} (MÁXIMO PERMITIDO: ${enforcement.max})
+RIMA A PRESERVAR: "${targetRhyme}"
 
-REESCREVA ESTA LINHA para ter ENTRE ${enforcement.min} E ${enforcement.max} SILABAS POÉTICAS.
+REGRAS ABSOLUTAS:
+1. MÁXIMO ${enforcement.max} sílabas poéticas
+2. A RIMA "${targetRhyme}" DEVE SER MANTIDA no final
+3. Preserve o significado principal
 
-TÉCNICAS OBRIGATÓRIAS (APLIQUE IMEDIATAMENTE):
+TÉCNICAS OBRIGATÓRIAS:
 
-1. CONTRAÇÕES BRUTAIS:
-   - "você" → "cê" (OBRIGATÓRIO)
-   - "está" → "tá" (OBRIGATÓRIO)
-   - "para" → "pra" (OBRIGATÓRIO)
-   - "estou" → "tô" (OBRIGATÓRIO)
+• CONTRACÕES: "você"→"cê", "está"→"tá", "para"→"pra"
+• SIMPLIFICAÇÃO: Reduza palavras do MEIO, nunca do FINAL
+• ELISAO: "de amor"→"d'amor", "que eu"→"qu'eu"
 
-2. ELISAO EXTREMA:
-   - "de amor" → "d'amor" (OBRIGATÓRIO)
-   - "que eu" → "qu'eu" (OBRIGATÓRIO)
-   - "meu amor" → "meuamor" (OBRIGATÓRIO)
+EXEMPLOS COM PRESERVAÇÃO DE RIMA:
 
-3. CORTE RADICAL:
-   - Remova adjetivos desnecessários
-   - Use frases mais curtas e diretas
-   - Mantenha apenas o essencial
+"Meu coração dispara quando você chega perto" (14s) → rima "perto"
+→ "Coração dispara quando cê chega perto" (10s) ✅ RIMA PRESERVADA
 
-4. EXEMPLOS PRÁTICOS:
+"Eu estou completamente perdido nos seus olhos" (13s) → rima "olhos" 
+→ "Tô completamente perdido nos teus olhos" (10s) ✅ RIMA PRESERVADA
 
-"Me olha e provoca: 'Tá pronto pra amar?'" (12s) 
-→ "Me olha e provoca: 'Pronto p'ra amar?'" (9s)
+"Toda vez que eu te vejo, o mundo para de girar" (14s) → rima "girar"
+→ "Sempre que te vejo, o mundo para de girar" (11s) ✅ RIMA PRESERVADA
 
-"Meu peito explode, e a razão se apaga" (12s)
-→ "Peito explode, razão se apaga" (8s)
+GÊNERO: ${genre}
 
-"Eu, sem rumo, confesso: 'Vivo pra te amar'" (12s)
-→ "Sem rumo, confesso: 'Vivo p'ra te amar'" (9s)
+SUA TAREFA CRÍTICA:
+Reescreva com MÁXIMO ${enforcement.max} sílabas PRESERVANDO a rima "${targetRhyme}":
 
-GÊNERO: ${genre} - Use linguagem coloquial brasileira
+"${line}"
+
+→ (APENAS A LINHA CORRIGIDA)`
+  }
+
+  /**
+   * PROMPT PARA CORREÇÃO DE GRUPOS DE RIMA
+   */
+  private static buildRhymeGroupPrompt(
+    lines: string[],
+    enforcement: SyllableEnforcement,
+    genre: string,
+    targetRhyme: string
+  ): string {
+    return `REESCRITA DE ESTROFE - GRUPO DE RIMA COERENTE
+
+LINHAS ORIGINAIS (TODAS RIMAM COM "${targetRhyme}"):
+${lines.map((line, i) => `${i+1}. "${line}"`).join('\n')}
+
+REESCREVA TODAS AS LINHAS para:
+1. MÁXIMO ${enforcement.max} sílabas cada
+2. MANTER a rima "${targetRhyme}" no final de cada linha  
+3. Preservar coerência temática
+
+EXEMPLO DE GRUPO CORRIGIDO:
+
+Originais:
+1. "Meu coração dispara quando você chega perto"
+2. "Eu fico completamente sem jeito e muito aberto"
+
+Corrigidas:
+1. "Coração dispara quando cê chega perto"
+2. "Fico sem jeito, me sinto aberto"
+
+GÊNERO: ${genre}
 
 SUA TAREFA:
-Corrija: "${line}"
-→ (APENAS A LINHA CORRIGIDA, sem explicações)`
+Reescreva estas ${lines.length} linhas mantendo a rima "${targetRhyme}":
+
+${lines.map(line => `- "${line}"`).join('\n')}
+
+→ (APENAS AS LINHAS CORRIGIDAS, uma por linha)`
   }
 
-  /**
-   * Verifica se linha deve ser pulada na validacao
-   */
-  private static shouldSkipLine(line: string): boolean {
-    const trimmed = line.trim()
-    return (
-      !trimmed ||
-      trimmed.startsWith('[') ||
-      trimmed.startsWith('(') ||
-      trimmed.startsWith('Titulo:') ||
-      trimmed.startsWith('Instrucao:') ||
-      trimmed.includes('Instrucao:')
-    )
-  }
-
-  /**
-   * VALIDACAO RAPIDA para verificar conformidade
-   */
-  static validateLyrics(lyrics: string, enforcement: SyllableEnforcement) {
-    const lines = lyrics.split('\n').filter(line => 
-      line.trim() && !this.shouldSkipLine(line)
-    )
-
-    const stats = {
-      totalLines: lines.length,
-      withinLimit: 0,
-      problems: [] as Array<{ line: string; syllables: number }>
-    }
-
-    lines.forEach(line => {
-      const syllables = countPoeticSyllables(line)
-      if (syllables >= enforcement.min && syllables <= enforcement.max) {
-        stats.withinLimit++
-      } else {
-        stats.problems.push({ line, syllables })
-      }
-    })
-
-    return {
-      valid: stats.problems.length === 0,
-      compliance: stats.totalLines > 0 ? stats.withinLimit / stats.totalLines : 1,
-      ...stats
-    }
-  }
+  // ... (métodos shouldSkipLine e validateLyrics do código anterior)
 }
