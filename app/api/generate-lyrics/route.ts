@@ -5,6 +5,26 @@ import { SyllableEnforcer } from "@/lib/validation/syllableEnforcer"
 import { LineStacker } from "@/lib/utils/line-stacker"
 import { MetaComposer } from "@/lib/orchestrator/meta-composer"
 
+// ✅ CONFIGURAÇÃO UNIVERSAL DE QUALIDADE POR GÊNERO
+const GENRE_QUALITY_CONFIG = {
+  "Sertanejo": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
+  "Sertanejo Moderno": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
+  "Sertanejo Universitário": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
+  "Sertanejo Sofrência": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
+  "Sertanejo Raiz": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
+  "MPB": { min: 7, max: 12, ideal: 9, rhymeQuality: 0.6 },
+  "Bossa Nova": { min: 7, max: 12, ideal: 9, rhymeQuality: 0.6 },
+  "Funk": { min: 6, max: 10, ideal: 8, rhymeQuality: 0.3 },
+  "Pagode": { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
+  "Samba": { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
+  "Forró": { min: 8, max: 11, ideal: 9, rhymeQuality: 0.4 },
+  "Axé": { min: 6, max: 10, ideal: 8, rhymeQuality: 0.3 },
+  "Rock": { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
+  "Pop": { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
+  "Gospel": { min: 8, max: 11, ideal: 9, rhymeQuality: 0.5 },
+  "default": { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 }
+}
+
 // ✅ FUNÇÕES AUXILIARES
 function extractChorusesFromInstructions(instructions?: string): string[] | null {
   if (!instructions) return null
@@ -62,6 +82,11 @@ function applyFinalFormatting(lyrics: string, genero: string, metrics?: any): st
   return formattedLyrics
 }
 
+// ✅ OBTÉM CONFIGURAÇÃO DE SÍLABAS POR GÊNERO
+function getSyllableConfig(genero: string) {
+  return GENRE_QUALITY_CONFIG[genero as keyof typeof GENRE_QUALITY_CONFIG] || GENRE_QUALITY_CONFIG.default
+}
+
 // ✅ FUNÇÃO DE GERAÇÃO NORMAL
 async function generateNormally(
   genero: string,
@@ -72,11 +97,13 @@ async function generateNormally(
   metaforas?: string,
   emocoes: string[] = [],
   additionalRequirements?: string,
-  syllableTarget = { min: 7, max: 11, ideal: 9 },
+  universalPolish = true, // ✅ NOVO: POLIMENTO UNIVERSAL
+  syllableTarget = getSyllableConfig(genero), // ✅ CONFIGURAÇÃO AUTOMÁTICA
   metrics = { bpm: 100, structure: "VERSO-REFRAO" }
 ): Promise<string> {
   
   console.log(`[GenerateNormally] Gerando letra para: ${genero} - ${tema}`)
+  console.log(`[GenerateNormally] Configuração sílabas: ${syllableTarget.min}-${syllableTarget.max} (ideal: ${syllableTarget.ideal})`)
 
   const temperature = criatividade === "conservador" ? 0.5 : criatividade === "ousado" ? 0.9 : 0.7
 
@@ -108,8 +135,10 @@ UNIVERSAL RULES:
    - One verse per line (stacked)
    - (Backing: "text") when needed
 
-3. SYLLABLE LIMIT (12 maximum):
-   - Maximum 12 poetic syllables per verse
+3. SYLLABLE LIMIT (${syllableTarget.max} maximum):
+   - Maximum ${syllableTarget.max} poetic syllables per verse
+   - Minimum ${syllableTarget.min} poetic syllables per verse  
+   - Ideal ${syllableTarget.ideal} poetic syllables
    - Use contractions: você→cê, está→tá, para→pra
    - Complete phrases always
 
@@ -182,7 +211,7 @@ Create the original song now:`
   return lyrics
 }
 
-// ✅ ROTA PRINCIPAL
+// ✅ ROTA PRINCIPAL ATUALIZADA
 export async function POST(request: Request) {
   try {
     const body = await request.json()
@@ -199,9 +228,10 @@ export async function POST(request: Request) {
       formattingStyle = "performatico",
       additionalRequirements,
       advancedMode = false,
-      syllableTarget = { min: 7, max: 11, ideal: 9 },
+      universalPolish = true, // ✅ NOVO: POLIMENTO UNIVERSAL
+      syllableTarget, // Opcional: se não fornecido, usa configuração automática
       metrics = { bpm: 100, structure: "VERSO-REFRAO" },
-      selectedChoruses, // ✅ NOVO: Refrões selecionados para preservar
+      selectedChoruses, // ✅ Refrões selecionados para preservar
     } = body
 
     if (!genero) {
@@ -212,14 +242,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Tema é obrigatório" }, { status: 400 })
     }
 
+    // ✅ CONFIGURAÇÃO AUTOMÁTICA POR GÊNERO
+    const autoSyllableConfig = getSyllableConfig(genero)
+    const finalSyllableTarget = syllableTarget || autoSyllableConfig
+
+    console.log(`[Generate] Configuração ${genero}: ${finalSyllableTarget.min}-${finalSyllableTarget.max}s (ideal: ${finalSyllableTarget.ideal}s)`)
+    console.log(`[Generate] Polimento Universal: ${universalPolish ? 'ATIVO' : 'INATIVO'}`)
+
     // ✅ EXTRAI refrões selecionados se existirem (sempre retorna array)
     const extractedChoruses = selectedChoruses || extractChorusesFromInstructions(additionalRequirements) || []
 
     let finalLyrics: string
+    let generationMode: "preservation" | "universal" | "normal" = "normal"
 
-    // ✅ DECISÃO INTELIGENTE: Preservar refrões ou geração normal
+    // ✅ DECISÃO INTELIGENTE: Preservar refrões ou geração com Sistema Universal
     if (extractedChoruses.length > 0) {
       console.log(`[Generate] 🎯 Modo preservação ativo: ${extractedChoruses.length} refrões selecionados`)
+      generationMode = "preservation"
       
       // ✅ USA META-COMPOSER com refrões preservados
       finalLyrics = await MetaComposer.rewriteWithPreservedChoruses(
@@ -230,15 +269,41 @@ export async function POST(request: Request) {
           theme: extractThemeFromInput(tema, inspiracao),
           mood: extractMoodFromInput(humor, emocoes),
           additionalRequirements,
-          syllableTarget,
-          preservedChoruses: extractedChoruses
+          syllableTarget: finalSyllableTarget,
+          preservedChoruses: extractedChoruses,
+          applyFinalPolish: universalPolish // ✅ POLIMENTO UNIVERSAL
         },
-        syllableTarget
+        finalSyllableTarget
       )
-    } else {
-      console.log(`[Generate] Modo geração normal para: ${genero} - ${tema}`)
+    } else if (universalPolish) {
+      // ✅ SISTEMA UNIVERSAL DE QUALIDADE
+      console.log(`[Generate] 🎵 Sistema Universal ativo para: ${genero}`)
+      generationMode = "universal"
       
-      // ✅ FALLBACK: geração normal (sem refrões selecionados)
+      const compositionRequest = {
+        genre: genero,
+        theme: extractThemeFromInput(tema, inspiracao),
+        mood: extractMoodFromInput(humor, emocoes),
+        additionalRequirements,
+        syllableTarget: finalSyllableTarget,
+        applyFinalPolish: true,
+        creativity: criatividade,
+        preserveRhymes: true,
+        applyTerceiraVia: true
+      }
+
+      const result = await MetaComposer.compose(compositionRequest)
+      finalLyrics = result.lyrics
+
+      console.log(`[Generate] Sistema Universal finalizado - Score: ${result.metadata.finalScore.toFixed(2)}`)
+      if (result.metadata.polishingApplied) {
+        console.log(`[Generate] ✅ Polimento específico para ${genero} aplicado`)
+      }
+    } else {
+      // ✅ FALLBACK: geração normal (sem refrões selecionados e sem polimento universal)
+      console.log(`[Generate] Modo geração normal para: ${genero} - ${tema}`)
+      generationMode = "normal"
+      
       finalLyrics = await generateNormally(
         genero,
         humor || 'Romântico',
@@ -248,7 +313,8 @@ export async function POST(request: Request) {
         metaforas,
         emocoes,
         additionalRequirements,
-        syllableTarget,
+        universalPolish,
+        finalSyllableTarget,
         metrics
       )
     }
@@ -256,14 +322,17 @@ export async function POST(request: Request) {
     // ✅ APLICA FORMATAÇÃO FINAL
     finalLyrics = applyFinalFormatting(finalLyrics, genero, metrics)
 
-    console.log("[Generate] Geração concluída!")
+    console.log(`[Generate] Geração concluída! Modo: ${generationMode}`)
 
     return NextResponse.json({
       letra: finalLyrics,
       titulo: titulo || extractTitleFromLyrics(finalLyrics),
       metadata: {
         preservedChoruses: extractedChoruses.length,
-        mode: extractedChoruses.length > 0 ? "preservation" : "normal"
+        generationMode: generationMode,
+        syllableConfig: finalSyllableTarget,
+        universalPolish: universalPolish,
+        genre: genero
       }
     })
   } catch (error) {
