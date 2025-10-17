@@ -7,6 +7,7 @@ import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 import { validateLyricsSyllables } from "@/lib/validation/syllable-counter"
 import { SyllableEnforcer } from "@/lib/validation/syllableEnforcer"
 import { LineStacker } from "@/lib/utils/line-stacker"
+import { MetaComposer } from "@/lib/meta-composer"
 
 export async function POST(request: Request) {
   try {
@@ -29,35 +30,111 @@ export async function POST(request: Request) {
       formattingStyle,
       additionalRequirements,
       advancedMode,
+      selectedChoruses, // ✅ NOVO: Refrões selecionados para preservar
     } = body
 
-    const genreLower = generoConversao.toLowerCase()
-    const isBachata = genreLower.includes("bachata")
-    const isSertanejoRaiz = genreLower.includes("sertanejo raiz") || genreLower.includes("sertanejo-raiz")
-    const isSertanejoModerno = genreLower.includes("sertanejo") && !isSertanejoRaiz
-    const isSertanejo = isSertanejoRaiz || isSertanejoModerno
+    // ✅ EXTRAI refrões selecionados se existirem
+    const extractedChoruses = selectedChoruses || this.extractChorusesFromInstructions(additionalRequirements)
 
-    const subGenreInfo = detectSubGenre(additionalRequirements)
-    const defaultRhythm = getGenreRhythm(generoConversao)
-    const finalRhythm = subGenreInfo.rhythm || defaultRhythm
+    let finalLyrics: string
 
-    let genreConfig
-    if (isBachata) {
-      genreConfig = BACHATA_BRASILEIRA_2024
-    } else if (isSertanejoRaiz) {
-      genreConfig = GENRE_CONFIGS["Sertanejo Raiz"]
-    } else if (isSertanejoModerno) {
-      genreConfig = SERTANEJO_MODERNO_2024
+    // ✅ DECISÃO INTELIGENTE: Preservar refrões ou reescrita normal
+    if (extractedChoruses && extractedChoruses.length > 0) {
+      console.log(`[RewriteLyrics] 🎯 Modo preservação ativo: ${extractedChoruses.length} refrões selecionados`)
+      
+      // ✅ USA META-COMPOSER com refrões preservados
+      finalLyrics = await MetaComposer.rewriteWithPreservedChoruses(
+        letraOriginal,
+        extractedChoruses,
+        { 
+          genre: generoConversao, 
+          theme: this.extractThemeFromLyrics(letraOriginal),
+          mood: this.extractMoodFromLyrics(letraOriginal),
+          additionalRequirements,
+          syllableTarget: { min: 7, max: 11, ideal: 9 }
+        },
+        { min: 7, max: 11, ideal: 9 }
+      )
     } else {
-      genreConfig = GENRE_CONFIGS[generoConversao as keyof typeof GENRE_CONFIGS]
+      console.log(`[RewriteLyrics] Modo reescrita normal para: ${generoConversao}`)
+      
+      // ✅ FALLBACK: reescrita normal (sem refrões selecionados)
+      finalLyrics = await this.rewriteNormally(
+        letraOriginal,
+        generoConversao,
+        additionalRequirements,
+        conservarImagens,
+        polirSemMexer,
+        metrics
+      )
     }
 
-    console.log(`[v0] Reescrevendo para: ${generoConversao}`)
+    // ✅ APLICA FORMATAÇÃO FINAL
+    finalLyrics = this.applyFinalFormatting(finalLyrics, generoConversao, metrics)
 
-    const instrumentMatch = letraOriginal.match(/\(Instruments?:\s*\[([^\]]+)\]/i)
-    const originalInstruments = instrumentMatch ? instrumentMatch[1].trim() : null
+    console.log("[RewriteLyrics] Reescrita concluída!")
 
-    const prompt = `You are a professional Brazilian music composer specializing in ${generoConversao}.
+    return NextResponse.json({
+      letra: finalLyrics,
+      metadata: {
+        preservedChoruses: extractedChoruses?.length || 0,
+        mode: extractedChoruses ? "preservation" : "normal"
+      }
+    })
+
+  } catch (error) {
+    console.error("[RewriteLyrics] Erro ao reescrever letra:", error)
+
+    const errorMessage = error instanceof Error ? error.message : "Erro desconhecido"
+
+    return NextResponse.json(
+      {
+        error: "Erro ao reescrever letra",
+        details: errorMessage,
+        suggestion: "Tente novamente ou simplifique a letra original",
+      },
+      { status: 500 },
+    )
+  }
+}
+
+// ✅ NOVO MÉTODO: REWRITE NORMAL (fallback quando não há refrões selecionados)
+private static async rewriteNormally(
+  letraOriginal: string,
+  generoConversao: string,
+  additionalRequirements?: string,
+  conservarImagens?: boolean,
+  polirSemMexer?: boolean,
+  metrics?: any
+): Promise<string> {
+  
+  const genreLower = generoConversao.toLowerCase()
+  const isBachata = genreLower.includes("bachata")
+  const isSertanejoRaiz = genreLower.includes("sertanejo raiz") || genreLower.includes("sertanejo-raiz")
+  const isSertanejoModerno = genreLower.includes("sertanejo") && !isSertanejoRaiz
+  const isSertanejo = isSertanejoRaiz || isSertanejoModerno
+
+  const subGenreInfo = detectSubGenre(additionalRequirements)
+  const defaultRhythm = getGenreRhythm(generoConversao)
+  const finalRhythm = subGenreInfo.rhythm || defaultRhythm
+
+  let genreConfig
+  if (isBachata) {
+    genreConfig = BACHATA_BRASILEIRA_2024
+  } else if (isSertanejoRaiz) {
+    genreConfig = GENRE_CONFIGS["Sertanejo Raiz"]
+  } else if (isSertanejoModerno) {
+    genreConfig = SERTANEJO_MODERNO_2024
+  } else {
+    genreConfig = GENRE_CONFIGS[generoConversao as keyof typeof GENRE_CONFIGS]
+  }
+
+  console.log(`[RewriteNormally] Reescrevendo para: ${generoConversao}`)
+
+  const instrumentMatch = letraOriginal.match(/\(Instruments?:\s*\[([^\]]+)\]/i)
+  const originalInstruments = instrumentMatch ? instrumentMatch[1].trim() : null
+
+  const prompt = `You are a professional Brazilian music composer specializing in ${generoConversao}.
 
 TASK: Create an improved version of the lyrics below, maintaining the same story and theme.
 
@@ -113,7 +190,7 @@ ${additionalRequirements ? `\nSPECIAL REQUIREMENTS:\n${additionalRequirements}` 
 
 Create the improved version now:`
 
-    console.log("[v0] Iniciando reescrita...")
+    console.log("[RewriteNormally] Iniciando reescrita...")
 
     let finalLyrics = ""
     let attempt = 0
@@ -121,7 +198,7 @@ Create the improved version now:`
 
     while (attempt < maxAttempts) {
       attempt++
-      console.log(`[v0] Tentativa ${attempt}/${maxAttempts}`)
+      console.log(`[RewriteNormally] Tentativa ${attempt}/${maxAttempts}`)
 
       try {
         const { text } = await generateText({
@@ -140,7 +217,7 @@ Create the improved version now:`
         lyrics = lyrics.replace(/^\*\*(?:Título|Title):\s*.+\*\*$/gm, "").trim()
 
         // ✅ VALIDAÇÃO E CORREÇÃO AUTOMÁTICA DE SÍLABAS
-        console.log(`[v0] Aplicando imposição rigorosa de sílabas...`)
+        console.log(`[RewriteNormally] Aplicando imposição rigorosa de sílabas...`)
         const syllableEnforcement = { min: 7, max: 11, ideal: 9 }
 
         const enforcedResult = await SyllableEnforcer.enforceSyllableLimits(
@@ -150,14 +227,14 @@ Create the improved version now:`
         )
 
         if (enforcedResult.corrections > 0) {
-          console.log(`[v0] ${enforcedResult.corrections} linhas corrigidas automaticamente`)
+          console.log(`[RewriteNormally] ${enforcedResult.corrections} linhas corrigidas automaticamente`)
           enforcedResult.violations.forEach(v => {
-            console.log(`[v0] CORRIGIDO: ${v}`)
+            console.log(`[RewriteNormally] CORRIGIDO: ${v}`)
           })
           
           lyrics = enforcedResult.correctedLyrics
         } else {
-          console.log(`[v0] Todas as linhas respeitam o limite de sílabas!`)
+          console.log(`[RewriteNormally] Todas as linhas respeitam o limite de sílabas!`)
         }
 
         // ✅ APLICA EMPILHAMENTO PROFISSIONAL
@@ -172,38 +249,88 @@ Create the improved version now:`
         break
 
       } catch (error) {
-        console.error(`[v0] Erro na tentativa ${attempt}:`, error)
+        console.error(`[RewriteNormally] Erro na tentativa ${attempt}:`, error)
         if (attempt === maxAttempts) {
           throw error
         }
       }
     }
 
-    // Add instruments if missing
-    if (!finalLyrics.includes("(Instrumentos:")) {
-      const instrumentList = `(Instrumentos: ${subGenreInfo.instruments || originalInstruments || "guitar, bass, drums, keyboard"} | BPM: ${subGenreInfo.bpm || metrics?.bpm || 100} | Ritmo: ${finalRhythm} | Estilo: ${generoConversao})`
-      finalLyrics = finalLyrics.trim() + "\n\n" + instrumentList
+    return finalLyrics
+}
+
+// ✅ NOVO MÉTODO: EXTRAI REFRÕES DAS INSTRUÇÕES
+private static extractChorusesFromInstructions(instructions?: string): string[] | null {
+  if (!instructions) return null
+
+  const chorusMatches = instructions.match(/refr[ãa]o[:\s]*([^\.]+)/gi)
+  if (!chorusMatches) return null
+
+  const choruses: string[] = []
+  
+  chorusMatches.forEach(match => {
+    const chorusText = match.replace(/refr[ãa]o[:\s]*/gi, '').trim()
+    if (chorusText && chorusText.length > 10) { // Mínimo de caracteres para ser um refrão válido
+      choruses.push(chorusText)
     }
+  })
 
-    finalLyrics = capitalizeLines(finalLyrics)
+  return choruses.length > 0 ? choruses : null
+}
 
-    console.log("[v0] Reescrita concluída!")
+// ✅ NOVO MÉTODO: EXTRAI TEMA DA LETRA
+private static extractThemeFromLyrics(lyrics: string): string {
+  const lines = lyrics.split('\n').filter(line => 
+    line.trim() && !line.startsWith('[') && !line.startsWith('(') && !line.includes('Instrumentos:')
+  )
+  
+  if (lines.length === 0) return 'Amor'
+  
+  // Analisa as primeiras linhas para detectar tema
+  const firstLines = lines.slice(0, 3).join(' ').toLowerCase()
+  
+  if (firstLines.includes('amor') || firstLines.includes('coração') || firstLines.includes('amar')) return 'Amor'
+  if (firstLines.includes('saudade') || firstLines.includes('lembrança') || firstLines.includes('nostalgia')) return 'Saudade'
+  if (firstLines.includes('festa') || firstLines.includes('dançar') || firstLines.includes('noite')) return 'Festa'
+  if (firstLines.includes('vida') || firstLines.includes('tempo') || firstLines.includes('caminho')) return 'Vida'
+  
+  return 'Amor' // Default
+}
 
-    return NextResponse.json({
-      letra: finalLyrics,
-    })
-  } catch (error) {
-    console.error("[v0] Erro ao reescrever letra:", error)
+// ✅ NOVO MÉTODO: EXTRAI HUMOR DA LETRA
+private static extractMoodFromLyrics(lyrics: string): string {
+  const lines = lyrics.split('\n').filter(line => 
+    line.trim() && !line.startsWith('[') && !line.startsWith('(') && !line.includes('Instrumentos:')
+  )
+  
+  if (lines.length === 0) return 'Romântico'
+  
+  const text = lines.join(' ').toLowerCase()
+  
+  if (text.includes('triste') || text.includes('chor') || text.includes('sof')) return 'Melancólico'
+  if (text.includes('alegria') || text.includes('feliz') || text.includes('sorri')) return 'Alegre'
+  if (text.includes('paixão') || text.includes('amor') || text.includes('beij')) return 'Romântico'
+  if (text.includes('raiva') || text.includes('ódio') || text.includes('machuc')) return 'Intenso'
+  
+  return 'Romântico' // Default
+}
 
-    const errorMessage = error instanceof Error ? error.message : "Erro desconhecido"
+// ✅ NOVO MÉTODO: FORMATAÇÃO FINAL
+private static applyFinalFormatting(lyrics: string, genre: string, metrics?: any): string {
+  let formattedLyrics = lyrics
 
-    return NextResponse.json(
-      {
-        error: "Erro ao reescrever letra",
-        details: errorMessage,
-        suggestion: "Tente novamente ou simplifique a letra original",
-      },
-      { status: 500 },
-    )
+  // Add instruments if missing
+  if (!formattedLyrics.includes("(Instrumentos:")) {
+    const subGenreInfo = detectSubGenre('')
+    const defaultRhythm = getGenreRhythm(genre)
+    const finalRhythm = subGenreInfo.rhythm || defaultRhythm
+    
+    const instrumentList = `(Instrumentos: ${subGenreInfo.instruments || "guitar, bass, drums, keyboard"} | BPM: ${subGenreInfo.bpm || metrics?.bpm || 100} | Ritmo: ${finalRhythm} | Estilo: ${genre})`
+    formattedLyrics = formattedLyrics.trim() + "\n\n" + instrumentList
   }
+
+  // Aplica capitalização
+  formattedLyrics = capitalizeLines(formattedLyrics)
+
+  return formattedLyrics
 }
