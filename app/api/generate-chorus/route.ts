@@ -247,7 +247,8 @@ Gere as 5 variações de REFRÃO DE HIT agora:`
             const line = lines[j].trim()
             if (!line) continue
 
-            const syllables = countSyllables(line)
+            // ✅ CORREÇÃO: countSyllables → countPoeticSyllables
+            const syllables = countPoeticSyllables(line)
             if (syllables > 12) {
               allValid = false
               violations.push(`Variação ${i + 1}, linha ${j + 1}: "${line}" = ${syllables} sílabas (máx: 12)`)
