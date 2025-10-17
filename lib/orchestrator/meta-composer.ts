@@ -28,7 +28,7 @@ export interface CompositionRequest {
   preserveRhymes?: boolean
   applyTerceiraVia?: boolean
   applyFinalPolish?: boolean
-  preservedChoruses?: string[] // Refrões selecionados para preservar
+  preservedChoruses?: string[]
 }
 
 export interface CompositionResult {
@@ -140,9 +140,28 @@ export class MetaComposer {
       let finalLyrics = enforcedResult.correctedLyrics
       if (applyFinalPolish && iterations === this.MAX_ITERATIONS) {
         console.log('[MetaComposer] Aplicando polimento final...')
-        finalLyrics = await this.applyFinalPolish(enforcedResult.correctedLyrics, request.genre, syllableEnforcement)
+        
+        // Polimento específico para Sertanejo
+        if (request.genre.toLowerCase().includes('sertanejo')) {
+          finalLyrics = await this.applySertanejoPolish(enforcedResult.correctedLyrics, syllableEnforcement)
+          console.log('[MetaComposer] ✅ Polimento Sertanejo aplicado!')
+        } else {
+          finalLyrics = await this.applyFinalPolish(enforcedResult.correctedLyrics, request.genre, syllableEnforcement)
+          console.log('[MetaComposer] ✅ Polimento final aplicado!')
+        }
+        
         polishingApplied = true
-        console.log('[MetaComposer] ✅ Polimento final aplicado!')
+        
+        // ✅ VALIDAÇÃO FINAL RIGOROSA
+        const finalValidation = this.validateSertanejoQuality(finalLyrics)
+        console.log(`[MetaComposer] 📊 VALIDAÇÃO FINAL:`)
+        console.log(`[MetaComposer] Sílabas: ${(finalValidation.syllableScore * 100).toFixed(1)}% corretas`)
+        console.log(`[MetaComposer] Rimas: ${(finalValidation.rhymeScore * 100).toFixed(1)}% ricas`)
+        
+        if (finalValidation.problems.length > 0) {
+          console.log('[MetaComposer] ⚠️ PROBLEMAS ENCONTRADOS:')
+          finalValidation.problems.forEach(problem => console.log(`  - ${problem}`))
+        }
       }
 
       // ✅ VALIDAÇÃO COMPREENSIVA
@@ -326,6 +345,167 @@ RETORNE APENAS OS VERSOS NO FORMATO:
     });
 
     return this.parseComposedVerses(text);
+  }
+
+  /**
+   * POLIMENTO ESPECÍFICO PARA SERTANEJO - CORRIGE SÍLABAS E RIMAS
+   */
+  private static async applySertanejoPolish(
+    lyrics: string, 
+    syllableTarget: { min: number; max: number; ideal: number }
+  ): Promise<string> {
+    console.log('[SertanejoPolish] Aplicando polimento específico para Sertanejo...')
+    
+    const lines = lyrics.split('\n')
+    const polishedLines: string[] = []
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+      
+      // Mantém marcações e backing vocals
+      if (line.startsWith('[') || line.startsWith('(') || line.includes('Backing:') || 
+          line.includes('Instrumentos:') || line.includes('BPM:') || !line.trim()) {
+        polishedLines.push(line)
+        continue
+      }
+      
+      const currentSyllables = countPoeticSyllables(line)
+      const needsCorrection = currentSyllables < syllableTarget.min || currentSyllables > syllableTarget.max
+      
+      if (needsCorrection) {
+        console.log(`[SertanejoPolish] Corrigindo linha ${i+1}: "${line}" (${currentSyllables}s)`)
+        
+        try {
+          const polishedLine = await this.polishSertanejoLine(line, syllableTarget)
+          polishedLines.push(polishedLine)
+        } catch (error) {
+          console.error(`[SertanejoPolish] Erro, mantendo original:`, error)
+          polishedLines.push(line)
+        }
+      } else {
+        polishedLines.push(line)
+      }
+    }
+    
+    return polishedLines.join('\n')
+  }
+
+  /**
+   * POLIMENTO ESPECÍFICO PARA LINHAS SERTANEJO
+   */
+  private static async polishSertanejoLine(
+    line: string, 
+    syllableTarget: { min: number; max: number; ideal: number }
+  ): Promise<string> {
+    
+    const currentSyllables = countPoeticSyllables(line)
+    
+    const prompt = `POLIMENTO DE LINHA SERTANEJO - CORREÇÃO PROFISSIONAL
+
+LINHA ORIGINAL: "${line}"
+SÍLABAS ATUAIS: ${currentSyllables} (ALVO: ${syllableTarget.min}-${syllableTarget.max})
+
+REESCREVA ESTA LINHA PARA:
+1. 📏 RESPEITAR ${syllableTarget.min}-${syllableTarget.max} sílabas poéticas
+2. 🎵 MANTER a rima e contexto da música
+3. 🎶 USAR linguagem autêntica do sertanejo raiz
+4. 💬 APLICAR contrações: "cê", "tô", "pra", "tá", "meuamor"
+5. ✨ MELHORAR fluência mantendo significado
+
+TÉCNICAS OBRIGATÓRIAS:
+• Contrações naturais: "você"→"cê", "estou"→"tô", "para"→"pra"
+• Elisão poética: "de amor"→"d'amor", "que eu"→"qu'eu" 
+• Linguagem coloquial brasileira
+• Rimas ricas em -ar, -er, -ir, -or, -ão
+
+EXEMPLOS DE CORREÇÃO:
+"Ela balança" → "Ela vem balançando pro meu lado" (7→11)
+"Meu peito dói" → "Coração doi quando cê vai embora" (6→11)
+"Te amo tanto" → "Eu te amo tanto, meu amor querido" (7→11)
+
+LINHA PARA POLIR: "${line}"
+
+→ RETORNE APENAS A LINHA POLIDA (sem explicações, sem aspas):`
+
+    const { text } = await generateText({
+      model: "openai/gpt-4o",
+      prompt,
+      temperature: 0.3
+    })
+
+    const polishedLine = text.trim().replace(/^["']|["']$/g, "")
+    const polishedSyllables = countPoeticSyllables(polishedLine)
+    
+    // Verifica se a correção foi efetiva
+    const isImproved = polishedSyllables >= syllableTarget.min && 
+                       polishedSyllables <= syllableTarget.max &&
+                       polishedLine.length > line.length - 5
+    
+    return isImproved ? polishedLine : line
+  }
+
+  /**
+   * VALIDAÇÃO RIGOROSA DE SERTANEJO
+   */
+  private static validateSertanejoQuality(lyrics: string): {
+    syllableScore: number
+    rhymeScore: number 
+    totalLines: number
+    problems: string[]
+  } {
+    const lines = lyrics.split('\n').filter(line => 
+      line.trim() && !line.startsWith('[') && !line.startsWith('(') && 
+      !line.includes('Backing:') && !line.includes('Instrumentos:')
+    )
+    
+    let correctSyllables = 0
+    let richRhymes = 0
+    const problems: string[] = []
+    
+    // Analisa sílabas
+    lines.forEach((line, index) => {
+      const syllables = countPoeticSyllables(line)
+      if (syllables >= 9 && syllables <= 11) {
+        correctSyllables++
+      } else {
+        problems.push(`Linha ${index+1}: "${line}" - ${syllables}s (fora do padrão 9-11)`)
+      }
+    })
+    
+    // Analisa rimas (em pares)
+    for (let i = 0; i < lines.length - 1; i += 2) {
+      if (this.hasRichRhyme(lines[i], lines[i + 1])) {
+        richRhymes++
+      }
+    }
+    
+    return {
+      syllableScore: lines.length > 0 ? correctSyllables / lines.length : 0,
+      rhymeScore: lines.length >= 2 ? richRhymes / Math.floor(lines.length / 2) : 0,
+      totalLines: lines.length,
+      problems
+    }
+  }
+
+  /**
+   * VERIFICA RIMA RICA ENTRE DUAS LINHAS
+   */
+  private static hasRichRhyme(line1: string, line2: string): boolean {
+    const getLastWord = (line: string) => {
+      const words = line.trim().split(/\s+/)
+      return words[words.length - 1]?.toLowerCase().replace(/[.,!?;:]$/g, '') || ''
+    }
+    
+    const word1 = getLastWord(line1)
+    const word2 = getLastWord(line2)
+    
+    if (!word1 || !word2 || word1.length < 2 || word2.length < 2) return false
+    
+    // Rimas ricas: últimas 2-3 sílabas iguais
+    const end1 = word1.slice(-3)
+    const end2 = word2.slice(-3)
+    
+    return end1 === end2 || word1.slice(-2) === word2.slice(-2)
   }
 
   /**
