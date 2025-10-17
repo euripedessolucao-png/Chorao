@@ -1,3 +1,6 @@
+// lib/genre-config.ts
+import { countPoeticSyllables } from "./validation/syllable-counter"
+
 export const GENRE_CONFIGS = {
   "Sertanejo Moderno Feminino": {
     year_range: "2024-2025",
@@ -862,16 +865,16 @@ export function validateLyrics(
     })
   }
 
-  // Validar contagem de sílabas
+  // Validar contagem de sílabas - USANDO O NOVO SISTEMA
   const lines = lyrics.split("\n").filter((line) => line.trim() && !line.startsWith("["))
   lines.forEach((line, index) => {
-    const syllables = countSyllables(line)
+    const syllables = countPoeticSyllables(line) // ← CORRIGIDO: usa o novo sistema
     const rules = config.prosody_rules.syllable_count
 
     if ("with_comma" in rules && line.includes(",")) {
       const [before, after] = line.split(",")
-      const beforeCount = countSyllables(before)
-      const afterCount = countSyllables(after)
+      const beforeCount = countPoeticSyllables(before) // ← CORRIGIDO
+      const afterCount = countPoeticSyllables(after) // ← CORRIGIDO
 
       if (beforeCount > rules.with_comma.max_before_comma) {
         warnings.push(`Linha ${index + 1}: Muitas sílabas antes da vírgula (${beforeCount})`)
@@ -897,20 +900,6 @@ export function validateLyrics(
     errors,
     warnings,
   }
-}
-
-function countSyllables(text: string): number {
-  const cleaned = text.replace(/[^\wáàâãéèêíìîóòôõúùûç\s]/gi, "").toLowerCase()
-  const words = cleaned.split(/\s+/).filter(Boolean)
-
-  let total = 0
-  words.forEach((word) => {
-    // Contagem aproximada de sílabas
-    const vowels = word.match(/[aeiouáàâãéèêíìîóòôõúùû]/gi)
-    total += vowels ? vowels.length : 1
-  })
-
-  return total
 }
 
 export const INSTRUMENTATION_RULES = {
