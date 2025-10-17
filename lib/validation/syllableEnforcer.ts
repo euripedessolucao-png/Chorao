@@ -1,6 +1,6 @@
 /**
- * SISTEMA DE IMPOSIÇÃO RIGOROSA MAS INTELIGENTE DE SÍLABAS
- * Foco: MÁXIMO 11 sílabas com preservação de qualidade
+ * SISTEMA DE IMPOSICAO RIGOROSA DE SILABAS
+ * Nao apenas valida, mas CORRIGE automaticamente
  */
 
 import { countPoeticSyllables } from "./syllable-counter"
@@ -13,11 +13,10 @@ export interface SyllableEnforcement {
 }
 
 export class SyllableEnforcer {
-  private static readonly MAX_CORRECTION_ATTEMPTS = 1
-  private static readonly STRICT_MAX_SYLLABLES = 11 // ✅ RIGOROSO: máximo 11
+  private static readonly MAX_CORRECTION_ATTEMPTS = 2
 
   /**
-   * IMPOSIÇÃO RIGOROSA: Máximo 11 sílabas, mas com correções inteligentes
+   * IMPOSICAO RIGOROSA: Valida e corrige linha por linha
    */
   static async enforceSyllableLimits(
     lyrics: string, 
@@ -28,9 +27,6 @@ export class SyllableEnforcer {
     const correctedLines: string[] = []
     let corrections = 0
     const violations: string[] = []
-
-    // ✅ USAR LIMITE RIGOROSO: máximo 11, não 12
-    const strictEnforcement = { ...enforcement, max: this.STRICT_MAX_SYLLABLES }
 
     for (let i = 0; i < lines.length; i++) {
       const originalLine = lines[i]
@@ -43,10 +39,11 @@ export class SyllableEnforcer {
 
       const syllables = countPoeticSyllables(originalLine)
       
-      // ✅ RIGOROSO: Apenas até 11 sílabas são aceitas
-      if (syllables >= strictEnforcement.min && syllables <= strictEnforcement.max) {
+      if (syllables >= enforcement.min && syllables <= enforcement.max) {
+        // Dentro do limite - mantém
         correctedLines.push(originalLine)
       } else {
+        // Fora do limite - CORRIGE automaticamente
         violations.push(`Linha ${i+1}: "${originalLine}" -> ${syllables}s`)
         
         console.log(`[SyllableEnforcer] Corrigindo linha ${i+1}: "${originalLine}" (${syllables}s)`)
@@ -54,20 +51,20 @@ export class SyllableEnforcer {
         const correctedLine = await this.correctSyllableLine(
           originalLine, 
           syllables, 
-          strictEnforcement, 
+          enforcement, 
           genre
         )
         
         const finalSyllables = countPoeticSyllables(correctedLine)
         
-        // ✅ VERIFICA se a correção foi bem-sucedida (até 11 sílabas)
-        if (finalSyllables >= strictEnforcement.min && finalSyllables <= strictEnforcement.max) {
+        // ✅ VERIFICA se a correção foi bem-sucedida
+        if (finalSyllables >= enforcement.min && finalSyllables <= enforcement.max) {
           correctedLines.push(correctedLine)
           corrections++
           console.log(`[SyllableEnforcer] ✓ Correção bem-sucedida: ${syllables}s -> ${finalSyllables}s`)
         } else {
-          // ❌ Correção falhou - aplica correção de emergência
-          const emergencyCorrected = this.applyEmergencyCorrection(originalLine, strictEnforcement.max)
+          // ❌ Se ainda não estiver boa, aplica correção de emergência
+          const emergencyCorrected = this.applyEmergencyCorrection(originalLine, enforcement.max)
           correctedLines.push(emergencyCorrected)
           corrections++
           console.log(`[SyllableEnforcer] ⚠️ Usando correção de emergência: ${syllables}s -> ${countPoeticSyllables(emergencyCorrected)}s`)
@@ -83,7 +80,7 @@ export class SyllableEnforcer {
   }
 
   /**
-   * CORREÇÃO INTELIGENTE: Foca em reduzir para máximo 11 sílabas
+   * CORRECAO AUTOMATICA de linha problematica
    */
   private static async correctSyllableLine(
     line: string,
@@ -91,45 +88,62 @@ export class SyllableEnforcer {
     enforcement: SyllableEnforcement,
     genre: string
   ): Promise<string> {
-    // ✅ PRIMEIRO: Tenta correções automáticas LOCAIS
-    const autoCorrected = this.applySmartCorrections(line, enforcement.max)
-    const autoSyllables = countPoeticSyllables(autoCorrected)
-    
-    if (autoSyllables <= enforcement.max) {
-      console.log(`[SyllableEnforcer] Correção automática: "${line}" -> "${autoCorrected}"`)
-      return autoCorrected
+    let attempts = 0
+    let currentLine = line
+
+    while (attempts < this.MAX_CORRECTION_ATTEMPTS) {
+      attempts++
+
+      // ✅ PRIMEIRO: Tenta correções automáticas locais antes de chamar a IA
+      const autoCorrected = this.applyAutomaticCorrections(currentLine, enforcement.max)
+      const autoSyllables = countPoeticSyllables(autoCorrected)
+      
+      if (autoSyllables <= enforcement.max && autoSyllables >= enforcement.min) {
+        console.log(`[SyllableEnforcer] Correção automática bem-sucedida: "${line}" -> "${autoCorrected}"`)
+        return autoCorrected
+      }
+
+      // ✅ SEGUNDO: Se a correção automática falhou, usa IA
+      const correctionPrompt = this.buildCorrectionPrompt(currentLine, currentSyllables, enforcement, genre)
+      
+      try {
+        const { text: correctedLine } = await generateText({
+          model: "openai/gpt-4o",
+          prompt: correctionPrompt,
+          temperature: 0.3
+        })
+
+        const correctedText = correctedLine.trim().replace(/^["']|["']$/g, "")
+        const newSyllables = countPoeticSyllables(correctedText)
+
+        console.log(`[SyllableEnforcer] Correção ${attempts}: "${currentLine}" (${currentSyllables}s) -> "${correctedText}" (${newSyllables}s)`)
+
+        // Verifica se a correção foi bem-sucedida
+        if (newSyllables >= enforcement.min && newSyllables <= enforcement.max) {
+          return correctedText
+        }
+
+        currentLine = correctedText
+        currentSyllables = newSyllables
+
+      } catch (error) {
+        console.error('[SyllableEnforcer] Erro na correção:', error)
+        break
+      }
     }
 
-    // ✅ SEGUNDO: Se ainda longa, usa IA com foco em 11 sílabas
-    const correctionPrompt = this.buildStrictCorrectionPrompt(line, currentSyllables, enforcement, genre)
-    
-    try {
-      const { text: correctedLine } = await generateText({
-        model: "openai/gpt-4o",
-        prompt: correctionPrompt,
-        temperature: 0.3
-      })
-
-      const correctedText = correctedLine.trim().replace(/^["']|["']$/g, "")
-      const newSyllables = countPoeticSyllables(correctedText)
-
-      console.log(`[SyllableEnforcer] Correção IA: "${line}" (${currentSyllables}s) -> "${correctedText}" (${newSyllables}s)`)
-
-      return correctedText
-
-    } catch (error) {
-      console.error('[SyllableEnforcer] Erro na correção:', error)
-      return this.applyEmergencyCorrection(line, enforcement.max)
-    }
+    // ✅ TERCEIRO: Se todas as tentativas falharem, aplica correção de emergência
+    console.log(`[SyllableEnforcer] Todas as tentativas falharam, aplicando correção de emergência`)
+    return this.applyEmergencyCorrection(line, enforcement.max)
   }
 
   /**
-   * CORREÇÕES INTELIGENTES - Foco em reduzir para 11 sílabas
+   * CORREÇÕES AUTOMÁTICAS - Mais agressivas e eficientes
    */
-  private static applySmartCorrections(line: string, maxSyllables: number): string {
+  private static applyAutomaticCorrections(line: string, maxSyllables: number): string {
     let corrected = line
 
-    // ✅ CONTRACÕES OBRIGATÓRIAS para reduzir sílabas
+    // Lista expandida de contrações obrigatórias
     const contractions = [
       { from: /\bvocê\b/gi, to: 'cê' },
       { from: /\bestá\b/gi, to: 'tá' },
@@ -137,108 +151,144 @@ export class SyllableEnforcer {
       { from: /\bestou\b/gi, to: 'tô' },
       { from: /\bcomigo\b/gi, to: 'comigo' },
       { from: /\bcontigo\b/gi, to: 'contigo' },
-      { from: /\bnessa\b/gi, to: 'nessa' },
-      { from: /\bnesse\b/gi, to: 'nesse' },
+      { from: /\bdesejando\b/gi, to: 'querendo' },
+      { from: /\bpensando\b/gi, to: 'pensando' },
+      { from: /\bpronto\s+pra\b/gi, to: 'pronto p\'ra' },
+      { from: /\bpergunta\b/gi, to: 'pergunta' },
+      { from: /\bconfesso\b/gi, to: 'falo' },
+      { from: /\bconstantemente\b/gi, to: 'sempre' },
+      { from: /\bmaravilhosa\b/gi, to: 'incrível' },
+      { from: /\benorme\b/gi, to: 'grande' },
     ]
 
+    // Aplica todas as contrações
     contractions.forEach(({ from, to }) => {
       corrected = corrected.replace(from, to)
     })
 
-    // ✅ ELISAO ESTRATÉGICA
+    // Elisões poéticas obrigatórias
     const elisions = [
       { from: /\bde amor\b/gi, to: 'd\'amor' },
       { from: /\bque eu\b/gi, to: 'qu\'eu' },
+      { from: /\bse eu\b/gi, to: 's\'eu' },
       { from: /\bmeu amor\b/gi, to: 'meuamor' },
-      { from: /\bte amo\b/gi, to: 'teamo' },
+      { from: /\bte abraço\b/gi, to: 'tabraço' },
+      { from: /\bte espero\b/gi, to: 'tespero' },
+      { from: /\bna minha\b/gi, to: 'naminha' },
+      { from: /\bno meu\b/gi, to: 'nomeu' },
     ]
 
     elisions.forEach(({ from, to }) => {
       corrected = corrected.replace(from, to)
     })
 
-    // ✅ REMOÇÃO DE PALAVRAS DESNECESSÁRIAS (apenas se ainda estiver longo)
+    // Remove artigos desnecessários
+    corrected = corrected
+      .replace(/\b(o|a|os|as|um|uma)\s+/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+
+    // Se ainda estiver longo, corta palavras finais estrategicamente
     const currentSyllables = countPoeticSyllables(corrected)
     if (currentSyllables > maxSyllables) {
-      // Remove artigos e adjetivos menos importantes
-      corrected = corrected
-        .replace(/\b(o|a|os|as|um|uma)\s+/gi, ' ')
-        .replace(/\b(muito|pouco|grande|pequeno)\s+/gi, ' ')
-        .replace(/\s+/g, ' ')
-        .trim()
+      const words = corrected.split(' ')
+      
+      // Tenta remover palavras do final mantendo o sentido
+      if (words.length > 4) {
+        // Remove última palavra
+        const shortened = words.slice(0, -1).join(' ')
+        if (countPoeticSyllables(shortened) <= maxSyllables) {
+          return shortened
+        }
+        
+        // Remove duas últimas palavras
+        const moreShortened = words.slice(0, -2).join(' ')
+        if (countPoeticSyllables(moreShortened) <= maxSyllables) {
+          return moreShortened
+        }
+      }
     }
 
     return corrected
   }
 
   /**
-   * CORREÇÃO DE EMERGÊNCIA - Garante máximo 11 sílabas
+   * CORREÇÃO DE EMERGÊNCIA - Garante que sempre retorne algo dentro do limite
    */
   private static applyEmergencyCorrection(line: string, maxSyllables: number): string {
     console.log(`[SyllableEnforcer] Aplicando correção de emergência para: "${line}"`)
     
     const words = line.split(' ').filter(w => w.trim())
     
-    // Estratégia: Remove palavras do final até caber em 11 sílabas
-    for (let i = words.length; i > 2; i--) {
+    // Estratégia 1: Pega apenas as primeiras palavras até caber no limite
+    for (let i = words.length; i > 0; i--) {
       const candidate = words.slice(0, i).join(' ')
       if (countPoeticSyllables(candidate) <= maxSyllables) {
+        console.log(`[SyllableEnforcer] Emergência: "${line}" -> "${candidate}"`)
         return candidate
       }
     }
     
-    // Último recurso: Pega as primeiras 3-4 palavras
-    return words.slice(0, 4).join(' ')
+    // Estratégia 2: Se ainda não couber, pega apenas as 3 primeiras palavras
+    const fallback = words.slice(0, 3).join(' ')
+    console.log(`[SyllableEnforcer] Fallback extremo: "${line}" -> "${fallback}"`)
+    return fallback
   }
 
   /**
-   * PROMPT RIGOROSO - Foco em MÁXIMO 11 sílabas
+   * PROMPT MELHORADO para correções
    */
-  private static buildStrictCorrectionPrompt(
+  private static buildCorrectionPrompt(
     line: string,
     syllables: number,
     enforcement: SyllableEnforcement,
     genre: string
   ): string {
-    return `CORREÇÃO URGENTE DE SÍLABAS - MÁXIMO 11 SÍLABAS
+    return `CORREÇÃO URGENTE DE SILABAS - LINHA PROBLEMÁTICA
 
-LINHA PROBLEMÁTICA: "${line}"
-SÍLABAS ATUAIS: ${syllables} (LIMITE RÍGIDO: ${enforcement.max})
+LINHA ORIGINAL: "${line}"
+SILABAS ATUAIS: ${syllables} (LIMITE: ${enforcement.min}-${enforcement.max})
 
-REESCREVA ESTA LINHA para ter NO MÁXIMO ${enforcement.max} SÍLABAS.
+REESCREVA ESTA LINHA para ter ENTRE ${enforcement.min} E ${enforcement.max} SILABAS POÉTICAS.
 
-TÉCNICAS OBRIGATÓRIAS:
+TÉCNICAS OBRIGATÓRIAS (APLIQUE IMEDIATAMENTE):
 
-1. CORTE ESTRATÉGICO:
-   - Remova palavras desnecessárias
+1. CONTRAÇÕES BRUTAIS:
+   - "você" → "cê" (OBRIGATÓRIO)
+   - "está" → "tá" (OBRIGATÓRIO)
+   - "para" → "pra" (OBRIGATÓRIO)
+   - "estou" → "tô" (OBRIGATÓRIO)
+
+2. ELISAO EXTREMA:
+   - "de amor" → "d'amor" (OBRIGATÓRIO)
+   - "que eu" → "qu'eu" (OBRIGATÓRIO)
+   - "meu amor" → "meuamor" (OBRIGATÓRIO)
+
+3. CORTE RADICAL:
+   - Remova adjetivos desnecessários
+   - Use frases mais curtas e diretas
    - Mantenha apenas o essencial
-   - Preserve o significado principal
 
-2. CONTRACÕES RADICAIS:
-   - "você" → "cê" (SEMPRE)
-   - "está" → "tá" (SEMPRE)
-   - "para" → "pra" (SEMPRE)
+4. EXEMPLOS PRÁTICOS:
 
-3. EXEMPLOS PRÁTICOS:
+"Me olha e provoca: 'Tá pronto pra amar?'" (12s) 
+→ "Me olha e provoca: 'Pronto p'ra amar?'" (9s)
 
-"Me olha e provoca: 'Vem se entregar, amor!'" (13s)
-→ "Me olha: 'Vem se entregar!'" (7s)
+"Meu peito explode, e a razão se apaga" (12s)
+→ "Peito explode, razão se apaga" (8s)
 
-"Me diz: 'Caçador, você já se perdeu?'" (12s)
-→ "Pergunta: 'Caçador, se perdeu?'" (8s)
+"Eu, sem rumo, confesso: 'Vivo pra te amar'" (12s)
+→ "Sem rumo, confesso: 'Vivo p'ra te amar'" (9s)
 
-"Eu digo: 'Tô preso, entreguei o coração'" (13s)
-→ "Respondo: 'Tô preso, te entreguei'" (8s)
+GÊNERO: ${genre} - Use linguagem coloquial brasileira
 
-GÊNERO: ${genre} - Mantenha a essência do estilo
-
-SUA TAREFA (CRÍTICA):
-Transforme em NO MÁXIMO ${enforcement.max} sílabas: "${line}"
-→ (APENAS A LINHA CORRIGIDA)`
+SUA TAREFA:
+Corrija: "${line}"
+→ (APENAS A LINHA CORRIGIDA, sem explicações)`
   }
 
   /**
-   * Verifica se linha deve ser pulada na validação
+   * Verifica se linha deve ser pulada na validacao
    */
   private static shouldSkipLine(line: string): boolean {
     const trimmed = line.trim()
@@ -253,15 +303,12 @@ Transforme em NO MÁXIMO ${enforcement.max} sílabas: "${line}"
   }
 
   /**
-   * VALIDAÇÃO RÁPIDA para verificar conformidade
+   * VALIDACAO RAPIDA para verificar conformidade
    */
   static validateLyrics(lyrics: string, enforcement: SyllableEnforcement) {
     const lines = lyrics.split('\n').filter(line => 
       line.trim() && !this.shouldSkipLine(line)
     )
-
-    // ✅ USAR LIMITE RIGOROSO
-    const strictEnforcement = { ...enforcement, max: this.STRICT_MAX_SYLLABLES }
 
     const stats = {
       totalLines: lines.length,
@@ -271,7 +318,7 @@ Transforme em NO MÁXIMO ${enforcement.max} sílabas: "${line}"
 
     lines.forEach(line => {
       const syllables = countPoeticSyllables(line)
-      if (syllables >= strictEnforcement.min && syllables <= strictEnforcement.max) {
+      if (syllables >= enforcement.min && syllables <= enforcement.max) {
         stats.withinLimit++
       } else {
         stats.problems.push({ line, syllables })
