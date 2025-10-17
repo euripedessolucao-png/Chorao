@@ -103,7 +103,7 @@ export const GENRE_CONFIGS = {
       forbidden: {
         toxic_masculinity: ["ela me traiu vou destruir", "mulher é tudo igual", "não choro sou homem"],
         excessive_drama: ["não vivo sem você", "meu mundo desabou", "só penso em você", "morro sem você"],
-        generic_clichés: ["lágrimas no travesseiro", "noite sem luar", "coração partido em mil", "solidão me mata"],
+        generic_cliches: ["lágrimas no travesseiro", "noite sem luar", "coração partido em mil", "solidão me mata"],
       },
       style: "Direto, honesto, com toque de poesia cotidiana. Pode ser romântico, mas nunca possessivo ou dramático.",
     },
@@ -463,7 +463,7 @@ export const GENRE_CONFIGS = {
     harmony_and_rhythm: {
       key: "C minor",
       allowed_chords: ["Cm", "Fm", "Gm", "Ab", "Bb"],
-      bpm_range: { min: 120, max: 140, ideal: 130 },
+      bpm_range: { min: 120, max: 140, ideal: 128 },
       rhythm_style: "Batida marcada do funk com graves pesados (paredão)",
     },
   },
@@ -868,7 +868,7 @@ export function validateLyrics(
     const syllables = countSyllables(line)
     const rules = config.prosody_rules.syllable_count
 
-    if (line.includes(",")) {
+    if ("with_comma" in rules && line.includes(",")) {
       const [before, after] = line.split(",")
       const beforeCount = countSyllables(before)
       const afterCount = countSyllables(after)
@@ -879,7 +879,13 @@ export function validateLyrics(
       if (afterCount > rules.with_comma.max_after_comma) {
         warnings.push(`Linha ${index + 1}: Muitas sílabas depois da vírgula (${afterCount})`)
       }
-    } else {
+    } else if ("absolute_max" in rules) {
+      // For Sertanejo Moderno genres with absolute_max rule
+      if (syllables > rules.absolute_max) {
+        errors.push(`Linha ${index + 1}: Excede o limite de ${rules.absolute_max} sílabas (${syllables})`)
+      }
+    } else if ("without_comma" in rules) {
+      // For genres with without_comma rules
       if (syllables < rules.without_comma.min || syllables > rules.without_comma.acceptable_up_to) {
         warnings.push(`Linha ${index + 1}: Contagem de sílabas fora do ideal (${syllables})`)
       }
