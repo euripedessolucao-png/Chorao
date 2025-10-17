@@ -429,5 +429,69 @@ ${lines.map(line => `- "${line}"`).join('\n')}
 → (APENAS AS LINHAS CORRIGIDAS, uma por linha)`
   }
 
-  // ... (métodos shouldSkipLine e validateLyrics do código anterior)
+  /**
+   * Verifica se linha deve ser pulada na validação
+   */
+  private static shouldSkipLine(line: string): boolean {
+    const trimmed = line.trim()
+    return (
+      !trimmed ||
+      trimmed.startsWith('[') || // [INTRO], [VERSE], etc
+      trimmed.startsWith('(') || // (Backing vocals)
+      trimmed.startsWith('Titulo:') ||
+      trimmed.startsWith('Instrucao:') ||
+      trimmed.includes('Instrucao:') ||
+      trimmed.includes('BPM:') ||
+      trimmed.includes('Instrumentos:') ||
+      /^\(.*\)$/.test(trimmed) // (apenas parênteses)
+    )
+  }
+
+  /**
+   * VALIDAÇÃO RÁPIDA para verificar conformidade - MÉTODO QUE ESTAVA FALTANDO!
+   */
+  static validateLyrics(lyrics: string, enforcement: SyllableEnforcement) {
+    const lines = lyrics.split('\n').filter(line => 
+      line.trim() && !this.shouldSkipLine(line)
+    )
+
+    // ✅ USAR LIMITE RIGOROSO
+    const strictEnforcement = { ...enforcement, max: this.STRICT_MAX_SYLLABLES }
+
+    const stats = {
+      totalLines: lines.length,
+      withinLimit: 0,
+      problems: [] as Array<{ line: string; syllables: number }>
+    }
+
+    lines.forEach(line => {
+      const syllables = countPoeticSyllables(line)
+      if (syllables >= strictEnforcement.min && syllables <= strictEnforcement.max) {
+        stats.withinLimit++
+      } else {
+        stats.problems.push({ line, syllables })
+      }
+    })
+
+    return {
+      valid: stats.problems.length === 0,
+      compliance: stats.totalLines > 0 ? stats.withinLimit / stats.totalLines : 1,
+      ...stats
+    }
+  }
+
+  /**
+   * MÉTODO ADICIONAL: Análise de qualidade rítmica
+   */
+  static analyzeRhythmicQuality(lyrics: string, enforcement: SyllableEnforcement) {
+    const validation = this.validateLyrics(lyrics, enforcement)
+    const rhymeStructure = this.analyzeRhymeStructure(lyrics)
+    
+    return {
+      ...validation,
+      rhymePattern: rhymeStructure.pattern,
+      rhymeGroups: rhymeStructure.rhymeGroups.size,
+      qualityScore: (validation.compliance * 0.7) + (rhymeStructure.rhymeGroups.size > 0 ? 0.3 : 0)
+    }
+  }
 }
