@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { CheckCircle, AlertTriangle } from "lucide-react"
 import { toast } from "sonner"
+import { validateLyricsSyllables } from "@/lib/validation/syllable-counter" // ← IMPORT DIRETO
 
 interface ValidationResult {
   valid: boolean
@@ -28,47 +29,35 @@ interface SyllableValidatorProps {
 
 export function SyllableValidator({ lyrics, maxSyllables = 12, onValidate }: SyllableValidatorProps) {
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null)
-  const [isValidating, setIsValidating] = useState(false)
 
-  const handleValidate = async () => {
-    if (!lyrics.trim()) {
-      toast.error("Nenhuma letra para validar")
-      return
-    }
-
-    setIsValidating(true)
-
-    try {
-      const response = await fetch("/api/validate-syllables", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          lyrics,
-          maxSyllables,
-        }),
-      })
-
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.error || "Erro na validação")
+  useEffect(() => {
+    if (lyrics.trim()) {
+      const result = validateLyricsSyllables(lyrics, maxSyllables)
+      
+      const formattedResult: ValidationResult = {
+        valid: result.valid,
+        violations: result.violations.map(v => ({
+          line: v.lineNumber,
+          text: v.line,
+          syllables: v.syllables,
+          expected: maxSyllables
+        })),
+        totalLines: result.violations.length + (result.valid ? 1 : 0),
+        linesWithIssues: result.violations.length
       }
+      
+      setValidationResult(formattedResult)
+      onValidate?.(formattedResult)
 
-      setValidationResult(result)
-      onValidate?.(result)
-
-      if (result.valid) {
-        toast.success("✓ Letra validada com sucesso! Todos os versos estão dentro do limite.")
+      if (formattedResult.valid) {
+        toast.success(`✓ Letra validada: ${formattedResult.totalLines} versos dentro do limite`)
       } else {
-        toast.warning(`⚠️ ${result.linesWithIssues} versos excedem ${maxSyllables} sílabas`)
+        toast.warning(`⚠️ ${formattedResult.linesWithIssues} versos com mais de ${maxSyllables} sílabas`)
       }
-    } catch (error) {
-      console.error("[v0] Erro na validação:", error)
-      toast.error("Erro ao validar sílabas")
-    } finally {
-      setIsValidating(false)
+    } else {
+      setValidationResult(null)
     }
-  }
+  }, [lyrics, maxSyllables, onValidate])
 
   if (!lyrics.trim()) {
     return null
@@ -76,26 +65,6 @@ export function SyllableValidator({ lyrics, maxSyllables = 12, onValidate }: Syl
 
   return (
     <div className="space-y-4">
-      <Button
-        onClick={handleValidate}
-        disabled={isValidating}
-        variant="outline"
-        size="sm"
-        className="w-full bg-transparent"
-      >
-        {isValidating ? (
-          <>
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-r-transparent mr-2" />
-            Validando...
-          </>
-        ) : (
-          <>
-            <CheckCircle className="h-4 w-4 mr-2" />
-            Validar Métrica
-          </>
-        )}
-      </Button>
-
       {validationResult && (
         <Card className={validationResult.valid ? "border-green-200 bg-green-50" : "border-orange-200 bg-orange-50"}>
           <CardHeader className="pb-3">
