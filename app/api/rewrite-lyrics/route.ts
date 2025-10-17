@@ -50,71 +50,68 @@ export async function POST(request: Request) {
       genreConfig = GENRE_CONFIGS[generoConversao as keyof typeof GENRE_CONFIGS]
     }
 
-    console.log(`[v0] 🎵 Reescrevendo para: ${generoConversao}`)
+    console.log(`[v0] Reescrevendo para: ${generoConversao}`)
 
     const instrumentMatch = letraOriginal.match(/\(Instruments?:\s*\[([^\]]+)\]/i)
     const originalInstruments = instrumentMatch ? instrumentMatch[1].trim() : null
 
-    const prompt = `🎵 Você é um compositor PROFISSIONAL brasileiro especializado em ${generoConversao}.
+    const prompt = `You are a professional Brazilian music composer specializing in ${generoConversao}.
 
-⚠️ TAREFA: REESCREVER A LETRA ABAIXO (NÃO CRIAR UMA NOVA!)
-- Mantenha a MESMA HISTÓRIA e TEMA
-- Mantenha a MESMA ESTRUTURA NARRATIVA
-- APENAS melhore para padrões de HIT 2024-2025
+TASK: Create an improved version of the lyrics below, maintaining the same story and theme.
 
-LETRA ORIGINAL:
+ORIGINAL LYRICS:
 ${letraOriginal}
 
-⚠️ REGRAS UNIVERSAIS ABSOLUTAS:
+UNIVERSAL RULES:
 
-1. IDIOMA:
-   - LETRAS: 100% português brasileiro coloquial
-   - INSTRUÇÕES: 100% inglês dentro de [colchetes]
-   - BACKING VOCALS: (Backing: "texto") em parênteses
-   - INSTRUMENTOS: inglês na linha final
+1. LANGUAGE:
+   - Sung lyrics: Brazilian Portuguese (colloquial)
+   - Performance instructions: English in [brackets]
+   - Backing vocals: (Backing: "text") in parentheses
+   - Instruments: English in final line
 
-2. FORMATO LIMPO:
+2. CLEAN FORMAT:
    - [SECTION - Performance instructions in English]
-   - Letra em português (sem colchetes)
-   - Um verso por linha (empilhado)
-   - (Backing: "text") quando necessário
+   - Lyrics in Portuguese (no brackets)
+   - One verse per line (stacked)
+   - (Backing: "text") when needed
 
-3. LIMITE DE 12 SÍLABAS (INVIOLÁVEL):
-   - MÁXIMO ABSOLUTO: 12 sílabas poéticas por verso
-   - Use contrações: você→cê, está→tá, para→pra
-   - Frases completas sempre
+3. SYLLABLE LIMIT (12 maximum):
+   - Maximum 12 poetic syllables per verse
+   - Use contractions: você→cê, está→tá, para→pra
+   - Complete phrases always
 
-4. ESTRUTURA ${isSertanejoModerno ? "A, B, C" : "PADRÃO"} (3:00-3:30):
+4. STRUCTURE ${isSertanejoModerno ? "A, B, C" : "STANDARD"} (3:00-3:30):
    - [INTRO - Instructions, (8-12 SECONDS)]
-   - [VERSE 1${isSertanejoModerno ? " - A" : ""} - Instructions] (4-8 linhas)
-   - [PRE-CHORUS - Instructions] (2-4 linhas)
-   - [CHORUS${isSertanejoModerno ? " - B" : ""} - Instructions] (4 linhas)
-   - [VERSE 2${isSertanejoModerno ? " - A" : ""} - Instructions] (4-8 linhas)
+   - [VERSE 1${isSertanejoModerno ? " - A" : ""} - Instructions] (4-8 lines)
+   - [PRE-CHORUS - Instructions] (2-4 lines)
+   - [CHORUS${isSertanejoModerno ? " - B" : ""} - Instructions] (4 lines)
+   - [VERSE 2${isSertanejoModerno ? " - A" : ""} - Instructions] (4-8 lines)
    - [PRE-CHORUS - Instructions]
    - [CHORUS${isSertanejoModerno ? " - B" : ""} - Instructions]
-   - [BRIDGE${isSertanejoModerno ? " - C" : ""} - Instructions] (4-6 linhas)
+   - [BRIDGE${isSertanejoModerno ? " - C" : ""} - Instructions] (4-6 lines)
    - [SOLO - Instrument, (8-16 SECONDS)]
    - [FINAL CHORUS${isSertanejoModerno ? " - B" : ""} - Instructions]
-   - [OUTRO - Instructions] (2-4 linhas)
+   - [OUTRO - Instructions] (2-4 lines)
    - (Instrumentos: list | BPM: number | Ritmo: ${finalRhythm} | Estilo: ${generoConversao})
 
-5. REFRÃO GRUDENTO (PRIORIDADE #1):
-   - Primeira linha = gancho memorável
-   - 4 linhas máximo, 8-10 sílabas cada
-   - Simples, direto, fácil de cantar
+5. CATCHY CHORUS (Priority):
+   - First line = memorable hook
+   - 4 lines maximum, 8-10 syllables each
+   - Simple, direct, easy to sing
 
-INSTRUÇÕES DE REESCRITA:
-${conservarImagens ? "- CONSERVE as imagens e metáforas EXATAMENTE" : "- MELHORE as imagens mantendo o tema"}
-${polirSemMexer ? "- MANTENHA a estrutura, apenas aprimorando" : "- ADAPTE para estrutura de HIT"}
-- Preserve a mensagem emocional central
-- Mantenha personagens e situações
-- MÁXIMO 12 SÍLABAS POR VERSO (ABSOLUTO)
-- LINGUAGEM COLOQUIAL BRASILEIRA intensa
-${additionalRequirements ? `\n⚡ REQUISITOS ESPECIAIS:\n${additionalRequirements}` : ""}
+REWRITING INSTRUCTIONS:
+${conservarImagens ? "- Preserve images and metaphors exactly" : "- Improve images while maintaining theme"}
+${polirSemMexer ? "- Keep structure, only polish" : "- Adapt to hit song structure"}
+- Preserve central emotional message
+- Keep characters and situations
+- Maximum 12 syllables per verse
+- Intense Brazilian colloquial language
+${additionalRequirements ? `\nSPECIAL REQUIREMENTS:\n${additionalRequirements}` : ""}
 
-Reescreva a letra AGORA:`
+Create the improved version now:`
 
-    console.log("[v0] 🔄 Iniciando reescrita...")
+    console.log("[v0] Iniciando reescrita...")
 
     let finalLyrics = ""
     let attempt = 0
@@ -122,14 +119,14 @@ Reescreva a letra AGORA:`
 
     while (attempt < maxAttempts) {
       attempt++
-      console.log(`[v0] 🔄 Tentativa ${attempt}/${maxAttempts}`)
+      console.log(`[v0] Tentativa ${attempt}/${maxAttempts}`)
 
       try {
         const { text } = await generateText({
           model: "openai/gpt-4o",
           prompt:
             attempt > 0
-              ? `${prompt}\n\n⚠️ ATENÇÃO: Tentativa anterior teve versos >12 sílabas. REGENERE com MÁXIMO 12 sílabas por verso.`
+              ? `${prompt}\n\nATENTION: Previous attempt had verses >12 syllables. REGENERE with MAXIMUM 12 syllables per verse.`
               : prompt,
           temperature: 0.8,
         })
@@ -144,22 +141,22 @@ Reescreva a letra AGORA:`
         const validation = validateLyricsSyllables(lyrics, 12)
 
         if (validation.valid) {
-          console.log(`[v0] ✅ Validação passou na tentativa ${attempt}`)
+          console.log(`[v0] Validação passou na tentativa ${attempt}`)
           finalLyrics = lyrics
           break
         } else {
-          console.log(`[v0] ⚠️ ${validation.linesWithIssues} versos excedem 12 sílabas`)
+          console.log(`[v0] ${validation.linesWithIssues} versos excedem 12 sílabas`)
           validation.violations.forEach((v) => {
             console.log(`[v0]   Linha ${v.line}: "${v.text}" (${v.syllables} sílabas)`)
           })
 
           if (attempt === maxAttempts) {
-            console.log(`[v0] ⚠️ Máximo de tentativas. Retornando melhor resultado.`)
+            console.log(`[v0] Máximo de tentativas. Retornando melhor resultado.`)
             finalLyrics = lyrics
           }
         }
       } catch (error) {
-        console.error(`[v0] ❌ Erro na tentativa ${attempt}:`, error)
+        console.error(`[v0] Erro na tentativa ${attempt}:`, error)
         if (attempt === maxAttempts) {
           throw error
         }
@@ -174,13 +171,13 @@ Reescreva a letra AGORA:`
 
     finalLyrics = capitalizeLines(finalLyrics)
 
-    console.log("[v0] ✅ Reescrita concluída!")
+    console.log("[v0] Reescrita concluída!")
 
     return NextResponse.json({
       letra: finalLyrics,
     })
   } catch (error) {
-    console.error("[v0] ❌ Erro ao reescrever letra:", error)
+    console.error("[v0] Erro ao reescrever letra:", error)
 
     const errorMessage = error instanceof Error ? error.message : "Erro desconhecido"
 
