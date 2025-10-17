@@ -22,7 +22,7 @@ import { generateText } from "ai"
 import { ThirdWayEngine } from "@/lib/third-way-converter"
 import { getGenreConfig } from "@/lib/genre-config"
 import { validateFullLyricAgainstForcing } from "@/lib/validation/anti-forcing-validator"
-import { countSyllables } from "@/lib/validation/syllableUtils"
+import { countPoeticSyllables } from "@/lib/validation/syllable-counter"
 import { SyllableEnforcer } from "@/lib/validation/syllableEnforcer"
 
 export interface CompositionRequest {
