@@ -1,21 +1,5 @@
 /**
  * META-COMPOSITOR - SISTEMA AUTONOMO DE COMPOSICAO INTELIGENTE
- * 
- * PROPOSITO:
- * Orquestrar TODAS as regras e conhecimentos distribuidos no sistema de forma
- * autonoma e inteligente, garantindo que cada composicao siga:
- * 
- * 1. Terceira Via (forca criatividade dentro de restricoes)
- * 2. Anti-Forcacao (coerencia narrativa > palavras-chave)
- * 3. Regras Universais (linguagem simples, 12 silabas max, empilhamento)
- * 4. Regras de Genero (especificas de cada estilo musical)
- * 5. Prioridade de Requisitos Adicionais (sempre no topo)
- * 
- * ARQUITETURA:
- * User Request -> Meta-Orchestrator -> Validation -> Refinement -> Output
- * 
- * REVERSIBILIDADE:
- * Pode ser desativado via flag ENABLE_META_COMPOSER=false
  */
 
 import { generateText } from "ai"
@@ -262,13 +246,15 @@ RETORNE APENAS A LETRA NO FORMATO CORRETO.`
     
     if (syllableStats.linesWithinLimit < syllableStats.totalLines) {
       const problemLines = lines.filter(line => {
-        const syllables = countSyllables(line)
+        // ✅ CORREÇÃO: countSyllables → countPoeticSyllables
+        const syllables = countPoeticSyllables(line)
         return syllables < syllableTarget.min || syllables > syllableTarget.max
       }).slice(0, 3)
       
       errors.push(
         `${syllableStats.totalLines - syllableStats.linesWithinLimit} versos fora do limite de ${syllableTarget.min}-${syllableTarget.max} silabas`,
-        ...problemLines.map(line => `- "${line}" (${countSyllables(line)} silabas)`)
+        // ✅ CORREÇÃO: countSyllables → countPoeticSyllables
+        ...problemLines.map(line => `- "${line}" (${countPoeticSyllables(line)} silabas)`)
       )
     }
 
@@ -322,7 +308,8 @@ RETORNE APENAS A LETRA NO FORMATO CORRETO.`
     let maxSyllablesFound = 0
 
     lines.forEach(line => {
-      const syllables = countSyllables(line)
+      // ✅ CORREÇÃO: countSyllables → countPoeticSyllables
+      const syllables = countPoeticSyllables(line)
       totalSyllables += syllables
       maxSyllablesFound = Math.max(maxSyllablesFound, syllables)
       
