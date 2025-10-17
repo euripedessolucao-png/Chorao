@@ -133,67 +133,94 @@ export async function POST(request: Request) {
       : ""
 
     const formatoEstrutura = `
-📊 FORMATO DE SAÍDA (3:00-3:30 minutos)
+📊 FORMATO LIMPO PARA PERFORMANCE (3:00-3:30 minutos)
 
-⚠️ FORMATO DE VERSOS EMPILHADOS (OBRIGATÓRIO):
-- Cada verso em uma linha separada
-- NUNCA junte dois versos na mesma linha
-- Exceção: apenas quando o segundo verso é continuação DIRETA do primeiro
-- Facilita contagem de versos e sílabas
-- Formato padrão brasileiro de composição
+⚠️ FORMATO OBRIGATÓRIO:
+- INSTRUÇÕES: Em inglês, dentro de [colchetes]
+- LETRAS CANTADAS: Em português, SEM colchetes
+- BACKING VOCALS: (Backing: "texto") em parênteses
+- CADA VERSO: Uma linha separada (empilhado)
+- MÁXIMO: 12 sílabas poéticas por verso
 
-EXEMPLO CORRETO (versos empilhados):
-Se quer saber de mim
-Pergunte para mim
-Se for falar do que passou
-Conta a parte que você errou
+${
+  isSertanejoModerno
+    ? `
+🎵 SERTANEJO MODERNO - ESTRUTURA A, B, C:
+- A = VERSE (narrativa, história)
+- B = CHORUS (gancho grudento, repetitivo)
+- C = BRIDGE (nova perspectiva, reflexão)
+`
+    : ""
+}
 
-EXEMPLO ERRADO (NÃO FAÇA):
-Se quer saber de mim, pergunte para mim
+📝 EXEMPLO DE FORMATO CORRETO:
 
-[INTRO] (8-12 segundos)
-Instrução: [INTRO - ${subGenreInfo.instruments || "instrumentos principais"}, estabelecendo clima]
+[INTRO - ${subGenreInfo.instruments?.split(",")[0] || "guitar"} and keyboard creating anticipation, (8-12 SECONDS)]
 
-[VERSE 1] (8 linhas empilhadas - uma por linha)
-Instrução: [VERSE 1 - Voz narrativa, estabelecendo história com detalhes concretos]
-[8 linhas em português, CADA UMA EM LINHA SEPARADA]
+[VERSE 1${isSertanejoModerno ? " - A" : ""} - Narrative voice, establishing story with concrete details]
+Primeira linha da letra em português
+Segunda linha da letra em português
+Terceira linha da letra em português
+Quarta linha da letra em português
 
-[PRE-CHORUS] (2-4 linhas empilhadas)
-Instrução: [PRE-CHORUS - Energia crescente, preparando para refrão]
-[2-4 linhas em português, CADA UMA EM LINHA SEPARADA]
+[PRE-CHORUS - Building energy, preparing for chorus]
+Linha do pré-refrão em português
+Outra linha do pré-refrão em português
 
-[CHORUS] (4 linhas empilhadas - MOMENTO MAIS IMPORTANTE)
-Instrução: [CHORUS - Energia máxima, grudento, fácil de cantar junto]
-[4 linhas em português, CADA UMA EM LINHA SEPARADA]
+[CHORUS${isSertanejoModerno ? " - B" : ""} - Maximum energy, catchy, easy to sing along]
+(Backing: "Oh, oh, oh")
+Primeira linha do refrão em português
+Segunda linha do refrão em português
+Terceira linha do refrão em português
+Quarta linha do refrão em português
 
-[VERSE 2] (8 linhas empilhadas)
-Instrução: [VERSE 2 - Desenvolve história, novos detalhes]
-[8 linhas em português, CADA UMA EM LINHA SEPARADA]
+[VERSE 2${isSertanejoModerno ? " - A" : ""} - Develops story, new details]
+Primeira linha do segundo verso
+Segunda linha do segundo verso
+Terceira linha do segundo verso
+Quarta linha do segundo verso
 
-[PRE-CHORUS] (2-4 linhas empilhadas)
-Instrução: [PRE-CHORUS - Energia crescente novamente]
-[2-4 linhas em português, CADA UMA EM LINHA SEPARADA]
+[PRE-CHORUS - Building energy again]
+Linha do pré-refrão em português
+Outra linha do pré-refrão em português
 
-[CHORUS] (4 linhas empilhadas - repete)
-Instrução: [CHORUS - Repete com mesma energia]
-[4 linhas em português, CADA UMA EM LINHA SEPARADA]
+[CHORUS${isSertanejoModerno ? " - B" : ""} - Repeat with same energy]
+(Backing: "Oh, oh, oh")
+Primeira linha do refrão em português
+Segunda linha do refrão em português
+Terceira linha do refrão em português
+Quarta linha do refrão em português
 
-[BRIDGE] (8 linhas empilhadas)
-Instrução: [BRIDGE - Reflexão profunda, pode ter solo, mudança de perspectiva]
-[8 linhas em português, CADA UMA EM LINHA SEPARADA]
+[BRIDGE${isSertanejoModerno ? " - C" : ""} - Deep reflection, can have solo, perspective change]
+Primeira linha da ponte em português
+Segunda linha da ponte em português
+Terceira linha da ponte em português
+Quarta linha da ponte em português
 
-[SOLO] (8-16 segundos)
-Instrução: [SOLO - Instrumental de ${subGenreInfo.instruments?.split(",")[0] || "guitarra"}]
+[SOLO - ${subGenreInfo.instruments?.split(",")[0] || "Guitar"} instrumental, (8-16 SECONDS)]
 
-[FINAL CHORUS] (4 linhas empilhadas)
-Instrução: [FINAL CHORUS - Energia MÁXIMA, apoteose]
-[4 linhas em português, CADA UMA EM LINHA SEPARADA]
+[FINAL CHORUS${isSertanejoModerno ? " - B" : ""} - MAXIMUM energy, apotheosis]
+(Backing: "Oh, oh, oh")
+Primeira linha do refrão em português
+Segunda linha do refrão em português
+Terceira linha do refrão em português
+Quarta linha do refrão em português
 
-[OUTRO] (4 linhas empilhadas ou fade)
-Instrução: [OUTRO - Fade out suave ou frase final marcante]
-[4 linhas em português ou fade, CADA UMA EM LINHA SEPARADA]
+[OUTRO - Soft fade out or striking final phrase]
+Linha final em português
+Outra linha final em português
 
-(Instrumentos: [${subGenreInfo.instruments || originalInstruments || "guitar, bass, drums, keyboard"}] | BPM: ${subGenreInfo.bpm || metrics?.bpm || 100} | Ritmo: ${finalRhythm} | Estilo: ${generoConversao})
+(Instrumentos: ${subGenreInfo.instruments || originalInstruments || "guitar, bass, drums, keyboard"} | BPM: ${subGenreInfo.bpm || metrics?.bpm || 100} | Ritmo: ${finalRhythm} | Estilo: ${generoConversao})
+
+🎯 REGRAS CRÍTICAS:
+1. INSTRUÇÕES sempre em INGLÊS dentro de [colchetes]
+2. LETRAS sempre em PORTUGUÊS (sem colchetes)
+3. BACKING VOCALS: (Backing: "texto") em parênteses
+4. CADA VERSO em uma LINHA SEPARADA
+5. MÁXIMO 12 SÍLABAS por verso
+6. ${isSertanejoModerno ? "Labels A, B, C para Sertanejo Moderno" : "Sem labels A, B, C para este gênero"}
+7. Tempo em SEGUNDOS: (8-12 SECONDS), (8-16 SECONDS)
+8. INSTRUMENTOS em INGLÊS na linha final
 `
 
     const prompt = `${universalLanguageRules}
@@ -320,7 +347,7 @@ Reescreva a letra AGORA, transformando em HIT:`
 
     // Adiciona instrumentos se não existir
     if (!finalLyrics.includes("(Instrumentos:")) {
-      const instrumentList = `(Instrumentos: [${subGenreInfo.instruments || originalInstruments || "guitar, bass, drums, keyboard"}] | BPM: ${subGenreInfo.bpm || metrics?.bpm || 100} | Ritmo: ${finalRhythm} | Estilo: ${generoConversao})`
+      const instrumentList = `(Instrumentos: ${subGenreInfo.instruments || originalInstruments || "guitar, bass, drums, keyboard"} | BPM: ${subGenreInfo.bpm || metrics?.bpm || 100} | Ritmo: ${finalRhythm} | Estilo: ${generoConversao})`
       finalLyrics = finalLyrics.trim() + "\n\n" + instrumentList
     }
 

@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
     const genreConfig = getGenreConfig(genero)
     const isPerformanceMode = formattingStyle === "performatico"
     const isBachata = genero.toLowerCase().includes("bachata")
+    const isSertanejoModerno = genero.toLowerCase().includes("sertanejo moderno")
 
     const subGenreInfo = detectSubGenre(additionalRequirements)
     const defaultRhythm = getGenreRhythm(genero)
@@ -189,69 +190,94 @@ FIDELIDADE DE ESTILO:
       : ""
 
     const structureGuide = `
-📊 ESTRUTURA COMERCIAL OTIMIZADA (3:00-3:30 minutos para streaming)
+📊 ESTRUTURA LIMPA PARA PERFORMANCE (3:00-3:30 minutos)
 
-⚠️ FORMATO DE VERSOS EMPILHADOS (OBRIGATÓRIO):
-- Cada verso em uma linha separada
-- NUNCA junte dois versos na mesma linha
-- Exceção: apenas quando o segundo verso é continuação DIRETA do primeiro
-- Facilita contagem de versos e sílabas
-- Formato padrão brasileiro de composição
+⚠️ FORMATO OBRIGATÓRIO:
+- INSTRUÇÕES: Em inglês, dentro de [colchetes]
+- LETRAS CANTADAS: Em português, SEM colchetes
+- BACKING VOCALS: (Backing: "texto") em parênteses
+- CADA VERSO: Uma linha separada (empilhado)
+- MÁXIMO: 12 sílabas poéticas por verso
 
-⚠️ CADA VERSO: MÁXIMO 12 SÍLABAS POÉTICAS (ABSOLUTO)
+${
+  isSertanejoModerno
+    ? `
+🎵 SERTANEJO MODERNO - ESTRUTURA A, B, C:
+- A = VERSE (narrativa, história)
+- B = CHORUS (gancho grudento, repetitivo)
+- C = BRIDGE (nova perspectiva, reflexão)
+`
+    : ""
+}
 
-[INTRO] (8-12 segundos instrumental)
-Instrução: [INTRO - Instrumental suave com ${subGenreInfo.instruments || "instrumentos principais"}, estabelecendo o clima]
+📝 EXEMPLO DE FORMATO CORRETO:
 
-[VERSE 1] (8 linhas empilhadas - uma por linha)
-Instrução: [VERSE 1 - Voz ${genero.includes("Funk") ? "confiante e direta" : "suave e narrativa"}, estabelecendo a história com detalhes concretos]
-- Apresenta personagens, situação, contexto
-- Linguagem coloquial intensa
-- Cenas visuais claras
-- CADA VERSO EM UMA LINHA SEPARADA
+[INTRO - ${subGenreInfo.instruments?.split(",")[0] || "guitar"} and keyboard creating anticipation, (8-12 SECONDS)]
 
-[PRE-CHORUS] (2-4 linhas empilhadas)
-Instrução: [PRE-CHORUS - Energia crescente, preparando emocionalmente para o refrão]
-- Transição suave para o refrão
-- Aumenta tensão emocional
-- CADA VERSO EM UMA LINHA SEPARADA
+[VERSE 1${isSertanejoModerno ? " - A" : ""} - Narrative voice, establishing story with concrete details]
+Primeira linha da letra em português
+Segunda linha da letra em português
+Terceira linha da letra em português
+Quarta linha da letra em português
 
-[CHORUS] (4 linhas empilhadas - O MOMENTO MAIS IMPORTANTE)
-Instrução: [CHORUS - Energia máxima, grudento, fácil de cantar junto, repete palavras-chave]
-- GANCHO na primeira linha
-- Máximo 8-10 sílabas por linha
-- Ultra-memorável
-- CADA VERSO EM UMA LINHA SEPARADA
+[PRE-CHORUS - Building energy, preparing for chorus]
+Linha do pré-refrão em português
+Outra linha do pré-refrão em português
 
-[VERSE 2] (8 linhas empilhadas)
-Instrução: [VERSE 2 - Desenvolve a história, novos detalhes, mantém energia]
-- Avança a narrativa
-- Novos ângulos da história
-- CADA VERSO EM UMA LINHA SEPARADA
+[CHORUS${isSertanejoModerno ? " - B" : ""} - Maximum energy, catchy, easy to sing along]
+(Backing: "Oh, oh, oh")
+Primeira linha do refrão em português
+Segunda linha do refrão em português
+Terceira linha do refrão em português
+Quarta linha do refrão em português
 
-[PRE-CHORUS] (2-4 linhas empilhadas - repete ou varia levemente)
-Instrução: [PRE-CHORUS - Energia crescente novamente]
+[VERSE 2${isSertanejoModerno ? " - A" : ""} - Develops story, new details]
+Primeira linha do segundo verso
+Segunda linha do segundo verso
+Terceira linha do segundo verso
+Quarta linha do segundo verso
 
-[CHORUS] (4 linhas empilhadas - repete exatamente)
-Instrução: [CHORUS - Repete com mesma energia, público já canta junto]
+[PRE-CHORUS - Building energy again]
+Linha do pré-refrão em português
+Outra linha do pré-refrão em português
 
-[BRIDGE] (8 linhas empilhadas)
-Instrução: [BRIDGE - Momento de reflexão profunda, pode ter solo de ${subGenreInfo.instruments?.split(",")[0] || "guitarra"}, mudança de perspectiva]
-- Quebra o padrão
-- Reflexão ou clímax emocional
-- Prepara para final explosivo
-- CADA VERSO EM UMA LINHA SEPARADA
+[CHORUS${isSertanejoModerno ? " - B" : ""} - Repeat with same energy]
+(Backing: "Oh, oh, oh")
+Primeira linha do refrão em português
+Segunda linha do refrão em português
+Terceira linha do refrão em português
+Quarta linha do refrão em português
 
-[SOLO] (8-16 segundos instrumental)
-Instrução: [SOLO - Instrumental de ${subGenreInfo.instruments?.split(",")[0] || "guitarra"}, momento de virtuosismo]
+[BRIDGE${isSertanejoModerno ? " - C" : ""} - Deep reflection, can have solo, perspective change]
+Primeira linha da ponte em português
+Segunda linha da ponte em português
+Terceira linha da ponte em português
+Quarta linha da ponte em português
 
-[FINAL CHORUS] (4 linhas empilhadas - repete com MAIS intensidade)
-Instrução: [FINAL CHORUS - Energia MÁXIMA, todos os instrumentos, público cantando junto, apoteose]
+[SOLO - ${subGenreInfo.instruments?.split(",")[0] || "Guitar"} instrumental, (8-16 SECONDS)]
 
-[OUTRO] (4 linhas empilhadas ou fade out)
-Instrução: [OUTRO - Fade out suave ou frase final marcante, deixa saudade]
+[FINAL CHORUS${isSertanejoModerno ? " - B" : ""} - MAXIMUM energy, apotheosis]
+(Backing: "Oh, oh, oh")
+Primeira linha do refrão em português
+Segunda linha do refrão em português
+Terceira linha do refrão em português
+Quarta linha do refrão em português
 
-(Instrumentos: [${subGenreInfo.instruments || (isBachata ? "electric guitar, synthesizer, electronic drums, accordion" : "guitar, bass, drums, keyboard")}] | BPM: ${subGenreInfo.bpm || metrics?.bpm || 100} | Ritmo: ${finalRhythm} | Estilo: ${genero})
+[OUTRO - Soft fade out or striking final phrase]
+Linha final em português
+Outra linha final em português
+
+(Instrumentos: ${subGenreInfo.instruments || "guitar, bass, drums, keyboard"} | BPM: ${subGenreInfo.bpm || metrics?.bpm || 100} | Ritmo: ${finalRhythm} | Estilo: ${genero})
+
+🎯 REGRAS CRÍTICAS:
+1. INSTRUÇÕES sempre em INGLÊS dentro de [colchetes]
+2. LETRAS sempre em PORTUGUÊS (sem colchetes)
+3. BACKING VOCALS: (Backing: "texto") em parênteses
+4. CADA VERSO em uma LINHA SEPARADA
+5. MÁXIMO 12 SÍLABAS por verso
+6. ${isSertanejoModerno ? "Labels A, B, C para Sertanejo Moderno" : "Sem labels A, B, C para este gênero"}
+7. Tempo em SEGUNDOS: (8-12 SECONDS), (8-16 SECONDS)
+8. INSTRUMENTOS em INGLÊS na linha final
 `
 
     const universalLanguageRules = `
