@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
-import { Sparkles, Save, Search, Loader2, Zap, Copy, Trash2 } from "lucide-react"
+import { Sparkles, Save, Search, Loader2, Zap, Copy, Trash2, Wand2 } from "lucide-react"
 import { GENRE_CONFIGS } from "@/lib/genre-config"
 import { toast } from "sonner"
 import {
@@ -23,7 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Star, Trophy, Wand2 } from "lucide-react"
+import { Star, Trophy } from "lucide-react"
 import { EMOTIONS } from "@/lib/genres"
 import { GenreSelect } from "@/components/genre-select"
 import { HookGenerator } from "@/components/hook-generator"
@@ -118,6 +118,7 @@ export default function CriarPage() {
           formattingStyle: formattingStyle,
           additionalRequirements: additionalReqs,
           advancedMode: advancedMode,
+          syllableTarget: { min: 7, max: 11, ideal: 9 }, // ← NOVO: ALVO DE SÍLABAS
           metrics:
             BRAZILIAN_GENRE_METRICS[genre as keyof typeof BRAZILIAN_GENRE_METRICS] || BRAZILIAN_GENRE_METRICS.default,
         }),
@@ -388,7 +389,7 @@ export default function CriarPage() {
                     Modo Avançado
                   </Label>
                   <p className="text-xs text-muted-foreground">
-                    Rimas perfeitas, métrica e ganchos premium em PT-BR, linguagem limpa e fidelidade de estilo.
+                    Rimas perfeitas, métrica rigorosa de 7-11 sílabas, ganchos premium em PT-BR, linguagem limpa e fidelidade de estilo.
                   </p>
                 </div>
               </div>
@@ -623,10 +624,6 @@ export default function CriarPage() {
                   className="h-9"
                 />
 
-                <Button variant="outline" size="sm" className="w-full bg-transparent">
-                  Validar métrica
-                </Button>
-
                 <div className="space-y-2">
                   <Label className="text-xs">Acordes</Label>
                   <Textarea
@@ -647,15 +644,25 @@ export default function CriarPage() {
                     rows={12}
                     className="font-mono text-xs"
                   />
+                  
+                  {/* VALIDADOR DE SÍLABAS - CORRIGIDO */}
                   <SyllableValidator
                     lyrics={lyrics}
-                    maxSyllables={12}
+                    maxSyllables={11} {/* ← MÁXIMO 11 SÍLABAS */}
                     onValidate={(result) => {
                       if (!result.valid) {
                         console.log(`⚠️ ${result.linesWithIssues} versos com problemas:`)
                         result.violations.forEach((v) => {
                           console.log(`  Linha ${v.line}: "${v.text}" → ${v.syllables} sílabas`)
                         })
+                        
+                        // Mostrar toast com detalhes
+                        toast.warning(`${result.linesWithIssues} versos com mais de 11 sílabas`, {
+                          description: "Use o validador para ver detalhes",
+                          duration: 5000
+                        })
+                      } else if (result.totalLines > 0) {
+                        toast.success(`✓ Letra validada: ${result.totalLines} versos dentro do limite`)
                       }
                     }}
                   />
