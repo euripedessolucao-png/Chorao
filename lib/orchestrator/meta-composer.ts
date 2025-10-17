@@ -206,10 +206,23 @@ FORMATO PROFISSIONAL OBRIGATORIO:
 INSTRUCOES EM INGLES:
 [VERSE 1 - Narrative voice, intimate vocal delivery, establishing story]
 
-LETRAS EM PORTUGUES (EMPILHADAS):
-Cada verso em uma linha separada
-Versos empilhados para facilitar contagem
-Maximo ${enforcement.max} silabas por linha
+LETRAS EM PORTUGUES (EMPILHAMENTO INTELIGENTE):
+• UM VERSO POR LINHA para métrica
+• EXCEÇÃO: Quando versos se complementam, EMPILHE:
+  - Diálogo e resposta
+  - Frases que continuam naturalmente  
+  - Mesmo contexto/sujeito
+  - Citações consecutivas
+
+EXEMPLOS DE EMPILHAMENTO CORRETO:
+"Me olha e pergunta: 'Tá perdido?'"
+"Respondo: 'Só te desejando...'"
+
+"Te abraço forte"
+"E sinto o coração acelerar"
+
+"Ela ri e diz"
+"'Vem cá, te mostro o caminho'"
 
 BACKING VOCALS:
 (Backing: "texto em portugues")
@@ -246,14 +259,12 @@ RETORNE APENAS A LETRA NO FORMATO CORRETO.`
     
     if (syllableStats.linesWithinLimit < syllableStats.totalLines) {
       const problemLines = lines.filter(line => {
-        // ✅ CORREÇÃO: countSyllables → countPoeticSyllables
         const syllables = countPoeticSyllables(line)
         return syllables < syllableTarget.min || syllables > syllableTarget.max
       }).slice(0, 3)
       
       errors.push(
         `${syllableStats.totalLines - syllableStats.linesWithinLimit} versos fora do limite de ${syllableTarget.min}-${syllableTarget.max} silabas`,
-        // ✅ CORREÇÃO: countSyllables → countPoeticSyllables
         ...problemLines.map(line => `- "${line}" (${countPoeticSyllables(line)} silabas)`)
       )
     }
@@ -286,9 +297,11 @@ RETORNE APENAS A LETRA NO FORMATO CORRETO.`
       })
     }
 
-    const stackedRatio = this.calculateStackingRatio(lyrics)
-    if (stackedRatio < 0.7) {
-      warnings.push(`Baixo empilhamento de versos (${(stackedRatio * 100).toFixed(0)}%) - dificulta contagem`)
+    const stackingRatio = this.calculateStackingRatio(lyrics)
+    if (stackingRatio < 0.3) {
+      warnings.push(`Baixo empilhamento de versos (${(stackingRatio * 100).toFixed(0)}%) - formatação pouco natural`)
+    } else if (stackingRatio > 0.7) {
+      warnings.push(`Alto empilhamento (${(stackingRatio * 100).toFixed(0)}%) - pode dificultar contagem de sílabas`)
     }
 
     return {
@@ -308,7 +321,6 @@ RETORNE APENAS A LETRA NO FORMATO CORRETO.`
     let maxSyllablesFound = 0
 
     lines.forEach(line => {
-      // ✅ CORREÇÃO: countSyllables → countPoeticSyllables
       const syllables = countPoeticSyllables(line)
       totalSyllables += syllables
       maxSyllablesFound = Math.max(maxSyllablesFound, syllables)
@@ -351,7 +363,12 @@ RETORNE APENAS A LETRA NO FORMATO CORRETO.`
     score += syllableRatio * 0.3
 
     const stackingRatio = this.calculateStackingRatio(lyrics)
-    score += stackingRatio * 0.1
+    // Score ideal de empilhamento: 30-70%
+    if (stackingRatio >= 0.3 && stackingRatio <= 0.7) {
+      score += 0.15 // Bonus por empilhamento balanceado
+    } else {
+      score -= 0.1 // Penalidade por empilhamento extremo
+    }
 
     const coherenceScore = this.assessNarrativeCoherence(lyrics)
     score += coherenceScore * 0.15
@@ -398,9 +415,60 @@ RETORNE APENAS A LETRA NO FORMATO CORRETO.`
 
   private static calculateStackingRatio(lyrics: string): number {
     const lines = lyrics.split("\n").filter((line) => line.trim() && !line.startsWith("[") && !line.startsWith("("))
-    const linesWithComma = lines.filter((line) => line.includes(",")).length
-    const totalLines = lines.length
-    return totalLines > 0 ? 1 - linesWithComma / totalLines : 1
+    
+    let stackedPairs = 0
+    let totalPossiblePairs = Math.max(0, lines.length - 1)
+    
+    // Analisa pares de linhas consecutivas
+    for (let i = 0; i < lines.length - 1; i++) {
+      const currentLine = lines[i]
+      const nextLine = lines[i + 1]
+      
+      if (this.shouldLinesStack(currentLine, nextLine)) {
+        stackedPairs++
+      }
+    }
+    
+    return totalPossiblePairs > 0 ? stackedPairs / totalPossiblePairs : 1
+  }
+
+  private static shouldLinesStack(line1: string, line2: string): boolean {
+    const l1 = line1.toLowerCase().trim()
+    const l2 = line2.toLowerCase().trim()
+    
+    // ✅ CRITÉRIOS EXPANDIDOS DE EMPILHAMENTO:
+    
+    // 1. Diálogo e resposta
+    if ((l1.includes('?') && !l2.includes('?')) || 
+        (l2.includes('?') && !l1.includes('?'))) {
+      return true
+    }
+    
+    // 2. Continuação lógica (conectores)
+    const connectors = ['e', 'mas', 'porém', 'então', 'quando', 'onde', 'que', 'pra']
+    if (connectors.some(connector => l2.startsWith(connector))) {
+      return true
+    }
+    
+    // 3. Mesmo sujeito/contexto (palavras em comum)
+    const words1 = new Set(l1.split(/\s+/))
+    const words2 = new Set(l2.split(/\s+/))
+    const commonWords = [...words1].filter(word => words2.has(word) && word.length > 2)
+    if (commonWords.length >= 1) {
+      return true
+    }
+    
+    // 4. Padrão de citação/diálogo
+    if ((l1.includes('"') || l1.includes("'")) && (l2.includes('"') || l2.includes("'"))) {
+      return true
+    }
+    
+    // 5. Continuação natural (linha 2 completa linha 1)
+    if (l1.endsWith(',') || l1.endsWith(';') || l2.startsWith('—') || l2.startsWith('-')) {
+      return true
+    }
+    
+    return false
   }
 
   private static assessNarrativeCoherence(lyrics: string): number {
