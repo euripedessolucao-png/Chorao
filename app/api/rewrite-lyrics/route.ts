@@ -4,13 +4,7 @@ import { BACHATA_BRASILEIRA_2024 } from "@/lib/genres/bachata_brasileira_2024"
 import { SERTANEJO_MODERNO_2024 } from "@/lib/genres/sertanejo_moderno_2024"
 import { GENRE_CONFIGS, detectSubGenre, getGenreRhythm } from "@/lib/genre-config"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
-import { validateLyricsSyllables } from "@/lib/validation/syllableUtils"
-import { NextResponse } from "next/server"
-import { countPoeticSyllables } from "@/lib/validation/syllable-counter" // ← CORRIGIDO
-
-export async function POST(request: Request) {
-  // ... resto do código que usa countPoeticSyllables
-}
+import { validateLyricsSyllables } from "@/lib/validation/syllable-counter" // ← CORRIGIDO
 
 export async function POST(request: Request) {
   try {
@@ -153,7 +147,7 @@ Create the improved version now:`
         } else {
           console.log(`[v0] ${validation.linesWithIssues} versos excedem 12 sílabas`)
           validation.violations.forEach((v) => {
-            console.log(`[v0]   Linha ${v.line}: "${v.text}" (${v.syllables} sílabas)`)
+            console.log(`[v0]   Linha ${v.lineNumber}: "${v.line}" (${v.syllables} sílabas)`)
           })
 
           if (attempt === maxAttempts) {
