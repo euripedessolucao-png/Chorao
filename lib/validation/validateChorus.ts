@@ -1,5 +1,5 @@
 import type { ChorusOption } from "./parser"
-import { SERTANEJO_RULES, countSyllables, hasVisualElement, hasForbiddenElement, extractHook } from "./sertanejoRules"
+import { SERTANEJO_RULES, countPoeticSyllables, hasVisualElement, hasForbiddenElement, extractHook } from "./sertanejoRules"
 
 export interface ChorusValidation {
   isValid: boolean
