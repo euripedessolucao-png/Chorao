@@ -263,6 +263,12 @@ export async function POST(request: Request) {
       selectedChoruses,
     } = body
 
+    // ✅ CONFIGURAÇÃO ESPECÍFICA PARA SERTANEJO
+    const applyFinalPolish = true // SEMPRE aplicar polimento
+    const syllableTarget = generoConversao.toLowerCase().includes('sertanejo') 
+      ? { min: 9, max: 11, ideal: 10 } // Sertanejo mais rigoroso
+      : { min: 7, max: 11, ideal: 9 }  // Outros gêneros
+
     // ✅ EXTRAI refrões selecionados se existirem (sempre retorna array)
     const extractedChoruses = selectedChoruses || extractChorusesFromInstructions(additionalRequirements) || []
 
@@ -281,10 +287,11 @@ export async function POST(request: Request) {
           theme: extractThemeFromLyrics(letraOriginal),
           mood: extractMoodFromLyrics(letraOriginal),
           additionalRequirements,
-          syllableTarget: { min: 7, max: 11, ideal: 9 },
-          preservedChoruses: extractedChoruses
+          syllableTarget: syllableTarget,
+          preservedChoruses: extractedChoruses,
+          applyFinalPolish: applyFinalPolish // ✅ GARANTIR POLIMENTO
         },
-        { min: 7, max: 11, ideal: 9 }
+        syllableTarget
       )
     } else {
       console.log(`[RewriteLyrics] Modo reescrita normal para: ${generoConversao}`)
