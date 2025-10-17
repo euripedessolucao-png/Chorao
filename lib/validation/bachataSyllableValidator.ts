@@ -44,16 +44,17 @@ export function validateBachataLine(
   const warnings: string[] = []
   let score = 100
 
-  // Contagem principal
-  const totalSyllables = countSyllables(line)
+  // Contagem principal - ✅ CORREÇÃO: countSyllables → countPoeticSyllables
+  const totalSyllables = countPoeticSyllables(line)
   const [part1, part2] = splitAtCaesura(line)
   const hasCaesura = part2 !== null
 
   let partsSyllables: { part1: number; part2: number } | undefined
 
   if (hasCaesura) {
-    const p1 = countSyllables(part1)
-    const p2 = countSyllables(part2)
+    // ✅ CORREÇÃO: countSyllables → countPoeticSyllables
+    const p1 = countPoeticSyllables(part1)
+    const p2 = countPoeticSyllables(part2)
     partsSyllables = { part1: p1, part2: p2 }
 
     // Valida cesura
@@ -191,6 +192,21 @@ export function suggestBachataCorrections(line: string): string[] {
   }
 
   return suggestions
+}
+
+// ✅ CORREÇÃO: Adicionar a função splitAtCaesura que estava faltando
+function splitAtCaesura(line: string): [string, string | null] {
+  const commaIndex = line.indexOf(',')
+  if (commaIndex !== -1) {
+    return [line.substring(0, commaIndex).trim(), line.substring(commaIndex + 1).trim()]
+  }
+  
+  const spaceIndex = line.lastIndexOf(' ', Math.floor(line.length / 2))
+  if (spaceIndex !== -1 && spaceIndex > 0 && spaceIndex < line.length - 1) {
+    return [line.substring(0, spaceIndex).trim(), line.substring(spaceIndex + 1).trim()]
+  }
+  
+  return [line, null]
 }
 
 export const BACHATA_PROSODY_RULES = BACHATA_RULES
