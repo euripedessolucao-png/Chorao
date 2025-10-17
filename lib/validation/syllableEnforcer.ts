@@ -3,7 +3,7 @@
  * Nao apenas valida, mas CORRIGE automaticamente
  */
 
-import { countSyllables } from "./syllableUtils"
+import { countPoeticSyllables } from "./syllable-counter"
 import { generateText } from "ai"
 
 export interface SyllableEnforcement {
