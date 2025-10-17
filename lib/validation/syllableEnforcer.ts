@@ -1,6 +1,7 @@
 /**
  * SISTEMA DE IMPOSICAO RIGOROSA DE SILABAS
  * Nao apenas valida, mas CORRIGE automaticamente
+ * VERSÃO SEGURA: Protege contra corrupção de texto
  */
 
 import { countPoeticSyllables } from "./syllable-counter"
@@ -13,10 +14,11 @@ export interface SyllableEnforcement {
 }
 
 export class SyllableEnforcer {
-  private static readonly MAX_CORRECTION_ATTEMPTS = 2
+  private static readonly MAX_CORRECTION_ATTEMPTS = 1 // ✅ REDUZIDO: era 2
 
   /**
    * IMPOSICAO RIGOROSA: Valida e corrige linha por linha
+   * VERSÃO SEGURA: Protege contra corrupção de texto
    */
   static async enforceSyllableLimits(
     lyrics: string, 
@@ -43,7 +45,7 @@ export class SyllableEnforcer {
         // Dentro do limite - mantém
         correctedLines.push(originalLine)
       } else {
-        // Fora do limite - CORRIGE automaticamente
+        // Fora do limite - CORRIGE com cuidado
         violations.push(`Linha ${i+1}: "${originalLine}" -> ${syllables}s`)
         
         console.log(`[SyllableEnforcer] Corrigindo linha ${i+1}: "${originalLine}" (${syllables}s)`)
@@ -55,25 +57,43 @@ export class SyllableEnforcer {
           genre
         )
         
-        const finalSyllables = countPoeticSyllables(correctedLine)
-        
-        // ✅ VERIFICA se a correção foi bem-sucedida
-        if (finalSyllables >= enforcement.min && finalSyllables <= enforcement.max) {
-          correctedLines.push(correctedLine)
-          corrections++
-          console.log(`[SyllableEnforcer] ✓ Correção bem-sucedida: ${syllables}s -> ${finalSyllables}s`)
+        // ✅ PROTEÇÃO: Verifica se a correção não corrompeu o texto
+        const integrityCheck = this.validateLineIntegrity(correctedLine)
+        if (integrityCheck.isValid) {
+          const finalSyllables = countPoeticSyllables(correctedLine)
+          
+          if (finalSyllables >= enforcement.min && finalSyllables <= enforcement.max) {
+            correctedLines.push(correctedLine)
+            corrections++
+            console.log(`[SyllableEnforcer] ✓ Correção bem-sucedida: ${syllables}s -> ${finalSyllables}s`)
+          } else {
+            // Correção falhou, mantém original
+            correctedLines.push(originalLine)
+            console.log(`[SyllableEnforcer] ⚠️ Correção falhou, mantendo original`)
+          }
         } else {
-          // ❌ Se ainda não estiver boa, aplica correção de emergência
-          const emergencyCorrected = this.applyEmergencyCorrection(originalLine, enforcement.max)
-          correctedLines.push(emergencyCorrected)
-          corrections++
-          console.log(`[SyllableEnforcer] ⚠️ Usando correção de emergência: ${syllables}s -> ${countPoeticSyllables(emergencyCorrected)}s`)
+          // Texto corrompido, mantém original
+          correctedLines.push(originalLine)
+          console.log(`[SyllableEnforcer] ❌ Texto corrompido: ${integrityCheck.issue}, mantendo original`)
         }
       }
     }
 
+    const correctedLyrics = correctedLines.join('\n')
+    
+    // ✅ VALIDAÇÃO FINAL: Verifica integridade geral
+    const finalIntegrityCheck = this.validateTextIntegrity(correctedLyrics)
+    if (!finalIntegrityCheck.isValid) {
+      console.log(`[SyllableEnforcer] ❌ CORREÇÃO FINAL CORROMPEU TEXTO! Retornando original.`)
+      return {
+        correctedLyrics: lyrics, // Fallback para original
+        corrections: 0,
+        violations: []
+      }
+    }
+
     return {
-      correctedLyrics: correctedLines.join('\n'),
+      correctedLyrics,
       corrections,
       violations
     }
@@ -81,6 +101,7 @@ export class SyllableEnforcer {
 
   /**
    * CORRECAO AUTOMATICA de linha problematica
+   * VERSÃO SEGURA: Apenas 1 tentativa + proteções
    */
   private static async correctSyllableLine(
     line: string,
@@ -88,62 +109,117 @@ export class SyllableEnforcer {
     enforcement: SyllableEnforcement,
     genre: string
   ): Promise<string> {
-    let attempts = 0
-    let currentLine = line
-
-    while (attempts < this.MAX_CORRECTION_ATTEMPTS) {
-      attempts++
-
-      // ✅ PRIMEIRO: Tenta correções automáticas locais antes de chamar a IA
-      const autoCorrected = this.applyAutomaticCorrections(currentLine, enforcement.max)
-      const autoSyllables = countPoeticSyllables(autoCorrected)
-      
-      if (autoSyllables <= enforcement.max && autoSyllables >= enforcement.min) {
-        console.log(`[SyllableEnforcer] Correção automática bem-sucedida: "${line}" -> "${autoCorrected}"`)
-        return autoCorrected
-      }
-
-      // ✅ SEGUNDO: Se a correção automática falhou, usa IA
-      const correctionPrompt = this.buildCorrectionPrompt(currentLine, currentSyllables, enforcement, genre)
-      
-      try {
-        const { text: correctedLine } = await generateText({
-          model: "openai/gpt-4o",
-          prompt: correctionPrompt,
-          temperature: 0.3
-        })
-
-        const correctedText = correctedLine.trim().replace(/^["']|["']$/g, "")
-        const newSyllables = countPoeticSyllables(correctedText)
-
-        console.log(`[SyllableEnforcer] Correção ${attempts}: "${currentLine}" (${currentSyllables}s) -> "${correctedText}" (${newSyllables}s)`)
-
-        // Verifica se a correção foi bem-sucedida
-        if (newSyllables >= enforcement.min && newSyllables <= enforcement.max) {
-          return correctedText
-        }
-
-        currentLine = correctedText
-        currentSyllables = newSyllables
-
-      } catch (error) {
-        console.error('[SyllableEnforcer] Erro na correção:', error)
-        break
-      }
+    // ✅ PRIMEIRO: Tenta correções automáticas LOCAIS (mais seguras)
+    const autoCorrected = this.applyAutomaticCorrections(line, enforcement.max)
+    const autoSyllables = countPoeticSyllables(autoCorrected)
+    
+    if (autoSyllables <= enforcement.max && autoSyllables >= enforcement.min) {
+      console.log(`[SyllableEnforcer] Correção automática bem-sucedida: "${line}" -> "${autoCorrected}"`)
+      return this.protectPortugueseAccents(autoCorrected) // ✅ PROTEÇÃO
     }
 
-    // ✅ TERCEIRO: Se todas as tentativas falharem, aplica correção de emergência
-    console.log(`[SyllableEnforcer] Todas as tentativas falharam, aplicando correção de emergência`)
-    return this.applyEmergencyCorrection(line, enforcement.max)
+    // ✅ SEGUNDO: Se correção automática falhou, tenta IA APENAS UMA VEZ
+    const correctionPrompt = this.buildCorrectionPrompt(line, currentSyllables, enforcement, genre)
+    
+    try {
+      const { text: correctedLine } = await generateText({
+        model: "openai/gpt-4o",
+        prompt: correctionPrompt,
+        temperature: 0.3 // Baixa para precisão
+      })
+
+      let correctedText = correctedLine.trim().replace(/^["']|["']$/g, "")
+      
+      // ✅ PROTEÇÃO: Aplica proteção de acentos ANTES de retornar
+      correctedText = this.protectPortugueseAccents(correctedText)
+      
+      const newSyllables = countPoeticSyllables(correctedText)
+
+      console.log(`[SyllableEnforcer] Correção IA: "${line}" (${currentSyllables}s) -> "${correctedText}" (${newSyllables}s)`)
+
+      return correctedText
+
+    } catch (error) {
+      console.error('[SyllableEnforcer] Erro na correção:', error)
+      return line // Fallback para original em caso de erro
+    }
   }
 
   /**
-   * CORREÇÕES AUTOMÁTICAS - Mais agressivas e eficientes
+   * ✅ PROTEÇÃO: Corrige acentos corrompidos comuns
+   */
+  private static protectPortugueseAccents(text: string): string {
+    const accentMap: { [key: string]: string } = {
+      'coraçã': 'coração',
+      'razã': 'razão', 
+      'paixã': 'paixão',
+      'sã': 'são',
+      'nã': 'não',
+      'coraçao': 'coração',
+      'razao': 'razão',
+      'paixao': 'paixão'
+    }
+    
+    let protectedText = text
+    Object.entries(accentMap).forEach(([wrong, correct]) => {
+      const regex = new RegExp(`\\b${wrong}\\b`, 'gi')
+      protectedText = protectedText.replace(regex, correct)
+    })
+    
+    return protectedText
+  }
+
+  /**
+   * ✅ VALIDAÇÃO: Verifica se linha não foi corrompida
+   */
+  private static validateLineIntegrity(line: string): { isValid: boolean; issue?: string } {
+    const trimmed = line.trim()
+    
+    // Verifica acentos corrompidos
+    if (/\b(coraçã|razã|paixã|sã|nã)\b/gi.test(trimmed)) {
+      return { isValid: false, issue: 'acentos corrompidos' }
+    }
+    
+    // Verifica se linha está muito curta/incompleta
+    const words = trimmed.split(/\s+/)
+    if (words.length < 3 && !/[.!?]/.test(trimmed) && words.length > 0) {
+      return { isValid: false, issue: 'linha incompleta' }
+    }
+    
+    // Verifica caracteres estranhos
+    if (/[�]/.test(trimmed)) {
+      return { isValid: false, issue: 'caracteres inválidos' }
+    }
+    
+    return { isValid: true }
+  }
+
+  /**
+   * ✅ VALIDAÇÃO: Verifica integridade geral do texto
+   */
+  private static validateTextIntegrity(text: string): { isValid: boolean; issues: string[] } {
+    const issues: string[] = []
+    const lines = text.split('\n')
+    
+    lines.forEach((line, i) => {
+      if (line.trim() && !this.shouldSkipLine(line)) {
+        const lineCheck = this.validateLineIntegrity(line)
+        if (!lineCheck.isValid) {
+          issues.push(`linha ${i+1}: ${lineCheck.issue}`)
+        }
+      }
+    })
+    
+    return { isValid: issues.length === 0, issues }
+  }
+
+  /**
+   * CORREÇÕES AUTOMÁTICAS - Mais seguras que IA
    */
   private static applyAutomaticCorrections(line: string, maxSyllables: number): string {
     let corrected = line
 
-    // Lista expandida de contrações obrigatórias
+    // Lista SEGURA de contrações
     const contractions = [
       { from: /\bvocê\b/gi, to: 'cê' },
       { from: /\bestá\b/gi, to: 'tá' },
@@ -151,92 +227,28 @@ export class SyllableEnforcer {
       { from: /\bestou\b/gi, to: 'tô' },
       { from: /\bcomigo\b/gi, to: 'comigo' },
       { from: /\bcontigo\b/gi, to: 'contigo' },
-      { from: /\bdesejando\b/gi, to: 'querendo' },
-      { from: /\bpensando\b/gi, to: 'pensando' },
-      { from: /\bpronto\s+pra\b/gi, to: 'pronto p\'ra' },
-      { from: /\bpergunta\b/gi, to: 'pergunta' },
-      { from: /\bconfesso\b/gi, to: 'falo' },
-      { from: /\bconstantemente\b/gi, to: 'sempre' },
-      { from: /\bmaravilhosa\b/gi, to: 'incrível' },
-      { from: /\benorme\b/gi, to: 'grande' },
     ]
 
-    // Aplica todas as contrações
+    // Aplica contrações
     contractions.forEach(({ from, to }) => {
       corrected = corrected.replace(from, to)
     })
 
-    // Elisões poéticas obrigatórias
+    // Elisões poéticas SEGURAS
     const elisions = [
       { from: /\bde amor\b/gi, to: 'd\'amor' },
       { from: /\bque eu\b/gi, to: 'qu\'eu' },
-      { from: /\bse eu\b/gi, to: 's\'eu' },
-      { from: /\bmeu amor\b/gi, to: 'meuamor' },
-      { from: /\bte abraço\b/gi, to: 'tabraço' },
-      { from: /\bte espero\b/gi, to: 'tespero' },
-      { from: /\bna minha\b/gi, to: 'naminha' },
-      { from: /\bno meu\b/gi, to: 'nomeu' },
     ]
 
     elisions.forEach(({ from, to }) => {
       corrected = corrected.replace(from, to)
     })
 
-    // Remove artigos desnecessários
-    corrected = corrected
-      .replace(/\b(o|a|os|as|um|uma)\s+/gi, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-
-    // Se ainda estiver longo, corta palavras finais estrategicamente
-    const currentSyllables = countPoeticSyllables(corrected)
-    if (currentSyllables > maxSyllables) {
-      const words = corrected.split(' ')
-      
-      // Tenta remover palavras do final mantendo o sentido
-      if (words.length > 4) {
-        // Remove última palavra
-        const shortened = words.slice(0, -1).join(' ')
-        if (countPoeticSyllables(shortened) <= maxSyllables) {
-          return shortened
-        }
-        
-        // Remove duas últimas palavras
-        const moreShortened = words.slice(0, -2).join(' ')
-        if (countPoeticSyllables(moreShortened) <= maxSyllables) {
-          return moreShortened
-        }
-      }
-    }
-
     return corrected
   }
 
   /**
-   * CORREÇÃO DE EMERGÊNCIA - Garante que sempre retorne algo dentro do limite
-   */
-  private static applyEmergencyCorrection(line: string, maxSyllables: number): string {
-    console.log(`[SyllableEnforcer] Aplicando correção de emergência para: "${line}"`)
-    
-    const words = line.split(' ').filter(w => w.trim())
-    
-    // Estratégia 1: Pega apenas as primeiras palavras até caber no limite
-    for (let i = words.length; i > 0; i--) {
-      const candidate = words.slice(0, i).join(' ')
-      if (countPoeticSyllables(candidate) <= maxSyllables) {
-        console.log(`[SyllableEnforcer] Emergência: "${line}" -> "${candidate}"`)
-        return candidate
-      }
-    }
-    
-    // Estratégia 2: Se ainda não couber, pega apenas as 3 primeiras palavras
-    const fallback = words.slice(0, 3).join(' ')
-    console.log(`[SyllableEnforcer] Fallback extremo: "${line}" -> "${fallback}"`)
-    return fallback
-  }
-
-  /**
-   * PROMPT MELHORADO para correções
+   * PROMPT DE CORREÇÃO
    */
   private static buildCorrectionPrompt(
     line: string,
@@ -244,43 +256,27 @@ export class SyllableEnforcer {
     enforcement: SyllableEnforcement,
     genre: string
   ): string {
-    return `CORREÇÃO URGENTE DE SILABAS - LINHA PROBLEMÁTICA
+    return `CORREÇÃO DE SILABAS - LINHA PROBLEMÁTICA
 
 LINHA ORIGINAL: "${line}"
 SILABAS ATUAIS: ${syllables} (LIMITE: ${enforcement.min}-${enforcement.max})
 
 REESCREVA ESTA LINHA para ter ENTRE ${enforcement.min} E ${enforcement.max} SILABAS POÉTICAS.
 
-TÉCNICAS OBRIGATÓRIAS (APLIQUE IMEDIATAMENTE):
+REGRAS IMPORTANTES:
+1. MANTENHA o significado original
+2. USE contrações: você→cê, está→tá, para→pra
+3. PRESERVE acentos portugueses: coração, razão, paixão
+4. LINHA DEVE fazer sentido completo
 
-1. CONTRAÇÕES BRUTAIS:
-   - "você" → "cê" (OBRIGATÓRIO)
-   - "está" → "tá" (OBRIGATÓRIO)
-   - "para" → "pra" (OBRIGATÓRIO)
-   - "estou" → "tô" (OBRIGATÓRIO)
+EXEMPLOS:
+"Meu coração dispara quando te vejo" (11s)
+→ "Coração dispara ao te ver" (7s)
 
-2. ELISAO EXTREMA:
-   - "de amor" → "d'amor" (OBRIGATÓRIO)
-   - "que eu" → "qu'eu" (OBRIGATÓRIO)
-   - "meu amor" → "meuamor" (OBRIGATÓRIO)
+"Estou pensando em você constantemente" (13s)  
+→ "Tô pensando em cê sempre" (6s)
 
-3. CORTE RADICAL:
-   - Remova adjetivos desnecessários
-   - Use frases mais curtas e diretas
-   - Mantenha apenas o essencial
-
-4. EXEMPLOS PRÁTICOS:
-
-"Me olha e provoca: 'Tá pronto pra amar?'" (12s) 
-→ "Me olha e provoca: 'Pronto p'ra amar?'" (9s)
-
-"Meu peito explode, e a razão se apaga" (12s)
-→ "Peito explode, razão se apaga" (8s)
-
-"Eu, sem rumo, confesso: 'Vivo pra te amar'" (12s)
-→ "Sem rumo, confesso: 'Vivo p'ra te amar'" (9s)
-
-GÊNERO: ${genre} - Use linguagem coloquial brasileira
+GÊNERO: ${genre}
 
 SUA TAREFA:
 Corrija: "${line}"
