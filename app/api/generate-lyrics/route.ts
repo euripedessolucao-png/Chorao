@@ -2,14 +2,18 @@ import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
 import { getGenreConfig, detectSubGenre, getGenreRhythm } from "@/lib/genre-config"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
-import { validateLyricsSyllables } from "@/lib/validation/syllableUtils"
-import { NextResponse } from "next/server"
-import { countPoeticSyllables } from "@/lib/validation/syllable-counter" // ← CORRIGIDO
+import { validateLyricsSyllables } from "@/lib/validation/syllable-counter" // ← CORRIGIDO
 
+// ⚠️ REMOVA ESTAS 6 LINHAS - SÓ PODE TER UMA FUNÇÃO POST!
+/*
 export async function POST(request: Request) {
   // ... resto do código que usa countPoeticSyllables
 }
 
+export async function POST(request: NextRequest) {
+*/
+
+// ⚠️ MANTENHA APENAS ESTA FUNÇÃO POST:
 export async function POST(request: NextRequest) {
   try {
     const {
@@ -118,16 +122,16 @@ Escreva a letra completa AGORA:`
         finalLyrics = finalLyrics.replace(/^(?:Título|Title):\s*.+$/gm, "").trim()
         finalLyrics = finalLyrics.replace(/^\*\*(?:Título|Title):\s*.+\*\*$/gm, "").trim()
 
-        // Validate syllables
+        // Validate syllables - USANDO O NOVO SISTEMA
         const validation = validateLyricsSyllables(finalLyrics, 12)
 
         if (validation.valid) {
           console.log(`[v0] ✅ Validação passou na tentativa ${attempts}`)
           break
         } else {
-          console.log(`[v0] ⚠️ ${validation.linesWithIssues} versos excedem 12 sílabas`)
+          console.log(`[v0] ⚠️ ${validation.violations.length} versos excedem 12 sílabas`)
           validation.violations.forEach((v) => {
-            console.log(`[v0]   Linha ${v.line}: "${v.text}" (${v.syllables} sílabas)`)
+            console.log(`[v0]   Linha ${v.lineNumber}: "${v.line}" (${v.syllables} sílabas)`)
           })
 
           if (attempts === maxAttempts) {
