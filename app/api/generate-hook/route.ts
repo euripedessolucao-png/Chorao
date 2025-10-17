@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { generateText } from "ai"
 import { getGenreConfig, detectSubGenre, getGenreRhythm } from "@/lib/genre-config"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
-import { countSyllables } from "@/lib/validation/syllableUtils"
+import { countPoeticSyllables } from "@/lib/validation/syllableUtils"
 
 export async function POST(request: Request) {
   try {
