@@ -305,7 +305,7 @@ export class MetaComposer {
       model: "openai/gpt-4o",
       prompt: masterPrompt,
       temperature: this.getCreativityTemperature(request.creativity),
-      maxTokens: 2000
+      // ❌ REMOVIDO: maxTokens não é suportado pela biblioteca ai
     })
 
     return text
