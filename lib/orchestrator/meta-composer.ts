@@ -28,7 +28,7 @@ export interface CompositionRequest {
   preserveRhymes?: boolean
   applyTerceiraVia?: boolean
   applyFinalPolish?: boolean
-  preservedChoruses?: string[] // ✅ NOVO: Refrões selecionados para preservar
+  preservedChoruses?: string[] // Refrões selecionados para preservar
 }
 
 export interface CompositionResult {
@@ -54,7 +54,7 @@ export interface CompositionResult {
     terceiraViaAnalysis?: any
     rhymeAnalysis?: any
     polishingApplied?: boolean
-    preservedChorusesUsed?: boolean // ✅ NOVO: Indica se usou refrões preservados
+    preservedChorusesUsed?: boolean
   }
 }
 
@@ -78,7 +78,7 @@ export class MetaComposer {
     let bestResult: CompositionResult | null = null
     let bestScore = 0
     let polishingApplied = false
-    let preservedChorusesUsed = false // ✅ NOVO: Controle de refrões preservados
+    let preservedChorusesUsed = false
 
     const syllableEnforcement = request.syllableTarget || this.SYLLABLE_TARGET
     const preserveRhymes = request.preserveRhymes ?? this.PRESERVE_RHYMES
@@ -87,10 +87,12 @@ export class MetaComposer {
 
     console.log(`[MetaComposer] Configuração: ${preserveRhymes ? 'RIMAS PRESERVADAS' : 'Rimas não preservadas'} | ${applyTerceiraVia ? 'TERCEIRA VIA ATIVA' : 'Terceira Via inativa'} | ${applyFinalPolish ? 'POLIMENTO FINAL ATIVO' : 'Polimento final inativo'}`)
 
-    // ✅ VERIFICA SE TEM REFRÕES PARA PRESERVAR
-    const hasPreservedChoruses = request.preservedChoruses && request.preservedChoruses.length > 0
+    // ✅ VERIFICA SE TEM REFRÕES PARA PRESERVAR (forma type-safe)
+    const preservedChoruses = request.preservedChoruses || []
+    const hasPreservedChoruses = preservedChoruses.length > 0
+    
     if (hasPreservedChoruses) {
-      console.log(`[MetaComposer] 🎯 Modo preservação ativo: ${request.preservedChoruses.length} refrões selecionados`)
+      console.log(`[MetaComposer] 🎯 Modo preservação ativo: ${preservedChoruses.length} refrões selecionados`)
     }
 
     while (iterations < this.MAX_ITERATIONS) {
@@ -104,7 +106,7 @@ export class MetaComposer {
         console.log('[MetaComposer] Aplicando reescrita com refrões preservados...')
         rawLyrics = await this.rewriteWithPreservedChoruses(
           "", // Letra original vazia para primeira iteração
-          request.preservedChoruses!,
+          preservedChoruses,
           request,
           syllableEnforcement
         )
@@ -178,7 +180,7 @@ export class MetaComposer {
             terceiraViaAnalysis,
             rhymeAnalysis: this.analyzeRhymePreservation(rawLyrics, finalLyrics),
             polishingApplied,
-            preservedChorusesUsed // ✅ NOVO: Inclui informação de refrões preservados
+            preservedChorusesUsed
           },
         }
       }
@@ -234,13 +236,12 @@ export class MetaComposer {
     return bestResult
   }
 
-  // ✅ NOVO MÉTODO ADICIONADO: REESCRITA INTELIGENTE QUE PRESERVA REFRÕES SELECIONADOS
   /**
    * REESCRITA INTELIGENTE QUE PRESERVA REFRÕES SELECIONADOS
    */
-  private static async rewriteWithPreservedChoruses(
+  static async rewriteWithPreservedChoruses(
     originalLyrics: string,
-    selectedChoruses: string[], // Refrões selecionados pelo usuário
+    selectedChoruses: string[],
     request: CompositionRequest,
     syllableEnforcement: { min: number; max: number; ideal: number }
   ): Promise<string> {
@@ -268,7 +269,6 @@ export class MetaComposer {
     return finalLyrics;
   }
 
-  // ✅ NOVO MÉTODO ADICIONADO: COMPÕE VERSOS COERENTES COM OS REFRÕES SELECIONADOS
   /**
    * COMPÕE VERSOS COERENTES COM OS REFRÕES SELECIONADOS
    */
@@ -326,80 +326,6 @@ RETORNE APENAS OS VERSOS NO FORMATO:
     });
 
     return this.parseComposedVerses(text);
-  }
-
-  // ✅ NOVO MÉTODO ADICIONADO: ANALISA ESTRUTURA DA MÚSICA
-  private static extractSongStructure(lyrics: string): any {
-    const sections = lyrics.split('\n\n').filter(section => section.trim());
-    const structure = {
-      hasIntro: /\[INTRO\]/i.test(lyrics),
-      hasVerse: /\[VERS[OE]]/i.test(lyrics),
-      hasChorus: /\[(?:CHORUS|REFRÃO)\]/i.test(lyrics),
-      hasBridge: /\[BRIDGE\]/i.test(lyrics),
-      hasOutro: /\[OUTRO\]/i.test(lyrics),
-      totalSections: sections.length
-    };
-    
-    return structure;
-  }
-
-  // ✅ NOVO MÉTODO ADICIONADO: MONTA ESTRUTURA FINAL
-  private static buildFinalStructure(
-    verses: { verse1: string; verse2: string; bridge?: string },
-    choruses: string[],
-    structure: any
-  ): string {
-    const sections: string[] = [];
-    
-    // Intro
-    if (structure.hasIntro) {
-      sections.push('[INTRO]');
-    }
-    
-    // Primeiro verso e refrão
-    sections.push(verses.verse1);
-    sections.push(`[CHORUS]\n${choruses[0]}`);
-    
-    // Segundo verso e refrão
-    sections.push(verses.verse2);
-    sections.push(`[CHORUS]\n${choruses[0]}`);
-    
-    // Bridge se existir
-    if (verses.bridge) {
-      sections.push(verses.bridge);
-    }
-    
-    // Refrão final
-    sections.push(`[CHORUS]\n${choruses[0]}`);
-    
-    // Outro se existir
-    if (structure.hasOutro) {
-      sections.push('[OUTRO]');
-    }
-    
-    return sections.join('\n\n');
-  }
-
-  // ✅ NOVO MÉTODO ADICIONADO: ANALISA VERSOS COMPOSTOS
-  private static parseComposedVerses(text: string): { verse1: string; verse2: string; bridge?: string } {
-    const lines = text.split('\n');
-    let currentSection = '';
-    const sections: { [key: string]: string[] } = {};
-    
-    for (const line of lines) {
-      if (line.startsWith('[') && line.endsWith(']')) {
-        currentSection = line;
-        sections[currentSection] = [];
-      } else if (currentSection && line.trim() && !line.startsWith('•')) {
-        sections[currentSection].push(line.trim());
-      }
-    }
-    
-    return {
-      verse1: sections['[VERSE 1]']?.join('\n') || '',
-      verse2: sections['[VERSE 2]']?.join('\n') || '',
-      bridge: sections['[BRIDGE]']?.join('\n')
-    };
   }
 
   /**
@@ -1005,5 +931,78 @@ RETORNE APENAS A LETRA NO FORMATO CORRETO.`
     const complexCount = complexWords.filter((word: string) => lyricsLower.includes(word)).length
 
     return Math.max(0, 1 - complexCount * 0.1)
+  }
+
+  // ✅ MÉTODOS AUXILIARES PARA PRESERVAÇÃO DE REFRÕES
+
+  private static extractSongStructure(lyrics: string): any {
+    const sections = lyrics.split('\n\n').filter(section => section.trim());
+    const structure = {
+      hasIntro: /\[INTRO\]/i.test(lyrics),
+      hasVerse: /\[VERS[OE]]/i.test(lyrics),
+      hasChorus: /\[(?:CHORUS|REFRÃO)\]/i.test(lyrics),
+      hasBridge: /\[BRIDGE\]/i.test(lyrics),
+      hasOutro: /\[OUTRO\]/i.test(lyrics),
+      totalSections: sections.length
+    };
+    
+    return structure;
+  }
+
+  private static buildFinalStructure(
+    verses: { verse1: string; verse2: string; bridge?: string },
+    choruses: string[],
+    structure: any
+  ): string {
+    const sections: string[] = [];
+    
+    // Intro
+    if (structure.hasIntro) {
+      sections.push('[INTRO]');
+    }
+    
+    // Primeiro verso e refrão
+    sections.push(verses.verse1);
+    sections.push(`[CHORUS]\n${choruses[0]}`);
+    
+    // Segundo verso e refrão
+    sections.push(verses.verse2);
+    sections.push(`[CHORUS]\n${choruses[0]}`);
+    
+    // Bridge se existir
+    if (verses.bridge) {
+      sections.push(verses.bridge);
+    }
+    
+    // Refrão final
+    sections.push(`[CHORUS]\n${choruses[0]}`);
+    
+    // Outro se existir
+    if (structure.hasOutro) {
+      sections.push('[OUTRO]');
+    }
+    
+    return sections.join('\n\n');
+  }
+
+  private static parseComposedVerses(text: string): { verse1: string; verse2: string; bridge?: string } {
+    const lines = text.split('\n');
+    let currentSection = '';
+    const sections: { [key: string]: string[] } = {};
+    
+    for (const line of lines) {
+      if (line.startsWith('[') && line.endsWith(']')) {
+        currentSection = line;
+        sections[currentSection] = [];
+      } else if (currentSection && line.trim() && !line.startsWith('•')) {
+        sections[currentSection].push(line.trim());
+      }
+    }
+    
+    return {
+      verse1: sections['[VERSE 1]']?.join('\n') || '',
+      verse2: sections['[VERSE 2]']?.join('\n') || '',
+      bridge: sections['[BRIDGE]']?.join('\n')
+    };
   }
 }
