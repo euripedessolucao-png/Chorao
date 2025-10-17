@@ -1,4 +1,4 @@
-import { countSyllables, splitAtCaesura } from "./syllableUtils"
+import { countPoeticSyllables } from "./syllable-counter" // ← CORRIGIDO
 
 export interface BachataSyllableValidation {
   isValid: boolean
