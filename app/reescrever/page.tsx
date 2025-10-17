@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
-import { RefreshCw, Save, Copy, Search, Loader2, Star, Trophy, Trash2 } from "lucide-react"
+import { RefreshCw, Save, Copy, Search, Loader2, Star, Trophy, Trash2, Zap, Wand2 } from "lucide-react"
 import { toast } from "sonner"
 import { GENRE_CONFIGS } from "@/lib/genre-config"
 import { EMOTIONS } from "@/lib/genres"
@@ -45,6 +45,7 @@ const BRAZILIAN_GENRE_METRICS = {
   Gospel: { syllablesPerLine: 8, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
   default: { syllablesPerLine: 8, bpm: 100, structure: "VERSO-REFRAO" },
 } as const
+
 const GENRES = ["Pop", "Sertanejo Moderno", "MPB", "Rock", "Funk"]
 
 type ChorusVariation = {
@@ -211,6 +212,7 @@ export default function ReescreverPage() {
           formattingStyle: formattingStyle,
           additionalRequirements: additionalReqs,
           advancedMode: advancedMode,
+          syllableTarget: { min: 7, max: 11, ideal: 9 }, // ← NOVO: ALVO DE SÍLABAS
           metrics:
             BRAZILIAN_GENRE_METRICS[genre as keyof typeof BRAZILIAN_GENRE_METRICS] || BRAZILIAN_GENRE_METRICS.default,
         }),
@@ -427,7 +429,7 @@ export default function ReescreverPage() {
                     Modo Avançado
                   </Label>
                   <p className="text-xs text-muted-foreground">
-                    Rimas perfeitas, métrica e ganchos premium em PT-BR, linguagem limpa e fidelidade de estilo.
+                    Rimas perfeitas, métrica rigorosa de 7-11 sílabas, ganchos premium em PT-BR, linguagem limpa e fidelidade de estilo.
                   </p>
                 </div>
               </div>
@@ -607,7 +609,7 @@ export default function ReescreverPage() {
                   onClick={() => setShowHookDialog(true)}
                   disabled={isRewriting || isGeneratingChorus}
                 >
-                  <Trash2 className="h-4 w-4 mr-2" />
+                  <Zap className="h-4 w-4 mr-2" /> {/* ← ÍCONE CORRIGIDO */}
                   Gerador de Hook
                 </Button>
 
@@ -618,7 +620,7 @@ export default function ReescreverPage() {
                   onClick={handleGenerateChorus}
                   disabled={!genre || !theme || isRewriting || isGeneratingChorus}
                 >
-                  <Trash2 className="h-4 w-4 mr-2" />
+                  <Wand2 className="h-4 w-4 mr-2" /> {/* ← ÍCONE CORRIGIDO */}
                   Gerar Refrão
                 </Button>
 
@@ -656,10 +658,6 @@ export default function ReescreverPage() {
                   className="h-9"
                 />
 
-                <Button variant="outline" size="sm" className="w-full bg-transparent">
-                  Validar métrica
-                </Button>
-
                 <div className="space-y-2">
                   <Label className="text-xs">Acordes</Label>
                   <Textarea
@@ -680,15 +678,25 @@ export default function ReescreverPage() {
                     rows={12}
                     className="font-mono text-xs"
                   />
+                  
+                  {/* VALIDADOR DE SÍLABAS - CORRIGIDO */}
                   <SyllableValidator
                     lyrics={lyrics}
-                    maxSyllables={12}
+                    maxSyllables={11} {/* ← MÁXIMO 11 SÍLABAS */}
                     onValidate={(result) => {
                       if (!result.valid) {
                         console.log(`⚠️ ${result.linesWithIssues} versos com problemas:`)
                         result.violations.forEach((v) => {
                           console.log(`  Linha ${v.line}: "${v.text}" → ${v.syllables} sílabas`)
                         })
+                        
+                        // Mostrar toast com detalhes
+                        toast.warning(`${result.linesWithIssues} versos com mais de 11 sílabas`, {
+                          description: "Use o validador para ver detalhes",
+                          duration: 5000
+                        })
+                      } else if (result.totalLines > 0) {
+                        toast.success(`✓ Letra validada: ${result.totalLines} versos dentro do limite`)
                       }
                     }}
                   />
