@@ -1,6 +1,6 @@
 /**
- * SISTEMA DE IMPOSIÇÃO RIGOROSA DE SÍLABAS
- * Não apenas valida, mas CORRIGE automaticamente
+ * SISTEMA DE IMPOSICAO RIGOROSA DE SILABAS
+ * Nao apenas valida, mas CORRIGE automaticamente
  */
 
 import { countSyllables } from "./syllableUtils"
@@ -16,7 +16,7 @@ export class SyllableEnforcer {
   private static readonly MAX_CORRECTION_ATTEMPTS = 2
 
   /**
-   * IMPOSIÇÃO RIGOROSA: Valida e corrige linha por linha
+   * IMPOSICAO RIGOROSA: Valida e corrige linha por linha
    */
   static async enforceSyllableLimits(
     lyrics: string, 
@@ -40,11 +40,11 @@ export class SyllableEnforcer {
       const syllables = countSyllables(originalLine)
       
       if (syllables >= enforcement.min && syllables <= enforcement.max) {
-        // Dentro do limite - mantém
+        // Dentro do limite - mantem
         correctedLines.push(originalLine)
       } else {
         // Fora do limite - CORRIGE automaticamente
-        violations.push(`Linha ${i+1}: "${originalLine}" → ${syllables} sílabas`)
+        violations.push(`Linha ${i+1}: "${originalLine}" -> ${syllables} silabas`)
         
         const correctedLine = await this.correctSyllableLine(
           originalLine, 
@@ -66,7 +66,7 @@ export class SyllableEnforcer {
   }
 
   /**
-   * CORREÇÃO AUTOMÁTICA de linha problemática
+   * CORRECAO AUTOMATICA de linha problematica
    */
   private static async correctSyllableLine(
     line: string,
@@ -86,16 +86,16 @@ export class SyllableEnforcer {
         const { text: correctedLine } = await generateText({
           model: "openai/gpt-4o",
           prompt: correctionPrompt,
-          temperature: 0.3, // Baixa para correções precisas
-          maxTokens: 50
+          temperature: 0.3 // Baixa para correcoes precisas
+          // Removido maxTokens pois nao existe na API
         })
 
         const correctedText = correctedLine.trim()
         const newSyllables = countSyllables(correctedText)
 
-        console.log(`[SyllableEnforcer] Correção ${attempts}: "${currentLine}" (${currentSyllables}s) → "${correctedText}" (${newSyllables}s)`)
+        console.log(`[SyllableEnforcer] Correcao ${attempts}: "${currentLine}" (${currentSyllables}s) -> "${correctedText}" (${newSyllables}s)`)
 
-        // Verifica se a correção foi bem-sucedida
+        // Verifica se a correcao foi bem-sucedida
         if (newSyllables >= enforcement.min && newSyllables <= enforcement.max) {
           return correctedText
         }
@@ -104,17 +104,17 @@ export class SyllableEnforcer {
         currentSyllables = newSyllables
 
       } catch (error) {
-        console.error('[SyllableEnforcer] Erro na correção:', error)
+        console.error('[SyllableEnforcer] Erro na correcao:', error)
         break
       }
     }
 
-    // Se não conseguiu corrigir, retorna a linha original com aviso
-    return `${line} [⚠️ ${currentSyllables}s - NÃO CORRIGIDO]`
+    // Se nao conseguiu corrigir, retorna a linha original com aviso
+    return `${line} [ATENCAO ${currentSyllables}s - NAO CORRIGIDO]`
   }
 
   /**
-   * PROMPT DE CORREÇÃO ESPECÍFICO
+   * PROMPT DE CORRECAO ESPECIFICO
    */
   private static buildCorrectionPrompt(
     line: string,
@@ -122,55 +122,55 @@ export class SyllableEnforcer {
     enforcement: SyllableEnforcement,
     genre: string
   ): string {
-    return `🚨 CORREÇÃO DE SÍLABA OBRIGATÓRIA
+    return `CORRECAO DE SILABA OBRIGATORIA
 
-LINHA PROBLEMÁTICA: "${line}"
-SÍLABAS ATUAIS: ${syllables} (FORA DO LIMITE ${enforcement.min}-${enforcement.max})
+LINHA PROBLEMATICA: "${line}"
+SILABAS ATUAIS: ${syllables} (FORA DO LIMITE ${enforcement.min}-${enforcement.max})
 
-REESCREVA ESTA LINHA para ter entre ${enforcement.min} e ${enforcement.max} sílabas.
+REESCREVA ESTA LINHA para ter entre ${enforcement.min} e ${enforcement.max} silabas.
 
-TÉCNICAS OBRIGATÓRIAS:
+TECNICAS OBRIGATORIAS:
 
-1. CONTRÇÕES IMEDIATAS:
-   • "você" → "cê" (2→1 sílaba)
-   • "estou" → "tô" (2→1 sílaba) 
-   • "para" → "pra" (2→1 sílaba)
-   • "está" → "tá" (2→1 sílaba)
-   • "comigo" → "c'migo" (3→2 sílabas)
+1. CONTRAÇÕES IMEDIATAS:
+   - "voce" -> "ce" (2->1 silaba)
+   - "estou" -> "to" (2->1 silaba) 
+   - "para" -> "pra" (2->1 silaba)
+   - "esta" -> "ta" (2->1 silaba)
+   - "comigo" -> "c'migo" (3->2 silabas)
 
-2. ELISÃO AUTOMÁTICA:
-   • "de amor" → "d'amor" (3→2 sílabas)
-   • "que eu" → "qu'eu" (2→1 sílaba)
-   • "meu amor" → "meuamor" (4→3 sílabas)
-   • "se eu" → "s'eu" (2→1 sílaba)
+2. ELISAO AUTOMATICA:
+   - "de amor" -> "d'amor" (3->2 silabas)
+   - "que eu" -> "qu'eu" (2->1 silaba)
+   - "meu amor" -> "meuamor" (4->3 silabas)
+   - "se eu" -> "s'eu" (2->1 silaba)
 
-3. CORTE DE PALAVRAS DESNECESSÁRIAS:
-   • Remova adjetivos supérfluos
-   • Use frases mais diretas
-   • Mantenha apenas palavras essenciais
+3. CORTE DE PALAVRAS DESNECESSARIAS:
+   - Remova adjetivos superfluos
+   - Use frases mais diretas
+   - Mantenha apenas palavras essenciais
 
 4. LINGUAGEM ${genre.toUpperCase()}:
-   • Use gírias e expressões do gênero
-   • Mantenha a naturalidade brasileira
+   - Use girias e expressoes do genero
+   - Mantenha a naturalidade brasileira
 
-EXEMPLOS PRÁTICOS:
+EXEMPLOS PRATICOS:
 
-"Eu estou pensando em você constantemente" (13s ✗)
-→ "Tô pensando em cê sempre" (6s ✓)
+"Eu estou pensando em voce constantemente" (13s ERRADO)
+-> "To pensando em ce sempre" (6s CORRETO)
 
-"A saudade que eu sinto no peito é enorme" (14s ✗)  
-→ "Saudade no peito dói" (6s ✓)
+"A saudade que eu sinto no peito e enorme" (14s ERRADO)  
+-> "Saudade no peito doi" (6s CORRETO)
 
-"Vamos aproveitar essa noite maravilhosa" (12s ✗)
-→ "Vamo curtir essa noite" (6s ✓)
+"Vamos aproveitar essa noite maravilhosa" (12s ERRADO)
+-> "Vamo curtir essa noite" (6s CORRETO)
 
 SUA TAREFA:
 Corrija: "${line}"
-→`
+->`
   }
 
   /**
-   * Verifica se linha deve ser pulada na validação
+   * Verifica se linha deve ser pulada na validacao
    */
   private static shouldSkipLine(line: string): boolean {
     const trimmed = line.trim()
@@ -178,14 +178,14 @@ Corrija: "${line}"
       !trimmed ||
       trimmed.startsWith('[') ||
       trimmed.startsWith('(') ||
-      trimmed.startsWith('Título:') ||
-      trimmed.startsWith('Instrução:') ||
-      trimmed.match(/^Instrução:/)
+      trimmed.startsWith('Titulo:') ||
+      trimmed.startsWith('Instrucao:') ||
+      trimmed.match(/^Instrucao:/)
     )
   }
 
   /**
-   * VALIDAÇÃO RÁPIDA para verificar conformidade
+   * VALIDACAO RAPIDA para verificar conformidade
    */
   static validateLyrics(lyrics: string, enforcement: SyllableEnforcement) {
     const lines = lyrics.split('\n').filter(line => 
