@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
-import { Sparkles, Save, Search, Loader2, Zap, Copy, Trash2, Wand2 } from "lucide-react"
+import { Sparkles, Save, Search, Loader2, Zap, Copy, Trash2, Wand2, Star, Trophy } from "lucide-react"
 import { GENRE_CONFIGS } from "@/lib/genre-config"
 import { toast } from "sonner"
 import {
@@ -23,7 +23,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Star, Trophy } from "lucide-react"
 import { EMOTIONS } from "@/lib/genres"
 import { GenreSelect } from "@/components/genre-select"
 import { HookGenerator } from "@/components/hook-generator"
@@ -47,6 +46,26 @@ const BRAZILIAN_GENRE_METRICS = {
   Gospel: { syllablesPerLine: 8, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
   default: { syllablesPerLine: 8, bpm: 100, structure: "VERSO-REFRAO" },
 } as const
+
+// ✅ CONFIGURAÇÃO UNIVERSAL DE QUALIDADE POR GÊNERO
+const GENRE_QUALITY_CONFIG = {
+  "Sertanejo": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
+  "Sertanejo Moderno": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
+  "Sertanejo Universitário": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
+  "Sertanejo Sofrência": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
+  "Sertanejo Raiz": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
+  "MPB": { min: 7, max: 12, ideal: 9, rhymeQuality: 0.6 },
+  "Bossa Nova": { min: 7, max: 12, ideal: 9, rhymeQuality: 0.6 },
+  "Funk": { min: 6, max: 10, ideal: 8, rhymeQuality: 0.3 },
+  "Pagode": { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
+  "Samba": { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
+  "Forró": { min: 8, max: 11, ideal: 9, rhymeQuality: 0.4 },
+  "Axé": { min: 6, max: 10, ideal: 8, rhymeQuality: 0.3 },
+  "Rock": { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
+  "Pop": { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
+  "Gospel": { min: 8, max: 11, ideal: 9, rhymeQuality: 0.5 },
+  "default": { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 }
+}
 
 const GENRES = ["Pop", "Sertanejo Moderno", "Sertanejo Universitário", "MPB", "Rock", "Funk", "Pagode", "Forró"]
 
@@ -86,7 +105,18 @@ export default function CriarPage() {
   const [isGeneratingChorus, setIsGeneratingChorus] = useState(false)
   const [showHookDialog, setShowHookDialog] = useState(false)
   const [selectedHook, setSelectedHook] = useState<string | null>(null)
-  const [formattingStyle, setFormattingStyle] = useState("performatico") // ← PADRÃO PERFORMÁTICO
+  const [formattingStyle, setFormattingStyle] = useState("performatico")
+  const [universalPolish, setUniversalPolish] = useState(true) // ✅ NOVO: POLIMENTO UNIVERSAL
+
+  // ✅ OBTER CONFIGURAÇÃO DE SÍLABAS POR GÊNERO
+  const getSyllableConfig = (selectedGenre: string) => {
+    const config = GENRE_QUALITY_CONFIG[selectedGenre as keyof typeof GENRE_QUALITY_CONFIG] || GENRE_QUALITY_CONFIG.default
+    return {
+      min: config.min,
+      max: config.max,
+      ideal: config.ideal
+    }
+  }
 
   const toggleEmotion = (emotion: string) => {
     setSelectedEmotions((prev) => (prev.includes(emotion) ? prev.filter((e) => e !== emotion) : [...prev, emotion]))
@@ -102,6 +132,7 @@ export default function CriarPage() {
 
     try {
       const genreConfig = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS]
+      const syllableConfig = getSyllableConfig(genre)
 
       const response = await fetch("/api/generate-lyrics", {
         method: "POST",
@@ -115,10 +146,11 @@ export default function CriarPage() {
           metaforas: metaphorSearch,
           emocoes: selectedEmotions,
           titulo: title,
-          formattingStyle: formattingStyle, // ← SEMPRE PERFORMÁTICO
+          formattingStyle: formattingStyle,
           additionalRequirements: additionalReqs,
           advancedMode: advancedMode,
-          syllableTarget: { min: 7, max: 11, ideal: 9 },
+          universalPolish: universalPolish, // ✅ NOVO: POLIMENTO UNIVERSAL
+          syllableTarget: syllableConfig, // ✅ CONFIGURAÇÃO ESPECÍFICA POR GÊNERO
           metrics:
             BRAZILIAN_GENRE_METRICS[genre as keyof typeof BRAZILIAN_GENRE_METRICS] || BRAZILIAN_GENRE_METRICS.default,
         }),
@@ -134,7 +166,16 @@ export default function CriarPage() {
       if (data.titulo && !title) {
         setTitle(data.titulo)
       }
-      toast.success("Letra gerada com sucesso!")
+      
+      // ✅ FEEDBACK DO SISTEMA UNIVERSAL
+      if (data.metadata?.polishingApplied) {
+        toast.success("Letra gerada com Sistema Universal de Qualidade!", {
+          description: `Polimento específico para ${genre} aplicado com sucesso`
+        })
+      } else {
+        toast.success("Letra gerada com sucesso!")
+      }
+      
     } catch (error) {
       console.error("[v0] Error generating lyrics:", error)
       toast.error(error instanceof Error ? error.message : "Erro ao gerar letra")
@@ -283,6 +324,9 @@ export default function CriarPage() {
     )
   }
 
+  // ✅ EXIBIR CONFIGURAÇÃO ATUAL DO GÊNERO
+  const currentSyllableConfig = genre ? getSyllableConfig(genre) : null
+
   return (
     <div className="bg-background">
       <Navigation />
@@ -304,6 +348,19 @@ export default function CriarPage() {
               <div className="space-y-2">
                 <Label className="text-xs">Gênero</Label>
                 <GenreSelect value={genre} onValueChange={setGenre} className="h-9" />
+                
+                {/* ✅ EXIBIR CONFIGURAÇÃO DO GÊNERO SELECIONADO */}
+                {currentSyllableConfig && (
+                  <div className="bg-blue-50 border border-blue-200 rounded p-2 text-xs">
+                    <div className="font-semibold text-blue-800">Configuração {genre}:</div>
+                    <div className="text-blue-700">
+                      Sílabas: {currentSyllableConfig.min}-{currentSyllableConfig.max} (ideal: {currentSyllableConfig.ideal})
+                    </div>
+                    <div className="text-blue-700">
+                      Rimas: {(GENRE_QUALITY_CONFIG[genre as keyof typeof GENRE_QUALITY_CONFIG]?.rhymeQuality * 100 || 40)}% mínimas
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -389,7 +446,24 @@ export default function CriarPage() {
                     Modo Avançado
                   </Label>
                   <p className="text-xs text-muted-foreground">
-                    Rimas perfeitas, métrica rigorosa de 7-11 sílabas, ganchos premium em PT-BR, linguagem limpa e fidelidade de estilo.
+                    Rimas perfeitas, métrica rigorosa, ganchos premium em PT-BR, linguagem limpa e fidelidade de estilo.
+                  </p>
+                </div>
+              </div>
+
+              {/* ✅ NOVO: POLIMENTO UNIVERSAL */}
+              <div className="flex items-start space-x-2">
+                <Checkbox
+                  id="universalPolish"
+                  checked={universalPolish}
+                  onCheckedChange={(checked) => setUniversalPolish(checked as boolean)}
+                />
+                <div>
+                  <Label htmlFor="universalPolish" className="text-xs cursor-pointer font-semibold text-green-600">
+                    🎵 Sistema Universal de Polimento
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Aplica polimento específico por gênero, correção automática de rimas e instrumentos em inglês.
                   </p>
                 </div>
               </div>
@@ -398,11 +472,17 @@ export default function CriarPage() {
                 <div>
                   <div className="flex justify-between mb-1">
                     <Label className="text-xs">Nível de Criatividade</Label>
-                    <span className="text-xs text-muted-foreground">Equilibrado</span>
+                    <span className="text-xs text-muted-foreground">
+                      {creativity[0] < 33 ? "Conservador" : creativity[0] < 66 ? "Equilibrado" : "Ousado"}
+                    </span>
                   </div>
                   <Slider value={creativity} onValueChange={setCreativity} max={100} step={1} />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Equilíbrio entre tradição e originalidade com alta qualidade
+                    {creativity[0] < 33 
+                      ? "Tradicional e previsível" 
+                      : creativity[0] < 66 
+                      ? "Equilíbrio entre tradição e originalidade" 
+                      : "Originalidade e inovação máxima"}
                   </p>
                 </div>
 
@@ -539,7 +619,7 @@ export default function CriarPage() {
               <div className="border rounded-lg p-3 bg-purple-50/50 space-y-2">
                 <Label className="text-xs font-semibold">Sensações & Emoções</Label>
                 <p className="text-xs text-muted-foreground">
-                  O "como" a história será contada. O sentimento que dará o tom da letra.
+                  O "como" a história será contada. O sentimento que dará o ton da letra.
                 </p>
                 <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
                   {EMOTIONS.map((emotion) => (
@@ -604,10 +684,18 @@ export default function CriarPage() {
                   ) : (
                     <>
                       <Sparkles className="h-4 w-4 mr-2" />
-                      Gerar Letra
+                      {universalPolish ? "🎵 Gerar com Polimento Universal" : "Gerar Letra"}
                     </>
                   )}
                 </Button>
+                
+                {/* ✅ STATUS DO SISTEMA UNIVERSAL */}
+                {universalPolish && genre && (
+                  <div className="bg-green-50 border border-green-200 rounded p-2 text-xs text-green-700">
+                    <div className="font-semibold">Sistema Universal Ativo</div>
+                    <div>Polimento específico para {genre} habilitado</div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -645,10 +733,11 @@ export default function CriarPage() {
                     className="font-mono text-xs"
                   />
                   
-                  {/* VALIDADOR DE SÍLABAS - CORRIGIDO */}
+                  {/* VALIDADOR DE SÍLABAS - ATUALIZADO PARA SISTEMA UNIVERSAL */}
                   <SyllableValidator
                     lyrics={lyrics}
-                    maxSyllables={11}
+                    maxSyllables={currentSyllableConfig?.max || 11}
+                    minSyllables={currentSyllableConfig?.min || 7}
                     onValidate={(result) => {
                       if (!result.valid) {
                         console.log(`⚠️ ${result.linesWithIssues} versos com problemas:`)
@@ -656,12 +745,12 @@ export default function CriarPage() {
                           console.log(`  Linha ${v.line}: "${v.text}" → ${v.syllables} sílabas`)
                         })
                         
-                        toast.warning(`${result.linesWithIssues} versos com mais de 11 sílabas`, {
-                          description: "Use o validador para ver detalhes",
+                        toast.warning(`${result.linesWithIssues} versos fora do padrão ${genre}`, {
+                          description: `Use ${currentSyllableConfig?.min}-${currentSyllableConfig?.max} sílabas`,
                           duration: 5000
                         })
                       } else if (result.totalLines > 0) {
-                        toast.success(`✓ Letra validada: ${result.totalLines} versos dentro do limite`)
+                        toast.success(`✓ Letra validada: ${result.totalLines} versos dentro do padrão ${genre}`)
                       }
                     }}
                   />
