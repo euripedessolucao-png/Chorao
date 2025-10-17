@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { generateText } from "ai"
 import { getGenreConfig, detectSubGenre, getGenreRhythm } from "@/lib/genre-config"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
-import { countPoeticSyllables } from "@/lib/validation/syllableUtils"
+import { countPoeticSyllables } from "@/lib/validation/syllable-counter" // ← CORRIGIDO
 
 export async function POST(request: Request) {
   try {
@@ -149,14 +149,16 @@ IMPORTANTE:
       allValid = true
       const violations: string[] = []
 
-      const mainHookSyllables = countSyllables(parsedResult.hook)
+      // ✅ CORREÇÃO: countSyllables → countPoeticSyllables
+      const mainHookSyllables = countPoeticSyllables(parsedResult.hook)
       if (mainHookSyllables > 12) {
         allValid = false
         violations.push(`Hook principal: "${parsedResult.hook}" = ${mainHookSyllables} sílabas (máx: 12)`)
       }
 
       parsedResult.hookVariations.forEach((variation: string, index: number) => {
-        const syllables = countSyllables(variation)
+        // ✅ CORREÇÃO: countSyllables → countPoeticSyllables
+        const syllables = countPoeticSyllables(variation)
         if (syllables > 12) {
           allValid = false
           violations.push(`Variação ${index + 1}: "${variation}" = ${syllables} sílabas (máx: 12)`)
