@@ -85,7 +85,7 @@ export default function ReescreverPage() {
   const [isGeneratingChorus, setIsGeneratingChorus] = useState(false)
   const [showHookDialog, setShowHookDialog] = useState(false)
   const [selectedHook, setSelectedHook] = useState<string | null>(null)
-  const [formattingStyle, setFormattingStyle] = useState("padrao")
+  const [formattingStyle, setFormattingStyle] = useState("performatico") // ← PADRÃO PERFORMÁTICO
 
   const toggleEmotion = (emotion: string) => {
     setSelectedEmotions((prev) => (prev.includes(emotion) ? prev.filter((e) => e !== emotion) : [...prev, emotion]))
@@ -209,10 +209,10 @@ export default function ReescreverPage() {
           generoConversao: genre,
           conservarImagens: true,
           polirSemMexer: false,
-          formattingStyle: formattingStyle,
+          formattingStyle: formattingStyle, // ← SEMPRE PERFORMÁTICO
           additionalRequirements: additionalReqs,
           advancedMode: advancedMode,
-          syllableTarget: { min: 7, max: 11, ideal: 9 }, // ← NOVO: ALVO DE SÍLABAS
+          syllableTarget: { min: 7, max: 11, ideal: 9 },
           metrics:
             BRAZILIAN_GENRE_METRICS[genre as keyof typeof BRAZILIAN_GENRE_METRICS] || BRAZILIAN_GENRE_METRICS.default,
         }),
@@ -474,7 +474,7 @@ export default function ReescreverPage() {
                   </select>
                   <p className="text-xs text-muted-foreground mt-1">
                     {formattingStyle === "performatico"
-                      ? "Inclui descrições detalhadas de palco e lista de instrumentos"
+                      ? "✅ FORMATO PROFISSIONAL: Instruções em inglês, letras empilhadas, backing vocals, estrutura A-B-C"
                       : "Formato simples com marcadores básicos"}
                   </p>
                 </div>
@@ -573,7 +573,7 @@ export default function ReescreverPage() {
               <div className="border rounded-lg p-3 bg-purple-50/50 space-y-2">
                 <Label className="text-xs font-semibold">Sensações & Emoções</Label>
                 <p className="text-xs text-muted-foreground">
-                  O "como" a história será contada. O sentimento que dará o tom da letra.
+                  O "como" a história será contada. O sentimento que dará o ton da letra.
                 </p>
                 <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
                   {EMOTIONS.map((emotion) => (
@@ -609,7 +609,7 @@ export default function ReescreverPage() {
                   onClick={() => setShowHookDialog(true)}
                   disabled={isRewriting || isGeneratingChorus}
                 >
-                  <Zap className="h-4 w-4 mr-2" /> {/* ← ÍCONE CORRIGIDO */}
+                  <Zap className="h-4 w-4 mr-2" />
                   Gerador de Hook
                 </Button>
 
@@ -620,7 +620,7 @@ export default function ReescreverPage() {
                   onClick={handleGenerateChorus}
                   disabled={!genre || !theme || isRewriting || isGeneratingChorus}
                 >
-                  <Wand2 className="h-4 w-4 mr-2" /> {/* ← ÍCONE CORRIGIDO */}
+                  <Wand2 className="h-4 w-4 mr-2" />
                   Gerar Refrão
                 </Button>
 
@@ -682,7 +682,7 @@ export default function ReescreverPage() {
                   {/* VALIDADOR DE SÍLABAS - CORRIGIDO */}
                   <SyllableValidator
                     lyrics={lyrics}
-                    maxSyllables={11} {/* ← MÁXIMO 11 SÍLABAS */}
+                    maxSyllables={11}
                     onValidate={(result) => {
                       if (!result.valid) {
                         console.log(`⚠️ ${result.linesWithIssues} versos com problemas:`)
@@ -690,7 +690,6 @@ export default function ReescreverPage() {
                           console.log(`  Linha ${v.line}: "${v.text}" → ${v.syllables} sílabas`)
                         })
                         
-                        // Mostrar toast com detalhes
                         toast.warning(`${result.linesWithIssues} versos com mais de 11 sílabas`, {
                           description: "Use o validador para ver detalhes",
                           duration: 5000
