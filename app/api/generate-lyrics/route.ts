@@ -3,6 +3,12 @@ import { generateText } from "ai"
 import { getGenreConfig, detectSubGenre, getGenreRhythm } from "@/lib/genre-config"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 import { validateLyricsSyllables } from "@/lib/validation/syllableUtils"
+import { NextResponse } from "next/server"
+import { countPoeticSyllables } from "@/lib/validation/syllable-counter" // ← CORRIGIDO
+
+export async function POST(request: Request) {
+  // ... resto do código que usa countPoeticSyllables
+}
 
 export async function POST(request: NextRequest) {
   try {
