@@ -1,6 +1,6 @@
 /**
  * META-COMPOSITOR INTELIGENTE - SISTEMA AUTÔNOMO DE COMPOSIÇÃO HARMONIZADO
- * Versão final com polimento inteligente - COMPLETA E CORRIGIDA
+ * Versão final com Sistema Universal de Polimento por Gênero - COMPLETA E ATUALIZADA
  */
 
 import { generateText } from "ai"
@@ -68,10 +68,10 @@ export class MetaComposer {
   private static readonly APPLY_FINAL_POLISH = true
 
   /**
-   * COMPOSIÇÃO INTELIGENTE - SISTEMA HARMONIZADO COM POLIMENTO FINAL
+   * COMPOSIÇÃO INTELIGENTE - SISTEMA UNIVERSAL DE QUALIDADE
    */
   static async compose(request: CompositionRequest): Promise<CompositionResult> {
-    console.log("[MetaComposer] Iniciando composição inteligente harmonizada...")
+    console.log("[MetaComposer] Iniciando composição com Sistema Universal de Qualidade...")
 
     let iterations = 0
     let refinements = 0
@@ -85,7 +85,7 @@ export class MetaComposer {
     const applyTerceiraVia = request.applyTerceiraVia ?? this.APPLY_TERCEIRA_VIA
     const applyFinalPolish = request.applyFinalPolish ?? this.APPLY_FINAL_POLISH
 
-    console.log(`[MetaComposer] Configuração: ${preserveRhymes ? 'RIMAS PRESERVADAS' : 'Rimas não preservadas'} | ${applyTerceiraVia ? 'TERCEIRA VIA ATIVA' : 'Terceira Via inativa'} | ${applyFinalPolish ? 'POLIMENTO FINAL ATIVO' : 'Polimento final inativo'}`)
+    console.log(`[MetaComposer] Configuração: ${preserveRhymes ? 'RIMAS PRESERVADAS' : 'Rimas não preservadas'} | ${applyTerceiraVia ? 'TERCEIRA VIA ATIVA' : 'Terceira Via inativa'} | ${applyFinalPolish ? 'POLIMENTO UNIVERSAL ATIVO' : 'Polimento universal inativo'}`)
 
     // ✅ VERIFICA SE TEM REFRÕES PARA PRESERVAR (forma type-safe)
     const preservedChoruses = request.preservedChoruses || []
@@ -136,31 +136,38 @@ export class MetaComposer {
 
       console.log(`[MetaComposer] Correções aplicadas: ${enforcedResult.corrections} linhas`)
 
-      // ✅ POLIMENTO FINAL INTELIGENTE (se habilitado)
+      // ✅ POLIMENTO UNIVERSAL POR GÊNERO (se habilitado)
       let finalLyrics = enforcedResult.correctedLyrics
       if (applyFinalPolish && iterations === this.MAX_ITERATIONS) {
-        console.log('[MetaComposer] Aplicando polimento final...')
+        console.log('[MetaComposer] Aplicando polimento universal...')
         
-        // Polimento específico para Sertanejo
-        if (request.genre.toLowerCase().includes('sertanejo')) {
-          finalLyrics = await this.applySertanejoPolish(enforcedResult.correctedLyrics, syllableEnforcement)
-          console.log('[MetaComposer] ✅ Polimento Sertanejo aplicado!')
-        } else {
-          finalLyrics = await this.applyFinalPolish(enforcedResult.correctedLyrics, request.genre, syllableEnforcement)
-          console.log('[MetaComposer] ✅ Polimento final aplicado!')
-        }
+        // Aplica polimento específico por gênero
+        finalLyrics = await this.applyGenreSpecificPolish(
+          enforcedResult.correctedLyrics, 
+          request.genre, 
+          syllableEnforcement
+        )
         
         polishingApplied = true
         
-        // ✅ VALIDAÇÃO FINAL RIGOROSA
-        const finalValidation = this.validateSertanejoQuality(finalLyrics)
-        console.log(`[MetaComposer] 📊 VALIDAÇÃO FINAL:`)
-        console.log(`[MetaComposer] Sílabas: ${(finalValidation.syllableScore * 100).toFixed(1)}% corretas`)
-        console.log(`[MetaComposer] Rimas: ${(finalValidation.rhymeScore * 100).toFixed(1)}% ricas`)
+        // ✅ VALIDAÇÃO FINAL UNIVERSAL
+        const genreConfig = this.getGenreQualityConfig(request.genre)
+        const finalValidation = this.validateRhymeQuality(finalLyrics, genreConfig)
+        const syllableValidation = SyllableEnforcer.validateLyrics(finalLyrics, syllableEnforcement)
         
-        if (finalValidation.problems.length > 0) {
-          console.log('[MetaComposer] ⚠️ PROBLEMAS ENCONTRADOS:')
-          finalValidation.problems.forEach(problem => console.log(`  - ${problem}`))
+        console.log(`[MetaComposer] 📊 RELATÓRIO FINAL - ${request.genre}:`)
+        console.log(`[MetaComposer] Sílabas: ${(syllableValidation.compliance * 100).toFixed(1)}% corretas`)
+        console.log(`[MetaComposer] Rimas: ${(finalValidation.score * 100).toFixed(1)}% ricas (mínimo: ${(genreConfig.minRhymeQuality * 100)}%)`)
+        
+        if (finalValidation.score < genreConfig.minRhymeQuality) {
+          console.log(`[MetaComposer] ⚠️ ATENÇÃO: Rimas abaixo do padrão ${request.genre}`)
+        }
+        
+        if (syllableValidation.problems.length > 0) {
+          console.log('[MetaComposer] ⚠️ PROBLEMAS DE SÍLABA:')
+          syllableValidation.problems.slice(0, 3).forEach(problem => 
+            console.log(`  - "${problem.line}" (${problem.syllables}s)`)
+          )
         }
       }
 
@@ -241,7 +248,7 @@ export class MetaComposer {
     }
 
     if (bestResult.metadata.polishingApplied) {
-      console.log(`[MetaComposer] ✨ Polimento final aplicado`)
+      console.log(`[MetaComposer] ✨ Polimento universal aplicado`)
     }
 
     if (finalValidation.problems.length > 0) {
@@ -256,9 +263,352 @@ export class MetaComposer {
   }
 
   /**
-   * REESCRITA INTELIGENTE QUE PRESERVA REFRÕES SELECIONADOS
+   * SISTEMA UNIVERSAL DE POLIMENTO POR GÊNERO
    */
-  static async rewriteWithPreservedChoruses(
+  private static async applyGenreSpecificPolish(
+    lyrics: string, 
+    genre: string,
+    syllableTarget: { min: number; max: number; ideal: number }
+  ): Promise<string> {
+    console.log(`[GenrePolish] Aplicando polimento específico para: ${genre}`)
+    
+    const genreConfig = this.getGenreQualityConfig(genre)
+    const lines = lyrics.split('\n')
+    const polishedLines: string[] = []
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+      
+      // Mantém marcações e backing vocals
+      if (line.startsWith('[') || line.startsWith('(') || line.includes('Backing:') || 
+          line.includes('Instrumentos:') || line.includes('BPM:') || !line.trim()) {
+        polishedLines.push(line)
+        continue
+      }
+      
+      const currentSyllables = countPoeticSyllables(line)
+      const needsCorrection = currentSyllables < syllableTarget.min || currentSyllables > syllableTarget.max
+      
+      if (needsCorrection) {
+        console.log(`[GenrePolish] Corrigindo linha ${i+1}: "${line}" (${currentSyllables}s)`)
+        
+        try {
+          const polishedLine = await this.polishLineForGenre(line, genre, syllableTarget, genreConfig)
+          polishedLines.push(polishedLine)
+        } catch (error) {
+          console.error(`[GenrePolish] Erro, mantendo original:`, error)
+          polishedLines.push(line)
+        }
+      } else {
+        polishedLines.push(line)
+      }
+    }
+    
+    let finalLyrics = polishedLines.join('\n')
+    
+    // ✅ APLICA CORREÇÃO DE RIMAS SE NECESSÁRIO
+    const rhymeValidation = this.validateRhymeQuality(finalLyrics, genreConfig)
+    if (rhymeValidation.score < genreConfig.minRhymeQuality) {
+      console.log(`[GenrePolish] Rimas insuficientes (${rhymeValidation.score}%), aplicando correção...`)
+      finalLyrics = await this.enhanceRhymes(finalLyrics, genre, genreConfig)
+    }
+    
+    // ✅ CORRIGE INSTRUMENTOS PARA INGLÊS
+    finalLyrics = this.fixInstrumentsLanguage(finalLyrics)
+    
+    return finalLyrics
+  }
+
+  /**
+   * CONFIGURAÇÃO DE QUALIDADE POR GÊNERO
+   */
+  private static getGenreQualityConfig(genre: string): {
+    minRhymeQuality: number
+    targetSyllables: { min: number; max: number; ideal: number }
+    rhymePatterns: string[]
+    languageStyle: string
+  } {
+    const genreLower = genre.toLowerCase()
+    
+    if (genreLower.includes('sertanejo')) {
+      return {
+        minRhymeQuality: 0.5, // 50% rimas ricas
+        targetSyllables: { min: 9, max: 11, ideal: 10 },
+        rhymePatterns: ['AABB', 'ABAB', 'ABBA'],
+        languageStyle: 'coloquial rural'
+      }
+    }
+    
+    if (genreLower.includes('mpb') || genreLower.includes('bossa')) {
+      return {
+        minRhymeQuality: 0.6, // 60% rimas ricas
+        targetSyllables: { min: 7, max: 12, ideal: 9 },
+        rhymePatterns: ['ABAB', 'ABBA', 'ABCD', 'AABA'],
+        languageStyle: 'poético sofisticado'
+      }
+    }
+    
+    if (genreLower.includes('funk') || genreLower.includes('trap')) {
+      return {
+        minRhymeQuality: 0.3, // 30% rimas ricas
+        targetSyllables: { min: 6, max: 10, ideal: 8 },
+        rhymePatterns: ['AABB', 'AAAA', 'ABAB'],
+        languageStyle: 'urbano coloquial'
+      }
+    }
+    
+    if (genreLower.includes('forró') || genreLower.includes('piseiro')) {
+      return {
+        minRhymeQuality: 0.4, // 40% rimas ricas
+        targetSyllables: { min: 8, max: 11, ideal: 9 },
+        rhymePatterns: ['AABB', 'ABAB'],
+        languageStyle: 'nordestino festivo'
+      }
+    }
+    
+    // Configuração padrão para outros gêneros
+    return {
+      minRhymeQuality: 0.4, // 40% rimas ricas
+      targetSyllables: { min: 7, max: 11, ideal: 9 },
+      rhymePatterns: ['AABB', 'ABAB'],
+      languageStyle: 'coloquial brasileiro'
+    }
+  }
+
+  /**
+   * POLIMENTO DE LINHA ESPECÍFICO POR GÊNERO
+   */
+  private static async polishLineForGenre(
+    line: string, 
+    genre: string,
+    syllableTarget: { min: number; max: number; ideal: number },
+    genreConfig: any
+  ): Promise<string> {
+    
+    const currentSyllables = countPoeticSyllables(line)
+    
+    const prompt = `POLIMENTO PROFISSIONAL - GÊNERO: ${genre.toUpperCase()}
+
+LINHA ORIGINAL: "${line}"
+SÍLABAS ATUAIS: ${currentSyllables} (ALVO: ${syllableTarget.min}-${syllableTarget.max})
+ESTILO LINGUAGEM: ${genreConfig.languageStyle}
+PADRÃO RIMAS: ${genreConfig.rhymePatterns.join(', ')}
+
+REESCREVA ESTA LINHA PARA:
+1. 📏 RESPEITAR ${syllableTarget.min}-${syllableTarget.max} sílabas poéticas
+2. 🎵 MANTER contexto e significado original
+3. 🎶 USAR linguagem autêntica do ${genre}
+4. 💬 APLICAR estilo: ${genreConfig.languageStyle}
+5. ✨ MELHORAR qualidade poética
+
+TÉCNICAS OBRIGATÓRIAS:
+• ${genre === 'MPB' ? 'Vocabulário poético sofisticado' : 'Contrações naturais'}
+• ${genre.includes('Sertanejo') ? 'Elisão rural: "meuamor", "tava"' : 'Fluência natural'}
+• Rimas preferenciais: ${genreConfig.rhymePatterns.join(', ')}
+
+EXEMPLOS PARA ${genre.toUpperCase()}:
+${this.getGenreExamples(genre)}
+
+LINHA PARA POLIR: "${line}"
+
+→ RETORNE APENAS A LINHA POLIDA:`
+
+    const { text } = await generateText({
+      model: "openai/gpt-4o",
+      prompt,
+      temperature: 0.3
+    })
+
+    const polishedLine = text.trim().replace(/^["']|["']$/g, "")
+    const polishedSyllables = countPoeticSyllables(polishedLine)
+    
+    const isImproved = polishedSyllables >= syllableTarget.min && 
+                       polishedSyllables <= syllableTarget.max &&
+                       polishedLine.length > line.length - 5
+    
+    return isImproved ? polishedLine : line
+  }
+
+  /**
+   * MELHORA RIMAS AUTOMATICAMENTE
+   */
+  private static async enhanceRhymes(
+    lyrics: string,
+    genre: string,
+    genreConfig: any
+  ): Promise<string> {
+    
+    const prompt = `MELHORIA DE RIMAS - GÊNERO: ${genre.toUpperCase()}
+
+LETRA ORIGINAL:
+${lyrics}
+
+REQUISITOS:
+- Gênero: ${genre}
+- Mínimo ${(genreConfig.minRhymeQuality * 100)}% rimas ricas
+- Padrões preferidos: ${genreConfig.rhymePatterns.join(', ')}
+- Estilo: ${genreConfig.languageStyle}
+
+TAREFA:
+1. 🔧 REESCREVER versos para melhorar rimas
+2. 🎯 GARANTIR mínimo ${(genreConfig.minRhymeQuality * 100)}% rimas ricas
+3. 🎵 MANTER estrutura e significado original
+4. 💬 USAR linguagem do ${genre}
+
+TÉCNICAS:
+• Rimas ricas (últimas 2-3 sílabas iguais)
+• Variedade de padrões: ${genreConfig.rhymePatterns.join(', ')}
+• Naturalidade na linguagem
+
+RETORNE A LETRA COMPLETA MELHORADA:`
+
+    const { text } = await generateText({
+      model: "openai/gpt-4o",
+      prompt,
+      temperature: 0.4
+    })
+
+    return text.trim()
+  }
+
+  /**
+   * CORRIGE INSTRUMENTOS PARA INGLÊS
+   */
+  private static fixInstrumentsLanguage(lyrics: string): string {
+    // Mapeamento de instrumentos em português para inglês
+    const instrumentMap: { [key: string]: string } = {
+      'violão': 'acoustic guitar',
+      'sanfona': 'accordion',
+      'bateria': 'drums',
+      'baixo': 'bass',
+      'guitarra': 'electric guitar',
+      'teclado': 'keyboard',
+      'piano': 'piano',
+      'saxofone': 'saxophone',
+      'trompete': 'trumpet',
+      'violino': 'violin',
+      'viola': 'viola',
+      'violoncelo': 'cello',
+      'flauta': 'flute',
+      'harmônica': 'harmonica',
+      'cavaquinho': 'cavaquinho',
+      'pandeiro': 'tambourine',
+      'surdo': 'bass drum',
+      'tamborim': 'tamborim',
+      'agogô': 'agogo',
+      'berimbau': 'berimbau',
+      'viola caipira': 'acoustic viola',
+      'guitarra elétrica': 'electric guitar',
+      'baixo elétrico': 'electric bass',
+      'bateria acústica': 'acoustic drums',
+      'teclado eletrônico': 'electronic keyboard',
+      'sintetizador': 'synthesizer',
+      'órgão': 'organ',
+      'harpa': 'harp'
+    }
+
+    // Encontra e substitui a linha de instrumentos
+    const lines = lyrics.split('\n')
+    const updatedLines = lines.map(line => {
+      if (line.includes('Instrumentos:') || line.includes('Instruments:')) {
+        let instrumentLine = line
+        
+        // Substitui cada instrumento em português por inglês
+        Object.entries(instrumentMap).forEach(([pt, en]) => {
+          const regex = new RegExp(pt, 'gi')
+          instrumentLine = instrumentLine.replace(regex, en)
+        })
+        
+        // Garante que está em inglês no formato correto
+        if (instrumentLine.includes('Instrumentos:')) {
+          instrumentLine = instrumentLine.replace('Instrumentos:', 'Instruments:')
+        }
+        
+        return instrumentLine
+      }
+      return line
+    })
+
+    return updatedLines.join('\n')
+  }
+
+  /**
+   * VALIDAÇÃO DE QUALIDADE DE RIMAS
+   */
+  private static validateRhymeQuality(lyrics: string, genreConfig: any): {
+    score: number
+    totalPairs: number
+    richRhymes: number
+    patterns: string[]
+  } {
+    const lines = lyrics.split('\n').filter(line => 
+      line.trim() && !line.startsWith('[') && !line.startsWith('(') && 
+      !line.includes('Backing:') && !line.includes('Instruments:')
+    )
+    
+    let richRhymes = 0
+    let totalPairs = 0
+    const patterns: string[] = []
+    
+    // Analisa rimas em pares
+    for (let i = 0; i < lines.length - 1; i += 2) {
+      if (i + 1 < lines.length) {
+        totalPairs++
+        if (this.hasRichRhyme(lines[i], lines[i + 1])) {
+          richRhymes++
+          patterns.push('AB')
+        } else {
+          patterns.push('--')
+        }
+      }
+    }
+    
+    return {
+      score: totalPairs > 0 ? richRhymes / totalPairs : 0,
+      totalPairs,
+      richRhymes,
+      patterns
+    }
+  }
+
+  /**
+   * VERIFICA RIMA RICA ENTRE DUAS LINHAS
+   */
+  private static hasRichRhyme(line1: string, line2: string): boolean {
+    const getLastWord = (line: string) => {
+      const words = line.trim().split(/\s+/)
+      return words[words.length - 1]?.toLowerCase().replace(/[.,!?;:]$/g, '') || ''
+    }
+    
+    const word1 = getLastWord(line1)
+    const word2 = getLastWord(line2)
+    
+    if (!word1 || !word2 || word1.length < 2 || word2.length < 2) return false
+    
+    // Rimas ricas: últimas 2-3 sílabas iguais
+    const end1 = word1.slice(-3)
+    const end2 = word2.slice(-3)
+    
+    return end1 === end2 || word1.slice(-2) === word2.slice(-2)
+  }
+
+  /**
+   * EXEMPLOS POR GÊNERO
+   */
+  private static getGenreExamples(genre: string): string {
+    const examples: { [key: string]: string } = {
+      'Sertanejo': `"Ela balança" → "Ela vem balançando pro meu lado"\n"Meu peito dói" → "Coração doi quando cê vai embora"`,
+      'MPB': `"O mar" → "O mar sereno beija a areia fina"\n"Amor" → "Amor que floresce no tempo certo"`,
+      'Funk': `"Ela dança" → "Ela rebola, a quebrada toda grita"\n"Na pista" → "No baile, o coração acelera"`,
+      'Forró': `"Xote bom" → "No xote a gente abraça e vai rodando"\n"Saudade" → "Saudade bate quando o forró para"`
+    }
+    
+    return examples[genre] || `"Linha exemplo" → "Linha melhorada com sílabas corretas"`
+  }
+
+  // 🔧 MÉTODOS AUXILIARES EXISTENTES (mantidos da versão anterior)
+
+  private static async rewriteWithPreservedChoruses(
     originalLyrics: string,
     selectedChoruses: string[],
     request: CompositionRequest,
@@ -267,10 +617,7 @@ export class MetaComposer {
     
     console.log('[MetaComposer] Reescrevendo com refrões preservados:', selectedChoruses.length);
     
-    // ✅ PASSO 1: Extrair estrutura básica da letra original
     const originalStructure = this.extractSongStructure(originalLyrics);
-    
-    // ✅ PASSO 2: Compor versos que preparem para os refrões selecionados
     const composedVerses = await this.composeVersesForChoruses(
       originalLyrics,
       selectedChoruses,
@@ -278,7 +625,6 @@ export class MetaComposer {
       syllableEnforcement
     );
     
-    // ✅ PASSO 3: Montar estrutura final preservando refrões
     const finalLyrics = this.buildFinalStructure(
       composedVerses,
       selectedChoruses,
@@ -288,9 +634,6 @@ export class MetaComposer {
     return finalLyrics;
   }
 
-  /**
-   * COMPÕE VERSOS COERENTES COM OS REFRÕES SELECIONADOS
-   */
   private static async composeVersesForChoruses(
     originalLyrics: string,
     choruses: string[],
@@ -347,374 +690,77 @@ RETORNE APENAS OS VERSOS NO FORMATO:
     return this.parseComposedVerses(text);
   }
 
-  /**
-   * POLIMENTO ESPECÍFICO PARA SERTANEJO - CORRIGE SÍLABAS E RIMAS
-   */
-  private static async applySertanejoPolish(
-    lyrics: string, 
-    syllableTarget: { min: number; max: number; ideal: number }
-  ): Promise<string> {
-    console.log('[SertanejoPolish] Aplicando polimento específico para Sertanejo...')
+  private static extractSongStructure(lyrics: string): any {
+    const sections = lyrics.split('\n\n').filter(section => section.trim());
+    const structure = {
+      hasIntro: /\[INTRO\]/i.test(lyrics),
+      hasVerse: /\[VERS[OE]]/i.test(lyrics),
+      hasChorus: /\[(?:CHORUS|REFRÃO)\]/i.test(lyrics),
+      hasBridge: /\[BRIDGE\]/i.test(lyrics),
+      hasOutro: /\[OUTRO\]/i.test(lyrics),
+      totalSections: sections.length
+    };
     
-    const lines = lyrics.split('\n')
-    const polishedLines: string[] = []
+    return structure;
+  }
+
+  private static buildFinalStructure(
+    verses: { verse1: string; verse2: string; bridge?: string },
+    choruses: string[],
+    structure: any
+  ): string {
+    const sections: string[] = [];
     
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i]
-      
-      // Mantém marcações e backing vocals
-      if (line.startsWith('[') || line.startsWith('(') || line.includes('Backing:') || 
-          line.includes('Instrumentos:') || line.includes('BPM:') || !line.trim()) {
-        polishedLines.push(line)
-        continue
-      }
-      
-      const currentSyllables = countPoeticSyllables(line)
-      const needsCorrection = currentSyllables < syllableTarget.min || currentSyllables > syllableTarget.max
-      
-      if (needsCorrection) {
-        console.log(`[SertanejoPolish] Corrigindo linha ${i+1}: "${line}" (${currentSyllables}s)`)
-        
-        try {
-          const polishedLine = await this.polishSertanejoLine(line, syllableTarget)
-          polishedLines.push(polishedLine)
-        } catch (error) {
-          console.error(`[SertanejoPolish] Erro, mantendo original:`, error)
-          polishedLines.push(line)
-        }
-      } else {
-        polishedLines.push(line)
-      }
+    if (structure.hasIntro) {
+      sections.push('[INTRO]');
     }
     
-    return polishedLines.join('\n')
+    sections.push(verses.verse1);
+    sections.push(`[CHORUS]\n${choruses[0]}`);
+    
+    sections.push(verses.verse2);
+    sections.push(`[CHORUS]\n${choruses[0]}`);
+    
+    if (verses.bridge) {
+      sections.push(verses.bridge);
+    }
+    
+    sections.push(`[CHORUS]\n${choruses[0]}`);
+    
+    if (structure.hasOutro) {
+      sections.push('[OUTRO]');
+    }
+    
+    return sections.join('\n\n');
   }
 
-  /**
-   * POLIMENTO ESPECÍFICO PARA LINHAS SERTANEJO
-   */
-  private static async polishSertanejoLine(
-    line: string, 
-    syllableTarget: { min: number; max: number; ideal: number }
-  ): Promise<string> {
+  private static parseComposedVerses(text: string): { verse1: string; verse2: string; bridge?: string } {
+    const lines = text.split('\n');
+    let currentSection = '';
+    const sections: { [key: string]: string[] } = {};
     
-    const currentSyllables = countPoeticSyllables(line)
-    
-    const prompt = `POLIMENTO DE LINHA SERTANEJO - CORREÇÃO PROFISSIONAL
-
-LINHA ORIGINAL: "${line}"
-SÍLABAS ATUAIS: ${currentSyllables} (ALVO: ${syllableTarget.min}-${syllableTarget.max})
-
-REESCREVA ESTA LINHA PARA:
-1. 📏 RESPEITAR ${syllableTarget.min}-${syllableTarget.max} sílabas poéticas
-2. 🎵 MANTER a rima e contexto da música
-3. 🎶 USAR linguagem autêntica do sertanejo raiz
-4. 💬 APLICAR contrações: "cê", "tô", "pra", "tá", "meuamor"
-5. ✨ MELHORAR fluência mantendo significado
-
-TÉCNICAS OBRIGATÓRIAS:
-• Contrações naturais: "você"→"cê", "estou"→"tô", "para"→"pra"
-• Elisão poética: "de amor"→"d'amor", "que eu"→"qu'eu" 
-• Linguagem coloquial brasileira
-• Rimas ricas em -ar, -er, -ir, -or, -ão
-
-EXEMPLOS DE CORREÇÃO:
-"Ela balança" → "Ela vem balançando pro meu lado" (7→11)
-"Meu peito dói" → "Coração doi quando cê vai embora" (6→11)
-"Te amo tanto" → "Eu te amo tanto, meu amor querido" (7→11)
-
-LINHA PARA POLIR: "${line}"
-
-→ RETORNE APENAS A LINHA POLIDA (sem explicações, sem aspas):`
-
-    const { text } = await generateText({
-      model: "openai/gpt-4o",
-      prompt,
-      temperature: 0.3
-    })
-
-    const polishedLine = text.trim().replace(/^["']|["']$/g, "")
-    const polishedSyllables = countPoeticSyllables(polishedLine)
-    
-    // Verifica se a correção foi efetiva
-    const isImproved = polishedSyllables >= syllableTarget.min && 
-                       polishedSyllables <= syllableTarget.max &&
-                       polishedLine.length > line.length - 5
-    
-    return isImproved ? polishedLine : line
-  }
-
-  /**
-   * VALIDAÇÃO RIGOROSA DE SERTANEJO
-   */
-  private static validateSertanejoQuality(lyrics: string): {
-    syllableScore: number
-    rhymeScore: number 
-    totalLines: number
-    problems: string[]
-  } {
-    const lines = lyrics.split('\n').filter(line => 
-      line.trim() && !line.startsWith('[') && !line.startsWith('(') && 
-      !line.includes('Backing:') && !line.includes('Instrumentos:')
-    )
-    
-    let correctSyllables = 0
-    let richRhymes = 0
-    const problems: string[] = []
-    
-    // Analisa sílabas
-    lines.forEach((line, index) => {
-      const syllables = countPoeticSyllables(line)
-      if (syllables >= 9 && syllables <= 11) {
-        correctSyllables++
-      } else {
-        problems.push(`Linha ${index+1}: "${line}" - ${syllables}s (fora do padrão 9-11)`)
-      }
-    })
-    
-    // Analisa rimas (em pares)
-    for (let i = 0; i < lines.length - 1; i += 2) {
-      if (this.hasRichRhyme(lines[i], lines[i + 1])) {
-        richRhymes++
+    for (const line of lines) {
+      if (line.startsWith('[') && line.endsWith(']')) {
+        currentSection = line;
+        sections[currentSection] = [];
+      } else if (currentSection && line.trim() && !line.startsWith('•')) {
+        sections[currentSection].push(line.trim());
       }
     }
     
     return {
-      syllableScore: lines.length > 0 ? correctSyllables / lines.length : 0,
-      rhymeScore: lines.length >= 2 ? richRhymes / Math.floor(lines.length / 2) : 0,
-      totalLines: lines.length,
-      problems
-    }
+      verse1: sections['[VERSE 1]']?.join('\n') || '',
+      verse2: sections['[VERSE 2]']?.join('\n') || '',
+      bridge: sections['[BRIDGE]']?.join('\n')
+    };
   }
 
-  /**
-   * VERIFICA RIMA RICA ENTRE DUAS LINHAS
-   */
-  private static hasRichRhyme(line1: string, line2: string): boolean {
-    const getLastWord = (line: string) => {
-      const words = line.trim().split(/\s+/)
-      return words[words.length - 1]?.toLowerCase().replace(/[.,!?;:]$/g, '') || ''
-    }
-    
-    const word1 = getLastWord(line1)
-    const word2 = getLastWord(line2)
-    
-    if (!word1 || !word2 || word1.length < 2 || word2.length < 2) return false
-    
-    // Rimas ricas: últimas 2-3 sílabas iguais
-    const end1 = word1.slice(-3)
-    const end2 = word2.slice(-3)
-    
-    return end1 === end2 || word1.slice(-2) === word2.slice(-2)
-  }
-
-  /**
-   * POLIMENTO FINAL INTELIGENTE - CORRIGE LINHAS PROBLEMÁTICAS
-   */
-  private static async applyFinalPolish(lyrics: string, genre: string, syllableTarget: { min: number; max: number; ideal: number }): Promise<string> {
-    const lines = lyrics.split('\n');
-    const polishedLines: string[] = [];
-    
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      
-      // Mantém linhas de estrutura e metadata intactas
-      if (line.startsWith('[') || line.startsWith('(') || line.includes('Instrumentos:') || line.includes('BPM:') || line.includes('Ritmo:') || line.includes('Estilo:')) {
-        polishedLines.push(line);
-        continue;
-      }
-      
-      const syllables = countPoeticSyllables(line);
-      
-      // Se a linha está vazia ou dentro do limite, mantém
-      if (!line.trim() || (syllables >= syllableTarget.min && syllables <= syllableTarget.max)) {
-        polishedLines.push(line);
-        continue;
-      }
-      
-      // Se está fora do limite ou parece quebrada, aplica polimento
-      console.log(`[FinalPolish] Polindo linha ${i+1}: "${line}" (${syllables}s)`);
-      
-      try {
-        const polishedLine = await this.polishProblematicLine(line, genre, syllableTarget);
-        polishedLines.push(polishedLine);
-      } catch (error) {
-        console.error(`[FinalPolish] Erro ao polir linha ${i+1}, mantendo original`);
-        polishedLines.push(line);
-      }
-    }
-    
-    return polishedLines.join('\n');
-  }
-
-  /**
-   * POLIMENTO DE LINHA PROBLEMÁTICA
-   */
-  private static async polishProblematicLine(line: string, genre: string, syllableTarget: { min: number; max: number; ideal: number }): Promise<string> {
-    const currentSyllables = countPoeticSyllables(line);
-    const isTooShort = currentSyllables < syllableTarget.min;
-    const isTooLong = currentSyllables > syllableTarget.max;
-    const seemsBroken = line.includes('?\"') || line.length < 10 || (line.endsWith('?') && !line.includes(':'));
-
-    const prompt = `POLIMENTO FINAL DE LINHA MUSICAL - GÊNERO: ${genre}
-
-LINHA ORIGINAL: "${line}"
-PROBLEMAS DETECTADOS:
-- ${isTooShort ? `MUITO CURTA: ${currentSyllables}s (mínimo ${syllableTarget.min}s)` : ''}
-- ${isTooLong ? `MUITO LONGA: ${currentSyllables}s (máximo ${syllableTarget.max}s)` : ''}
-- ${seemsBroken ? `POSSIVELMENTE QUEBRADA: estrutura incompleta` : 'Estrutura OK'}
-
-REESCREVA ESTA LINHA PARA:
-1. 🔥 COMPLETAR o sentido se estiver quebrada
-2. 📏 RESPEITAR ${syllableTarget.min}-${syllableTarget.max} sílabas (IDEAL: ${syllableTarget.ideal})
-3. 🎵 MANTER a rima e contexto musical
-4. 💬 USAR linguagem natural do ${genre}
-5. ✨ MELHORAR fluência sem alterar significado principal
-
-TÉCNICAS OBRIGATÓRIAS:
-• Contrações: "cê", "tô", "pra", "tá"
-• Elisão: "d'amor", "qu'eu", "meuamor" 
-• Linguagem coloquial brasileira
-
-EXEMPLOS DE POLIMENTO:
-"Olhar entregar?'" → "Meu olhar quer te entregar?"
-"Ela balança" → "Ela vem balançando pro meu lado"
-"Meu peito dispara" → "Coração dispara quando cê chega"
-
-GÊNERO: ${genre}
-LINHA PARA POLIR: "${line}"
-
-→ RETORNE APENAS A LINHA POLIDA (sem explicações, sem aspas):`;
-
-    const { text } = await generateText({
-      model: "openai/gpt-4o",
-      prompt,
-      temperature: 0.4
-    });
-
-    const polishedLine = text.trim().replace(/^["']|["']$/g, "");
-    
-    // Verifica se a linha polida está melhor
-    const polishedSyllables = countPoeticSyllables(polishedLine);
-    const isImproved = (isTooShort && polishedSyllables >= syllableTarget.min) || 
-                      (isTooLong && polishedSyllables <= syllableTarget.max) ||
-                      (!isTooShort && !isTooLong && polishedLine.length > line.length);
-
-    return isImproved ? polishedLine : line;
-  }
-
-  /**
-   * ANÁLISE TERCEIRA VIA - IMPLEMENTAÇÃO LOCAL
-   */
-  private static analisarTerceiraVia(lyrics: string, genre: string, theme: string): any {
-    const lines = lyrics.split('\n').filter(line => 
-      line.trim() && !line.startsWith('[') && !line.startsWith('(') && !line.includes('Instrumentos:') && !line.includes('BPM:')
-    )
-
-    // Análise de clichês
-    const cliches = ["coração partido", "lágrimas no travesseiro", "noite sem luar", "amor eterno", "para sempre"]
-    let clicheCount = 0
-    const lyricsLower = lyrics.toLowerCase()
-    
-    cliches.forEach(cliche => {
-      if (lyricsLower.includes(cliche)) clicheCount++
-    })
-
-    const originalidade = Math.max(0, 100 - clicheCount * 20)
-
-    // Análise de estrutura
-    const hasStructure = lyrics.includes("[VERSE") && lyrics.includes("[CHORUS")
-    const hasRhyme = lines.length >= 2 && this.checkRhyme(lines[0], lines[1])
-    
-    let tecnica = 50
-    if (hasRhyme) tecnica += 25
-    if (hasStructure) tecnica += 25
-
-    // Score geral
-    const score_geral = Math.round(originalidade * 0.4 + tecnica * 0.6)
-
-    return {
-      originalidade,
-      profundidade_emocional: 75,
-      tecnica_compositiva: tecnica,
-      adequacao_genero: 85,
-      score_geral,
-      sugestoes: clicheCount > 0 ? ["Evite clichês comuns"] : ["Boa qualidade literária"],
-      pontos_fortes: hasStructure ? ["Estrutura bem organizada"] : ["Letra coesa"],
-      pontos_fracos: clicheCount > 0 ? ["Alguns clichês detectados"] : ["Pode melhorar originalidade"]
-    }
-  }
-
-  /**
-   * VERIFICA RIMA ENTRE LINHAS
-   */
-  private static checkRhyme(line1: string, line2: string): boolean {
-    const getLastWord = (line: string) => {
-      const words = line.trim().split(/\s+/)
-      return words[words.length - 1]?.toLowerCase().replace(/[^\wáàâãéèêíìîóòôõúùûç]/gi, "") || ""
-    }
-
-    const word1 = getLastWord(line1)
-    const word2 = getLastWord(line2)
-
-    if (!word1 || !word2) return false
-
-    const end1 = word1.slice(-2)
-    const end2 = word2.slice(-2)
-
-    return end1 === end2
-  }
-
-  /**
-   * APLICA TERCEIRA VIA À LETRA COMPLETA
-   */
-  private static async applyTerceiraViaToLyrics(
-    lyrics: string, 
-    genre: string, 
-    theme: string
-  ): Promise<string> {
-    const lines = lyrics.split('\n')
-    const improvedLines: string[] = []
-    const genreConfig = getGenreConfig(genre)
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i]
-      
-      if (!line.trim() || line.startsWith('[') || line.startsWith('(') || line.includes('Instrumentos:') || line.includes('BPM:')) {
-        improvedLines.push(line)
-        continue
-      }
-
-      const context = lines.slice(Math.max(0, i - 2), Math.min(lines.length, i + 3)).join(' | ')
-      
-      try {
-        const improvedLine = await ThirdWayEngine.generateThirdWayLine(
-          line,
-          genre,
-          genreConfig,
-          context,
-          false
-        )
-        improvedLines.push(improvedLine)
-      } catch (error) {
-        console.error(`[MetaComposer] Erro ao aplicar Terceira Via na linha ${i}:`, error)
-        improvedLines.push(line)
-      }
-    }
-
-    return improvedLines.join('\n')
-  }
-
-  /**
-   * GERAÇÃO INTELIGENTE DE LETRAS
-   */
   private static async generateIntelligentLyrics(
     request: CompositionRequest, 
     enforcement: { min: number; max: number; ideal: number },
     preserveRhymes: boolean
   ): Promise<string> {
     const genreConfig = getGenreConfig(request.genre)
-
     const masterPrompt = this.buildHarmonizedMasterPrompt(request, genreConfig, enforcement, preserveRhymes)
 
     const { text } = await generateText({
@@ -726,9 +772,6 @@ LINHA PARA POLIR: "${line}"
     return text
   }
 
-  /**
-   * PROMPT HARMONIZADO
-   */
   private static buildHarmonizedMasterPrompt(
     request: CompositionRequest, 
     genreConfig: any, 
@@ -765,9 +808,6 @@ ${request.additionalRequirements ? `REQUISITOS:\n${request.additionalRequirement
 RETORNE APENAS A LETRA NO FORMATO CORRETO.`
   }
 
-  /**
-   * VALIDAÇÃO COMPREENSIVA HARMONIZADA
-   */
   private static async comprehensiveValidation(
     lyrics: string,
     request: CompositionRequest,
@@ -794,7 +834,6 @@ RETORNE APENAS A LETRA NO FORMATO CORRETO.`
       line.trim() && !line.startsWith('[') && !line.startsWith('(') && !line.includes('Instrumentos:') && !line.includes('BPM:')
     )
 
-    // ✅ ANÁLISE DE SÍLABAS
     const syllableStats = this.calculateSyllableStatistics(lines, syllableTarget)
     
     if (syllableStats.linesWithinLimit < syllableStats.totalLines) {
@@ -809,13 +848,11 @@ RETORNE APENAS A LETRA NO FORMATO CORRETO.`
       )
     }
 
-    // ✅ VALIDAÇÃO ANTI-FORCING
     const forcingValidation = validateFullLyricAgainstForcing(lyrics, request.genre)
     if (!forcingValidation.isValid) {
       warnings.push(...forcingValidation.warnings)
     }
 
-    // ✅ VALIDAÇÃO DE PALAVRAS PROIBIDAS
     const forbidden = genreConfig.language_rules?.forbidden
       ? Object.values(genreConfig.language_rules.forbidden).flat()
       : []
@@ -826,7 +863,6 @@ RETORNE APENAS A LETRA NO FORMATO CORRETO.`
       }
     })
 
-    // ✅ VALIDAÇÃO DE REFRÕES (3 linhas são proibidas)
     const chorusMatches = lyrics.match(/\[(?:CHORUS|REFRÃO)[^\]]*\]\s*\n((?:[^\n]+\n?)+?)(?=\[|$)/gi)
     if (chorusMatches) {
       chorusMatches.forEach((chorus: string, index: number) => {
@@ -840,7 +876,6 @@ RETORNE APENAS A LETRA NO FORMATO CORRETO.`
       })
     }
 
-    // ✅ ANÁLISE DE EMPILHAMENTO
     const stackingRatio = this.calculateStackingRatio(lyrics)
     if (stackingRatio < 0.3) {
       warnings.push(`Baixo empilhamento de versos (${(stackingRatio * 100).toFixed(0)}%) - formatação pouco natural`)
@@ -848,7 +883,6 @@ RETORNE APENAS A LETRA NO FORMATO CORRETO.`
       warnings.push(`Alto empilhamento (${(stackingRatio * 100).toFixed(0)}%) - pode dificultar contagem de sílabas`)
     }
 
-    // ✅ SCORE TERCEIRA VIA
     let terceiraViaScore = undefined
     if (terceiraViaAnalysis) {
       terceiraViaScore = terceiraViaAnalysis.score_geral
@@ -867,9 +901,6 @@ RETORNE APENAS A LETRA NO FORMATO CORRETO.`
     }
   }
 
-  /**
-   * SCORE DE QUALIDADE HARMONIZADO
-   */
   private static calculateHarmonizedQualityScore(
     lyrics: string,
     validation: any,
@@ -880,40 +911,31 @@ RETORNE APENAS A LETRA NO FORMATO CORRETO.`
   ): number {
     let score = 1.0
 
-    // ✅ PESO FORTE: Sílabas corretas (40%)
     const syllableRatio = validation.syllableStats.linesWithinLimit / validation.syllableStats.totalLines
     score = score * 0.6 + (syllableRatio * 0.4)
 
-    // ✅ PESO MÉDIO: Terceira Via (25%)
     if (terceiraViaAnalysis) {
       const terceiraViaScore = terceiraViaAnalysis.score_geral / 100
       score = score * 0.75 + (terceiraViaScore * 0.25)
     }
 
-    // ✅ PESO MÉDIO: Estrutura e coerência (20%)
     const coherenceScore = this.assessNarrativeCoherence(lyrics)
     score = score * 0.8 + (coherenceScore * 0.2)
 
-    // ✅ PESO LEVE: Empilhamento balanceado (10%)
     const stackingRatio = this.calculateStackingRatio(lyrics)
     const stackingScore = (stackingRatio >= 0.3 && stackingRatio <= 0.7) ? 1.0 : 0.5
     score = score * 0.9 + (stackingScore * 0.1)
 
-    // ✅ PENALIDADES
     score -= validation.errors.length * 0.15
     score -= validation.warnings.length * 0.05
     score -= Math.min(correctionCount * 0.02, 0.1)
 
-    // ✅ BÔNUS: Linguagem simples e natural
     const simplicityScore = this.assessLanguageSimplicity(lyrics)
     score += simplicityScore * 0.05
 
     return Math.max(0, Math.min(1, score))
   }
 
-  /**
-   * REFINAMENTO AUTÔNOMO INTELIGENTE
-   */
   private static async autonomousRefinement(
     request: CompositionRequest,
     validation: { passed: boolean; errors: string[]; warnings: string[] },
@@ -928,7 +950,6 @@ RETORNE APENAS A LETRA NO FORMATO CORRETO.`
       `USAR: contrações "cê", "tô", "pra", "tá" e elisões "d'amor", "qu'eu"`,
     ]
 
-    // ✅ ADICIONA INSTRUÇÕES DA TERCEIRA VIA SE SCORE BAIXO
     if (terceiraViaAnalysis && terceiraViaAnalysis.score_geral < 70) {
       refinementInstructions.push(
         `TERCEIRA VIA: Evitar clichês, usar imagens concretas, mostrar vulnerabilidade genuína`
@@ -948,9 +969,6 @@ RETORNE APENAS A LETRA NO FORMATO CORRETO.`
     }
   }
 
-  /**
-   * ANÁLISE DE PRESERVAÇÃO DE RIMAS
-   */
   private static analyzeRhymePreservation(originalLyrics: string, correctedLyrics: string): any {
     const originalRhymes = this.extractRhymes(originalLyrics)
     const correctedRhymes = this.extractRhymes(correctedLyrics)
@@ -976,9 +994,6 @@ RETORNE APENAS A LETRA NO FORMATO CORRETO.`
     }
   }
 
-  /**
-   * EXTRAI RIMAS DA LETRA
-   */
   private static extractRhymes(lyrics: string): string[] {
     const lines = lyrics.split('\n')
       .filter(line => line.trim() && !line.startsWith('[') && !line.startsWith('(') && !line.includes('Instrumentos:') && !line.includes('BPM:'))
@@ -990,9 +1005,6 @@ RETORNE APENAS A LETRA NO FORMATO CORRETO.`
     }).filter(rhyme => rhyme.length > 0)
   }
 
-  /**
-   * CALCULA TAXA DE PRESERVAÇÃO DE RIMAS
-   */
   private static calculateRhymePreservation(lyrics: string): number {
     const rhymes = this.extractRhymes(lyrics)
     if (rhymes.length < 2) return 100
@@ -1006,8 +1018,6 @@ RETORNE APENAS A LETRA NO FORMATO CORRETO.`
 
     return Math.round((consistentRhymes / Math.floor(rhymes.length / 2)) * 100)
   }
-
-  // 🔧 MÉTODOS AUXILIARES
 
   private static calculateSyllableStatistics(
     lines: string[], 
@@ -1113,76 +1123,93 @@ RETORNE APENAS A LETRA NO FORMATO CORRETO.`
     return Math.max(0, 1 - complexCount * 0.1)
   }
 
-  // ✅ MÉTODOS AUXILIARES PARA PRESERVAÇÃO DE REFRÕES
+  private static analisarTerceiraVia(lyrics: string, genre: string, theme: string): any {
+    const lines = lyrics.split('\n').filter(line => 
+      line.trim() && !line.startsWith('[') && !line.startsWith('(') && !line.includes('Instrumentos:') && !line.includes('BPM:')
+    )
 
-  private static extractSongStructure(lyrics: string): any {
-    const sections = lyrics.split('\n\n').filter(section => section.trim());
-    const structure = {
-      hasIntro: /\[INTRO\]/i.test(lyrics),
-      hasVerse: /\[VERS[OE]]/i.test(lyrics),
-      hasChorus: /\[(?:CHORUS|REFRÃO)\]/i.test(lyrics),
-      hasBridge: /\[BRIDGE\]/i.test(lyrics),
-      hasOutro: /\[OUTRO\]/i.test(lyrics),
-      totalSections: sections.length
-    };
+    const cliches = ["coração partido", "lágrimas no travesseiro", "noite sem luar", "amor eterno", "para sempre"]
+    let clicheCount = 0
+    const lyricsLower = lyrics.toLowerCase()
     
-    return structure;
+    cliches.forEach(cliche => {
+      if (lyricsLower.includes(cliche)) clicheCount++
+    })
+
+    const originalidade = Math.max(0, 100 - clicheCount * 20)
+
+    const hasStructure = lyrics.includes("[VERSE") && lyrics.includes("[CHORUS")
+    const hasRhyme = lines.length >= 2 && this.checkRhyme(lines[0], lines[1])
+    
+    let tecnica = 50
+    if (hasRhyme) tecnica += 25
+    if (hasStructure) tecnica += 25
+
+    const score_geral = Math.round(originalidade * 0.4 + tecnica * 0.6)
+
+    return {
+      originalidade,
+      profundidade_emocional: 75,
+      tecnica_compositiva: tecnica,
+      adequacao_genero: 85,
+      score_geral,
+      sugestoes: clicheCount > 0 ? ["Evite clichês comuns"] : ["Boa qualidade literária"],
+      pontos_fortes: hasStructure ? ["Estrutura bem organizada"] : ["Letra coesa"],
+      pontos_fracos: clicheCount > 0 ? ["Alguns clichês detectados"] : ["Pode melhorar originalidade"]
+    }
   }
 
-  private static buildFinalStructure(
-    verses: { verse1: string; verse2: string; bridge?: string },
-    choruses: string[],
-    structure: any
-  ): string {
-    const sections: string[] = [];
-    
-    // Intro
-    if (structure.hasIntro) {
-      sections.push('[INTRO]');
+  private static checkRhyme(line1: string, line2: string): boolean {
+    const getLastWord = (line: string) => {
+      const words = line.trim().split(/\s+/)
+      return words[words.length - 1]?.toLowerCase().replace(/[^\wáàâãéèêíìîóòôõúùûç]/gi, "") || ""
     }
-    
-    // Primeiro verso e refrão
-    sections.push(verses.verse1);
-    sections.push(`[CHORUS]\n${choruses[0]}`);
-    
-    // Segundo verso e refrão
-    sections.push(verses.verse2);
-    sections.push(`[CHORUS]\n${choruses[0]}`);
-    
-    // Bridge se existir
-    if (verses.bridge) {
-      sections.push(verses.bridge);
-    }
-    
-    // Refrão final
-    sections.push(`[CHORUS]\n${choruses[0]}`);
-    
-    // Outro se existir
-    if (structure.hasOutro) {
-      sections.push('[OUTRO]');
-    }
-    
-    return sections.join('\n\n');
+
+    const word1 = getLastWord(line1)
+    const word2 = getLastWord(line2)
+
+    if (!word1 || !word2) return false
+
+    const end1 = word1.slice(-2)
+    const end2 = word2.slice(-2)
+
+    return end1 === end2
   }
 
-  private static parseComposedVerses(text: string): { verse1: string; verse2: string; bridge?: string } {
-    const lines = text.split('\n');
-    let currentSection = '';
-    const sections: { [key: string]: string[] } = {};
-    
-    for (const line of lines) {
-      if (line.startsWith('[') && line.endsWith(']')) {
-        currentSection = line;
-        sections[currentSection] = [];
-      } else if (currentSection && line.trim() && !line.startsWith('•')) {
-        sections[currentSection].push(line.trim());
+  private static async applyTerceiraViaToLyrics(
+    lyrics: string, 
+    genre: string, 
+    theme: string
+  ): Promise<string> {
+    const lines = lyrics.split('\n')
+    const improvedLines: string[] = []
+    const genreConfig = getGenreConfig(genre)
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+      
+      if (!line.trim() || line.startsWith('[') || line.startsWith('(') || line.includes('Instrumentos:') || line.includes('BPM:')) {
+        improvedLines.push(line)
+        continue
+      }
+
+      const context = lines.slice(Math.max(0, i - 2), Math.min(lines.length, i + 3)).join(' | ')
+      
+      try {
+        const improvedLine = await ThirdWayEngine.generateThirdWayLine(
+          line,
+          genre,
+          genreConfig,
+          context,
+          false
+        )
+        improvedLines.push(improvedLine)
+      } catch (error) {
+        console.error(`[MetaComposer] Erro ao aplicar Terceira Via na linha ${i}:`, error)
+        improvedLines.push(line)
       }
     }
-    
-    return {
-      verse1: sections['[VERSE 1]']?.join('\n') || '',
-      verse2: sections['[VERSE 2]']?.join('\n') || '',
-      bridge: sections['[BRIDGE]']?.join('\n')
-    };
+
+    return improvedLines.join('\n')
   }
 }
