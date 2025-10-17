@@ -86,7 +86,7 @@ export default function CriarPage() {
   const [isGeneratingChorus, setIsGeneratingChorus] = useState(false)
   const [showHookDialog, setShowHookDialog] = useState(false)
   const [selectedHook, setSelectedHook] = useState<string | null>(null)
-  const [formattingStyle, setFormattingStyle] = useState("padrao")
+  const [formattingStyle, setFormattingStyle] = useState("performatico") // ← PADRÃO PERFORMÁTICO
 
   const toggleEmotion = (emotion: string) => {
     setSelectedEmotions((prev) => (prev.includes(emotion) ? prev.filter((e) => e !== emotion) : [...prev, emotion]))
@@ -115,10 +115,10 @@ export default function CriarPage() {
           metaforas: metaphorSearch,
           emocoes: selectedEmotions,
           titulo: title,
-          formattingStyle: formattingStyle,
+          formattingStyle: formattingStyle, // ← SEMPRE PERFORMÁTICO
           additionalRequirements: additionalReqs,
           advancedMode: advancedMode,
-          syllableTarget: { min: 7, max: 11, ideal: 9 }, // ← NOVO: ALVO DE SÍLABAS
+          syllableTarget: { min: 7, max: 11, ideal: 9 },
           metrics:
             BRAZILIAN_GENRE_METRICS[genre as keyof typeof BRAZILIAN_GENRE_METRICS] || BRAZILIAN_GENRE_METRICS.default,
         }),
@@ -440,7 +440,7 @@ export default function CriarPage() {
                   </Select>
                   <p className="text-xs text-muted-foreground mt-1">
                     {formattingStyle === "performatico"
-                      ? "Inclui descrições detalhadas de palco e lista de instrumentos"
+                      ? "✅ FORMATO PROFISSIONAL: Instruções em inglês, letras empilhadas, backing vocals, estrutura A-B-C"
                       : "Formato simples com marcadores básicos"}
                   </p>
                 </div>
@@ -648,7 +648,7 @@ export default function CriarPage() {
                   {/* VALIDADOR DE SÍLABAS - CORRIGIDO */}
                   <SyllableValidator
                     lyrics={lyrics}
-                    maxSyllables={11} {/* ← MÁXIMO 11 SÍLABAS */}
+                    maxSyllables={11}
                     onValidate={(result) => {
                       if (!result.valid) {
                         console.log(`⚠️ ${result.linesWithIssues} versos com problemas:`)
@@ -656,7 +656,6 @@ export default function CriarPage() {
                           console.log(`  Linha ${v.line}: "${v.text}" → ${v.syllables} sílabas`)
                         })
                         
-                        // Mostrar toast com detalhes
                         toast.warning(`${result.linesWithIssues} versos com mais de 11 sílabas`, {
                           description: "Use o validador para ver detalhes",
                           duration: 5000
