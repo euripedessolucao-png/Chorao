@@ -211,15 +211,15 @@ Create the original song now:`
   return lyrics
 }
 
-// ✅ FUNÇÃO PARA GERAR COM REFRÕES PRESERVADOS (ALTERNATIVA)
+// ✅ FUNÇÃO PARA GERAR COM REFRÕES PRESERVADOS (CORRIGIDA)
 async function generateWithPreservedChoruses(
   genero: string,
   tema: string,
   humor: string,
   extractedChoruses: string[],
-  additionalRequirements?: string,
   syllableTarget: any,
-  universalPolish: boolean
+  universalPolish: boolean,
+  additionalRequirements?: string
 ): Promise<string> {
   
   console.log(`[PreservedChoruses] Gerando com ${extractedChoruses.length} refrões preservados`)
@@ -296,15 +296,15 @@ export async function POST(request: Request) {
       console.log(`[Generate] 🎯 Modo preservação ativo: ${extractedChoruses.length} refrões selecionados`)
       generationMode = "preservation"
       
-      // ✅ USA FUNÇÃO ALTERNATIVA PARA REFRÕES PRESERVADOS
+      // ✅ USA FUNÇÃO ALTERNATIVA PARA REFRÕES PRESERVADOS (ORDEM CORRIGIDA)
       finalLyrics = await generateWithPreservedChoruses(
         genero,
         tema,
         humor || 'Romântico',
         extractedChoruses,
-        additionalRequirements,
         finalSyllableTarget,
-        universalPolish
+        universalPolish,
+        additionalRequirements
       )
     } else if (universalPolish) {
       // ✅ SISTEMA UNIVERSAL DE QUALIDADE
