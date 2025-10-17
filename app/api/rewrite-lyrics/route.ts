@@ -5,6 +5,7 @@ import { SERTANEJO_MODERNO_2024 } from "@/lib/genres/sertanejo_moderno_2024"
 import { GENRE_CONFIGS, detectSubGenre, getGenreRhythm } from "@/lib/genre-config"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 import { validateLyricsSyllables } from "@/lib/validation/syllable-counter"
+import { SyllableEnforcer } from "@/lib/validation/syllableEnforcer"
 
 export async function POST(request: Request) {
   try {
@@ -137,24 +138,28 @@ Create the improved version now:`
         lyrics = lyrics.replace(/^(?:Título|Title):\s*.+$/gm, "").trim()
         lyrics = lyrics.replace(/^\*\*(?:Título|Title):\s*.+\*\*$/gm, "").trim()
 
-        // Validate syllables
-        const validation = validateLyricsSyllables(lyrics, 12)
+        // ✅ VALIDAÇÃO E CORREÇÃO AUTOMÁTICA DE SÍLABAS
+        console.log(`[v0] Aplicando imposição rigorosa de sílabas...`)
+        const syllableEnforcement = { min: 7, max: 11, ideal: 9 }
 
-        if (validation.valid) {
-          console.log(`[v0] Validação passou na tentativa ${attempt}`)
+        const enforcedResult = await SyllableEnforcer.enforceSyllableLimits(
+          lyrics, 
+          syllableEnforcement, 
+          generoConversao
+        )
+
+        if (enforcedResult.corrections > 0) {
+          console.log(`[v0] ${enforcedResult.corrections} linhas corrigidas automaticamente`)
+          enforcedResult.violations.forEach(v => {
+            console.log(`[v0] CORRIGIDO: ${v}`)
+          })
+          
+          finalLyrics = enforcedResult.correctedLyrics
+          break // Usa a versão corrigida imediatamente
+        } else {
+          console.log(`[v0] Todas as linhas respeitam o limite de sílabas!`)
           finalLyrics = lyrics
           break
-        } else {
-          // ✅ CORREÇÃO: validation.linesWithIssues → validation.violations.length
-          console.log(`[v0] ${validation.violations.length} versos excedem 12 sílabas`)
-          validation.violations.forEach((v) => {
-            console.log(`[v0]   Linha ${v.lineNumber}: "${v.line}" (${v.syllables} sílabas)`)
-          })
-
-          if (attempt === maxAttempts) {
-            console.log(`[v0] Máximo de tentativas. Retornando melhor resultado.`)
-            finalLyrics = lyrics
-          }
         }
       } catch (error) {
         console.error(`[v0] Erro na tentativa ${attempt}:`, error)
