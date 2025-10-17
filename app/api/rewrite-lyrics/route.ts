@@ -6,6 +6,7 @@ import { GENRE_CONFIGS, detectSubGenre, getGenreRhythm } from "@/lib/genre-confi
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 import { validateLyricsSyllables } from "@/lib/validation/syllable-counter"
 import { SyllableEnforcer } from "@/lib/validation/syllableEnforcer"
+import { LineStacker } from "@/lib/utils/line-stacker"
 
 export async function POST(request: Request) {
   try {
@@ -154,13 +155,22 @@ Create the improved version now:`
             console.log(`[v0] CORRIGIDO: ${v}`)
           })
           
-          finalLyrics = enforcedResult.correctedLyrics
-          break // Usa a versão corrigida imediatamente
+          lyrics = enforcedResult.correctedLyrics
         } else {
           console.log(`[v0] Todas as linhas respeitam o limite de sílabas!`)
-          finalLyrics = lyrics
-          break
         }
+
+        // ✅ APLICA EMPILHAMENTO PROFISSIONAL
+        console.log("[Stacker] Aplicando empilhamento profissional...")
+        const stackingResult = LineStacker.stackLines(lyrics)
+        lyrics = stackingResult.stackedLyrics
+
+        console.log(`[Stacker] Score de empilhamento: ${(stackingResult.stackingScore * 100).toFixed(1)}%`)
+        stackingResult.improvements.forEach(imp => console.log(`[Stacker] ${imp}`))
+
+        finalLyrics = lyrics
+        break
+
       } catch (error) {
         console.error(`[v0] Erro na tentativa ${attempt}:`, error)
         if (attempt === maxAttempts) {
