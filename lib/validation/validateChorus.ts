@@ -1,5 +1,6 @@
 import type { ChorusOption } from "./parser"
-import { SERTANEJO_RULES, countPoeticSyllables, hasVisualElement, hasForbiddenElement, extractHook } from "./sertanejoRules"
+import { SERTANEJO_RULES, hasVisualElement, hasForbiddenElement, extractHook } from "./sertanejoRules"
+import { countPoeticSyllables } from "./syllable-counter" // ← CORREÇÃO: Importar do lugar correto
 
 export interface ChorusValidation {
   isValid: boolean
@@ -48,9 +49,9 @@ export function validateChorus(chorus: ChorusOption): ChorusValidation {
     score -= 15
   }
 
-  // Verifica prosódia (métrica)
+  // Verifica prosódia (métrica) - ✅ CORREÇÃO: countSyllables → countPoeticSyllables
   for (const line of chorus.lines) {
-    const syllables = countSyllables(line)
+    const syllables = countPoeticSyllables(line)
     if (syllables > SERTANEJO_RULES.chorusStructure.maxSyllablesPerLine) {
       errors.push(`Linha muito longa (${syllables} sílabas)`)
       score -= 10
