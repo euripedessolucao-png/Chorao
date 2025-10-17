@@ -37,7 +37,7 @@ export class SyllableEnforcer {
         continue
       }
 
-      const syllables = countSyllables(originalLine)
+      const syllables = countPoeticSyllables(originalLine) // ← CORRIGIDO
       
       if (syllables >= enforcement.min && syllables <= enforcement.max) {
         // Dentro do limite - mantem
@@ -90,7 +90,7 @@ export class SyllableEnforcer {
         })
 
         const correctedText = correctedLine.trim()
-        const newSyllables = countSyllables(correctedText)
+        const newSyllables = countPoeticSyllables(correctedText) // ← CORRIGIDO
 
         console.log(`[SyllableEnforcer] Correcao ${attempts}: "${currentLine}" (${currentSyllables}s) -> "${correctedText}" (${newSyllables}s)`)
 
@@ -198,7 +198,7 @@ Corrija: "${line}"
     }
 
     lines.forEach(line => {
-      const syllables = countSyllables(line)
+      const syllables = countPoeticSyllables(line) // ← CORRIGIDO
       if (syllables >= enforcement.min && syllables <= enforcement.max) {
         stats.withinLimit++
       } else {
