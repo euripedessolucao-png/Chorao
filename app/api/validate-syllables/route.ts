@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { validateLyricsSyllables } from "@/lib/validation/syllableUtils"
+import { validateLyricsSyllables } from "@/lib/validation/syllable-counter" // ← CORRIGIDO
 
 export async function POST(request: Request) {
   try {
@@ -13,7 +13,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(validation)
   } catch (error) {
-    console.error("[v0] Erro na validação de sílabas:", error)
+    console.error("[API] Erro na validação de sílabas:", error)
     return NextResponse.json(
       {
         error: "Erro interno na validação",
