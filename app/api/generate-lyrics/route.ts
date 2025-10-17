@@ -97,8 +97,8 @@ async function generateNormally(
   metaforas?: string,
   emocoes: string[] = [],
   additionalRequirements?: string,
-  universalPolish = true, // ✅ NOVO: POLIMENTO UNIVERSAL
-  syllableTarget = getSyllableConfig(genero), // ✅ CONFIGURAÇÃO AUTOMÁTICA
+  universalPolish = true,
+  syllableTarget = getSyllableConfig(genero),
   metrics = { bpm: 100, structure: "VERSO-REFRAO" }
 ): Promise<string> {
   
@@ -211,6 +211,42 @@ Create the original song now:`
   return lyrics
 }
 
+// ✅ FUNÇÃO PARA GERAR COM REFRÕES PRESERVADOS (ALTERNATIVA)
+async function generateWithPreservedChoruses(
+  genero: string,
+  tema: string,
+  humor: string,
+  extractedChoruses: string[],
+  additionalRequirements?: string,
+  syllableTarget: any,
+  universalPolish: boolean
+): Promise<string> {
+  
+  console.log(`[PreservedChoruses] Gerando com ${extractedChoruses.length} refrões preservados`)
+  
+  // ✅ USA O META-COMPOSER DIRETAMENTE COM OS REFRÕES PRESERVADOS
+  const compositionRequest = {
+    genre: genero,
+    theme: extractThemeFromInput(tema),
+    mood: extractMoodFromInput(humor),
+    additionalRequirements: additionalRequirements || '',
+    syllableTarget: syllableTarget,
+    applyFinalPolish: universalPolish,
+    preserveRhymes: true,
+    applyTerceiraVia: true,
+    preservedChoruses: extractedChoruses
+  }
+
+  const result = await MetaComposer.compose(compositionRequest)
+  
+  console.log(`[PreservedChoruses] Geração concluída - Score: ${result.metadata.finalScore.toFixed(2)}`)
+  if (result.metadata.preservedChorusesUsed) {
+    console.log(`[PreservedChoruses] ✅ ${extractedChoruses.length} refrões preservados aplicados`)
+  }
+  
+  return result.lyrics
+}
+
 // ✅ ROTA PRINCIPAL ATUALIZADA
 export async function POST(request: Request) {
   try {
@@ -228,10 +264,10 @@ export async function POST(request: Request) {
       formattingStyle = "performatico",
       additionalRequirements,
       advancedMode = false,
-      universalPolish = true, // ✅ NOVO: POLIMENTO UNIVERSAL
-      syllableTarget, // Opcional: se não fornecido, usa configuração automática
+      universalPolish = true,
+      syllableTarget,
       metrics = { bpm: 100, structure: "VERSO-REFRAO" },
-      selectedChoruses, // ✅ Refrões selecionados para preservar
+      selectedChoruses,
     } = body
 
     if (!genero) {
@@ -260,20 +296,15 @@ export async function POST(request: Request) {
       console.log(`[Generate] 🎯 Modo preservação ativo: ${extractedChoruses.length} refrões selecionados`)
       generationMode = "preservation"
       
-      // ✅ USA META-COMPOSER com refrões preservados
-      finalLyrics = await MetaComposer.rewriteWithPreservedChoruses(
-        "", // Letra original vazia para criação
+      // ✅ USA FUNÇÃO ALTERNATIVA PARA REFRÕES PRESERVADOS
+      finalLyrics = await generateWithPreservedChoruses(
+        genero,
+        tema,
+        humor || 'Romântico',
         extractedChoruses,
-        { 
-          genre: genero,
-          theme: extractThemeFromInput(tema, inspiracao),
-          mood: extractMoodFromInput(humor, emocoes),
-          additionalRequirements,
-          syllableTarget: finalSyllableTarget,
-          preservedChoruses: extractedChoruses,
-          applyFinalPolish: universalPolish // ✅ POLIMENTO UNIVERSAL
-        },
-        finalSyllableTarget
+        additionalRequirements,
+        finalSyllableTarget,
+        universalPolish
       )
     } else if (universalPolish) {
       // ✅ SISTEMA UNIVERSAL DE QUALIDADE
