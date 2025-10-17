@@ -87,7 +87,6 @@ export class SyllableEnforcer {
           model: "openai/gpt-4o",
           prompt: correctionPrompt,
           temperature: 0.3 // Baixa para correcoes precisas
-          // Removido maxTokens pois nao existe na API
         })
 
         const correctedText = correctedLine.trim()
@@ -180,7 +179,7 @@ Corrija: "${line}"
       trimmed.startsWith('(') ||
       trimmed.startsWith('Titulo:') ||
       trimmed.startsWith('Instrucao:') ||
-      trimmed.match(/^Instrucao:/)
+      trimmed.includes('Instrucao:')
     )
   }
 
