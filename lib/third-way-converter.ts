@@ -1,5 +1,5 @@
 import { generateText } from "ai"
-import { countSyllables } from "./validation/syllableUtils"
+import { countPoeticSyllables } from "./validation/syllableUtils" // ← MUDADO PARA O NOVO SISTEMA
 
 export const ADVANCED_BRAZILIAN_METRICS = {
   "Sertanejo Moderno": { syllablesPerLine: 6, maxSyllables: 7, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
@@ -20,23 +20,10 @@ export type GenreName = keyof typeof ADVANCED_BRAZILIAN_METRICS
 
 /**
  * ============================================================================
- * TERCEIRA VIA - SISTEMA DE COMPOSIÇÃO POR RESTRIÇÕES
+ * TERCEIRA VIA ATUALIZADA - SISTEMA DE COMPOSIÇÃO POR RESTRIÇÕES
  * ============================================================================
  *
- * PROPÓSITO:
- * Este sistema NÃO ensina a IA a compor. Ele FORÇA a IA a seguir regras
- * absolutas através de um processo de 3 etapas:
- *
- * 1. VARIAÇÃO A: Foco em métrica perfeita (sílabas, ritmo, estrutura)
- * 2. VARIAÇÃO B: Foco em criatividade (vocabulário, imagens, emoção)
- * 3. SÍNTESE FINAL: Combina os melhores elementos de A e B
- *
- * REGRAS UNIVERSAIS:
- * - Linguagem simples e coloquial (dia-a-dia brasileiro)
- * - Respeito absoluto aos limites de sílabas por gênero
- * - Nunca quebrar palavras (ex: "nãsãnossas" é PROIBIDO)
- * - Requisitos Adicionais têm PRIORIDADE TOTAL sobre qualquer regra
- *
+ * ATUALIZAÇÃO: Agora usa SÍLABAS POÉTICAS (com elisão/sinalefa)
  * ============================================================================
  */
 export class ThirdWayEngine {
@@ -44,14 +31,6 @@ export class ThirdWayEngine {
    * ----------------------------------------------------------------------------
    * FUNÇÃO PRINCIPAL: Gera uma linha usando o sistema de Terceira Via
    * ----------------------------------------------------------------------------
-   *
-   * @param originalLine - Linha original a ser processada
-   * @param genre - Gênero musical (Bachata, Sertanejo, etc.)
-   * @param genreRules - Regras específicas do gênero
-   * @param context - Contexto da música (tema, emoção, etc.)
-   * @param performanceMode - Se deve incluir descrições performáticas
-   * @param additionalRequirements - Requisitos do compositor (PRIORIDADE TOTAL)
-   * @returns Linha processada seguindo todas as restrições
    */
   static async generateThirdWayLine(
     originalLine: string,
@@ -61,12 +40,11 @@ export class ThirdWayEngine {
     performanceMode = false,
     additionalRequirements?: string,
   ): Promise<string> {
-    // Normalizar nome do gênero
     const normalizedGenre = genre.includes("Bachata") ? "Bachata Moderna" : genre
     const metrics = ADVANCED_BRAZILIAN_METRICS[normalizedGenre as GenreName] || ADVANCED_BRAZILIAN_METRICS.default
 
     try {
-      // VARIAÇÃO A: Métrica perfeita (restrição rígida de sílabas)
+      // VARIAÇÃO A: Métrica perfeita (restrição rígida de sílabas POÉTICAS)
       const variationA = await this.forceMetricVariation(
         originalLine,
         genre,
@@ -100,8 +78,8 @@ export class ThirdWayEngine {
 
       return finalLine
     } catch (error) {
-      console.error("[v0] Erro na Terceira Via:", error)
-      return originalLine // Em caso de erro, retorna a linha original
+      console.error("[ThirdWay] Erro na Terceira Via:", error)
+      return originalLine
     }
   }
 
@@ -125,19 +103,26 @@ export class ThirdWayEngine {
       ? `\n\nEXCEÇÃO: O compositor especificou requisitos adicionais: "${additionalRequirements}". Siga estas instruções específicas.`
       : `\n\nREGRA UNIVERSAL INVIOLÁVEIS: ${universalRule}`
 
-    const prompt = `RESTRIÇÕES ABSOLUTAS - VARIAÇÃO A (MÉTRICA):
+    const prompt = `RESTRIÇÕES ABSOLUTAS - VARIAÇÃO A (MÉTRICA POÉTICA):
 
 LINHA: "${line}"
 GÊNERO: ${genre}
-LIMITE: ${metrics.maxSyllables} sílabas (ABSOLUTO - NÃO PODE EXCEDER)
+LIMITE: ${metrics.maxSyllables} SÍLABAS POÉTICAS (ABSOLUTO - NÃO PODE EXCEDER)
+
+⚠️ SISTEMA DE SÍLABAS POÉTICAS (ELISÃO/SINALEFA):
+• "de amor" → "d'amor" (3→2 sílabas) - OBRIGATÓRIO
+• "que eu" → "qu'eu" (2→1 sílaba) - OBRIGATÓRIO  
+• "meu amor" → "meuamor" (4→3 sílabas) - OBRIGATÓRIO
+• "se eu" → "s'eu" (2→1 sílaba) - OBRIGATÓRIO
 
 REGRAS INVIOLÁVEIS:
-1. MÁXIMO ${metrics.maxSyllables} SÍLABAS - qualquer linha com mais será REJEITADA
+1. MÁXIMO ${metrics.maxSyllables} SÍLABAS POÉTICAS - qualquer linha com mais será REJEITADA
 2. Use contrações: "para"→"pra", "você"→"cê", "está"→"tá", "estão"→"tão"
-3. NUNCA quebre palavras (ex: "nãsãnossas" é PROIBIDO)
-4. NUNCA use: ${forbiddenList.slice(0, 10).join(", ")}
-5. Mantenha o significado emocional da linha original
-6. PALAVRAS SIMPLES E COLOQUIAIS - fale como uma pessoa comum fala no dia-a-dia${languageOverride}
+3. Use ELISÃO obrigatória: "de amor"→"d'amor", "que eu"→"qu'eu"
+4. NUNCA quebre palavras (ex: "nãsãnossas" é PROIBIDO)
+5. NUNCA use: ${forbiddenList.slice(0, 10).join(", ")}
+6. Mantenha o significado emocional da linha original
+7. PALAVRAS SIMPLES E COLOQUIAIS - fale como uma pessoa comum fala no dia-a-dia${languageOverride}
 
 CONTEXTO: ${context}
 
@@ -175,20 +160,26 @@ RETORNE APENAS A LINHA REESCRITA (sem explicações, sem aspas, sem comentários
       ? `\n\nEXCEÇÃO: O compositor especificou requisitos adicionais: "${additionalRequirements}". Siga estas instruções específicas.`
       : `\n\nREGRA UNIVERSAL INVIOLÁVEIS: ${universalRule}`
 
-    const prompt = `RESTRIÇÕES ABSOLUTAS - VARIAÇÃO B (CRIATIVIDADE):
+    const prompt = `RESTRIÇÕES ABSOLUTAS - VARIAÇÃO B (CRIATIVIDADE POÉTICA):
 
 LINHA: "${line}"
 GÊNERO: ${genre}
-LIMITE: ${metrics.maxSyllables} sílabas (ABSOLUTO)
+LIMITE: ${metrics.maxSyllables} SÍLABAS POÉTICAS (ABSOLUTO)
+
+⚠️ SISTEMA DE SÍLABAS POÉTICAS (ELISÃO/SINALEFA):
+• "de amor" → "d'amor" (3→2 sílabas) - OBRIGATÓRIO
+• "que eu" → "qu'eu" (2→1 sílaba) - OBRIGATÓRIO
+• Vogais entre palavras se unem: "sua alma" → "sualma" (4→3 sílabas)
 
 REGRAS INVIOLÁVEIS:
-1. MÁXIMO ${metrics.maxSyllables} SÍLABAS
+1. MÁXIMO ${metrics.maxSyllables} SÍLABAS POÉTICAS
 2. USE APENAS elementos permitidos: ${allowedList.slice(0, 15).join(", ")}
 3. PROIBIDO usar: ${forbiddenList.slice(0, 10).join(", ")}
 4. NUNCA quebre palavras
 5. Evite clichês de IA: "coração partido", "alma vazia", "dor profunda"
 6. Use imagens CONCRETAS e VISUAIS (não abstratas)
 7. PALAVRAS SIMPLES DO DIA-A-DIA - como uma pessoa comum fala${languageOverride}
+8. USE ELISÃO OBRIGATORIAMENTE para reduzir sílabas
 
 CONTEXTO: ${context}
 
@@ -213,8 +204,10 @@ RETORNE APENAS A LINHA REESCRITA (sem explicações, sem aspas, sem comentários
     context: string,
     additionalRequirements?: string,
   ): Promise<string> {
-    const syllablesA = countSyllables(variationA)
-    const syllablesB = countSyllables(variationB)
+    // ✅ AGORA USA countPoeticSyllables (sistema novo)
+    const syllablesA = countPoeticSyllables(variationA)
+    const syllablesB = countPoeticSyllables(variationB)
+    
     const forbiddenList = genreRules?.language_rules?.forbidden
       ? Object.values(genreRules.language_rules.forbidden).flat()
       : []
@@ -227,21 +220,27 @@ RETORNE APENAS A LINHA REESCRITA (sem explicações, sem aspas, sem comentários
       ? `\n\nEXCEÇÃO: O compositor especificou requisitos adicionais: "${additionalRequirements}". Siga estas instruções específicas.`
       : `\n\nREGRA UNIVERSAL INVIOLÁVEIS: ${universalRule}`
 
-    const prompt = `SÍNTESE FINAL - TODAS AS RESTRIÇÕES APLICADAS:
+    const prompt = `SÍNTESE FINAL - TODAS AS RESTRIÇÕES APLICADAS (SÍLABAS POÉTICAS):
 
 ORIGINAL: "${original}"
-VARIAÇÃO A (${syllablesA} sílabas): "${variationA}"
-VARIAÇÃO B (${syllablesB} sílabas): "${variationB}"
+VARIAÇÃO A (${syllablesA} sílabas POÉTICAS): "${variationA}"
+VARIAÇÃO B (${syllablesB} sílabas POÉTICAS): "${variationB}"
 
 TAREFA: Combine os MELHORES elementos de A e B.
 
+⚠️ SISTEMA DE SÍLABAS POÉTICAS:
+• Elisão obrigatória: "de amor"→"d'amor", "que eu"→"qu'eu"
+• Sinalefa automática entre vogais
+• Conta até a última sílaba tônica
+
 RESTRIÇÕES ABSOLUTAS:
-1. MÁXIMO ${metrics.maxSyllables} SÍLABAS (INVIOLÁVEL)
+1. MÁXIMO ${metrics.maxSyllables} SÍLABAS POÉTICAS (INVIOLÁVEL)
 2. NUNCA use: ${forbiddenList.slice(0, 10).join(", ")}
 3. NUNCA quebre palavras (mantenha espaços entre palavras)
 4. Use a métrica de A + a criatividade de B
 5. Palavras COMPLETAS e CORRETAS sempre
-6. LINGUAGEM SIMPLES E COLOQUIAL - fale como uma pessoa comum no dia-a-dia${languageOverride}
+6. LINGUAGEM SIMPLES E COLOQUIAL - fale como uma pessoa comum no dia-a-dia
+7. USE ELISÃO para respeitar o limite de sílabas${languageOverride}
 
 GÊNERO: ${genre}
 CONTEXTO: ${context}
@@ -256,7 +255,8 @@ RETORNE APENAS A LINHA FINAL (sem explicações, sem aspas, sem comentários).`
 
     const finalLine = text.trim().replace(/^["']|["']$/g, "")
 
-    const finalSyllables = countSyllables(finalLine)
+    // ✅ AGORA USA countPoeticSyllables (sistema novo)
+    const finalSyllables = countPoeticSyllables(finalLine)
     if (finalSyllables > metrics.maxSyllables) {
       return this.safeCompress(finalLine, metrics.maxSyllables)
     }
@@ -280,21 +280,27 @@ RETORNE APENAS A LINHA FINAL (sem explicações, sem aspas, sem comentários).`
       { from: /\bem a\b/gi, to: "na" },
       { from: /\bque está\b/gi, to: "que tá" },
       { from: /\bque estão\b/gi, to: "que tão" },
+      // ✅ ADICIONADAS ELISÕES POÉTICAS
+      { from: /\bde amor\b/gi, to: "d'amor" },
+      { from: /\bque eu\b/gi, to: "qu'eu" },
+      { from: /\bse eu\b/gi, to: "s'eu" },
+      { from: /\bmeu amor\b/gi, to: "meuamor" },
     ]
 
     for (const { from, to } of contractions) {
       const test = compressed.replace(from, to)
-      if (countSyllables(test) <= maxSyllables) {
+      // ✅ AGORA USA countPoeticSyllables (sistema novo)
+      if (countPoeticSyllables(test) <= maxSyllables) {
         compressed = test
         return compressed
       }
     }
 
-    // Melhor ter linha longa que palavra quebrada
     return line
   }
 }
 
+// ✅ Função atualizada para usar o novo sistema
 export function countPortugueseSyllables(text: string): number {
-  return countSyllables(text)
+  return countPoeticSyllables(text)
 }
