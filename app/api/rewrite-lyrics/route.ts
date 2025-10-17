@@ -7,6 +7,7 @@ import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 import { validateLyricsSyllables } from "@/lib/validation/syllable-counter"
 import { SyllableEnforcer } from "@/lib/validation/syllableEnforcer"
 import { LineStacker } from "@/lib/utils/line-stacker"
+import { MetaComposer } from "@/lib/orchestrator/meta-composer"
 
 // ✅ FUNÇÕES AUXILIARES
 function extractChorusesFromInstructions(instructions?: string): string[] | null {
@@ -75,138 +76,6 @@ function applyFinalFormatting(lyrics: string, genre: string, metrics?: any): str
 
   formattedLyrics = capitalizeLines(formattedLyrics)
   return formattedLyrics
-}
-
-// ✅ FUNÇÃO DE PRESERVAÇÃO DE REFRÕES (substitui MetaComposer temporariamente)
-async function rewriteWithPreservedChoruses(
-  originalLyrics: string,
-  selectedChoruses: string[],
-  request: any,
-  syllableTarget: { min: number; max: number; ideal: number }
-): Promise<string> {
-  
-  console.log('[RewriteWithPreservedChoruses] Iniciando reescrita com refrões preservados...')
-  
-  // ✅ PASSO 1: Compor versos que preparem para os refrões selecionados
-  const composedVerses = await composeVersesForChoruses(
-    originalLyrics,
-    selectedChoruses,
-    request,
-    syllableTarget
-  )
-  
-  // ✅ PASSO 2: Montar estrutura final preservando refrões
-  const finalLyrics = buildFinalStructure(
-    composedVerses,
-    selectedChoruses
-  )
-  
-  return finalLyrics
-}
-
-// ✅ COMPÕE VERSOS COERENTES COM OS REFRÕES SELECIONADOS
-async function composeVersesForChoruses(
-  originalLyrics: string,
-  choruses: string[],
-  request: any,
-  syllableEnforcement: { min: number; max: number; ideal: number }
-): Promise<{ verse1: string; verse2: string; bridge?: string }> {
-  
-  const prompt = `COMPOSIÇÃO DE VERSOS - PREPARAÇÃO PARA REFRÕES
-
-TEMA: ${request.theme}
-HUMOR: ${request.mood}
-GÊNERO: ${request.genre}
-
-REFRÃO PRINCIPAL:
-${choruses[0]}
-
-${choruses[1] ? `REFRÃO SECUNDÁRIO:\n${choruses[1]}` : ''}
-
-${originalLyrics ? `LETRA ORIGINAL PARA INSPIRAÇÃO:\n${originalLyrics}` : ''}
-
-LIMITE DE SÍLABAS: ${syllableEnforcement.min}-${syllableEnforcement.max} por linha
-
-TAREFA: Compor versos que:
-1. PREPAREM tematicamente para os refrões acima
-2. MANTENHAM coerência com o tema "${request.theme}" e humor "${request.mood}"
-3. RESPEITEM o limite de sílabas
-4. USEM linguagem do ${request.genre}
-5. CREEM transição natural para os refrões
-6. USEM contrações: "cê", "tô", "pra", "tá"
-
-RETORNE APENAS OS VERSOS NO FORMATO:
-[VERSE 1]
-• Linha 1
-• Linha 2
-• Linha 3
-• Linha 4
-
-[VERSE 2]  
-• Linha 1
-• Linha 2
-• Linha 3
-• Linha 4
-
-[BRIDGE] (opcional)
-• Linha 1
-• Linha 2`
-
-  const { text } = await generateText({
-    model: "openai/gpt-4o",
-    prompt,
-    temperature: 0.4
-  })
-
-  return parseComposedVerses(text)
-}
-
-// ✅ MONTA ESTRUTURA FINAL
-function buildFinalStructure(
-  verses: { verse1: string; verse2: string; bridge?: string },
-  choruses: string[]
-): string {
-  const sections: string[] = []
-  
-  // Estrutura básica da música
-  sections.push('[INTRO]')
-  sections.push(verses.verse1)
-  sections.push(`[CHORUS]\n${choruses[0]}`)
-  sections.push(verses.verse2)
-  sections.push(`[CHORUS]\n${choruses[0]}`)
-  
-  // Bridge se existir
-  if (verses.bridge) {
-    sections.push(verses.bridge)
-  }
-  
-  // Refrão final
-  sections.push(`[CHORUS]\n${choruses[0]}`)
-  sections.push('[OUTRO]')
-  
-  return sections.join('\n\n')
-}
-
-// ✅ ANALISA VERSOS COMPOSTOS
-function parseComposedVerses(text: string): { verse1: string; verse2: string; bridge?: string } {
-  const lines = text.split('\n')
-  let currentSection = ''
-  const sections: { [key: string]: string[] } = {}
-  
-  for (const line of lines) {
-    if (line.startsWith('[') && line.endsWith(']')) {
-      currentSection = line
-      sections[currentSection] = []
-    } else if (currentSection && line.trim() && !line.startsWith('•')) {
-      sections[currentSection].push(line.trim())
-    }
-  }
-  
-  return {
-    verse1: sections['[VERSE 1]']?.join('\n') || '',
-    verse2: sections['[VERSE 2]']?.join('\n') || '',
-    bridge: sections['[BRIDGE]']?.join('\n')
-  }
 }
 
 // ✅ FUNÇÃO DE REWRITE NORMAL
@@ -394,17 +263,17 @@ export async function POST(request: Request) {
       selectedChoruses,
     } = body
 
-    // ✅ EXTRAI refrões selecionados se existirem
-    const extractedChoruses = selectedChoruses || extractChorusesFromInstructions(additionalRequirements)
+    // ✅ EXTRAI refrões selecionados se existirem (sempre retorna array)
+    const extractedChoruses = selectedChoruses || extractChorusesFromInstructions(additionalRequirements) || []
 
     let finalLyrics: string
 
     // ✅ DECISÃO INTELIGENTE: Preservar refrões ou reescrita normal
-    if (extractedChoruses && extractedChoruses.length > 0) {
+    if (extractedChoruses.length > 0) {
       console.log(`[RewriteLyrics] 🎯 Modo preservação ativo: ${extractedChoruses.length} refrões selecionados`)
       
-      // ✅ USA FUNÇÃO LOCAL com refrões preservados
-      finalLyrics = await rewriteWithPreservedChoruses(
+      // ✅ USA META-COMPOSER com refrões preservados
+      finalLyrics = await MetaComposer.rewriteWithPreservedChoruses(
         letraOriginal,
         extractedChoruses,
         { 
@@ -412,7 +281,8 @@ export async function POST(request: Request) {
           theme: extractThemeFromLyrics(letraOriginal),
           mood: extractMoodFromLyrics(letraOriginal),
           additionalRequirements,
-          syllableTarget: { min: 7, max: 11, ideal: 9 }
+          syllableTarget: { min: 7, max: 11, ideal: 9 },
+          preservedChoruses: extractedChoruses
         },
         { min: 7, max: 11, ideal: 9 }
       )
@@ -438,8 +308,8 @@ export async function POST(request: Request) {
     return NextResponse.json({
       letra: finalLyrics,
       metadata: {
-        preservedChoruses: extractedChoruses?.length || 0,
-        mode: extractedChoruses ? "preservation" : "normal"
+        preservedChoruses: extractedChoruses.length,
+        mode: extractedChoruses.length > 0 ? "preservation" : "normal"
       }
     })
 
