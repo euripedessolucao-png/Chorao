@@ -2,6 +2,7 @@ import { generateText } from "ai"
 import { NextResponse } from "next/server"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 import { SyllableEnforcer } from "@/lib/validation/syllableEnforcer"
+import { LineStacker } from "@/lib/utils/line-stacker"
 
 export async function POST(request: Request) {
   try {
@@ -125,6 +126,14 @@ Create the original song now:`
     } else {
       console.log(`[Generate] Todas as linhas respeitam o limite de sílabas!`)
     }
+
+    // ✅ APLICA EMPILHAMENTO PROFISSIONAL
+    console.log("[Stacker] Aplicando empilhamento profissional...")
+    const stackingResult = LineStacker.stackLines(lyrics)
+    lyrics = stackingResult.stackedLyrics
+
+    console.log(`[Stacker] Score de empilhamento: ${(stackingResult.stackingScore * 100).toFixed(1)}%`)
+    stackingResult.improvements.forEach(imp => console.log(`[Stacker] ${imp}`))
 
     // Add instruments if missing
     if (!lyrics.includes("(Instrumentos:")) {
