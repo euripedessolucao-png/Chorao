@@ -69,11 +69,12 @@ export class MetaComposer {
 
       const rawLyrics = await this.generateWithSyllableControl(request, syllableEnforcement)
 
-      const enforcedResult = await SyllableEnforcer.enforceSyllableLimits(
-        rawLyrics, 
-        syllableEnforcement, 
-        request.genre
-      )
+      const enforcedResult = await IntelligentSyllableEnforcer.enforceSyllableLimits(
+  rawLyrics, 
+  syllableEnforcement, 
+  request.genre,
+  { preserveRhymes: true, preserveStructure: true } // ✅
+)
 
       console.log(`[MetaComposer] Correcoes aplicadas: ${enforcedResult.corrections} linhas`)
 
