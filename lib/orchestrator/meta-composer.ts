@@ -40,6 +40,50 @@ export class MetaComposer {
   private static readonly MAX_ITERATIONS = 2
 
   /**
+   * EXTRAI REFRÕES DOS REQUISITOS ADICIONAIS
+   * Detecta hooks/refrões no formato do gerador automático
+   */
+  private static extractChorusesFromRequirements(additionalRequirements?: string): string[] {
+    if (!additionalRequirements) return []
+    
+    console.log('[MetaComposer] Analisando requisitos adicionais por refrões...')
+    
+    const choruses: string[] = []
+    
+    // ✅ PADRÃO 1: Refrões no formato "linha1 / linha2"
+    const chorusPattern = /(?:\d+\.\s*)?([^\.\n]+(?:\s*\/\s*[^\.\n]+)+)/g
+    const matches = additionalRequirements.matchAll(chorusPattern)
+    
+    for (const match of matches) {
+      const chorusText = match[1].trim()
+      // Verifica se parece um refrão (tem pelo menos 2 versos separados por /)
+      if (chorusText.includes('/') && chorusText.split('/').length >= 2) {
+        choruses.push(chorusText)
+        console.log(`[MetaComposer] Refrão encontrado: ${chorusText.substring(0, 50)}...`)
+      }
+    }
+    
+    // ✅ PADRÃO 2: Texto explícito entre marcadores
+    if (choruses.length === 0) {
+      const explicitMatch = additionalRequirements.match(/REFR.AO[^:]*:\s*([^•]+(?:\s*•[^•]+)*)/gi)
+      if (explicitMatch) {
+        explicitMatch.forEach(match => {
+          const lines = match.split('\n')
+            .map(line => line.replace(/^[•\-\*]\s*/, '').trim())
+            .filter(line => line && !line.match(/REFR.AO|linhas/i))
+          
+          if (lines.length >= 2) {
+            choruses.push(lines.join(' / '))
+          }
+        })
+      }
+    }
+    
+    console.log(`[MetaComposer] Total de refrões extraídos: ${choruses.length}`)
+    return choruses
+  }
+
+  /**
    * COMPOSIÇÃO TURBO DEFINITIVA - COM SISTEMA DE RIMAS E PRESERVAÇÃO DE REFRÕES
    */
   static async compose(request: CompositionRequest): Promise<CompositionResult> {
@@ -51,8 +95,13 @@ export class MetaComposer {
 
     const syllableEnforcement = request.syllableTarget || this.getGenreSyllableConfig(request.genre)
     const applyFinalPolish = request.applyFinalPolish ?? true
-    const preservedChoruses = request.preservedChoruses || []
-    const hasPreservedChoruses = preservedChoruses.length > 0
+
+    // ✅ CORREÇÃO CRÍTICA: EXTRAI REFRÕES DOS REQUISITOS ADICIONAIS
+    const extractedChoruses = this.extractChorusesFromRequirements(request.additionalRequirements)
+    const allPreservedChoruses = [...(request.preservedChoruses || []), ...extractedChoruses]
+    
+    const hasPreservedChoruses = allPreservedChoruses.length > 0
+    console.log(`[MetaComposer] Refrões totais para preservar: ${allPreservedChoruses.length} (${extractedChoruses.length} dos requisitos)`)
 
     while (iterations < this.MAX_ITERATIONS) {
       iterations++
@@ -60,8 +109,9 @@ export class MetaComposer {
 
       let rawLyrics: string
 
+      // ✅ USA allPreservedChoruses EM VEZ DE request.preservedChoruses
       if (hasPreservedChoruses && iterations === 1) {
-        rawLyrics = await this.generateWithPreservedChoruses(preservedChoruses, request, syllableEnforcement)
+        rawLyrics = await this.generateWithPreservedChoruses(allPreservedChoruses, request, syllableEnforcement)
       } else {
         rawLyrics = await this.generateDirectLyrics(request, syllableEnforcement)
       }
@@ -83,7 +133,7 @@ export class MetaComposer {
       // ✅ VALIDA PRESERVAÇÃO DE REFRÕES
       let chorusPreservation = { allPreserved: true, details: [] as string[] }
       if (hasPreservedChoruses) {
-        const chorusFormats = preservedChoruses.map(chorus => {
+        const chorusFormats = allPreservedChoruses.map(chorus => {
           const lines = chorus.split('/').map(line => line.trim()).filter(line => line)
           return { chorus, lineCount: lines.length, lines }
         })
