@@ -27,6 +27,7 @@ import { EMOTIONS } from "@/lib/genres"
 import { GenreSelect } from "@/components/genre-select"
 import { HookGenerator } from "@/components/hook-generator"
 import { SyllableValidator } from "@/components/syllable-validator"
+import { RhymeAnalyzer } from "@/components/rhyme-analyzer"
 
 const BRAZILIAN_GENRE_METRICS = {
   "Sertanejo Moderno": { syllablesPerLine: 6, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
@@ -66,20 +67,6 @@ const GENRE_QUALITY_CONFIG = {
   "Gospel": { min: 8, max: 11, ideal: 9, rhymeQuality: 0.5 },
   "default": { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 }
 }
-// No criar/page.tsx - ADICIONE:
-
-import { RhymeAnalyzer } from "@/components/rhyme-analyzer"
-
-// No componente, após o SyllableValidator:
-<RhymeAnalyzer 
-  lyrics={lyrics}
-  genre={genre}
-  onAnalysis={(report) => {
-    if (report.overallScore < 60) {
-      toast.warning(`Rimas precisam de melhoria (Score: ${report.overallScore})`)
-    }
-  }}
-/>
 
 const GENRES = ["Pop", "Sertanejo Moderno", "Sertanejo Universitário", "MPB", "Rock", "Funk", "Pagode", "Forró"]
 
@@ -767,6 +754,17 @@ export default function CriarPage() {
                         })
                       } else if (result.totalLines > 0) {
                         toast.success(`✓ Letra validada: ${result.totalLines} versos dentro do padrão ${genre}`)
+                      }
+                    }}
+                  />
+
+                  {/* ✅ ANALISADOR DE RIMAS */}
+                  <RhymeAnalyzer 
+                    lyrics={lyrics}
+                    genre={genre}
+                    onAnalysis={(report) => {
+                      if (report.overallScore < 60) {
+                        toast.warning(`Rimas precisam de melhoria (Score: ${report.overallScore})`)
                       }
                     }}
                   />
