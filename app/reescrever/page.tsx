@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,7 +13,6 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
 import { RefreshCw, Save, Copy, Search, Loader2, Star, Trophy, Trash2, Zap, Wand2 } from "lucide-react"
 import { toast } from "sonner"
-import { GENRE_CONFIGS } from "@/lib/genre-config"
 import { EMOTIONS } from "@/lib/genres"
 import { GenreSelect } from "@/components/genre-select"
 import { SyllableValidator } from "@/components/syllable-validator"
@@ -29,24 +28,22 @@ import { HookGenerator } from "@/components/hook-generator"
 
 const BRAZILIAN_GENRE_METRICS = {
   "Sertanejo Moderno": { syllablesPerLine: 6, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
-  Sertanejo: { syllablesPerLine: 7, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
+  "Sertanejo": { syllablesPerLine: 7, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
   "Sertanejo Universitário": { syllablesPerLine: 6, bpm: 95, structure: "VERSO-REFRAO" },
   "Sertanejo Sofrência": { syllablesPerLine: 8, bpm: 75, structure: "VERSO-REFRAO-PONTE" },
   "Sertanejo Raiz": { syllablesPerLine: 10, bpm: 80, structure: "VERSO-REFRAO" },
-  Pagode: { syllablesPerLine: 7, bpm: 100, structure: "VERSO-REFRAO" },
-  Samba: { syllablesPerLine: 7, bpm: 105, structure: "VERSO-REFRAO-PONTE" },
-  Forró: { syllablesPerLine: 8, bpm: 120, structure: "VERSO-REFRAO" },
-  Axé: { syllablesPerLine: 6, bpm: 130, structure: "VERSO-REFRAO" },
-  MPB: { syllablesPerLine: 9, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
+  "Pagode": { syllablesPerLine: 7, bpm: 100, structure: "VERSO-REFRAO" },
+  "Samba": { syllablesPerLine: 7, bpm: 105, structure: "VERSO-REFRAO-PONTE" },
+  "Forró": { syllablesPerLine: 8, bpm: 120, structure: "VERSO-REFRAO" },
+  "Axé": { syllablesPerLine: 6, bpm: 130, structure: "VERSO-REFRAO" },
+  "MPB": { syllablesPerLine: 9, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
   "Bossa Nova": { syllablesPerLine: 8, bpm: 70, structure: "VERSO-REFRAO" },
-  Rock: { syllablesPerLine: 8, bpm: 115, structure: "VERSO-REFRAO-SOLO" },
-  Pop: { syllablesPerLine: 7, bpm: 110, structure: "VERSO-REFRAO-PONTE" },
-  Funk: { syllablesPerLine: 6, bpm: 125, structure: "REFRAO-VERSO" },
-  Gospel: { syllablesPerLine: 8, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
-  default: { syllablesPerLine: 8, bpm: 100, structure: "VERSO-REFRAO" },
+  "Rock": { syllablesPerLine: 8, bpm: 115, structure: "VERSO-REFRAO-SOLO" },
+  "Pop": { syllablesPerLine: 7, bpm: 110, structure: "VERSO-REFRAO-PONTE" },
+  "Funk": { syllablesPerLine: 6, bpm: 125, structure: "REFRAO-VERSO" },
+  "Gospel": { syllablesPerLine: 8, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
+  "default": { syllablesPerLine: 8, bpm: 100, structure: "VERSO-REFRAO" },
 } as const
-
-const GENRES = ["Pop", "Sertanejo Moderno", "MPB", "Rock", "Funk"]
 
 type ChorusVariation = {
   chorus: string
@@ -85,7 +82,12 @@ export default function ReescreverPage() {
   const [isGeneratingChorus, setIsGeneratingChorus] = useState(false)
   const [showHookDialog, setShowHookDialog] = useState(false)
   const [selectedHook, setSelectedHook] = useState<string | null>(null)
-  const [formattingStyle, setFormattingStyle] = useState("performatico") // ← PADRÃO PERFORMÁTICO
+  const [formattingStyle, setFormattingStyle] = useState("performatico")
+
+  // ✅ DEBUG: Monitorar mudanças no genre
+  useEffect(() => {
+    console.log('🎵 Genre state updated:', genre)
+  }, [genre])
 
   const toggleEmotion = (emotion: string) => {
     setSelectedEmotions((prev) => (prev.includes(emotion) ? prev.filter((e) => e !== emotion) : [...prev, emotion]))
@@ -185,12 +187,16 @@ export default function ReescreverPage() {
     )
   }
 
+  // ✅ FUNÇÃO CORRIGIDA - Validação simples que funciona
   const handleRewriteLyrics = async () => {
+    console.log('🔍 Iniciando reescrita - Genre:', genre)
+    
     if (!originalLyrics) {
       toast.error("Por favor, cole a letra original")
       return
     }
 
+    // ✅ VALIDAÇÃO SIMPLES QUE FUNCIONA
     if (!genre) {
       toast.error("Por favor, selecione um gênero")
       return
@@ -199,7 +205,9 @@ export default function ReescreverPage() {
     setIsRewriting(true)
 
     try {
-      const genreConfig = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS]
+      const syllableConfig = { min: 7, max: 11, ideal: 9 }
+
+      console.log('📤 Enviando para API - Genre:', genre)
 
       const response = await fetch("/api/rewrite-lyrics", {
         method: "POST",
@@ -209,10 +217,11 @@ export default function ReescreverPage() {
           generoConversao: genre,
           conservarImagens: true,
           polirSemMexer: false,
-          formattingStyle: formattingStyle, // ← SEMPRE PERFORMÁTICO
+          formattingStyle: formattingStyle,
           additionalRequirements: additionalReqs,
           advancedMode: advancedMode,
-          syllableTarget: { min: 7, max: 11, ideal: 9 },
+          universalPolish: true,
+          syllableTarget: syllableConfig,
           metrics:
             BRAZILIAN_GENRE_METRICS[genre as keyof typeof BRAZILIAN_GENRE_METRICS] || BRAZILIAN_GENRE_METRICS.default,
         }),
@@ -344,6 +353,12 @@ export default function ReescreverPage() {
               <div className="space-y-2">
                 <Label className="text-xs">Gênero para Reescrever</Label>
                 <GenreSelect value={genre} onValueChange={setGenre} className="h-9" />
+                {/* ✅ DEBUG: Mostrar gênero selecionado */}
+                {genre && (
+                  <div className="text-xs text-green-600 font-medium">
+                    ✅ Gênero selecionado: {genre}
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -573,7 +588,7 @@ export default function ReescreverPage() {
               <div className="border rounded-lg p-3 bg-purple-50/50 space-y-2">
                 <Label className="text-xs font-semibold">Sensações & Emoções</Label>
                 <p className="text-xs text-muted-foreground">
-                  O "como" a história será contada. O sentimento que dará o ton da letra.
+                  O "como" a história será contada. O sentimento que dará o tom da letra.
                 </p>
                 <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
                   {EMOTIONS.map((emotion) => (
@@ -679,17 +694,11 @@ export default function ReescreverPage() {
                     className="font-mono text-xs"
                   />
                   
-                  {/* VALIDADOR DE SÍLABAS - CORRIGIDO */}
                   <SyllableValidator
                     lyrics={lyrics}
                     maxSyllables={11}
                     onValidate={(result) => {
                       if (!result.valid) {
-                        console.log(`⚠️ ${result.linesWithIssues} versos com problemas:`)
-                        result.violations.forEach((v) => {
-                          console.log(`  Linha ${v.line}: "${v.text}" → ${v.syllables} sílabas`)
-                        })
-                        
                         toast.warning(`${result.linesWithIssues} versos com mais de 11 sílabas`, {
                           description: "Use o validador para ver detalhes",
                           duration: 5000
