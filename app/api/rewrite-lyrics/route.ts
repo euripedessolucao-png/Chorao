@@ -5,69 +5,83 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
     
-    console.log('🔍 DEBUG - Body recebido:', {
-      keys: Object.keys(body),
-      lyricsType: typeof body.lyrics,
-      lyricsLength: body.lyrics?.length,
-      lyricsPreview: body.lyrics?.substring(0, 100) + '...',
-      genero: body.genero || body.genre,
-      selectedChoruses: body.selectedChoruses?.length
-    })
+    console.log('🔍 DEBUG - Body completo:', JSON.stringify(body, null, 2))
 
-    // ✅ PARÂMETROS FLEXÍVEIS
-    const {
-      lyrics, 
-      genero, genre,
-      tema, theme,  
-      humor, mood,
-      selectedChoruses, 
-      universalPolish = true 
-    } = body
-
-    // ✅ VALORES FINAIS
-    const finalGenero = genero || genre
-    const finalTema = tema || theme || "Reescrita"
-    const finalHumor = humor || mood || "Adaptado"
-    const finalLyrics = lyrics?.trim()
-
-    // ✅ VALIDAÇÃO DETALHADA
-    if (!finalLyrics) {
-      console.error('❌ VALIDAÇÃO FALHOU - Letra:', {
-        lyrics: lyrics,
-        isNull: lyrics === null,
-        isUndefined: lyrics === undefined,
-        isEmpty: lyrics === '',
-        isString: typeof lyrics === 'string',
-        trimmed: finalLyrics
-      })
+    // ✅ PROCURA A LETRA EM QUALQUER PARÂMETRO
+    let finalLyrics = ''
+    let finalGenero = ''
+    
+    // Procura por letra em qualquer campo que possa conter
+    for (const [key, value] of Object.entries(body)) {
+      if (typeof value === 'string' && value.length > 10) {
+        // Se for um texto longo, provavelmente é a letra
+        if (value.length > 50 && !finalLyrics) {
+          finalLyrics = value
+          console.log(`📝 Letra encontrada no campo: "${key}"`)
+        }
+      }
       
-      return NextResponse.json({ 
-        error: "Letra é obrigatória",
-        details: `Recebido: ${typeof lyrics} - "${lyrics?.substring(0, 50)}..."`,
-        suggestion: "Verifique se a letra foi colada corretamente"
-      }, { status: 400 })
+      // Procura por gênero
+      if (typeof value === 'string' && 
+          ['sertanejo', 'mpb', 'funk', 'forró', 'rock', 'pop', 'gospel']
+            .some(genre => value.toLowerCase().includes(genre))) {
+        finalGenero = value
+        console.log(`🎵 Gênero encontrado no campo: "${key}" = "${value}"`)
+      }
     }
 
-    if (finalLyrics.length < 10) {
+    // ✅ SE NÃO ENCONTROU, TENTA OS CAMPOS MAIS COMUNS
+    if (!finalLyrics) {
+      finalLyrics = body.lyrics || body.letra || body.text || body.content || ''
+    }
+
+    if (!finalGenero) {
+      finalGenero = body.genero || body.genre || body.style || body.tipo || ''
+    }
+
+    const finalTema = body.tema || body.theme || body.subject || "Reescrita"
+    const finalHumor = body.humor || body.mood || body.emocao || "Adaptado"
+    const selectedChoruses = body.selectedChoruses || body.choruses || body.refroes || []
+    const universalPolish = body.universalPolish !== false
+
+    console.log('🎯 PARÂMETROS IDENTIFICADOS:', {
+      finalLyrics: finalLyrics ? `✅ ${finalLyrics.length} chars` : '❌ NÃO ENCONTRADA',
+      finalGenero: finalGenero || '❌ NÃO ENCONTRADO',
+      finalTema,
+      finalHumor,
+      selectedChoruses: selectedChoruses.length,
+      allParams: Object.keys(body)
+    })
+
+    // ✅ VALIDAÇÃO FINAL
+    if (!finalLyrics || finalLyrics.trim().length < 10) {
       return NextResponse.json({ 
-        error: "Letra muito curta",
-        details: `A letra deve ter pelo menos 10 caracteres (recebido: ${finalLyrics.length})`,
-        suggestion: "Cole uma letra completa para reescrever"
+        error: "Letra não encontrada ou muito curta",
+        details: `Parâmetros recebidos: ${Object.keys(body).join(', ')}`,
+        suggestion: "Certifique-se de enviar a letra no parâmetro 'lyrics' ou 'letra'",
+        debug: {
+          receivedParams: Object.keys(body),
+          lyricsFound: !!finalLyrics,
+          lyricsLength: finalLyrics?.length,
+          lyricsPreview: finalLyrics?.substring(0, 100)
+        }
       }, { status: 400 })
     }
 
     if (!finalGenero) {
       return NextResponse.json({ 
-        error: "Gênero é obrigatório",
-        details: "Selecione um gênero musical",
-        suggestion: "Escolha um gênero como Sertanejo, MPB, Funk, etc."
+        error: "Gênero não encontrado",
+        details: `Parâmetros recebidos: ${Object.keys(body).join(', ')}`,
+        suggestion: "Envie o gênero no parâmetro 'genero' ou 'genre'",
+        debug: {
+          receivedParams: Object.keys(body)
+        }
       }, { status: 400 })
     }
 
-    console.log(`[Rewrite] ✅ Validação passada - Iniciando para: ${finalGenero}`)
-    console.log(`[Rewrite] Letra: ${finalLyrics.length} chars, Refrões: ${selectedChoruses?.length || 0}`)
+    console.log(`[Rewrite] ✅ Iniciando reescrita - Gênero: ${finalGenero}, Letra: ${finalLyrics.length} chars`)
 
-    // ✅ CONFIGURAÇÃO SIMPLES
+    // ✅ CONFIGURAÇÃO DE SÍLABAS
     const getSyllableConfig = (genre: string) => {
       const configs: { [key: string]: { min: number; max: number; ideal: number } } = {
         "Sertanejo": { min: 9, max: 11, ideal: 10 },
@@ -93,19 +107,19 @@ export async function POST(request: Request) {
       mood: finalHumor,
       syllableTarget: getSyllableConfig(finalGenero),
       applyFinalPolish: universalPolish,
-      preservedChoruses: selectedChoruses || [],
-      additionalRequirements: "Reescreva esta letra mantendo a essência mas melhorando a estrutura, métrica e fluência"
+      preservedChoruses: selectedChoruses,
+      additionalRequirements: "Reescreva esta letra mantendo a essência mas melhorando a estrutura e métrica"
     }
 
-    // ✅ TIMEOUT PREVENTIVO
+    // ✅ TIMEOUT
     const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error("Timeout - processo muito longo")), 45000)
+      setTimeout(() => reject(new Error("Timeout")), 45000)
     )
 
     const compositionPromise = MetaComposer.compose(compositionRequest)
     const result = await Promise.race([compositionPromise, timeoutPromise])
 
-    console.log(`[Rewrite] ✅ Reescrita concluída! Score: ${result.metadata.finalScore}`)
+    console.log(`[Rewrite] ✅ Concluído! Score: ${result.metadata.finalScore}`)
 
     return NextResponse.json({
       letra: result.lyrics,
@@ -120,20 +134,11 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("[Rewrite] Erro:", error)
     
-    const errorMessage = error instanceof Error ? error.message : "Erro desconhecido"
-    
-    let suggestion = "Tente novamente"
-    if (errorMessage.includes("Timeout")) {
-      suggestion = "Tente com menos refrões selecionados ou uma letra mais curta"
-    } else if (errorMessage.includes("Letra")) {
-      suggestion = "Verifique se a letra foi colada corretamente"
-    }
-    
     return NextResponse.json(
       {
         error: "Erro na reescrita",
-        details: errorMessage,
-        suggestion
+        details: error instanceof Error ? error.message : "Erro desconhecido",
+        suggestion: "Tente novamente com menos refrões selecionados"
       },
       { status: 500 }
     )
