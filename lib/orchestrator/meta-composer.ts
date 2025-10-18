@@ -1,6 +1,7 @@
 /**
- * META-COMPOSITOR TURBO - SISTEMA OTIMIZADO DE ALTA PERFORMANCE
- * Versão final testada e completa
+ * META-COMPOSITOR TURBO DEFINITIVO
+ * Sistema completo com rimas ricas por gênero
+ * Metas: MPB 60%, Sertanejo 50% rimas ricas
  */
 
 import { generateText } from "ai"
@@ -30,6 +31,8 @@ export interface CompositionResult {
     finalScore: number
     polishingApplied?: boolean
     preservedChorusesUsed?: boolean
+    rhymeScore?: number
+    rhymeTarget?: number
   }
 }
 
@@ -37,16 +40,16 @@ export class MetaComposer {
   private static readonly MAX_ITERATIONS = 2
 
   /**
-   * COMPOSIÇÃO TURBO - SISTEMA OTIMIZADO
+   * COMPOSIÇÃO TURBO DEFINITIVA - COM SISTEMA DE RIMAS
    */
   static async compose(request: CompositionRequest): Promise<CompositionResult> {
-    console.log("[MetaComposer-TURBO] Iniciando composição...")
+    console.log("[MetaComposer-TURBO] Iniciando composição com sistema de rimas...")
 
     let iterations = 0
     let bestResult: CompositionResult | null = null
     let bestScore = 0
 
-    const syllableEnforcement = request.syllableTarget || { min: 7, max: 11, ideal: 9 }
+    const syllableEnforcement = request.syllableTarget || this.getGenreSyllableConfig(request.genre)
     const applyFinalPolish = request.applyFinalPolish ?? true
     const preservedChoruses = request.preservedChoruses || []
     const hasPreservedChoruses = preservedChoruses.length > 0
@@ -63,19 +66,22 @@ export class MetaComposer {
         rawLyrics = await this.generateDirectLyrics(request, syllableEnforcement)
       }
 
+      // ✅ CORREÇÃO DE SÍLABAS
       const enforcedResult = await SyllableEnforcer.enforceSyllableLimits(rawLyrics, syllableEnforcement, request.genre)
-      console.log(`[MetaComposer-TURBO] Correções: ${enforcedResult.corrections} linhas`)
+      console.log(`[MetaComposer-TURBO] Correções de sílabas: ${enforcedResult.corrections} linhas`)
 
       let finalLyrics = enforcedResult.correctedLyrics
       let polishingApplied = false
 
+      // ✅ POLIMENTO FINAL COM SISTEMA DE RIMAS
       if (applyFinalPolish && iterations === this.MAX_ITERATIONS) {
-        console.log('[MetaComposer-TURBO] Aplicando polimento leve...')
-        finalLyrics = await this.applyLightPolish(finalLyrics, request.genre, syllableEnforcement)
+        console.log('[MetaComposer-TURBO] Aplicando polimento universal com rimas...')
+        finalLyrics = await this.applyUniversalPolish(finalLyrics, request.genre, request.theme, syllableEnforcement)
         polishingApplied = true
       }
 
-      const qualityScore = this.quickQualityAssessment(finalLyrics, syllableEnforcement)
+      // ✅ AVALIAÇÃO DE QUALIDADE COM RIMAS
+      const qualityScore = this.calculateQualityScore(finalLyrics, syllableEnforcement, request.genre)
       console.log(`[MetaComposer-TURBO] Score: ${qualityScore.toFixed(2)}`)
 
       if (qualityScore > bestScore) {
@@ -87,7 +93,9 @@ export class MetaComposer {
             iterations,
             finalScore: qualityScore,
             polishingApplied,
-            preservedChorusesUsed: hasPreservedChoruses
+            preservedChorusesUsed: hasPreservedChoruses,
+            rhymeScore: this.analyzeRhymes(finalLyrics, request.genre).score,
+            rhymeTarget: this.getGenreRhymeTarget(request.genre).minScore
           },
         }
       }
@@ -104,12 +112,326 @@ export class MetaComposer {
   }
 
   /**
-   * GERAÇÃO DIRETA E RÁPIDA
+   * POLIMENTO UNIVERSAL COM SISTEMA DE RIMAS
+   */
+  private static async applyUniversalPolish(
+    lyrics: string, 
+    genre: string,
+    theme: string,
+    syllableTarget: { min: number; max: number; ideal: number }
+  ): Promise<string> {
+    
+    console.log(`[MetaComposer-TURBO] Polimento universal para: ${genre}`)
+    
+    let polishedLyrics = lyrics
+    
+    // ✅ ETAPA 1: CORREÇÃO DE RIMAS
+    polishedLyrics = await this.applyRhymeEnhancement(polishedLyrics, genre, theme)
+    
+    // ✅ ETAPA 2: CORREÇÃO DE SÍLABAS
+    const lines = polishedLyrics.split('\n')
+    const finalLines: string[] = []
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+      
+      if (line.startsWith('[') || line.startsWith('(') || line.includes('Instruments:') || !line.trim()) {
+        finalLines.push(line)
+        continue
+      }
+      
+      const currentSyllables = countPoeticSyllables(line)
+      const needsCorrection = currentSyllables < syllableTarget.min || currentSyllables > syllableTarget.max
+      
+      if (needsCorrection) {
+        try {
+          const polishedLine = await this.quickLineFix(line, genre, syllableTarget)
+          finalLines.push(polishedLine)
+        } catch (error) {
+          finalLines.push(line)
+        }
+      } else {
+        finalLines.push(line)
+      }
+    }
+    
+    return finalLines.join('\n')
+  }
+
+  /**
+   * SISTEMA DE APRIMORAMENTO DE RIMAS
+   */
+  private static async applyRhymeEnhancement(
+    lyrics: string, 
+    genre: string, 
+    theme: string
+  ): Promise<string> {
+    
+    const analysis = this.analyzeRhymes(lyrics, genre)
+    const target = this.getGenreRhymeTarget(genre)
+    
+    console.log(`[RhymeSystem] ${genre}: ${analysis.score}% rimas ricas (alvo: ${target.minScore}%)`)
+    
+    // Só corrige se estiver abaixo do alvo
+    if (analysis.score >= target.minScore) {
+      console.log(`[RhymeSystem] ✅ Rimas já atendem o padrão ${genre}`)
+      return lyrics
+    }
+    
+    console.log(`[RhymeSystem] 🔧 Aplicando correção de rimas...`)
+    
+    const lines = lyrics.split('\n')
+    const enhancedLines: string[] = []
+    let improvements = 0
+    
+    for (let i = 0; i < lines.length - 1; i++) {
+      const line1 = lines[i]
+      const line2 = lines[i + 1]
+      
+      // Mantém estrutura
+      if (line1.startsWith('[') || line1.startsWith('(') || 
+          line1.includes('Instruments:') || !line1.trim()) {
+        enhancedLines.push(line1)
+        continue
+      }
+      
+      if (line2 && !line2.startsWith('[') && !line2.startsWith('(')) {
+        const rhymeType = this.analyzeRhymeType(line1, line2)
+        const targetTypes = target.preferredTypes
+        
+        if (!targetTypes.includes(rhymeType)) {
+          const enhanced = await this.enhanceRhymePair(line1, line2, genre, theme)
+          if (enhanced) {
+            enhancedLines.push(enhanced.line1)
+            enhancedLines.push(enhanced.line2)
+            improvements++
+            i++ // Pula a próxima linha
+            continue
+          }
+        }
+      }
+      
+      enhancedLines.push(line1)
+    }
+    
+    // Adiciona última linha se necessário
+    if (enhancedLines.length < lines.length) {
+      enhancedLines.push(lines[lines.length - 1])
+    }
+    
+    const enhancedLyrics = enhancedLines.join('\n')
+    const newAnalysis = this.analyzeRhymes(enhancedLyrics, genre)
+    
+    console.log(`[RhymeSystem] ✅ Rimas melhoradas: ${analysis.score}% → ${newAnalysis.score}% (${improvements} melhorias)`)
+    
+    return enhancedLyrics
+  }
+
+  /**
+   * ANALISA RIMAS DA LETRA
+   */
+  private static analyzeRhymes(lyrics: string, genre: string): { score: number; richRhymes: number; totalPairs: number } {
+    const lines = lyrics.split('\n').filter(line => 
+      line.trim() && 
+      !line.startsWith('[') && 
+      !line.startsWith('(') &&
+      !line.includes('Instruments:')
+    )
+
+    let richRhymes = 0
+    let totalPairs = 0
+
+    for (let i = 0; i < lines.length - 1; i += 2) {
+      if (i + 1 < lines.length) {
+        totalPairs++
+        const rhymeType = this.analyzeRhymeType(lines[i], lines[i + 1])
+        if (rhymeType === 'rica' || rhymeType === 'perfeita') {
+          richRhymes++
+        }
+      }
+    }
+
+    const score = totalPairs > 0 ? Math.round((richRhymes / totalPairs) * 100) : 0
+    return { score, richRhymes, totalPairs }
+  }
+
+  /**
+   * ANALISA TIPO DE RIMA ENTRE DUAS LINHAS
+   */
+  private static analyzeRhymeType(line1: string, line2: string): string {
+    const word1 = this.getLastWord(line1)
+    const word2 = this.getLastWord(line2)
+    
+    if (!word1 || !word2) return 'none'
+    
+    // Rima perfeita (últimas 3 letras iguais)
+    if (word1.slice(-3) === word2.slice(-3)) return 'perfeita'
+    
+    // Rima rica (últimas 2 letras iguais)
+    if (word1.slice(-2) === word2.slice(-2)) return 'rica'
+    
+    // Rima pobre (apenas última letra igual)
+    if (word1.slice(-1) === word2.slice(-1)) return 'pobre'
+    
+    return 'none'
+  }
+
+  /**
+   * APRIMORA UM PAR DE LINHAS PARA MELHOR RIMA
+   */
+  private static async enhanceRhymePair(
+    line1: string,
+    line2: string,
+    genre: string,
+    theme: string
+  ): Promise<{ line1: string; line2: string } | null> {
+    
+    const prompt = `CORREÇÃO DE RIMA - ${genre.toUpperCase()}
+
+LINHA 1: "${line1}"
+LINHA 2: "${line2}"
+TEMA: ${theme}
+
+REESCREVA APENAS A ÚLTIMA PALAVRA DE CADA LINHA para criar uma rima mais rica,
+mantendo o significado original. Use linguagem do ${genre}.
+
+RETORNE APENAS:
+LINHA1_CORRIGIDA
+LINHA2_CORRIGIDA`
+
+    try {
+      const { text } = await generateText({
+        model: "openai/gpt-4o-mini",
+        prompt,
+        temperature: 0.3
+      })
+
+      const lines = text.trim().split('\n').filter(l => l.trim())
+      if (lines.length >= 2) {
+        return {
+          line1: lines[0].trim(),
+          line2: lines[1].trim()
+        }
+      }
+    } catch (error) {
+      console.error('[RhymeSystem] Erro na correção:', error)
+    }
+    
+    return null
+  }
+
+  /**
+   * METAS DE RIMA POR GÊNERO - SEU OBJETIVO PRINCIPAL!
+   */
+  private static getGenreRhymeTarget(genre: string): { minScore: number; preferredTypes: string[] } {
+    const genreLower = genre.toLowerCase()
+    
+    // ✅ MPB: 60% rimas ricas
+    if (genreLower.includes('mpb') || genreLower.includes('bossa')) {
+      return { 
+        minScore: 60,
+        preferredTypes: ['perfeita', 'rica'] 
+      }
+    }
+    
+    // ✅ SERTANEJO: 50% rimas ricas  
+    if (genreLower.includes('sertanejo')) {
+      return { 
+        minScore: 50,
+        preferredTypes: ['rica', 'perfeita'] 
+      }
+    }
+    
+    if (genreLower.includes('funk') || genreLower.includes('trap')) {
+      return { 
+        minScore: 30,
+        preferredTypes: ['rica', 'pobre'] 
+      }
+    }
+    
+    // Padrão para outros gêneros
+    return { 
+      minScore: 40,
+      preferredTypes: ['rica', 'pobre'] 
+    }
+  }
+
+  /**
+   * CONFIGURAÇÃO DE SÍLABAS POR GÊNERO
+   */
+  private static getGenreSyllableConfig(genre: string): { min: number; max: number; ideal: number } {
+    const configs: { [key: string]: { min: number; max: number; ideal: number } } = {
+      "Sertanejo": { min: 9, max: 11, ideal: 10 },
+      "Sertanejo Moderno": { min: 9, max: 11, ideal: 10 },
+      "Sertanejo Universitário": { min: 9, max: 11, ideal: 10 },
+      "MPB": { min: 7, max: 12, ideal: 9 },
+      "Bossa Nova": { min: 7, max: 12, ideal: 9 },
+      "Funk": { min: 6, max: 10, ideal: 8 },
+      "Pagode": { min: 7, max: 11, ideal: 9 },
+      "Samba": { min: 7, max: 11, ideal: 9 },
+      "Forró": { min: 8, max: 11, ideal: 9 },
+      "Axé": { min: 6, max: 10, ideal: 8 },
+      "Rock": { min: 7, max: 11, ideal: 9 },
+      "Pop": { min: 7, max: 11, ideal: 9 },
+      "Gospel": { min: 8, max: 11, ideal: 9 }
+    }
+
+    return configs[genre] || { min: 7, max: 11, ideal: 9 }
+  }
+
+  /**
+   * CALCULA SCORE DE QUALIDADE COM RIMAS
+   */
+  private static calculateQualityScore(
+    lyrics: string, 
+    syllableTarget: { min: number; max: number; ideal: number },
+    genre: string
+  ): number {
+    
+    const lines = lyrics.split('\n').filter(line => 
+      line.trim() && !line.startsWith('[') && !line.startsWith('(') && !line.includes('Instruments:')
+    )
+
+    if (lines.length === 0) return 0
+
+    // ✅ SCORE DE SÍLABAS (70%)
+    let correctSyllables = 0
+    let totalSyllables = 0
+    
+    lines.forEach(line => {
+      const syllables = countPoeticSyllables(line)
+      totalSyllables += syllables
+      if (syllables >= syllableTarget.min && syllables <= syllableTarget.max) {
+        correctSyllables++
+      }
+    })
+
+    const syllableScore = correctSyllables / lines.length
+    const averageSyllables = totalSyllables / lines.length
+    const idealBonus = 1 - Math.abs(averageSyllables - syllableTarget.ideal) / 10
+
+    // ✅ SCORE DE RIMAS (30%)
+    const rhymeAnalysis = this.analyzeRhymes(lyrics, genre)
+    const rhymeTarget = this.getGenreRhymeTarget(genre)
+    const rhymeScore = rhymeAnalysis.score >= rhymeTarget.minScore ? 1.0 : rhymeAnalysis.score / rhymeTarget.minScore
+
+    // ✅ SCORE FINAL
+    const finalScore = (syllableScore * 0.6) + (idealBonus * 0.1) + (rhymeScore * 0.3)
+    
+    return Math.min(1, Math.max(0, finalScore))
+  }
+
+  // ... (os outros métodos permanecem iguais: generateDirectLyrics, generateWithPreservedChoruses, quickLineFix, extractTitle)
+  // Mantenha a implementação existente desses métodos
+
+  /**
+   * GERAÇÃO DIRETA DE LETRAS
    */
   private static async generateDirectLyrics(
     request: CompositionRequest, 
     enforcement: { min: number; max: number; ideal: number }
   ): Promise<string> {
+
     const prompt = `COMPOSIÇÃO MUSICAL - ${request.genre.toUpperCase()}
 
 TEMA: ${request.theme}
@@ -138,6 +460,7 @@ RETORNE APENAS A LETRA NO FORMATO:`
     request: CompositionRequest,
     syllableEnforcement: { min: number; max: number; ideal: number }
   ): Promise<string> {
+    
     const chorusesToUse = preservedChoruses.slice(0, 2)
     
     const prompt = `COMPOSIÇÃO COM REFRÕES PRESERVADOS - ${request.genre.toUpperCase()}
@@ -163,43 +486,6 @@ RETORNE APENAS A LETRA:`
   }
 
   /**
-   * POLIMENTO LEVE
-   */
-  private static async applyLightPolish(
-    lyrics: string, 
-    genre: string,
-    syllableTarget: { min: number; max: number; ideal: number }
-  ): Promise<string> {
-    const lines = lyrics.split('\n')
-    const polishedLines: string[] = []
-    
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i]
-      
-      if (line.startsWith('[') || line.startsWith('(') || line.includes('Instruments:') || !line.trim()) {
-        polishedLines.push(line)
-        continue
-      }
-      
-      const currentSyllables = countPoeticSyllables(line)
-      const needsCorrection = currentSyllables < syllableTarget.min || currentSyllables > syllableTarget.max
-      
-      if (needsCorrection) {
-        try {
-          const polishedLine = await this.quickLineFix(line, genre, syllableTarget)
-          polishedLines.push(polishedLine)
-        } catch (error) {
-          polishedLines.push(line)
-        }
-      } else {
-        polishedLines.push(line)
-      }
-    }
-    
-    return polishedLines.join('\n')
-  }
-
-  /**
    * CORREÇÃO RÁPIDA DE LINHA
    */
   private static async quickLineFix(
@@ -207,12 +493,15 @@ RETORNE APENAS A LETRA:`
     genre: string,
     syllableTarget: { min: number; max: number; ideal: number }
   ): Promise<string> {
+    
+    const currentSyllables = countPoeticSyllables(line)
+    
     const prompt = `CORREÇÃO RÁPIDA - ${genre.toUpperCase()}
 
 LINHA: "${line}"
-SÍLABAS ATUAIS: ${countPoeticSyllables(line)} (ALVO: ${syllableTarget.min}-${syllableTarget.max})
+SÍLABAS ATUAIS: ${currentSyllables} (ALVO: ${syllableTarget.min}-${syllableTarget.max})
 
-REESCREVA PARA AJUSTAR AS SÍLABAS MANTENDO O SIGNIFICADO:
+REESCREVA RAPIDAMENTE PARA ${syllableTarget.ideal} SÍLABAS, MANTENDO SIGNIFICADO.
 
 LINHA CORRIGIDA:`
 
@@ -227,36 +516,6 @@ LINHA CORRIGIDA:`
   }
 
   /**
-   * AVALIAÇÃO RÁPIDA DE QUALIDADE
-   */
-  private static quickQualityAssessment(
-    lyrics: string, 
-    syllableTarget: { min: number; max: number; ideal: number }
-  ): number {
-    const lines = lyrics.split('\n').filter(line => 
-      line.trim() && !line.startsWith('[') && !line.startsWith('(') && !line.includes('Instruments:')
-    )
-
-    if (lines.length === 0) return 0
-
-    let correctSyllables = 0
-    lines.forEach(line => {
-      const syllables = countPoeticSyllables(line)
-      if (syllables >= syllableTarget.min && syllables <= syllableTarget.max) {
-        correctSyllables++
-      }
-    })
-
-    const syllableScore = correctSyllables / lines.length
-    
-    let structureBonus = 0
-    if (lyrics.includes('[VERSE') || lyrics.includes('[VERSO')) structureBonus += 0.1
-    if (lyrics.includes('[CHORUS') || lyrics.includes('[REFRÃO')) structureBonus += 0.1
-
-    return Math.min(1, (syllableScore * 0.9) + (structureBonus * 0.1))
-  }
-
-  /**
    * EXTRAI TÍTULO
    */
   private static extractTitle(lyrics: string, request: CompositionRequest): string {
@@ -264,9 +523,18 @@ LINHA CORRIGIDA:`
 
     const chorusMatch = lyrics.match(/\[(?:CHORUS|REFRÃO)[^\]]*\]\s*\n([^\n]+)/i)
     if (chorusMatch?.[1]) {
-      return chorusMatch[1].trim().split(' ').slice(0, 3).join(' ')
+      return chorusMatch[1].trim().split(" ").slice(0, 4).join(" ")
     }
 
     return "Composição Musical"
+  }
+
+  /**
+   * EXTRAI ÚLTIMA PALAVRA
+   */
+  private static getLastWord(line: string): string {
+    const words = line.trim().split(/\s+/)
+    const lastWord = words[words.length - 1]?.replace(/[.,!?;:]$/g, '') || ''
+    return lastWord.toLowerCase()
   }
 }

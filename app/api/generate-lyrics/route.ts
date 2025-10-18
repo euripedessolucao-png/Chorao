@@ -1,9 +1,7 @@
-import { generateText } from "ai"
 import { NextResponse } from "next/server"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 import { MetaComposer } from "@/lib/orchestrator/meta-composer"
 
-// ✅ CONFIGURAÇÃO SIMPLES POR GÊNERO
 const GENRE_CONFIG = {
   "Sertanejo": { min: 9, max: 11, ideal: 10 },
   "Sertanejo Moderno": { min: 9, max: 11, ideal: 10 },
@@ -18,12 +16,6 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
 
-    console.log('🎵 [Generate-Lyrics] Parâmetros:', {
-      genero: body.genero,
-      tema: body.tema,
-      humor: body.humor
-    })
-
     const {
       genero,
       humor,
@@ -33,26 +25,20 @@ export async function POST(request: Request) {
       selectedChoruses = [],
     } = body
 
-    // ✅ VALIDAÇÃO SIMPLES
     if (!genero) {
       return NextResponse.json({ 
-        error: "Gênero é obrigatório",
-        suggestion: "Selecione um gênero musical"
+        error: "Gênero é obrigatório"
       }, { status: 400 })
     }
 
     if (!tema) {
       return NextResponse.json({ 
-        error: "Tema é obrigatório", 
-        suggestion: "Digite um tema para a música"
+        error: "Tema é obrigatório"
       }, { status: 400 })
     }
 
-    // ✅ CONFIGURAÇÃO AUTOMÁTICA
     const syllableTarget = GENRE_CONFIG[genero as keyof typeof GENRE_CONFIG] || GENRE_CONFIG.default
-    console.log(`[Generate-Lyrics] ${genero}: ${syllableTarget.min}-${syllableTarget.max}s`)
 
-    // ✅ COMPOSIÇÃO SIMPLES
     const compositionRequest = {
       genre: genero,
       theme: tema,
@@ -65,7 +51,6 @@ export async function POST(request: Request) {
 
     const result = await MetaComposer.compose(compositionRequest)
     
-    // ✅ FORMATAÇÃO FINAL
     let finalLyrics = result.lyrics
     if (!finalLyrics.includes("(Instrumentos:")) {
       const instrumentList = `(Instrumentos: guitar, bass, drums, keyboard | Estilo: ${genero})`
@@ -73,15 +58,16 @@ export async function POST(request: Request) {
     }
     finalLyrics = capitalizeLines(finalLyrics)
 
-    console.log(`[Generate-Lyrics] ✅ Letra gerada! Score: ${result.metadata.finalScore}`)
+    console.log(`[Generate-Lyrics] ✅ Letra gerada! Score: ${result.metadata.finalScore}, Rimas: ${result.metadata.rhymeScore}%`)
 
     return NextResponse.json({
       letra: finalLyrics,
       titulo: result.title,
       metadata: {
         score: result.metadata.finalScore,
-        polishingApplied: result.metadata.polishingApplied,
-        preservedChorusesUsed: result.metadata.preservedChorusesUsed
+        rhymeScore: result.metadata.rhymeScore,
+        rhymeTarget: result.metadata.rhymeTarget,
+        polishingApplied: result.metadata.polishingApplied
       }
     })
     
@@ -91,8 +77,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error: "Erro ao gerar letra",
-        details: error instanceof Error ? error.message : "Erro desconhecido",
-        suggestion: "Tente novamente com um tema diferente"
+        details: error instanceof Error ? error.message : "Erro desconhecido"
       },
       { status: 500 }
     )
