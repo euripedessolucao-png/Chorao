@@ -143,6 +143,8 @@ export async function applyTerceiraViaToLine(
   }
 
   try {
+    console.log(`[v0] Aplicando Terceira Via na linha ${index}: "${line.substring(0, 50)}..."`)
+
     // Apply Terceira Via principles: avoid clichés, use concrete imagery
     const cliches = [
       "coração partido",
@@ -164,8 +166,13 @@ export async function applyTerceiraViaToLine(
 
     // If line doesn't need improvement, return as is
     if (!needsImprovement) {
+      console.log(`[v0] Linha ${index} não precisa de melhoria`)
       return line
     }
+
+    const timeoutPromise = new Promise<string>((_, reject) =>
+      setTimeout(() => reject(new Error("Timeout na Terceira Via")), 5000),
+    )
 
     // Use AI to improve the line with Terceira Via principles
     const prompt = `Você é um compositor seguindo os princípios da Terceira Via.
@@ -182,13 +189,16 @@ REGRAS TERCEIRA VIA:
 
 Reescreva APENAS esta linha aplicando os princípios acima. Retorne SOMENTE a linha reescrita, sem explicações.`
 
-    const { text } = await generateText({
+    const aiPromise = generateText({
       model: "openai/gpt-4o-mini",
       prompt,
       temperature: 0.7,
     })
 
+    const { text } = (await Promise.race([aiPromise, timeoutPromise])) as { text: string }
+
     const improvedLine = text.trim().replace(/^["']|["']$/g, "")
+    console.log(`[v0] Linha ${index} melhorada com sucesso`)
     return improvedLine || line
   } catch (error) {
     console.error(`[v0] Erro ao aplicar Terceira Via na linha ${index}:`, error)

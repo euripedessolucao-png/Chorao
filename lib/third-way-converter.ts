@@ -1,5 +1,5 @@
 import { generateText } from "ai"
-import { countPoeticSyllables } from "./validation/syllable-counter" // 
+import { countPoeticSyllables } from "./validation/syllable-counter" //
 
 export const ADVANCED_BRAZILIAN_METRICS = {
   "Sertanejo Moderno": { syllablesPerLine: 6, maxSyllables: 7, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
@@ -207,7 +207,7 @@ RETORNE APENAS A LINHA REESCRITA (sem explicações, sem aspas, sem comentários
     // ✅ AGORA USA countPoeticSyllables (sistema novo)
     const syllablesA = countPoeticSyllables(variationA)
     const syllablesB = countPoeticSyllables(variationB)
-    
+
     const forbiddenList = genreRules?.language_rules?.forbidden
       ? Object.values(genreRules.language_rules.forbidden).flat()
       : []
