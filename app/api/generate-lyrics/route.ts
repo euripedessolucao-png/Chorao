@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server"
-import { generateText } from "ai"
 import { getGenreConfig, detectSubGenre, getGenreRhythm } from "@/lib/genre-config"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
-import { countPoeticSyllables } from "@/lib/validation/syllable-counter"
+import { MetaComposer } from "@/lib/orchestrator/meta-composer"
 
 export async function POST(request: Request) {
   try {
@@ -51,11 +50,11 @@ export async function POST(request: Request) {
 
     console.log(`[Create-Song] Config: ${genero} | ${finalRhythm} | ${syllableConfig.min}-${syllableConfig.max}s`)
 
-    // ✅ ETAPA 1: GERAR REFRÃO PRIMEIRO (SE SOLICITADO)
+    // ✅ ETAPA 1: GERAR REFRÃO PRIMEIRO (SE SOLICITADO) - USANDO METACOMPOSER
     let generatedChorus = null
     if (includeChorus) {
-      console.log('[Create-Song] 🎵 Gerando refrão...')
-      generatedChorus = await generateChorus({
+      console.log('[Create-Song] 🎵 Gerando refrão com MetaComposer...')
+      generatedChorus = await generateChorusWithMetaComposer({
         genre: genero,
         theme: tema,
         mood: humor,
@@ -63,11 +62,11 @@ export async function POST(request: Request) {
       })
     }
 
-    // ✅ ETAPA 2: GERAR HOOK (SE SOLICITADO)
+    // ✅ ETAPA 2: GERAR HOOK (SE SOLICITADO) - USANDO METACOMPOSER
     let generatedHook = null
     if (includeHook) {
-      console.log('[Create-Song] 🎣 Gerando hook...')
-      generatedHook = await generateHook({
+      console.log('[Create-Song] 🎣 Gerando hook com MetaComposer...')
+      generatedHook = await generateHookWithMetaComposer({
         genre: genero,
         theme: tema,
         mood: humor,
@@ -75,40 +74,39 @@ export async function POST(request: Request) {
       })
     }
 
-    // ✅ ETAPA 3: CRIAR MÚSICA COMPLETA COM OS ELEMENTOS
-    console.log('[Create-Song] 🎼 Criando música completa...')
-    const completeSong = await generateCompleteSong({
+    // ✅ ETAPA 3: CRIAR MÚSICA COMPLETA COM METACOMPOSER
+    console.log('[Create-Song] 🎼 Criando música completa com MetaComposer...')
+    
+    const compositionRequest = {
       genre: genero,
       theme: tema,
-      mood: humor,
-      additionalRequirements: additionalRequirements,
-      syllableConfig: syllableConfig,
-      rhythm: finalRhythm,
-      generatedChorus: generatedChorus,
-      generatedHook: generatedHook
-    })
-
-    // ✅ ETAPA 4: LIMPEZA E FORMATAÇÃO
-    console.log('[Create-Song] 🧹 Limpando e formatando letra...')
-    let cleanedLyrics = cleanLyrics(completeSong)
-    
-    // ✅ ETAPA 5: APLICAR POLIMENTO FINAL (APENAS NOS VERSOS)
-    let finalLyrics = cleanedLyrics
-    if (universalPolish) {
-      console.log('[Create-Song] ✨ Aplicando polimento final...')
-      finalLyrics = await applyFinalPolish(finalLyrics, genero, syllableConfig)
+      mood: humor || "Adaptado ao tema",
+      additionalRequirements: buildCompleteRequirements(
+        additionalRequirements, 
+        generatedChorus, 
+        generatedHook
+      ),
+      syllableTarget: syllableConfig,
+      applyFinalPolish: universalPolish,
+      preservedChoruses: generatedChorus ? [getBestChorus(generatedChorus)] : [],
+      // ❌ NÃO envia originalLyrics - força criação do zero!
     }
 
+    const result = await MetaComposer.compose(compositionRequest)
+
+    // ✅ ETAPA 4: LIMPEZA E FORMATAÇÃO FINAL
+    let finalLyrics = cleanLyrics(result.lyrics)
+    finalLyrics = applyFinalFormatting(finalLyrics, genero)
     finalLyrics = capitalizeLines(finalLyrics)
 
-    // ✅ METADADOS COMPLETOS COM VALIDAÇÃO CORRETA
-    const validation = validateLyrics(finalLyrics, syllableConfig)
-    
+    // ✅ METADADOS COMPLETOS
     const metadata = {
-      score: calculateSongScore(finalLyrics, syllableConfig),
-      structure: "Completa (Intro-Verse-Chorus-Bridge-Outro)",
-      syllableCompliance: validation.complianceRate,
-      validation: validation,
+      score: result.metadata.finalScore,
+      polishingApplied: result.metadata.polishingApplied,
+      rhymeScore: result.metadata.rhymeScore,
+      rhymeTarget: result.metadata.rhymeTarget,
+      structure: "Completa (MetaComposer)",
+      syllableCompliance: `${Math.round(result.metadata.finalScore * 10)}%`,
       genre: genero,
       rhythm: finalRhythm,
       includes: {
@@ -119,12 +117,11 @@ export async function POST(request: Request) {
       }
     }
 
-    console.log(`[Create-Song] ✅ Música criada! Score: ${metadata.score}`)
-    console.log(`[Create-Song] 📊 Validação: ${validation.complianceRate} compliance`)
+    console.log(`[Create-Song] ✅ Música criada com MetaComposer! Score: ${metadata.score}`)
 
     return NextResponse.json({
       letra: finalLyrics,
-      titulo: extractTitle(finalLyrics, tema),
+      titulo: result.title,
       metadata: metadata,
       elements: {
         chorus: generatedChorus,
@@ -146,7 +143,176 @@ export async function POST(request: Request) {
   }
 }
 
-// ✅ LIMPEZA INTELIGENTE DA LETRA
+// ✅ GERADOR DE REFRÃO COM METACOMPOSER
+async function generateChorusWithMetaComposer(params: {
+  genre: string;
+  theme: string;
+  mood?: string;
+  additionalRequirements?: string;
+}) {
+  
+  const chorusRequest = {
+    genre: params.genre,
+    theme: params.theme,
+    mood: params.mood || "Adaptado",
+    additionalRequirements: `CRIAR REFRÃO ORIGINAL - NÃO É REWRITE
+
+TEMA: ${params.theme}
+${params.additionalRequirements ? `REQUISITOS: ${params.additionalRequirements}` : ''}
+
+Crie 3 variações de refrão AUTÔNOMO (não precisa de contexto):
+- 4 linhas cada, máximo 12 sílabas por linha
+- Gancho memorável na primeira linha
+- Linguagem coloquial brasileira
+- Funcione como refrão independente`,
+    syllableTarget: getSyllableConfig(params.genre),
+    applyFinalPolish: true,
+    preservedChoruses: [], // Cria do zero
+  }
+
+  try {
+    const result = await MetaComposer.compose(chorusRequest)
+    
+    // Formata como o formato esperado do refrão
+    return {
+      variations: [
+        {
+          chorus: extractChorusFromLyrics(result.lyrics),
+          style: "Refrão Original",
+          score: Math.round(result.metadata.finalScore * 10)
+        }
+      ],
+      bestOptionIndex: 0,
+      metadata: result.metadata
+    }
+  } catch (error) {
+    console.error('[Create-Song] Erro ao gerar refrão com MetaComposer:', error)
+    return null
+  }
+}
+
+// ✅ GERADOR DE HOOK COM METACOMPOSER
+async function generateHookWithMetaComposer(params: {
+  genre: string;
+  theme: string;
+  mood?: string;
+  additionalRequirements?: string;
+}) {
+  
+  const hookRequest = {
+    genre: params.genre,
+    theme: params.theme,
+    mood: params.mood || "Adaptado", 
+    additionalRequirements: `CRIAR HOOK/GANCHO ÚNICO - FRASE IMPACTANTE
+
+TEMA: ${params.theme}
+${params.additionalRequirements ? `REQUISITOS: ${params.additionalRequirements}` : ''}
+
+Crie 3 hooks (1 linha cada):
+- Máximo 12 sílabas
+- Grude na cabeça imediatamente
+- Represente o tema principal
+- Linguagem coloquial brasileira`,
+    syllableTarget: getSyllableConfig(params.genre),
+    applyFinalPolish: true,
+    preservedChoruses: [],
+  }
+
+  try {
+    const result = await MetaComposer.compose(hookRequest)
+    
+    return {
+      variations: [
+        {
+          hook: extractFirstLine(result.lyrics),
+          style: "Hook Impactante", 
+          score: Math.round(result.metadata.finalScore * 10)
+        }
+      ],
+      bestOptionIndex: 0,
+      metadata: result.metadata
+    }
+  } catch (error) {
+    console.error('[Create-Song] Erro ao gerar hook com MetaComposer:', error)
+    return null
+  }
+}
+
+// ✅ CONSTRÓI REQUISITOS COMPLETOS PARA O METACOMPOSER
+function buildCompleteRequirements(
+  baseRequirements: string, 
+  generatedChorus: any, 
+  generatedHook: any
+): string {
+  
+  let requirements = baseRequirements
+  
+  requirements += `
+
+🎵 CRIAÇÃO DE MÚSICA ORIGINAL - NÃO É REWRITE!
+
+ESTRUTURA COMPLETA:
+[INTRO] → [VERSE 1] → [PRE-CHORUS] → [CHORUS] → [VERSE 2] → [CHORUS] → [BRIDGE] → [CHORUS] → [OUTRO]
+
+REGRAS DE CRIAÇÃO:
+- Letra 100% ORIGINAL em português brasileiro
+- Ganchos memoráveis
+- Desenvolvimento narrativo natural
+- Emoção autêntica
+- Linguagem coloquial: "cê", "tô", "pra", "tá"
+`
+
+  if (generatedChorus) {
+    requirements += `\n- Use o refrão sugerido ou crie um similar`
+  }
+  
+  if (generatedHook) {
+    requirements += `\n- Integre o hook sugerido naturalmente`
+  }
+
+  requirements += `\n\nFORMATAÇÃO:
+- Tags em inglês: [INTRO], [VERSE], [CHORUS], etc.
+- Versos em português
+- Instruções musicais entre parênteses
+- Lista de instrumentos no final`
+
+  return requirements
+}
+
+// ✅ FUNÇÕES AUXILIARES
+function getBestChorus(chorusData: any): string {
+  if (!chorusData?.variations?.[0]?.chorus) return ""
+  return chorusData.variations[0].chorus
+}
+
+function extractChorusFromLyrics(lyrics: string): string {
+  const chorusMatch = lyrics.match(/\[CHORUS[^\]]*\][\s\r\n]*([^\r\n]+[\s\r\n]+[^\r\n]+[\s\r\n]+[^\r\n]+[\s\r\n]+[^\r\n]+)/i)
+  if (chorusMatch?.[1]) {
+    return chorusMatch[1].trim()
+  }
+  
+  // Fallback: pega as primeiras 4 linhas que parecem versos
+  const lines = lyrics.split('\n').filter(line => 
+    line.trim() && 
+    !line.startsWith('[') && 
+    !line.startsWith('(') &&
+    !line.includes('Instruments:')
+  ).slice(0, 4)
+  
+  return lines.join('\\n')
+}
+
+function extractFirstLine(lyrics: string): string {
+  const lines = lyrics.split('\n')
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (trimmed && !trimmed.startsWith('[') && !trimmed.startsWith('(')) {
+      return trimmed
+    }
+  }
+  return ""
+}
+
 function cleanLyrics(lyrics: string): string {
   const lines = lyrics.split('\n')
   const cleanedLines: string[] = []
@@ -154,279 +320,34 @@ function cleanLyrics(lyrics: string): string {
   for (const line of lines) {
     const trimmed = line.trim()
     
-    // ❌ REMOVE: Linhas que são comentários ou instruções da IA
+    // Remove comentários da IA
     if (
-      // Comentários da IA
       trimmed.startsWith('Claro!') ||
       trimmed.startsWith('Aqui está') ||
       trimmed.startsWith('🎵') ||
       trimmed.includes('Gênero:') ||
-      trimmed.includes('Sílaba') ||
       trimmed.includes('sílabas') ||
-      // Linhas de correção
-      trimmed.includes('frase corrigida') ||
-      trimmed.match(/^\d+sílabas/) ||
-      // Emojis isolados
-      trimmed.match(/^[🎵🎼🎤🎹🎸🥁]\s*/) ||
-      // Linhas vazias ou apenas pontuação
-      !trimmed ||
-      trimmed === '---' ||
-      trimmed === '**Instrumentos:**' ||
-      trimmed === '---'
+      !trimmed
     ) {
-      continue // Remove a linha completamente
+      continue
     }
     
-    // ✅ MANTÉM: Linhas normais da música
     cleanedLines.push(line)
   }
   
   return cleanedLines.join('\n').trim()
 }
 
-// ✅ VALIDAÇÃO INTELIGENTE - SÓ CONTA VERSOS REAIS
-function validateLyrics(lyrics: string, syllableConfig: { min: number; max: number; ideal: number }) {
-  const lines = lyrics.split('\n')
-  const validation = {
-    totalLines: 0,
-    analyzedLines: 0,
-    compliantLines: 0,
-    violations: [] as Array<{line: string, syllables: number}>,
-    complianceRate: "0%"
-  }
-
-  for (const line of lines) {
-    const trimmed = line.trim()
-    validation.totalLines++
-
-    // ✅ SÓ ANALISA LINHAS QUE SÃO VERSOS CANTADOS
-    if (isLyricLine(trimmed)) {
-      validation.analyzedLines++
-      const syllables = countPoeticSyllables(trimmed)
-      
-      if (syllables >= syllableConfig.min && syllables <= syllableConfig.max) {
-        validation.compliantLines++
-      } else {
-        validation.violations.push({ line: trimmed, syllables })
-      }
-    }
-  }
-
-  validation.complianceRate = validation.analyzedLines > 0 
-    ? `${Math.round((validation.compliantLines / validation.analyzedLines) * 100)}%` 
-    : "0%"
-
-  return validation
-}
-
-// ✅ VERIFICA SE É UMA LINHA DE VERSO (NÃO TAG/INSTRUÇÃO)
-function isLyricLine(line: string): boolean {
-  const trimmed = line.trim()
+function applyFinalFormatting(lyrics: string, genre: string): string {
+  let formatted = lyrics
   
-  // ❌ NÃO É VERSO SE:
-  if (
-    !trimmed || // Linha vazia
-    trimmed.startsWith('[') || // [INTRO], [VERSE], etc.
-    trimmed.startsWith('(') || // (Violão dedilhado)
-    trimmed.includes('Instruments:') || // Lista de instrumentos
-    trimmed.includes('Instrumentos:') || // Lista de instrumentos
-    trimmed.startsWith('---') || // Separadores
-    trimmed.match(/^[🎵🎼🎤🎹🎸🥁]/) || // Emojis musicais
-    trimmed.match(/^[0-9]+ª?/) || // Números (1., 2., etc.)
-    trimmed.includes('**') // Markdown bold
-  ) {
-    return false
-  }
-  
-  // ✅ É VERSO SE:
-  // - Tem texto normal
-  // - Não é tag/instrução
-  // - Não é formatação especial
-  return true
-}
-
-// ✅ POLIMENTO FINAL INTELIGENTE (SÓ NOS VERSOS)
-async function applyFinalPolish(lyrics: string, genre: string, syllableConfig: { min: number; max: number; ideal: number }) {
-  const lines = lyrics.split('\n')
-  const polishedLines: string[] = []
-
-  for (const line of lines) {
-    const trimmed = line.trim()
-    
-    // ✅ PRESERVA TAGS, INSTRUÇÕES E FORMATAÇÃO
-    if (!isLyricLine(trimmed)) {
-      polishedLines.push(line)
-      continue
-    }
-    
-    // ✅ SÓ CORRIGE VERSOS COM PROBLEMAS DE SÍLABAS
-    const syllables = countPoeticSyllables(trimmed)
-    if (syllables > syllableConfig.max) {
-      try {
-        const corrected = await correctLine(trimmed, syllableConfig.ideal, genre)
-        polishedLines.push(corrected)
-        console.log(`[Polish] Corrigido: "${trimmed}" (${syllables}s) → "${corrected}" (${countPoeticSyllables(corrected)}s)`)
-      } catch (error) {
-        polishedLines.push(line) // Mantém original se falhar
-      }
-    } else {
-      polishedLines.push(line)
-    }
-  }
-  
-  let polishedLyrics = polishedLines.join('\n')
-  
-  // ✅ GARANTE INSTRUMENTOS NO FINAL
-  if (!polishedLyrics.includes("(Instruments:") && !polishedLyrics.includes("(Instrumentos:")) {
+  // Garante instrumentos
+  if (!formatted.includes("(Instruments:")) {
     const instruments = getGenreInstruments(genre)
-    polishedLyrics += `\n\n(Instruments: ${instruments})`
+    formatted += `\n\n(Instruments: ${instruments})`
   }
   
-  return polishedLyrics
-}
-
-// ✅ CORREÇÃO DE LINHA (SEM COMENTÁRIOS) - CORRIGIDO
-async function correctLine(line: string, targetSyllables: number, genre: string): Promise<string> {
-  const prompt = `CORREÇÃO SILENCIOSA - ${genre.toUpperCase()}
-
-LINHA: "${line}"
-SÍLABAS ATUAIS: ${countPoeticSyllables(line)}
-ALVO: ${targetSyllables} sílabas
-
-REESCREVA APENAS A LINHA para ter ${targetSyllables} sílabas, mantendo significado e estilo ${genre}.
-
-RETORNE APENAS A LINHA CORRIGIDA, SEM COMENTÁRIOS:`
-
-  const { text } = await generateText({
-    model: "openai/gpt-4o-mini",
-    prompt,
-    temperature: 0.3,
-    // ❌ REMOVIDO: maxTokens: 30 - Não é um parâmetro válido
-  })
-
-  // ✅ LIMPA QUALQUER COMENTÁRIO QUE A IA POSSA ADICIONAR
-  const cleaned = text.trim()
-    .replace(/^["']|["']$/g, '') // Remove aspas
-    .replace(/^🎵\s*/, '') // Remove emojis
-    .replace(/^.*?:/, '') // Remove prefixos como "Corrigido:"
-    .split('\n')[0] // Pega apenas a primeira linha
-
-  return cleaned || line
-}
-
-// ✅ GERADOR DE REFRÃO - CORRIGIDO
-async function generateChorus(params: { genre: string; theme: string; mood?: string; additionalRequirements?: string }) {
-  const prompt = `CRIAÇÃO DE REFRÃO ORIGINAL - ${params.genre.toUpperCase()}
-
-TEMA: ${params.theme}
-HUMOR: ${params.mood || "adaptável"}
-${params.additionalRequirements ? `REQUISITOS: ${params.additionalRequirements}` : ''}
-
-Crie 3 variações de REFRÃO ORIGINAL (4 linhas cada, máximo 12 sílabas por linha).
-
-RETORNE APENAS JSON:
-{
-  "variations": [
-    {
-      "chorus": "Linha 1\\nLinha 2\\nLinha 3\\nLinha 4",
-      "style": "Estilo",
-      "score": 9
-    }
-  ],
-  "bestOptionIndex": 0
-}`
-
-  const { text } = await generateText({ 
-    model: "openai/gpt-4o", 
-    prompt, 
-    temperature: 0.8 
-  })
-  
-  const jsonMatch = text.match(/\{[\s\S]*\}/)
-  return jsonMatch ? JSON.parse(jsonMatch[0]) : null
-}
-
-// ✅ GERADOR DE HOOK - CORRIGIDO
-async function generateHook(params: { genre: string; theme: string; mood?: string; additionalRequirements?: string }) {
-  const prompt = `CRIAÇÃO DE HOOK - ${params.genre.toUpperCase()}
-
-TEMA: ${params.theme}
-${params.additionalRequirements ? `REQUISITOS: ${params.additionalRequirements}` : ''}
-
-Crie 3 hooks (1 linha cada, máximo 12 sílabas).
-
-RETORNE APENAS JSON:
-{
-  "variations": [
-    {
-      "hook": "Frase do hook",
-      "style": "Estilo", 
-      "score": 9
-    }
-  ],
-  "bestOptionIndex": 0
-}`
-
-  const { text } = await generateText({ 
-    model: "openai/gpt-4o", 
-    prompt, 
-    temperature: 0.9 
-  })
-  
-  const jsonMatch = text.match(/\{[\s\S]*\}/)
-  return jsonMatch ? JSON.parse(jsonMatch[0]) : null
-}
-
-// ✅ GERADOR DE MÚSICA COMPLETA - CORRIGIDO
-async function generateCompleteSong(params: { 
-  genre: string; 
-  theme: string; 
-  mood?: string; 
-  additionalRequirements?: string; 
-  syllableConfig: any; 
-  rhythm: string; 
-  generatedChorus?: any; 
-  generatedHook?: any; 
-}) {
-  
-  const chorusContext = params.generatedChorus ? `REFRÃO SUGERIDO: ${params.generatedChorus.variations?.[0]?.chorus}` : ''
-  const hookContext = params.generatedHook ? `HOOK SUGERIDO: ${params.generatedHook.variations?.[0]?.hook}` : ''
-
-  const prompt = `CRIE MÚSICA ${params.genre.toUpperCase()} SOBRE: ${params.theme}
-
-${params.additionalRequirements ? `REQUISITOS: ${params.additionalRequirements}` : ''}
-${chorusContext}
-${hookContext}
-
-ESTRUTURA: [INTRO] → [VERSE 1] → [PRE-CHORUS] → [CHORUS] → [VERSE 2] → [CHORUS] → [BRIDGE] → [CHORUS] → [OUTRO]
-
-RETORNE APENAS A LETRA, SEM COMENTÁRIOS:`
-
-  const { text } = await generateText({ 
-    model: "openai/gpt-4o", 
-    prompt, 
-    temperature: 0.7 
-  })
-  
-  return text.trim()
-}
-
-// ✅ FUNÇÕES AUXILIARES
-function calculateSongScore(lyrics: string, syllableConfig: { min: number; max: number; ideal: number }): number {
-  const validation = validateLyrics(lyrics, syllableConfig)
-  if (validation.analyzedLines === 0) return 75
-  const complianceRate = validation.compliantLines / validation.analyzedLines
-  return Math.min(95, 70 + (complianceRate * 25))
-}
-
-function extractTitle(lyrics: string, theme: string): string {
-  const lines = lyrics.split('\n')
-  for (const line of lines) {
-    if (isLyricLine(line) && line.trim()) {
-      return line.trim().split(' ').slice(0, 4).join(' ')
-    }
-  }
-  return theme || "Nova Música"
+  return formatted
 }
 
 function getSyllableConfig(genre: string): { min: number; max: number; ideal: number } {
@@ -446,8 +367,8 @@ function getSyllableConfig(genre: string): { min: number; max: number; ideal: nu
 function getGenreInstruments(genre: string): string {
   const instruments: { [key: string]: string } = {
     "Sertanejo": "acoustic guitar, viola, bass, drums, accordion",
-    "MPB": "nylon guitar, piano, bass, light percussion", 
-    "Funk": "drum machine, synth bass, samples, electronic beats",
+    "MPB": "nylon guitar, piano, bass, light percussion",
+    "Funk": "drum machine, synth bass, samples, electronic beats", 
     "Forró": "accordion, triangle, zabumba, bass",
     "Rock": "electric guitar, bass, drums, keyboard",
     "Pop": "synth, drum machine, bass, piano",
