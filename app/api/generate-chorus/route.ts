@@ -1,175 +1,294 @@
+import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
-import { NextResponse } from "next/server"
+import { getGenreConfig, detectSubGenre, getGenreRhythm } from "@/lib/genre-config"
+import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
+import { countPoeticSyllables } from "@/lib/validation/syllable-counter"
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    
-    console.log('🎵 [Generate-Chorus] Parâmetros recebidos:', {
-      genero: body.genero || body.genre,
-      tema: body.tema || body.theme,
-      humor: body.humor || body.mood
-    })
+    const { genre, theme, mood, additionalRequirements, lyrics, advancedMode } = await request.json()
 
-    // ✅ PARÂMETROS FLEXÍVEIS
-    const genero = body.genero || body.genre
-    const tema = body.tema || body.theme
-    const humor = body.humor || body.mood
-
-    // ✅ VALIDAÇÃO SIMPLES
-    if (!genero || !tema) {
-      return NextResponse.json({ 
-        error: "Gênero e tema são obrigatórios",
-        suggestion: "Selecione um gênero musical e digite um tema para gerar refrões"
-      }, { status: 400 })
+    if (!genre || !theme) {
+      return NextResponse.json({ error: "Gênero e tema são obrigatórios" }, { status: 400 })
     }
 
-    console.log(`[Generate-Chorus] Gerando refrões para: ${genero} - ${tema}`)
+    if (!lyrics) {
+      return NextResponse.json(
+        { error: "Letra base é obrigatória. Cole a letra na aba Reescrever antes de gerar o refrão." },
+        { status: 400 },
+      )
+    }
 
-    const prompt = `GERE 5 VARIAÇÕES DE REFRÃO - ${genero.toUpperCase()}
+    const genreConfig = getGenreConfig(genre)
+    const subGenreInfo = detectSubGenre(additionalRequirements)
+    const defaultRhythm = getGenreRhythm(genre)
+    const finalRhythm = subGenreInfo.rhythm || defaultRhythm
 
-TEMA: ${tema}
-HUMOR: ${humor || "Variado"}
-GÊNERO: ${genero}
+    const lyricsContext = `
+📝 LETRA EXISTENTE (CONTEXTO OBRIGATÓRIO):
+${lyrics}
 
-INSTRUÇÕES:
-- Gere 5 variações de refrão diferentes
-- Cada refrão deve ter 2 ou 4 linhas (NUNCA 3)
-- Use linguagem autêntica do ${genero}
-- Use contrações: "cê", "tô", "pra", "tá"
-- Foque no tema: ${tema}
-- Mantenha o humor: ${humor || "adequado ao tema"}
+🎯 O REFRÃO DEVE:
+- Conectar-se PERFEITAMENTE com esta letra
+- Usar o MESMO tom emocional e linguagem
+- Manter TOTAL coerência com a história
+- Parecer parte NATURAL desta composição
+- Ser o MOMENTO MAIS MEMORÁVEL da música
+- GRUDAR NA CABEÇA na primeira escuta
+${subGenreInfo.subGenre ? `- Seguir o ritmo de ${subGenreInfo.styleNote}` : ""}
+`
 
-FORMATO DE RESPOSTA:
-[Refrão 1 - Estilo Comercial]
-• Linha 1 do refrão
-• Linha 2 do refrão
-[Justificativa: Porque funciona comercialmente...]
+    const universalRules = `
+🌍 REGRAS UNIVERSAIS DE IDIOMA (OBRIGATÓRIO)
 
-[Refrão 2 - Estilo Emocional]  
-• Linha 1 do refrão
-• Linha 2 do refrão
-[Justificativa: Porque conecta emocionalmente...]
+✅ PORTUGUÊS BRASILEIRO:
+- LETRAS DO REFRÃO: 100% em português do Brasil
+- Linguagem coloquial autêntica
+- Gírias e expressões regionais
 
-[Refrão 3 - Estilo Dançante]
-• Linha 1 do refrão
-• Linha 2 do refrão  
-[Justificativa: Porque é cativante e dançante...]
+✅ INGLÊS:
+- BACKING VOCALS: sempre em inglês
+  Exemplo: (Backing: "Oh, oh, oh"), (Backing: "Yeah, yeah")
+- INSTRUÇÕES (se houver): sempre em inglês
+  Exemplo: [CHORUS - Full energy, singalong moment]
 
-[Refrão 4 - Estilo Poético]
-• Linha 1 do refrão
-• Linha 2 do refrão
-[Justificativa: Porque tem linguagem poética...]
+❌ NUNCA MISTURE:
+- Não escreva refrão em inglês
+- Mantenha separação clara
 
-[Refrão 5 - Estilo Simples]
-• Linha 1 do refrão
-• Linha 2 do refrão
-[Justificativa: Porque é direto e memorável...]
+🎯 FÓRMULA DE REFRÃO DE SUCESSO 2024-2025
 
-MELHOR OPÇÃO COMERCIAL: [Número do refrão]`
+⚠️ REGRA ABSOLUTA DE SÍLABAS (INVIOLÁVEL):
+- CADA VERSO: MÁXIMO 12 SÍLABAS POÉTICAS
+- Este é o LIMITE HUMANO do canto
+- NUNCA exceda 12 sílabas por verso
+- Se precisar de mais espaço, divida em dois versos
+- Criatividade DENTRO do limite, não burlando ele
 
-    const { text } = await generateText({
-      model: "openai/gpt-4o",
-      prompt,
-      temperature: 0.7
-    })
+⚠️ FORMATO DE VERSOS EMPILHADOS (OBRIGATÓRIO):
+- Cada verso do refrão em uma linha separada
+- NUNCA junte dois versos na mesma linha
+- Use "\\n" para separar as linhas no JSON
+- Facilita contagem de versos e sílabas
+- Formato padrão brasileiro de composição
 
-    // ✅ PROCESSAMENTO SIMPLES DA RESPOSTA
-    const variations = parseChorusResponse(text)
-    const bestCommercialOptionIndex = findBestCommercialOption(text)
+EXEMPLO CORRETO (cada verso ≤12 sílabas):
+"chorus": "Cê me testa, olha e sorri\\nSaudade é punhal no peito\\nTô no meu flow\\nVocê me faz sonhar"
 
-    console.log(`[Generate-Chorus] ✅ ${variations.length} refrões gerados`)
+EXEMPLO ERRADO (NÃO FAÇA):
+"chorus": "Cê me testa, olha e sorri, saudade é punhal no peito" ❌ (versos juntos)
+"chorus": "Você me deixou sozinho aqui pensando em tudo que passou" ❌ (mais de 12 sílabas)
 
-    return NextResponse.json({
-      variations,
-      bestCommercialOptionIndex
-    })
+PRIORIDADE ABSOLUTA:
+1. MÁXIMO 12 SÍLABAS POR VERSO (INVIOLÁVEL)
+2. GANCHO GRUDENTO (primeira linha deve grudar na cabeça)
+3. FRASES COMPLETAS E COERENTES (NUNCA corte no meio)
+4. LINGUAGEM COLOQUIAL BRASILEIRA INTENSA
+5. FÁCIL DE CANTAR JUNTO (karaokê-friendly)
+6. CADA VERSO EM UMA LINHA SEPARADA
 
+CARACTERÍSTICAS DE HIT:
+- Máximo 4 linhas, cada uma com 8-10 sílabas (NUNCA mais de 12)
+- Frases simples, diretas, memoráveis
+- Palavras do dia-a-dia ("cê", "tô", "pra", "né")
+- Cada linha faz sentido sozinha
+- Melodia implícita grudenta
+- CADA LINHA SEPARADA POR \\n
+
+EXEMPLOS DE HITS 2024-2025 (formato empilhado, ≤12 sílabas):
+✓ "Cê me testa, olha e sorri\\nSaudade é punhal no peito\\nTô no meu flow\\nVocê me faz sonhar"
+✓ "Se quer saber de mim\\nPergunte para mim\\nSe for falar do que passou\\nConta a parte que você errou"
+
+EVITE:
+✗ Versos com mais de 12 sílabas
+✗ Frases incompletas ("Você me faz..." - ERRADO)
+✗ Vocabulário rebuscado ("floresço", "bonança")
+✗ Abstrações vagas ("mar de dor", "alma perdida")
+✗ Rimas forçadas que quebram naturalidade
+✗ Juntar versos na mesma linha
+`
+
+    const advancedModeRules = advancedMode
+      ? `
+🔥 MODO AVANÇADO - CRITÉRIOS DE HIT
+
+GANCHO PREMIUM:
+- Primeira linha DEVE ser o gancho principal
+- Teste: Se não grudar em 3 segundos, refaça
+- Melodia implícita clara e memorável
+
+RIMAS PERFEITAS:
+- Mínimo 50% de rimas ricas
+- Zero rimas falsas ou forçadas
+- Rimas naturais da narrativa
+
+LINGUAGEM LIMPA:
+- Adequado para rádio e streaming
+- Zero palavrões pesados
+- Respeito e bom gosto
+
+MÉTRICA COMERCIAL:
+- 8-10 sílabas por linha (ideal para melodia)
+- Respiração natural garantida
+- Fácil de cantar em karaokê
+`
+      : ""
+
+    const metaforasRule = additionalRequirements
+      ? `\n⚡ REQUISITOS ESPECIAIS (PRIORIDADE MÁXIMA):
+${additionalRequirements}
+
+Se metáforas especificadas, são OBRIGATÓRIAS no refrão.`
+      : ""
+
+    const prompt = `${universalRules}
+${advancedModeRules}
+${metaforasRule}
+
+${lyricsContext}
+
+🎵 Você é um compositor PROFISSIONAL especializado em criar REFRÕES DE HIT.
+
+Seu objetivo: Criar refrões que GRUDEM NA CABEÇA e façam SUCESSO nas plataformas.
+
+ESPECIFICAÇÕES:
+- Gênero: ${genre}
+- Ritmo: ${finalRhythm}
+- Tema: ${theme}
+- Humor: ${mood || "neutro"}
+
+PROCESSO PARA CADA VARIAÇÃO:
+1. Identifique o GANCHO principal (frase que vai grudar)
+2. Construa em torno do gancho com frases completas
+3. VERIFIQUE: Cada verso tem no máximo 12 sílabas?
+4. Teste mental: É fácil de cantar junto?
+5. Verifique: Conecta com a letra existente?
+
+REGRAS ESTRUTURAIS:
+- 4 linhas por refrão (padrão comercial)
+- Cada linha: 8-10 sílabas (NUNCA mais de 12)
+- CADA LINHA = FRASE COMPLETA
+- Primeira linha = GANCHO PRINCIPAL
+- Repetição estratégica de palavras-chave
+
+DIVERSIDADE CRIATIVA (5 ESTILOS):
+1. CHICLETE RADIOFÔNICO: Repetição estratégica, grudento
+2. VISUAL E DIRETO: Cena clara, imagem concreta
+3. BORDÃO IMPACTANTE: Frase marcante, quotable
+4. EMOCIONAL E LEVE: Vulnerabilidade autêntica
+5. SURPREENDENTE: Abordagem inesperada, criativa
+
+FORMATO JSON:
+{
+  "variations": [
+    {
+      "chorus": "linha 1 (GANCHO)\\nlinha 2 completa\\nlinha 3 completa\\nlinha 4 completa",
+      "style": "Estilo (ex: Chiclete Radiofônico)",
+      "score": 8-10,
+      "hookLine": "A linha que vai grudar na cabeça",
+      "commercialAppeal": "Por que vai fazer sucesso",
+      "singAlongFactor": "Por que é fácil cantar junto"
+    }
+  ],
+  "bestCommercialOptionIndex": 0-4
+}
+
+CRITÉRIOS DE SCORE:
+- 10: Hit garantido, gruda na primeira escuta
+- 9: Muito forte, potencial de sucesso alto
+- 8: Bom comercialmente, funciona bem
+- <8: Refaça, não atinge padrão de hit
+
+IMPORTANTE:
+- Use contexto da letra existente
+- Cada variação TOTALMENTE DIFERENTE
+- Todos scores 8-10 (padrão de hit)
+- Melhor opção: score 10
+- GANCHO na primeira linha sempre
+- Frases completas e coerentes
+
+Gere as 5 variações de REFRÃO DE HIT agora:`
+
+    console.log("[v0] Gerando refrão otimizado para hit 2024-2025...")
+
+    let attempts = 0
+    let result: any = null
+    let allValid = false
+
+    while (attempts < 3 && !allValid) {
+      attempts++
+      console.log(`[v0] Tentativa ${attempts}/3 de geração de refrão...`)
+
+      const { text } = await generateText({
+        model: "openai/gpt-4o",
+        prompt,
+        temperature: 0.9,
+      })
+
+      const jsonMatch = text.match(/\{[\s\S]*\}/)
+      if (!jsonMatch) {
+        if (attempts === 3) {
+          throw new Error("Resposta da IA não está no formato JSON esperado")
+        }
+        continue
+      }
+
+      result = JSON.parse(jsonMatch[0])
+
+      if (result.variations && Array.isArray(result.variations)) {
+        allValid = true
+        const violations: string[] = []
+
+        for (let i = 0; i < result.variations.length; i++) {
+          const variation = result.variations[i]
+          const lines = variation.chorus.split("\\n")
+
+          for (let j = 0; j < lines.length; j++) {
+            const line = lines[j].trim()
+            if (!line) continue
+
+            // ✅ CORREÇÃO: countSyllables → countPoeticSyllables
+            const syllables = countPoeticSyllables(line)
+            if (syllables > 12) {
+              allValid = false
+              violations.push(`Variação ${i + 1}, linha ${j + 1}: "${line}" = ${syllables} sílabas (máx: 12)`)
+            }
+          }
+        }
+
+        if (!allValid) {
+          console.log(`[v0] ⚠️ Tentativa ${attempts} falhou - violações de sílabas:`)
+          violations.forEach((v) => console.log(`[v0]   - ${v}`))
+          if (attempts < 3) {
+            console.log(`[v0] 🔄 Regenerando...`)
+          }
+        } else {
+          console.log(`[v0] ✅ Todas as variações respeitam o limite de 12 sílabas!`)
+        }
+      }
+    }
+
+    if (!allValid) {
+      console.log(`[v0] ⚠️ Após 3 tentativas, ainda há violações. Retornando melhor resultado.`)
+    }
+
+    if (result.variations && Array.isArray(result.variations)) {
+      result.variations = result.variations.map((variation: any) => ({
+        ...variation,
+        chorus: capitalizeLines(variation.chorus),
+      }))
+    }
+
+    console.log("[v0] ✅ Refrão de hit gerado com sucesso!")
+
+    return NextResponse.json(result)
   } catch (error) {
-    console.error("[Generate-Chorus] Erro:", error)
-    
+    console.error("[v0] ❌ Erro ao gerar refrão:", error)
     return NextResponse.json(
       {
-        error: "Erro ao gerar refrões",
-        details: error instanceof Error ? error.message : "Erro desconhecido",
-        suggestion: "Tente novamente com um tema mais específico"
+        error: error instanceof Error ? error.message : "Erro ao gerar refrão",
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
-}
-
-// ✅ FUNÇÃO SIMPLES PARA PROCESSAR RESPOSTA
-function parseChorusResponse(response: string): Array<{
-  chorus: string
-  style: string
-  score: number
-  justification: string
-}> {
-  const variations: Array<{
-    chorus: string
-    style: string
-    score: number
-    justification: string
-  }> = []
-
-  // Busca por padrões simples
-  const chorusBlocks = response.split(/\[Refrão \d+/i)
-  
-  for (const block of chorusBlocks) {
-    if (!block.trim()) continue
-    
-    // Extrai estilo
-    const styleMatch = block.match(/- ([^\]]+)\]/)
-    const style = styleMatch ? styleMatch[1].trim() : "Estilo Variado"
-    
-    // Extrai linhas do refrão
-    const lineMatches = block.match(/•\s*([^\n]+)/g)
-    if (lineMatches && lineMatches.length >= 2) {
-      const chorus = lineMatches.slice(0, 2).map(line => line.replace(/•\s*/, '')).join(' / ')
-      
-      // Extrai justificativa
-      const justificationMatch = block.match(/\[Justificativa:\s*([^\]]+)\]/i)
-      const justification = justificationMatch ? justificationMatch[1].trim() : "Refrão bem construído"
-      
-      // Score baseado no estilo
-      const score = style.toLowerCase().includes('comercial') ? 9 : 
-                   style.toLowerCase().includes('emocional') ? 8 : 7
-
-      variations.push({
-        chorus,
-        style,
-        score,
-        justification
-      })
-    }
-  }
-
-  // Garante pelo menos 3 variações
-  while (variations.length < 3) {
-    variations.push({
-      chorus: "Refrão sendo gerado... / Em breve disponível",
-      style: "Estilo Básico",
-      score: 6,
-      justification: "Refrão em desenvolvimento"
-    })
-  }
-
-  return variations.slice(0, 5)
-}
-
-// ✅ IDENTIFICA MELHOR OPÇÃO COMERCIAL
-function findBestCommercialOption(response: string): number {
-  const bestMatch = response.match(/MELHOR OPÇÃO COMERCIAL:\s*\[?(\d+)\]?/i)
-  if (bestMatch) {
-    return Math.min(4, parseInt(bestMatch[1]) - 1) // Converte para índice 0-based
-  }
-
-  // Fallback: procura por "Comercial" no texto
-  const commercialIndex = response.toLowerCase().indexOf("comercial")
-  if (commercialIndex > -1) {
-    return 0 // Primeiro refrão como fallback
-  }
-
-  return 0
 }
