@@ -106,7 +106,7 @@ export default function CriarPage() {
   const [showHookDialog, setShowHookDialog] = useState(false)
   const [selectedHook, setSelectedHook] = useState<string | null>(null)
   const [formattingStyle, setFormattingStyle] = useState("performatico")
-  const [universalPolish, setUniversalPolish] = useState(true) // ✅ NOVO: POLIMENTO UNIVERSAL
+  const [universalPolish, setUniversalPolish] = useState(true)
 
   // ✅ OBTER CONFIGURAÇÃO DE SÍLABAS POR GÊNERO
   const getSyllableConfig = (selectedGenre: string) => {
@@ -149,8 +149,8 @@ export default function CriarPage() {
           formattingStyle: formattingStyle,
           additionalRequirements: additionalReqs,
           advancedMode: advancedMode,
-          universalPolish: universalPolish, // ✅ NOVO: POLIMENTO UNIVERSAL
-          syllableTarget: syllableConfig, // ✅ CONFIGURAÇÃO ESPECÍFICA POR GÊNERO
+          universalPolish: universalPolish,
+          syllableTarget: syllableConfig,
           metrics:
             BRAZILIAN_GENRE_METRICS[genre as keyof typeof BRAZILIAN_GENRE_METRICS] || BRAZILIAN_GENRE_METRICS.default,
         }),
@@ -733,11 +733,10 @@ export default function CriarPage() {
                     className="font-mono text-xs"
                   />
                   
-                  {/* VALIDADOR DE SÍLABAS - ATUALIZADO PARA SISTEMA UNIVERSAL */}
+                  {/* ✅ VALIDADOR DE SÍLABAS - CORRIGIDO (sem minSyllables) */}
                   <SyllableValidator
                     lyrics={lyrics}
                     maxSyllables={currentSyllableConfig?.max || 11}
-                    minSyllables={currentSyllableConfig?.min || 7}
                     onValidate={(result) => {
                       if (!result.valid) {
                         console.log(`⚠️ ${result.linesWithIssues} versos com problemas:`)
@@ -745,8 +744,11 @@ export default function CriarPage() {
                           console.log(`  Linha ${v.line}: "${v.text}" → ${v.syllables} sílabas`)
                         })
                         
+                        const minSyllables = currentSyllableConfig?.min || 7
+                        const maxSyllables = currentSyllableConfig?.max || 11
+                        
                         toast.warning(`${result.linesWithIssues} versos fora do padrão ${genre}`, {
-                          description: `Use ${currentSyllableConfig?.min}-${currentSyllableConfig?.max} sílabas`,
+                          description: `Use ${minSyllables}-${maxSyllables} sílabas`,
                           duration: 5000
                         })
                       } else if (result.totalLines > 0) {
