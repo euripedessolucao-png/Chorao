@@ -87,7 +87,7 @@ function getSyllableConfig(genero: string) {
   return GENRE_QUALITY_CONFIG[genero as keyof typeof GENRE_QUALITY_CONFIG] || GENRE_QUALITY_CONFIG.default
 }
 
-// ✅ FUNÇÃO PARA REWRITE COM REFRÕES PRESERVADOS
+// ✅ FUNÇÃO PARA REWRITE COM REFRÕES PRESERVADOS USANDO META-COMPOSER
 async function rewriteWithPreservedChoruses(
   letraOriginal: string,
   extractedChoruses: string[],
@@ -101,7 +101,7 @@ async function rewriteWithPreservedChoruses(
   
   console.log(`[RewritePreserved] Reescrita com ${extractedChoruses.length} refrões preservados`)
   
-  // ✅ USA O META-COMPOSER DIRETAMENTE COM OS REFRÕES PRESERVADOS
+  // ✅ USA O META-COMPOSER COM OS REFRÕES PRESERVADOS
   const compositionRequest = {
     genre: genero,
     theme: extractThemeFromInput(tema),
@@ -111,17 +111,36 @@ async function rewriteWithPreservedChoruses(
     applyFinalPolish: universalPolish,
     preserveRhymes: true,
     applyTerceiraVia: true,
-    preservedChoruses: extractedChoruses
+    preservedChoruses: extractedChoruses,
+    originalLyrics: letraOriginal // ← ADICIONADO: passa a letra original para o MetaComposer
   }
 
-  const result = await MetaComposer.compose(compositionRequest)
-  
-  console.log(`[RewritePreserved] Reescrita concluída - Score: ${result.metadata.finalScore.toFixed(2)}`)
-  if (result.metadata.preservedChorusesUsed) {
-    console.log(`[RewritePreserved] ✅ ${extractedChoruses.length} refrões preservados aplicados`)
+  try {
+    const result = await MetaComposer.compose(compositionRequest)
+    
+    console.log(`[RewritePreserved] Reescrita concluída - Score: ${result.metadata.finalScore.toFixed(2)}`)
+    if (result.metadata.preservedChorusesUsed) {
+      console.log(`[RewritePreserved] ✅ ${extractedChoruses.length} refrões preservados aplicados`)
+    }
+    
+    return result.lyrics
+  } catch (error) {
+    console.error('[RewritePreserved] Erro no MetaComposer, usando fallback:', error)
+    // Fallback para reescrita normal se o MetaComposer falhar
+    return await rewriteNormally(
+      letraOriginal,
+      genero,
+      humor,
+      tema,
+      'equilibrado', // criatividade padrão
+      undefined, // inspiracao
+      undefined, // metaforas
+      [], // emocoes
+      additionalRequirements,
+      universalPolish,
+      syllableTarget
+    )
   }
-  
-  return result.lyrics
 }
 
 // ✅ FUNÇÃO DE REWRITE NORMAL
@@ -143,6 +162,34 @@ async function rewriteNormally(
   console.log(`[RewriteNormally] Reescrita para: ${genero} - ${tema}`)
   console.log(`[RewriteNormally] Configuração sílabas: ${syllableTarget.min}-${syllableTarget.max} (ideal: ${syllableTarget.ideal})`)
 
+  // ✅ SE UNIVERSAL POLISH ESTÁ ATIVO, USA META-COMPOSER
+  if (universalPolish) {
+    console.log(`[RewriteNormally] 🎵 Usando MetaComposer para polimento universal`)
+    
+    const compositionRequest = {
+      genre: genero,
+      theme: extractThemeFromInput(tema, inspiracao),
+      mood: extractMoodFromInput(humor, emocoes),
+      additionalRequirements: additionalRequirements || '',
+      syllableTarget: syllableTarget,
+      applyFinalPolish: true,
+      preserveRhymes: true,
+      applyTerceiraVia: true,
+      originalLyrics: letraOriginal,
+      creativity: criatividade
+    }
+
+    try {
+      const result = await MetaComposer.compose(compositionRequest)
+      console.log(`[RewriteNormally] MetaComposer finalizado - Score: ${result.metadata.finalScore.toFixed(2)}`)
+      return result.lyrics
+    } catch (error) {
+      console.error('[RewriteNormally] Erro no MetaComposer, continuando com reescrita normal:', error)
+      // Continua com a reescrita normal abaixo
+    }
+  }
+
+  // ✅ FALLBACK: reescrita tradicional com GPT
   const temperature = criatividade === "conservador" ? 0.5 : criatividade === "ousado" ? 0.9 : 0.7
 
   const emotionsText = emocoes.length > 0 ? `Emoções: ${emocoes.join(", ")}` : ""
@@ -193,7 +240,7 @@ ${additionalRequirements ? `\nSPECIAL REQUIREMENTS:\n${additionalRequirements}` 
 
 Rewrite and improve the song now:`
 
-  console.log("[RewriteNormally] Iniciando reescrita...")
+  console.log("[RewriteNormally] Iniciando reescrita com GPT...")
 
   const { text } = await generateText({
     model: "openai/gpt-4o",
@@ -209,31 +256,21 @@ Rewrite and improve the song now:`
 
   // ✅ VALIDAÇÃO E CORREÇÃO AUTOMÁTICA DE SÍLABAS
   console.log(`[RewriteNormally] Aplicando imposição rigorosa de sílabas...`)
-  const syllableEnforcement = syllableTarget
-
   const enforcedResult = await SyllableEnforcer.enforceSyllableLimits(
     lyrics,
-    syllableEnforcement,
+    syllableTarget,
     genero
   )
 
   if (enforcedResult.corrections > 0) {
     console.log(`[RewriteNormally] ${enforcedResult.corrections} linhas corrigidas automaticamente`)
-    enforcedResult.violations.forEach(v => {
-      console.log(`[RewriteNormally] CORRIGIDO: ${v}`)
-    })
     lyrics = enforcedResult.correctedLyrics
-  } else {
-    console.log(`[RewriteNormally] Todas as linhas respeitam o limite de sílabas!`)
   }
 
   // ✅ APLICA EMPILHAMENTO PROFISSIONAL
-  console.log("[Stacker] Aplicando empilhamento profissional...")
+  console.log("[RewriteNormally] Aplicando empilhamento profissional...")
   const stackingResult = LineStacker.stackLines(lyrics)
   lyrics = stackingResult.stackedLyrics
-
-  console.log(`[Stacker] Score de empilhamento: ${(stackingResult.stackingScore * 100).toFixed(1)}%`)
-  stackingResult.improvements.forEach(imp => console.log(`[Stacker] ${imp}`))
 
   return lyrics
 }
@@ -277,7 +314,7 @@ export async function POST(request: Request) {
     console.log(`[Rewrite] Configuração ${genero}: ${finalSyllableTarget.min}-${finalSyllableTarget.max}s (ideal: ${finalSyllableTarget.ideal}s)`)
     console.log(`[Rewrite] Polimento Universal: ${universalPolish ? 'ATIVO' : 'INATIVO'}`)
 
-    // ✅ EXTRAI refrões selecionados se existirem (sempre retorna array)
+    // ✅ EXTRAI refrões selecionados se existirem
     const extractedChoruses = selectedChoruses || extractChorusesFromInstructions(additionalRequirements) || []
 
     let finalLyrics: string
@@ -288,7 +325,6 @@ export async function POST(request: Request) {
       console.log(`[Rewrite] 🎯 Modo preservação ativo: ${extractedChoruses.length} refrões selecionados`)
       rewriteMode = "preservation"
       
-      // ✅ USA FUNÇÃO ALTERNATIVA PARA REFRÕES PRESERVADOS
       finalLyrics = await rewriteWithPreservedChoruses(
         letraOriginal,
         extractedChoruses,
@@ -313,7 +349,8 @@ export async function POST(request: Request) {
         applyFinalPolish: true,
         creativity: criatividade,
         preserveRhymes: true,
-        applyTerceiraVia: true
+        applyTerceiraVia: true,
+        originalLyrics: letraOriginal
       }
 
       const result = await MetaComposer.compose(compositionRequest)
@@ -324,7 +361,7 @@ export async function POST(request: Request) {
         console.log(`[Rewrite] ✅ Polimento específico para ${genero} aplicado`)
       }
     } else {
-      // ✅ FALLBACK: reescrita normal (sem refrões selecionados e sem polimento universal)
+      // ✅ FALLBACK: reescrita normal
       console.log(`[Rewrite] Modo reescrita normal para: ${genero} - ${tema}`)
       rewriteMode = "normal"
       
