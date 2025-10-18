@@ -1,4 +1,3 @@
-// app/reescrever/page.tsx
 "use client"
 
 import { useState, useEffect } from "react"
@@ -85,7 +84,6 @@ export default function ReescreverPage() {
   const [selectedHook, setSelectedHook] = useState<string | null>(null)
   const [formattingStyle, setFormattingStyle] = useState("performatico")
 
-  // ✅ DEBUG: Monitorar mudanças no genre
   useEffect(() => {
     console.log('🎵 Genre state updated:', genre)
   }, [genre])
@@ -188,18 +186,12 @@ export default function ReescreverPage() {
     )
   }
 
-  // ✅ FUNÇÃO CORRIGIDA - Com DEBUG e validação robusta
   const handleRewriteLyrics = async () => {
-    // ✅ DEBUG DETALHADO
     console.log('=== DEBUG REWRITE ===')
     console.log('1. originalLyrics:', originalLyrics?.substring(0, 50) + '...')
     console.log('2. genre:', genre)
     console.log('3. genre type:', typeof genre)
     console.log('4. genre length:', genre?.length)
-    console.log('5. !genre:', !genre)
-    console.log('6. genre === "":', genre === '')
-    console.log('7. genre === undefined:', genre === undefined)
-    console.log('8. genre === null:', genre === null)
     console.log('=== FIM DEBUG ===')
 
     if (!originalLyrics?.trim()) {
@@ -207,7 +199,6 @@ export default function ReescreverPage() {
       return
     }
 
-    // ✅ VALIDAÇÃO ROBUSTA DO GÊNERO
     const isValidGenre = genre && 
                          genre.trim() !== '' && 
                          genre !== 'undefined' && 
@@ -232,20 +223,23 @@ export default function ReescreverPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           letraOriginal: originalLyrics,
-          generoConversao: genre,
-          conservarImagens: true,
-          polirSemMexer: false,
+          genero: genre,
+          humor: mood,
+          tema: theme,
+          criatividade: "equilibrado",
           formattingStyle: formattingStyle,
           additionalRequirements: additionalReqs,
           advancedMode: advancedMode,
           universalPolish: true,
           syllableTarget: syllableConfig,
-          metrics:
-            BRAZILIAN_GENRE_METRICS[genre as keyof typeof BRAZILIAN_GENRE_METRICS] || BRAZILIAN_GENRE_METRICS.default,
+          metrics: BRAZILIAN_GENRE_METRICS[genre as keyof typeof BRAZILIAN_GENRE_METRICS] || BRAZILIAN_GENRE_METRICS.default,
         }),
       })
 
+      console.log('📝 Status da resposta:', response.status)
+      
       const data = await response.json()
+      console.log('📝 Resposta da API:', data)
 
       if (!response.ok) {
         throw new Error(data.error || "Erro ao reescrever letra")
@@ -323,7 +317,7 @@ export default function ReescreverPage() {
       setLyrics("")
       setTitle("")
       setChords("")
-      toast.success("Resultado limpo!")
+      toast.success("Resultado limpa!")
     }
   }
 
@@ -335,7 +329,6 @@ export default function ReescreverPage() {
         <h1 className="text-2xl font-bold text-left mb-4">Reescrever Letras</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Coluna 1: Parâmetros de Reescrita */}
           <Card className="order-1 h-fit">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Parâmetros de Reescrita</CardTitle>
@@ -370,26 +363,7 @@ export default function ReescreverPage() {
 
               <div className="space-y-2">
                 <Label className="text-xs">Gênero para Reescrever</Label>
-                {/* ✅ TESTE ALTERNATIVO: Use este select se o GenreSelect não funcionar */}
-                {/* <select 
-                  value={genre} 
-                  onChange={(e) => {
-                    console.log('SELECT CHANGED:', e.target.value)
-                    setGenre(e.target.value)
-                  }}
-                  className="w-full h-9 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                >
-                  <option value="">Selecione um gênero</option>
-                  <option value="Sertanejo Raiz">Sertanejo Raiz</option>
-                  <option value="Sertanejo Moderno">Sertanejo Moderno</option>
-                  <option value="MPB">MPB</option>
-                  <option value="Rock">Rock</option>
-                  <option value="Funk">Funk</option>
-                </select> */}
-                
                 <GenreSelect value={genre} onValueChange={setGenre} className="h-9" />
-                
-                {/* ✅ DEBUG: Mostrar gênero selecionado */}
                 {genre && (
                   <div className="text-xs text-green-600 font-medium">
                     ✅ Gênero selecionado: {genre}
@@ -533,13 +507,11 @@ export default function ReescreverPage() {
             </CardContent>
           </Card>
 
-          {/* Coluna 2: Inspiração & Sensações */}
           <Card className="order-2 h-fit">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Inspiração & Sensações</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
-              {/* Diário de Inspiração */}
               <div className="border rounded-lg p-3 bg-purple-50/50 space-y-2">
                 <Label className="text-xs font-semibold">Diário de Inspiração</Label>
                 <p className="text-xs text-muted-foreground">
@@ -576,7 +548,6 @@ export default function ReescreverPage() {
                 </Tabs>
               </div>
 
-              {/* Inspiração Literária Global */}
               <div className="border rounded-lg p-3 bg-purple-50/50 space-y-2">
                 <Label className="text-xs font-semibold">Inspiração Literária Global</Label>
                 <p className="text-xs text-muted-foreground">
@@ -602,7 +573,6 @@ export default function ReescreverPage() {
                 <p className="text-xs text-muted-foreground">Busque por um tema ou palavra-chave.</p>
               </div>
 
-              {/* Metáforas Inteligentes */}
               <div className="border rounded-lg p-3 bg-purple-50/50 space-y-2">
                 <Label className="text-xs font-semibold">Metáforas Inteligentes</Label>
                 <p className="text-xs text-muted-foreground">Busque metáforas por tema para enriquecer sua letra.</p>
@@ -620,7 +590,6 @@ export default function ReescreverPage() {
                 <p className="text-xs text-muted-foreground">Busque por um tema ou palavra-chave.</p>
               </div>
 
-              {/* Sensações & Emoções */}
               <div className="border rounded-lg p-3 bg-purple-50/50 space-y-2">
                 <Label className="text-xs font-semibold">Sensações & Emoções</Label>
                 <p className="text-xs text-muted-foreground">
@@ -645,9 +614,7 @@ export default function ReescreverPage() {
             </CardContent>
           </Card>
 
-          {/* Coluna 3: Ferramentas e Resultado */}
           <div className="order-3 space-y-4">
-            {/* Ferramentas de Composição */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Ferramentas</CardTitle>
@@ -696,7 +663,6 @@ export default function ReescreverPage() {
               </CardContent>
             </Card>
 
-            {/* Resultado */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Resultado</CardTitle>
@@ -787,7 +753,6 @@ export default function ReescreverPage() {
         </div>
       </div>
 
-      {/* Dialog para Sugestões de Refrão */}
       <Dialog open={showChorusDialog} onOpenChange={setShowChorusDialog}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
@@ -855,7 +820,6 @@ export default function ReescreverPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog para Gerador de Hook */}
       <Dialog open={showHookDialog} onOpenChange={setShowHookDialog}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
