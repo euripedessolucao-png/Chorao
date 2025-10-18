@@ -97,9 +97,16 @@ export class MetaComposer {
   private static async applyRhymeCorrection(lyrics: string, genre: string, theme: string): Promise<string> {
     console.log(`[RhymeCorrection] Validando rimas para ${genre}...`)
 
+    const RHYME_CORRECTION_TIMEOUT = 10000 // 10 segundos máximo
+
     let rhymeReport
     try {
-      rhymeReport = generateRhymeReport(lyrics, genre)
+      rhymeReport = await Promise.race([
+        Promise.resolve(generateRhymeReport(lyrics, genre)),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Timeout no relatório de rimas")), RHYME_CORRECTION_TIMEOUT),
+        ),
+      ])
     } catch (reportError) {
       console.error("[RhymeCorrection] ⚠️ Erro ao gerar relatório, pulando correção:", reportError)
       return lyrics
@@ -110,18 +117,23 @@ export class MetaComposer {
       console.log(`[RhymeCorrection] Score baixo (${rhymeReport.overallScore}), aplicando correção...`)
 
       try {
-        const enhancement = await enhanceLyricsRhymes(lyrics, genre, theme)
+        const enhancement = (await Promise.race([
+          enhanceLyricsRhymes(lyrics, genre, theme),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Timeout na correção de rimas")), RHYME_CORRECTION_TIMEOUT),
+          ),
+        ])) as any
 
         if (enhancement.enhancedScore > rhymeReport.overallScore) {
           console.log(
             `[RhymeCorrection] ✅ Rimas melhoradas: ${rhymeReport.overallScore} → ${enhancement.enhancedScore}`,
           )
-          enhancement.improvements.forEach((imp) => console.log(`[RhymeCorrection] ${imp}`))
+          enhancement.improvements.forEach((imp: string) => console.log(`[RhymeCorrection] ${imp}`))
 
           return enhancement.enhancedLyrics
         }
       } catch (enhanceError) {
-        console.error("[RhymeCorrection] ⚠️ Erro ao corrigir rimas, mantendo original:", enhanceError)
+        console.error("[RhymeCorrection] ⚠️ Erro ou timeout ao corrigir rimas, mantendo original:", enhanceError)
         return lyrics
       }
     } else {
