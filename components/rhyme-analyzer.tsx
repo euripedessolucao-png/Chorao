@@ -6,14 +6,32 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { generateRhymeReport } from "@/lib/validation/rhyme-enhancer"
 
+interface RhymeReport {
+  overallScore: number
+  rhymeDistribution: {
+    rica: number
+    perfeita: number
+    pobre: number
+    toante: number
+    [key: string]: number
+  }
+  validation: {
+    valid: boolean
+    errors: string[]
+    warnings: string[]
+  }
+  suggestions: string[]
+  scheme: string[]
+}
+
 interface RhymeAnalyzerProps {
   lyrics: string
   genre: string
-  onAnalysis?: (report: any) => void
+  onAnalysis?: (report: RhymeReport) => void
 }
 
 export function RhymeAnalyzer({ lyrics, genre, onAnalysis }: RhymeAnalyzerProps) {
-  const [report, setReport] = useState<any>(null)
+  const [report, setReport] = useState<RhymeReport | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
 
   const analyzeRhymes = async () => {
@@ -21,7 +39,7 @@ export function RhymeAnalyzer({ lyrics, genre, onAnalysis }: RhymeAnalyzerProps)
     
     setIsAnalyzing(true)
     try {
-      const analysis = generateRhymeReport(lyrics, genre)
+      const analysis = generateRhymeReport(lyrics, genre) as RhymeReport
       setReport(analysis)
       onAnalysis?.(analysis)
     } catch (error) {
@@ -43,7 +61,7 @@ export function RhymeAnalyzer({ lyrics, genre, onAnalysis }: RhymeAnalyzerProps)
       case "perfeita": return "bg-blue-100 text-blue-800"
       case "pobre": return "bg-yellow-100 text-yellow-800"
       case "toante": return "bg-orange-100 text-orange-800"
-      default: return "bg-red-100 text-red-800"
+      default: return "bg-gray-100 text-gray-800"
     }
   }
 
@@ -79,7 +97,7 @@ export function RhymeAnalyzer({ lyrics, genre, onAnalysis }: RhymeAnalyzerProps)
               <div className="flex flex-wrap gap-1 mt-1">
                 {Object.entries(report.rhymeDistribution).map(([type, count]) => (
                   <Badge key={type} variant="secondary" className={getTypeColor(type)}>
-                    {type}: {count}
+                    {type}: {count as number}
                   </Badge>
                 ))}
               </div>
