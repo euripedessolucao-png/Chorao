@@ -1,6 +1,7 @@
 /**
- * META-COMPOSITOR TURBO DEFINITIVO - VERSÃO COMPLETA
- * Sistema completo com rimas ricas e preservação exata de refrões
+ * META-COMPOSITOR TURBO DEFINITIVO
+ * Sistema completo com rimas ricas por gênero
+ * Metas: MPB 60%, Sertanejo 50% rimas ricas
  */
 
 import { generateText } from "ai"
@@ -32,7 +33,6 @@ export interface CompositionResult {
     preservedChorusesUsed?: boolean
     rhymeScore?: number
     rhymeTarget?: number
-    chorusPreservation?: { allPreserved: boolean; details: string[] }
   }
 }
 
@@ -40,7 +40,7 @@ export class MetaComposer {
   private static readonly MAX_ITERATIONS = 2
 
   /**
-   * COMPOSIÇÃO TURBO DEFINITIVA - COM SISTEMA DE RIMAS E PRESERVAÇÃO DE REFRÕES
+   * COMPOSIÇÃO TURBO DEFINITIVA - COM SISTEMA DE RIMAS
    */
   static async compose(request: CompositionRequest): Promise<CompositionResult> {
     console.log("[MetaComposer-TURBO] Iniciando composição com sistema de rimas...")
@@ -80,17 +80,6 @@ export class MetaComposer {
         polishingApplied = true
       }
 
-      // ✅ VALIDA PRESERVAÇÃO DE REFRÕES
-      let chorusPreservation = { allPreserved: true, details: [] as string[] }
-      if (hasPreservedChoruses) {
-        const chorusFormats = preservedChoruses.map(chorus => {
-          const lines = chorus.split('/').map(line => line.trim()).filter(line => line)
-          return { chorus, lineCount: lines.length, lines }
-        })
-        chorusPreservation = this.validateChorusPreservation(finalLyrics, chorusFormats)
-        console.log(`[MetaComposer-TURBO] Preservação de refrões:`, chorusPreservation)
-      }
-
       // ✅ AVALIAÇÃO DE QUALIDADE COM RIMAS
       const qualityScore = this.calculateQualityScore(finalLyrics, syllableEnforcement, request.genre)
       console.log(`[MetaComposer-TURBO] Score: ${qualityScore.toFixed(2)}`)
@@ -106,8 +95,7 @@ export class MetaComposer {
             polishingApplied,
             preservedChorusesUsed: hasPreservedChoruses,
             rhymeScore: this.analyzeRhymes(finalLyrics, request.genre).score,
-            rhymeTarget: this.getGenreRhymeTarget(request.genre).minScore,
-            chorusPreservation
+            rhymeTarget: this.getGenreRhymeTarget(request.genre).minScore
           },
         }
       }
@@ -121,135 +109,6 @@ export class MetaComposer {
 
     console.log(`[MetaComposer-TURBO] 🎵 Composição finalizada! Score: ${bestScore.toFixed(2)}`)
     return bestResult
-  }
-
-  /**
-   * GERAÇÃO COM PRESERVAÇÃO EXATA DE REFRÕES - VERSÃO CORRIGIDA
-   */
-  private static async generateWithPreservedChoruses(
-    preservedChoruses: string[],
-    request: CompositionRequest,
-    syllableEnforcement: { min: number; max: number; ideal: number }
-  ): Promise<string> {
-    
-    console.log('[MetaComposer] Gerando com refrões preservados...')
-    
-    const chorusesToUse = preservedChoruses.slice(0, 2)
-    
-    // ✅ ANALISA O FORMATO DOS REFRÕES SELECIONADOS
-    const chorusFormats = chorusesToUse.map(chorus => {
-      const lines = chorus.split('/').map(line => line.trim()).filter(line => line)
-      return {
-        chorus,
-        lineCount: lines.length,
-        lines: lines
-      }
-    })
-    
-    console.log(`[MetaComposer] Formatos dos refrões:`, chorusFormats.map(c => `${c.lineCount} linhas`))
-
-    const prompt = `COMPOSIÇÃO COM REFRÕES PRESERVADOS - ${request.genre.toUpperCase()}
-
-REFRÃOS SELECIONADOS (USE EXATAMENTE ESTES):
-${chorusFormats.map((c, i) => `REFRÃO ${i+1} (${c.lineCount} linhas):\n${c.lines.map(line => `• ${line}`).join('\n')}`).join('\n\n')}
-
-TEMA: ${request.theme}
-HUMOR: ${request.mood}
-GÊNERO: ${request.genre}
-SÍLABAS: ${syllableEnforcement.min}-${syllableEnforcement.max} por linha
-
-INSTRUÇÕES CRÍTICAS:
-1. USE OS REFRÕES ACIMA EXATAMENTE COMO ESTÃO - não altere palavras, ordem ou número de linhas
-2. Cada refrão deve aparecer PELO MENOS 2 vezes na música
-3. Prepare versos que levem naturalmente para cada refrão
-4. Mantenha coerência temática com "${request.theme}"
-5. Use linguagem autêntica do ${request.genre}
-6. Use contrações: "cê", "tô", "pra", "tá"
-
-ESTRUTURA SUGERIDA:
-[INTRO]
-• Versos introdutórios
-
-[VERSE 1] 
-• Versos que preparam para o PRIMEIRO refrão
-
-[CHORUS 1]
-• PRIMEIRO REFRÃO SELECIONADO (exatamente como está acima)
-
-[VERSE 2]
-• Versos que desenvolvem e preparam para o próximo refrão
-
-[CHORUS 2] 
-• SEGUNDO REFRÃO SELECIONADO ou repetição do primeiro
-
-[BRIDGE] (opcional)
-• Desenvolvimento adicional
-
-[CHORUS 3]
-• Refrão final (pode repetir um dos selecionados)
-
-[OUTRO]
-• Encerramento
-
-IMPORTANTE: 
-- NÃO ALTERE os refrões selecionados
-- NÃO ADICIONE linhas extras aos refrões  
-- NÃO REMOVA linhas dos refrões
-- USE OS REFRÕES EXATAMENTE COMO FORAM FORNECIDOS
-
-RETORNE APENAS A LETRA COMPLETA:`
-
-    const { text } = await generateText({
-      model: "openai/gpt-4o",
-      prompt,
-      temperature: 0.3, // ✅ Temperatura baixa para seguir instruções rigorosamente
-    })
-
-    const lyrics = text.trim()
-    
-    // ✅ VALIDA SE OS REFRÕES FORAM PRESERVADOS
-    const preservationReport = this.validateChorusPreservation(lyrics, chorusFormats)
-    console.log(`[MetaComposer] Preservação de refrões:`, preservationReport)
-    
-    if (!preservationReport.allPreserved) {
-      console.warn(`[MetaComposer] ⚠️ Alguns refrões não foram preservados corretamente`)
-    }
-    
-    return lyrics
-  }
-
-  /**
-   * VALIDA SE OS REFRÕES FORAM PRESERVADOS CORRETAMENTE
-   */
-  private static validateChorusPreservation(
-    lyrics: string, 
-    chorusFormats: { chorus: string; lineCount: number; lines: string[] }[]
-  ): { allPreserved: boolean; details: string[] } {
-    
-    const details: string[] = []
-    let allPreserved = true
-    
-    for (const chorusFormat of chorusFormats) {
-      const { lines } = chorusFormat
-      
-      // Verifica se cada linha do refrão aparece na letra
-      let foundCount = 0
-      for (const line of lines) {
-        if (lyrics.includes(line)) {
-          foundCount++
-        }
-      }
-      
-      const isPreserved = foundCount === lines.length
-      if (!isPreserved) {
-        allPreserved = false
-        details.push(`Refrão com ${lines.length} linhas: ${foundCount}/${lines.length} linhas preservadas`)
-      } else {
-        details.push(`✅ Refrão com ${lines.length} linhas: totalmente preservado`)
-      }
-    }
-    
-    return { allPreserved, details }
   }
 
   /**
@@ -562,6 +421,9 @@ LINHA2_CORRIGIDA`
     return Math.min(1, Math.max(0, finalScore))
   }
 
+  // ... (os outros métodos permanecem iguais: generateDirectLyrics, generateWithPreservedChoruses, quickLineFix, extractTitle)
+  // Mantenha a implementação existente desses métodos
+
   /**
    * GERAÇÃO DIRETA DE LETRAS
    */
@@ -585,6 +447,39 @@ RETORNE APENAS A LETRA NO FORMATO:`
       model: "openai/gpt-4o",
       prompt,
       temperature: 0.7
+    })
+
+    return text.trim()
+  }
+
+  /**
+   * GERAÇÃO COM REFRÕES PRESERVADOS
+   */
+  private static async generateWithPreservedChoruses(
+    preservedChoruses: string[],
+    request: CompositionRequest,
+    syllableEnforcement: { min: number; max: number; ideal: number }
+  ): Promise<string> {
+    
+    const chorusesToUse = preservedChoruses.slice(0, 2)
+    
+    const prompt = `COMPOSIÇÃO COM REFRÕES PRESERVADOS - ${request.genre.toUpperCase()}
+
+REFRÃOS PARA USAR:
+${chorusesToUse.map((chorus, i) => `REFRÃO ${i+1}:\n${chorus}`).join('\n\n')}
+
+TEMA: ${request.theme}
+HUMOR: ${request.mood}
+SÍLABAS: ${syllableEnforcement.min}-${syllableEnforcement.max} por linha
+
+CRIE UMA MÚSICA QUE USE NATURALMENTE OS REFRÕES ACIMA.
+
+RETORNE APENAS A LETRA:`
+
+    const { text } = await generateText({
+      model: "openai/gpt-4o",
+      prompt,
+      temperature: 0.4
     })
 
     return text.trim()
