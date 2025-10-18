@@ -5,6 +5,25 @@ import { SyllableEnforcer } from "@/lib/validation/syllableEnforcer"
 import { LineStacker } from "@/lib/utils/line-stacker"
 import { MetaComposer } from "@/lib/orchestrator/meta-composer"
 
+// ✅ FUNÇÃO AUXILIAR PARA VALIDAR JSON
+async function safeJsonParse(request: Request) {
+  try {
+    const text = await request.text()
+    console.log('[API] Raw body received:', text.substring(0, 200))
+    
+    if (!text || text.trim() === '') {
+      throw new Error('Body vazio')
+    }
+    
+    const parsed = JSON.parse(text)
+    console.log('[API] JSON parseado com sucesso')
+    return parsed
+  } catch (error) {
+    console.error('[API] ERRO no parse do JSON:', error)
+    throw new Error('JSON inválido no corpo da requisição')
+  }
+}
+
 // ✅ CONFIGURAÇÃO UNIVERSAL DE QUALIDADE POR GÊNERO
 const GENRE_QUALITY_CONFIG = {
   "Sertanejo": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
@@ -273,18 +292,52 @@ Rewrite and improve the song now:`
   return lyrics
 }
 
-// ✅ ROTA PRINCIPAL DE REWRITE COM VALIDAÇÃO CORRIGIDA
-export async function POST(request: Request) {
-  try {
-    console.log('[API] Recebendo requisição...')
-    
-    const body = await request.json()
-    console.log('[API] Body recebido:', body)
+function extractTitleFromLyrics(lyrics: string): string {
+  const titleMatch = lyrics.match(/^Titulo:\s*(.+)$/m)
+  if (titleMatch?.[1]) return titleMatch[1].trim()
 
+  const chorusMatch = lyrics.match(/\[(?:CHORUS|REFRÃO)[^\]]*\]\s*\n([^\n]+)/i)
+  if (chorusMatch?.[1]) {
+    return chorusMatch[1].trim().split(" ").slice(0, 4).join(" ")
+  }
+
+  return "Música Reescrita"
+}
+
+// ✅ ROTA PRINCIPAL COM TRATAMENTO ROBUSTO DE JSON
+export async function POST(request: Request) {
+  console.log('[API] === INICIANDO REQUISIÇÃO REWRITE-LYRICS ===')
+  
+  let body: any = {}
+  
+  try {
+    // ✅ TENTA PARSEAR O JSON DE FORMA SEGURA
+    body = await safeJsonParse(request)
+    
+    console.log('[API] ✅ JSON parseado com sucesso')
+    console.log('[API] Campos recebidos:', Object.keys(body))
+
+  } catch (error) {
+    console.error('[API] ❌ ERRO CRÍTICO: Falha no parse do JSON')
+    
+    // ✅ RESPOSTA DE ERRO DETALHADA
+    return NextResponse.json({
+      error: "JSON inválido",
+      details: "O corpo da requisição não contém JSON válido",
+      suggestion: "Verifique se está enviando application/json e um JSON válido"
+    }, { 
+      status: 400,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+      }
+    })
+  }
+
+  try {
     const {
       letraOriginal,
       genero,
-      generoConversao, // ← ACEITA AMBOS OS NOMES
+      generoConversao,
       humor,
       tema,
       criatividade = "equilibrado",
@@ -301,31 +354,40 @@ export async function POST(request: Request) {
       selectedChoruses,
     } = body
 
-    // ✅ DEBUG no servidor
-    console.log('[API] Recebido - genero:', genero)
-    console.log('[API] Recebido - generoConversao:', generoConversao)
-    console.log('[API] Recebido - tipo genero:', typeof genero)
-    console.log('[API] Recebido - letraOriginal:', letraOriginal?.substring(0, 50))
+    // ✅ DEBUG DETALHADO
+    console.log('[API] === DEBUG DETALHADO ===')
+    console.log('[API] genero:', genero)
+    console.log('[API] generoConversao:', generoConversao)
+    console.log('[API] letraOriginal (primeiros 100 chars):', letraOriginal?.substring(0, 100))
+    console.log('[API] tema:', tema)
+    console.log('[API] humor:', humor)
+    console.log('[API] universalPolish:', universalPolish)
+    console.log('[API] criatividade:', criatividade)
 
     // ✅ CORREÇÃO: Usa qualquer um dos dois campos de gênero
-    const finalGenero = genero || generoConversao
+    const finalGenero = genero || generoConversao || "Sertanejo"
 
     // ✅ VALIDAÇÕES ROBUSTAS
     if (!letraOriginal || letraOriginal.trim() === '') {
       console.log('[API] ERRO: Letra original vazia')
       return NextResponse.json({ 
-        error: "Letra original é obrigatória" 
+        error: "Letra original é obrigatória",
+        received: letraOriginal
       }, { status: 400 })
     }
 
     if (!finalGenero || finalGenero.trim() === '' || finalGenero === 'undefined' || finalGenero === 'null') {
       console.log('[API] ERRO: Gênero inválido:', finalGenero)
       return NextResponse.json({ 
-        error: "Gênero é obrigatório" 
+        error: "Gênero é obrigatório",
+        receivedGenero: genero,
+        receivedGeneroConversao: generoConversao,
+        finalGenero: finalGenero
       }, { status: 400 })
     }
 
-    console.log('[API] Processando reescrita...')
+    console.log('[API] ✅ Dados validados com sucesso')
+    console.log(`[API] Processando reescrita para: ${finalGenero}`)
 
     // ✅ CONTINUA com o processamento normal...
     const autoSyllableConfig = getSyllableConfig(finalGenero)
@@ -400,10 +462,11 @@ export async function POST(request: Request) {
 
     finalLyrics = applyFinalFormatting(finalLyrics, finalGenero, metrics)
 
-    console.log(`[Rewrite] Reescrita concluída! Modo: ${rewriteMode}`)
+    console.log(`[Rewrite] ✅ Reescrita concluída! Modo: ${rewriteMode}`)
 
-    // ✅ RESPOSTA CORRETA - NextResponse.json() bem formatado
+    // ✅ RESPOSTA DE SUCESSO
     const responseData = {
+      success: true,
       letra: finalLyrics,
       titulo: titulo || extractTitleFromLyrics(finalLyrics),
       metadata: {
@@ -411,30 +474,32 @@ export async function POST(request: Request) {
         rewriteMode: rewriteMode,
         syllableConfig: finalSyllableTarget,
         universalPolish: universalPolish,
-        genre: finalGenero
+        genre: finalGenero,
+        timestamp: new Date().toISOString()
       }
     }
 
-    console.log('[API] Retornando resposta:', responseData)
+    console.log('[API] 📤 Enviando resposta de sucesso...')
 
     return NextResponse.json(responseData, { 
       status: 200,
       headers: {
-        'Content-Type': 'application/json; charset=utf-8'
+        'Content-Type': 'application/json; charset=utf-8',
       }
     })
 
   } catch (error) {
-    console.error("[Rewrite] Erro ao reescrever letra:", error)
+    console.error("[API] ❌ ERRO INTERNO:", error)
 
     const errorMessage = error instanceof Error ? error.message : "Erro desconhecido"
 
-    // ✅ RESPOSTA DE ERRO CORRETA
+    // ✅ RESPOSTA DE ERRO DETALHADA
     return NextResponse.json(
       {
         error: "Erro ao reescrever letra",
         details: errorMessage,
         suggestion: "Tente novamente com uma letra mais clara",
+        step: "processamento_reescrita"
       },
       { 
         status: 500,
@@ -446,14 +511,14 @@ export async function POST(request: Request) {
   }
 }
 
-function extractTitleFromLyrics(lyrics: string): string {
-  const titleMatch = lyrics.match(/^Titulo:\s*(.+)$/m)
-  if (titleMatch?.[1]) return titleMatch[1].trim()
-
-  const chorusMatch = lyrics.match(/\[(?:CHORUS|REFRÃO)[^\]]*\]\s*\n([^\n]+)/i)
-  if (chorusMatch?.[1]) {
-    return chorusMatch[1].trim().split(" ").slice(0, 4).join(" ")
-  }
-
-  return "Sem Título"
+// ✅ HANDLE OPTIONS FOR CORS
+export async function OPTIONS(request: Request) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    },
+  })
 }
