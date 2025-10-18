@@ -6,9 +6,26 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { generateRhymeReport } from "@/lib/validation/rhyme-enhancer"
 
+// Definir os tipos exatos baseados no que generateRhymeReport retorna
+type RhymeType = 'rica' | 'perfeita' | 'pobre' | 'toante' | 'consoante' | 'assonante'
+
+interface QualityBreakdownItem {
+  line: number  // ← CORRIGIDO: number em vez de string
+  type: RhymeType
+  score: number
+  explanation: string
+}
+
 interface RhymeReport {
   overallScore: number
-  rhymeDistribution: Record<string, number>
+  rhymeDistribution: {
+    rica: number
+    perfeita: number
+    pobre: number
+    toante: number
+    consoante?: number
+    assonante?: number
+  }
   validation: {
     valid: boolean
     errors: string[]
@@ -16,11 +33,7 @@ interface RhymeReport {
   }
   suggestions: string[]
   scheme: string[]
-  qualityBreakdown?: Array<{
-    line: string
-    score: number
-    type: string
-  }>
+  qualityBreakdown: QualityBreakdownItem[]
 }
 
 interface RhymeAnalyzerProps {
@@ -38,7 +51,7 @@ export function RhymeAnalyzer({ lyrics, genre, onAnalysis }: RhymeAnalyzerProps)
     
     setIsAnalyzing(true)
     try {
-      const analysis = generateRhymeReport(lyrics, genre)
+      const analysis = generateRhymeReport(lyrics, genre) as RhymeReport
       setReport(analysis)
       onAnalysis?.(analysis)
     } catch (error) {
@@ -60,16 +73,10 @@ export function RhymeAnalyzer({ lyrics, genre, onAnalysis }: RhymeAnalyzerProps)
       case "perfeita": return "bg-blue-100 text-blue-800"
       case "pobre": return "bg-yellow-100 text-yellow-800"
       case "toante": return "bg-orange-100 text-orange-800"
+      case "consoante": return "bg-purple-100 text-purple-800"
+      case "assonante": return "bg-pink-100 text-pink-800"
       default: return "bg-gray-100 text-gray-800"
     }
-  }
-
-  // Filtrar apenas os tipos de rima relevantes para exibição
-  const getRelevantRhymeTypes = (distribution: Record<string, number>) => {
-    const relevantTypes = ['rica', 'perfeita', 'pobre', 'toante', 'consoante', 'assonante']
-    return Object.entries(distribution).filter(([type]) => 
-      relevantTypes.includes(type) && distribution[type] > 0
-    )
   }
 
   return (
@@ -102,7 +109,9 @@ export function RhymeAnalyzer({ lyrics, genre, onAnalysis }: RhymeAnalyzerProps)
             <div>
               <span className="font-medium">Distribuição:</span>
               <div className="flex flex-wrap gap-1 mt-1">
-                {getRelevantRhymeTypes(report.rhymeDistribution).map(([type, count]) => (
+                {Object.entries(report.rhymeDistribution)
+                  .filter(([_, count]) => count > 0)
+                  .map(([type, count]) => (
                   <Badge key={type} variant="secondary" className={getTypeColor(type)}>
                     {type}: {count}
                   </Badge>
@@ -141,13 +150,18 @@ export function RhymeAnalyzer({ lyrics, genre, onAnalysis }: RhymeAnalyzerProps)
             {report.qualityBreakdown && report.qualityBreakdown.length > 0 && (
               <div className="text-xs">
                 <strong>Detalhes por linha:</strong>
-                <div className="mt-1 space-y-1">
-                  {report.qualityBreakdown.slice(0, 5).map((item, index) => (
-                    <div key={index} className="flex justify-between">
-                      <span className="truncate max-w-[200px]">{item.line}</span>
-                      <Badge variant="outline" className={getScoreColor(item.score)}>
-                        {item.score}
-                      </Badge>
+                <div className="mt-1 space-y-1 max-h-32 overflow-y-auto">
+                  {report.qualityBreakdown.slice(0, 10).map((item, index) => (
+                    <div key={index} className="flex justify-between items-center">
+                      <span className="text-xs">Linha {item.line}:</span>
+                      <div className="flex gap-2 items-center">
+                        <Badge variant="outline" className={getTypeColor(item.type)}>
+                          {item.type}
+                        </Badge>
+                        <Badge variant="outline" className={getScoreColor(item.score)}>
+                          {item.score}
+                        </Badge>
+                      </div>
                     </div>
                   ))}
                 </div>
