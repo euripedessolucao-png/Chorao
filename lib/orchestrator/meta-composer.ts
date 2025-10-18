@@ -1,6 +1,6 @@
 /**
  * META-COMPOSITOR TURBO - SISTEMA OTIMIZADO DE ALTA PERFORMANCE
- * Versão completa e funcional - ~200 linhas
+ * Versão corrigida - sem maxTokens
  */
 
 import { generateText } from "ai"
@@ -163,8 +163,8 @@ RETORNE APENAS A LETRA:`
     const { text } = await generateText({
       model: "openai/gpt-4o",
       prompt,
-      temperature: 0.7,
-      maxTokens: 1500
+      temperature: 0.7
+      // ✅ REMOVIDO: maxTokens: 1500
     })
 
     return text.trim()
@@ -206,8 +206,8 @@ RETORNE APENAS A LETRA:`
     const { text } = await generateText({
       model: "openai/gpt-4o",
       prompt,
-      temperature: 0.4,
-      maxTokens: 2000
+      temperature: 0.4
+      // ✅ REMOVIDO: maxTokens: 2000
     })
 
     return text.trim()
@@ -277,8 +277,8 @@ LINHA CORRIGIDA:`
       const { text } = await generateText({
         model: "openai/gpt-4o-mini",
         prompt,
-        temperature: 0.3,
-        maxTokens: 100
+        temperature: 0.3
+        // ✅ REMOVIDO: maxTokens: 100
       })
 
       const correctedLine = text.trim()
