@@ -1,433 +1,857 @@
-import { generateText } from "ai"
-import { NextResponse } from "next/server"
-import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
-import { SyllableEnforcer } from "@/lib/validation/syllableEnforcer"
-import { LineStacker } from "@/lib/utils/line-stacker"
-import { MetaComposer } from "@/lib/orchestrator/meta-composer"
+"use client"
 
-// ✅ CONFIGURAÇÃO UNIVERSAL DE QUALIDADE POR GÊNERO
-const GENRE_QUALITY_CONFIG = {
-  "Sertanejo": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
-  "Sertanejo Moderno": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
-  "Sertanejo Universitário": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
-  "Sertanejo Sofrência": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
-  "Sertanejo Raiz": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
-  "MPB": { min: 7, max: 12, ideal: 9, rhymeQuality: 0.6 },
-  "Bossa Nova": { min: 7, max: 12, ideal: 9, rhymeQuality: 0.6 },
-  "Funk": { min: 6, max: 10, ideal: 8, rhymeQuality: 0.3 },
-  "Pagode": { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
-  "Samba": { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
-  "Forró": { min: 8, max: 11, ideal: 9, rhymeQuality: 0.4 },
-  "Axé": { min: 6, max: 10, ideal: 8, rhymeQuality: 0.3 },
-  "Rock": { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
-  "Pop": { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
-  "Gospel": { min: 8, max: 11, ideal: 9, rhymeQuality: 0.5 },
-  "default": { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 }
+import { useState, useEffect } from "react"
+import { Navigation } from "@/components/navigation"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Slider } from "@/components/ui/slider"
+import { RefreshCw, Save, Copy, Search, Loader2, Star, Trophy, Trash2, Zap, Wand2 } from "lucide-react"
+import { toast } from "sonner"
+import { EMOTIONS } from "@/lib/genres"
+import { GenreSelect } from "@/components/genre-select"
+import { SyllableValidator } from "@/components/syllable-validator"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { HookGenerator } from "@/components/hook-generator"
+
+const BRAZILIAN_GENRE_METRICS = {
+  "Sertanejo Moderno": { syllablesPerLine: 6, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
+  "Sertanejo": { syllablesPerLine: 7, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
+  "Sertanejo Universitário": { syllablesPerLine: 6, bpm: 95, structure: "VERSO-REFRAO" },
+  "Sertanejo Sofrência": { syllablesPerLine: 8, bpm: 75, structure: "VERSO-REFRAO-PONTE" },
+  "Sertanejo Raiz": { syllablesPerLine: 10, bpm: 80, structure: "VERSO-REFRAO" },
+  "Pagode": { syllablesPerLine: 7, bpm: 100, structure: "VERSO-REFRAO" },
+  "Samba": { syllablesPerLine: 7, bpm: 105, structure: "VERSO-REFRAO-PONTE" },
+  "Forró": { syllablesPerLine: 8, bpm: 120, structure: "VERSO-REFRAO" },
+  "Axé": { syllablesPerLine: 6, bpm: 130, structure: "VERSO-REFRAO" },
+  "MPB": { syllablesPerLine: 9, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
+  "Bossa Nova": { syllablesPerLine: 8, bpm: 70, structure: "VERSO-REFRAO" },
+  "Rock": { syllablesPerLine: 8, bpm: 115, structure: "VERSO-REFRAO-SOLO" },
+  "Pop": { syllablesPerLine: 7, bpm: 110, structure: "VERSO-REFRAO-PONTE" },
+  "Funk": { syllablesPerLine: 6, bpm: 125, structure: "REFRAO-VERSO" },
+  "Gospel": { syllablesPerLine: 8, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
+  "default": { syllablesPerLine: 8, bpm: 100, structure: "VERSO-REFRAO" },
+} as const
+
+const GENRES = ["Pop", "Sertanejo Moderno", "MPB", "Rock", "Funk"]
+
+type ChorusVariation = {
+  chorus: string
+  style: string
+  score: number
+  justification: string
 }
 
-// ✅ FUNÇÕES AUXILIARES
-function extractChorusesFromInstructions(instructions?: string): string[] | null {
-  if (!instructions) return null
+type ChorusResponse = {
+  variations: ChorusVariation[]
+  bestCommercialOptionIndex: number
+}
 
-  const chorusMatches = instructions.match(/refr[ãa]o[:\s]*([^\.]+)/gi)
-  if (!chorusMatches) return null
+export default function ReescreverPage() {
+  const [originalLyrics, setOriginalLyrics] = useState("")
+  const [genre, setGenre] = useState("")
+  const [mood, setMood] = useState("")
+  const [theme, setTheme] = useState("")
+  const [avoidWords, setAvoidWords] = useState("")
+  const [additionalReqs, setAdditionalReqs] = useState("")
+  const [useDiary, setUseDiary] = useState(true)
+  const [advancedMode, setAdvancedMode] = useState(false)
+  const [creativity, setCreativity] = useState([50])
+  const [inspirationText, setInspirationText] = useState("")
+  const [literaryGenre, setLiteraryGenre] = useState("")
+  const [literaryEmotion, setLiteraryEmotion] = useState("")
+  const [metaphorSearch, setMetaphorSearch] = useState("")
+  const [selectedEmotions, setSelectedEmotions] = useState<string[]>([])
+  const [title, setTitle] = useState("")
+  const [chords, setChords] = useState("")
+  const [lyrics, setLyrics] = useState("")
+  const [isRewriting, setIsRewriting] = useState(false)
+  const [showChorusDialog, setShowChorusDialog] = useState(false)
+  const [chorusData, setChorusData] = useState<ChorusResponse | null>(null)
+  const [selectedChoruses, setSelectedChoruses] = useState<ChorusVariation[]>([])
+  const [isGeneratingChorus, setIsGeneratingChorus] = useState(false)
+  const [showHookDialog, setShowHookDialog] = useState(false)
+  const [selectedHook, setSelectedHook] = useState<string | null>(null)
+  const [formattingStyle, setFormattingStyle] = useState("performatico")
 
-  const choruses: string[] = []
-  
-  chorusMatches.forEach(match => {
-    const chorusText = match.replace(/refr[ãa]o[:\s]*/gi, '').trim()
-    if (chorusText && chorusText.length > 10) {
-      choruses.push(chorusText)
+  // ✅ DEBUG: Monitorar mudanças no genre
+  useEffect(() => {
+    console.log('🎵 Genre atualizado:', genre)
+  }, [genre])
+
+  const toggleEmotion = (emotion: string) => {
+    setSelectedEmotions((prev) => (prev.includes(emotion) ? prev.filter((e) => e !== emotion) : [...prev, emotion]))
+  }
+
+  const handleGenerateChorus = async () => {
+    if (!genre || !theme) {
+      toast.error("Selecione gênero e tema antes de gerar o refrão")
+      return
     }
-  })
 
-  return choruses.length > 0 ? choruses : null
-}
-
-function extractThemeFromInput(tema: string, inspiracao?: string): string {
-  if (tema.toLowerCase().includes('amor') || tema.toLowerCase().includes('coração')) return 'Amor'
-  if (tema.toLowerCase().includes('saudade') || tema.toLowerCase().includes('nostalgia')) return 'Saudade'
-  if (tema.toLowerCase().includes('festa') || tema.toLowerCase().includes('celebração')) return 'Festa'
-  if (tema.toLowerCase().includes('vida') || tema.toLowerCase().includes('caminho')) return 'Vida'
-  if (inspiracao?.toLowerCase().includes('amor')) return 'Amor'
-  return tema
-}
-
-function extractMoodFromInput(humor?: string, emocoes?: string[]): string {
-  if (humor) {
-    if (humor.toLowerCase().includes('triste') || humor.toLowerCase().includes('melancólico')) return 'Melancólico'
-    if (humor.toLowerCase().includes('alegre') || humor.toLowerCase().includes('feliz')) return 'Alegre'
-    if (humor.toLowerCase().includes('romântico') || humor.toLowerCase().includes('paixão')) return 'Romântico'
-    if (humor.toLowerCase().includes('raiva') || humor.toLowerCase().includes('intenso')) return 'Intenso'
-  }
-  
-  if (emocoes && emocoes.length > 0) {
-    if (emocoes.some(e => e.toLowerCase().includes('triste'))) return 'Melancólico'
-    if (emocoes.some(e => e.toLowerCase().includes('alegre'))) return 'Alegre'
-    if (emocoes.some(e => e.toLowerCase().includes('amor'))) return 'Romântico'
-  }
-  
-  return 'Romântico'
-}
-
-// ✅ FUNÇÃO PARA NORMALIZAR CRIATIVIDADE
-function normalizeCreativity(criatividade: string): "equilibrado" | "conservador" | "ousado" {
-  if (criatividade === "conservador") return "conservador"
-  if (criatividade === "ousado") return "ousado"
-  return "equilibrado" // padrão
-}
-
-function applyFinalFormatting(lyrics: string, genero: string, metrics?: any): string {
-  let formattedLyrics = lyrics
-
-  if (!formattedLyrics.includes("(Instrumentos:")) {
-    const instrumentList = `(Instrumentos: guitar, bass, drums, keyboard | BPM: ${metrics?.bpm || 100} | Ritmo: ${genero} | Estilo: ${genero})`
-    formattedLyrics = formattedLyrics.trim() + "\n\n" + instrumentList
-  }
-
-  formattedLyrics = capitalizeLines(formattedLyrics)
-  return formattedLyrics
-}
-
-// ✅ OBTÉM CONFIGURAÇÃO DE SÍLABAS POR GÊNERO
-function getSyllableConfig(genero: string) {
-  return GENRE_QUALITY_CONFIG[genero as keyof typeof GENRE_QUALITY_CONFIG] || GENRE_QUALITY_CONFIG.default
-}
-
-// ✅ FUNÇÃO PARA REWRITE COM REFRÕES PRESERVADOS USANDO META-COMPOSER
-async function rewriteWithPreservedChoruses(
-  letraOriginal: string,
-  extractedChoruses: string[],
-  genero: string,
-  tema: string,
-  humor: string,
-  syllableTarget: any,
-  universalPolish: boolean,
-  additionalRequirements?: string
-): Promise<string> {
-  
-  console.log(`[RewritePreserved] Reescrita com ${extractedChoruses.length} refrões preservados`)
-  
-  // ✅ USA O META-COMPOSER COM OS REFRÕES PRESERVADOS
-  const compositionRequest = {
-    genre: genero,
-    theme: extractThemeFromInput(tema),
-    mood: extractMoodFromInput(humor),
-    additionalRequirements: additionalRequirements || '',
-    syllableTarget: syllableTarget,
-    applyFinalPolish: universalPolish,
-    preserveRhymes: true,
-    applyTerceiraVia: true,
-    preservedChoruses: extractedChoruses,
-    originalLyrics: letraOriginal
-  }
-
-  try {
-    const result = await MetaComposer.compose(compositionRequest)
-    
-    console.log(`[RewritePreserved] Reescrita concluída - Score: ${result.metadata.finalScore.toFixed(2)}`)
-    if (result.metadata.preservedChorusesUsed) {
-      console.log(`[RewritePreserved] ✅ ${extractedChoruses.length} refrões preservados aplicados`)
+    if (!originalLyrics.trim()) {
+      toast.error("Cole a letra original antes de gerar o refrão")
+      return
     }
-    
-    return result.lyrics
-  } catch (error) {
-    console.error('[RewritePreserved] Erro no MetaComposer, usando fallback:', error)
-    // Fallback para reescrita normal se o MetaComposer falhar
-    return await rewriteNormally(
-      letraOriginal,
-      genero,
-      humor,
-      tema,
-      'equilibrado', // criatividade padrão
-      undefined, // inspiracao
-      undefined, // metaforas
-      [], // emocoes
-      additionalRequirements,
-      universalPolish,
-      syllableTarget
-    )
-  }
-}
 
-// ✅ FUNÇÃO DE REWRITE NORMAL
-async function rewriteNormally(
-  letraOriginal: string,
-  genero: string,
-  humor: string,
-  tema: string,
-  criatividade: string,
-  inspiracao?: string,
-  metaforas?: string,
-  emocoes: string[] = [],
-  additionalRequirements?: string,
-  universalPolish = true,
-  syllableTarget = getSyllableConfig(genero),
-  metrics = { bpm: 100, structure: "VERSO-REFRAO" }
-): Promise<string> {
-  
-  console.log(`[RewriteNormally] Reescrita para: ${genero} - ${tema}`)
-  console.log(`[RewriteNormally] Configuração sílabas: ${syllableTarget.min}-${syllableTarget.max} (ideal: ${syllableTarget.ideal})`)
-
-  // ✅ SE UNIVERSAL POLISH ESTÁ ATIVO, USA META-COMPOSER
-  if (universalPolish) {
-    console.log(`[RewriteNormally] 🎵 Usando MetaComposer para polimento universal`)
-    
-    const compositionRequest = {
-      genre: genero,
-      theme: extractThemeFromInput(tema, inspiracao),
-      mood: extractMoodFromInput(humor, emocoes),
-      additionalRequirements: additionalRequirements || '',
-      syllableTarget: syllableTarget,
-      applyFinalPolish: true,
-      preserveRhymes: true,
-      applyTerceiraVia: true,
-      originalLyrics: letraOriginal,
-      creativity: normalizeCreativity(criatividade) // ✅ CORRIGIDO: usando função de normalização
-    }
+    setShowChorusDialog(true)
+    setIsGeneratingChorus(true)
+    setChorusData(null)
+    setSelectedChoruses([])
 
     try {
-      const result = await MetaComposer.compose(compositionRequest)
-      console.log(`[RewriteNormally] MetaComposer finalizado - Score: ${result.metadata.finalScore.toFixed(2)}`)
-      return result.lyrics
+      const response = await fetch("/api/generate-chorus", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          genre,
+          theme,
+          mood,
+          lyrics: originalLyrics,
+          additionalRequirements: additionalReqs,
+          advancedMode: advancedMode,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao gerar refrão")
+      }
+
+      setChorusData(data)
+
+      if (data.bestCommercialOptionIndex !== undefined && data.variations[data.bestCommercialOptionIndex]) {
+        setSelectedChoruses([data.variations[data.bestCommercialOptionIndex]])
+      }
+
+      toast.success("Refrões gerados com sucesso!")
     } catch (error) {
-      console.error('[RewriteNormally] Erro no MetaComposer, continuando com reescrita normal:', error)
-      // Continua com a reescrita normal abaixo
+      console.error("[v0] Error generating chorus:", error)
+      toast.error(error instanceof Error ? error.message : "Erro ao gerar refrão")
+      setShowChorusDialog(false)
+    } finally {
+      setIsGeneratingChorus(false)
     }
   }
 
-  // ✅ FALLBACK: reescrita tradicional com GPT
-  const temperature = criatividade === "conservador" ? 0.5 : criatividade === "ousado" ? 0.9 : 0.7
-
-  const emotionsText = emocoes.length > 0 ? `Emoções: ${emocoes.join(", ")}` : ""
-  const inspirationText = inspiracao ? `Inspiração: ${inspiracao}` : ""
-  const metaphorsText = metaforas ? `Metáforas relacionadas: ${metaforas}` : ""
-
-  const prompt = `You are a professional Brazilian music composer specializing in ${genero}.
-
-TASK: Rewrite and improve the following song lyrics based on the theme and requirements below.
-
-ORIGINAL LYRICS:
-${letraOriginal}
-
-THEME: ${tema}
-MOOD: ${humor || "varies with the story"}
-${emotionsText}
-${inspirationText}
-${metaphorsText}
-
-UNIVERSAL RULES:
-
-1. LANGUAGE:
-   - Sung lyrics: Brazilian Portuguese (colloquial)
-   - Performance instructions: English in [brackets]
-   - Backing vocals: (Backing: "text") in parentheses
-   - Instruments: English in final line
-
-2. CLEAN FORMAT:
-   - [SECTION - Performance instructions in English]
-   - Lyrics in Portuguese (no brackets)
-   - One verse per line (stacked)
-   - (Backing: "text") when needed
-
-3. SYLLABLE LIMIT (${syllableTarget.max} maximum):
-   - Maximum ${syllableTarget.max} poetic syllables per verse
-   - Minimum ${syllableTarget.min} poetic syllables per verse  
-   - Ideal ${syllableTarget.ideal} poetic syllables
-   - Use contractions: você→cê, está→tá, para→pra
-   - Complete phrases always
-
-4. MAINTAIN STRUCTURE:
-   - Keep the original song structure
-   - Improve lyrics quality and flow
-   - Enhance rhymes and poetic elements
-
-CREATIVITY LEVEL: ${criatividade}
-${additionalRequirements ? `\nSPECIAL REQUIREMENTS:\n${additionalRequirements}` : ""}
-
-Rewrite and improve the song now:`
-
-  console.log("[RewriteNormally] Iniciando reescrita com GPT...")
-
-  const { text } = await generateText({
-    model: "openai/gpt-4o",
-    prompt,
-    temperature,
-  })
-
-  let lyrics = text.trim()
-
-  // Remove duplicate titles
-  lyrics = lyrics.replace(/^(?:Título|Title):\s*.+$/gm, "").trim()
-  lyrics = lyrics.replace(/^\*\*(?:Título|Title):\s*.+\*\*$/gm, "").trim()
-
-  // ✅ VALIDAÇÃO E CORREÇÃO AUTOMÁTICA DE SÍLABAS
-  console.log(`[RewriteNormally] Aplicando imposição rigorosa de sílabas...`)
-  const enforcedResult = await SyllableEnforcer.enforceSyllableLimits(
-    lyrics,
-    syllableTarget,
-    genero
-  )
-
-  if (enforcedResult.corrections > 0) {
-    console.log(`[RewriteNormally] ${enforcedResult.corrections} linhas corrigidas automaticamente`)
-    lyrics = enforcedResult.correctedLyrics
-  }
-
-  // ✅ APLICA EMPILHAMENTO PROFISSIONAL
-  console.log("[RewriteNormally] Aplicando empilhamento profissional...")
-  const stackingResult = LineStacker.stackLines(lyrics)
-  lyrics = stackingResult.stackedLyrics
-
-  return lyrics
-}
-
-// ✅ ROTA PRINCIPAL DE REWRITE
-export async function POST(request: Request) {
-  try {
-    const body = await request.json()
-
-    const {
-      letraOriginal,
-      genero,
-      humor,
-      tema,
-      criatividade = "equilibrado",
-      inspiracao,
-      metaforas,
-      emocoes = [],
-      titulo,
-      formattingStyle = "performatico",
-      additionalRequirements,
-      advancedMode = false,
-      universalPolish = true,
-      syllableTarget,
-      metrics = { bpm: 100, structure: "VERSO-REFRAO" },
-      selectedChoruses,
-    } = body
-
-    if (!letraOriginal) {
-      return NextResponse.json({ error: "Letra original é obrigatória" }, { status: 400 })
-    }
-
-    if (!genero) {
-      return NextResponse.json({ error: "Gênero é obrigatório" }, { status: 400 })
-    }
-
-    // ✅ CONFIGURAÇÃO AUTOMÁTICA POR GÊNERO
-    const autoSyllableConfig = getSyllableConfig(genero)
-    const finalSyllableTarget = syllableTarget || autoSyllableConfig
-
-    console.log(`[Rewrite] Configuração ${genero}: ${finalSyllableTarget.min}-${finalSyllableTarget.max}s (ideal: ${finalSyllableTarget.ideal}s)`)
-    console.log(`[Rewrite] Polimento Universal: ${universalPolish ? 'ATIVO' : 'INATIVO'}`)
-
-    // ✅ EXTRAI refrões selecionados se existirem
-    const extractedChoruses = selectedChoruses || extractChorusesFromInstructions(additionalRequirements) || []
-
-    let finalLyrics: string
-    let rewriteMode: "preservation" | "universal" | "normal" = "normal"
-
-    // ✅ DECISÃO INTELIGENTE: Preservar refrões ou reescrita com Sistema Universal
-    if (extractedChoruses.length > 0) {
-      console.log(`[Rewrite] 🎯 Modo preservação ativo: ${extractedChoruses.length} refrões selecionados`)
-      rewriteMode = "preservation"
-      
-      finalLyrics = await rewriteWithPreservedChoruses(
-        letraOriginal,
-        extractedChoruses,
-        genero,
-        tema || 'Amor',
-        humor || 'Romântico',
-        finalSyllableTarget,
-        universalPolish,
-        additionalRequirements
-      )
-    } else if (universalPolish) {
-      // ✅ SISTEMA UNIVERSAL DE QUALIDADE
-      console.log(`[Rewrite] 🎵 Sistema Universal ativo para: ${genero}`)
-      rewriteMode = "universal"
-      
-      const compositionRequest = {
-        genre: genero,
-        theme: extractThemeFromInput(tema || 'Amor', inspiracao),
-        mood: extractMoodFromInput(humor, emocoes),
-        additionalRequirements,
-        syllableTarget: finalSyllableTarget,
-        applyFinalPolish: true,
-        creativity: normalizeCreativity(criatividade), // ✅ CORRIGIDO
-        preserveRhymes: true,
-        applyTerceiraVia: true,
-        originalLyrics: letraOriginal
+  const handleSelectChorus = (chorus: ChorusVariation) => {
+    setSelectedChoruses((prev) => {
+      if (prev.find((c) => c.chorus === chorus.chorus)) {
+        return prev.filter((c) => c.chorus !== chorus.chorus)
       }
-
-      const result = await MetaComposer.compose(compositionRequest)
-      finalLyrics = result.lyrics
-
-      console.log(`[Rewrite] Sistema Universal finalizado - Score: ${result.metadata.finalScore.toFixed(2)}`)
-      if (result.metadata.polishingApplied) {
-        console.log(`[Rewrite] ✅ Polimento específico para ${genero} aplicado`)
-      }
-    } else {
-      // ✅ FALLBACK: reescrita normal
-      console.log(`[Rewrite] Modo reescrita normal para: ${genero} - ${tema}`)
-      rewriteMode = "normal"
-      
-      finalLyrics = await rewriteNormally(
-        letraOriginal,
-        genero,
-        humor || 'Romântico',
-        tema || 'Amor',
-        criatividade,
-        inspiracao,
-        metaforas,
-        emocoes,
-        additionalRequirements,
-        universalPolish,
-        finalSyllableTarget,
-        metrics
-      )
-    }
-
-    // ✅ APLICA FORMATAÇÃO FINAL
-    finalLyrics = applyFinalFormatting(finalLyrics, genero, metrics)
-
-    console.log(`[Rewrite] Reescrita concluída! Modo: ${rewriteMode}`)
-
-    return NextResponse.json({
-      letra: finalLyrics,
-      titulo: titulo || extractTitleFromLyrics(finalLyrics),
-      metadata: {
-        preservedChoruses: extractedChoruses.length,
-        rewriteMode: rewriteMode,
-        syllableConfig: finalSyllableTarget,
-        universalPolish: universalPolish,
-        genre: genero
+      if (prev.length < 2) {
+        return [...prev, chorus]
+      } else {
+        toast.error("Você pode selecionar no máximo 2 refrões")
+        return prev
       }
     })
-  } catch (error) {
-    console.error("[Rewrite] Erro ao reescrever letra:", error)
+  }
 
-    const errorMessage = error instanceof Error ? error.message : "Erro desconhecido"
+  const handleApplyChoruses = () => {
+    if (selectedChoruses.length === 0) {
+      toast.error("Selecione pelo menos um refrão")
+      return
+    }
 
-    return NextResponse.json(
-      {
-        error: "Erro ao reescrever letra",
-        details: errorMessage,
-        suggestion: "Tente novamente com uma letra mais clara",
-      },
-      { status: 500 },
+    const chorusText = selectedChoruses.map((c) => c.chorus.replace(/\s\/\s/g, "\n")).join("\n\n")
+    const updatedReqs = additionalReqs ? `${additionalReqs}\n\n[CHORUS]\n${chorusText}` : `[CHORUS]\n${chorusText}`
+
+    setAdditionalReqs(updatedReqs)
+    setShowChorusDialog(false)
+
+    toast.success("Refrão(ões) adicionado(s) aos requisitos!")
+  }
+
+  const renderStars = (score: number) => {
+    return (
+      <div className="flex items-center gap-0.5">
+        {Array.from({ length: 10 }).map((_, i) => (
+          <Star
+            key={i}
+            className={`h-3 w-3 ${i < score ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground"}`}
+          />
+        ))}
+      </div>
     )
   }
-}
 
-function extractTitleFromLyrics(lyrics: string): string {
-  const titleMatch = lyrics.match(/^Titulo:\s*(.+)$/m)
-  if (titleMatch?.[1]) return titleMatch[1].trim()
+  // ✅ FUNÇÃO CORRIGIDA: Agora aceita "Sertanejo Raiz" corretamente
+  const handleRewriteLyrics = async () => {
+    console.log('🔍 Iniciando reescrita - Genre:', genre)
+    
+    if (!originalLyrics) {
+      toast.error("Por favor, cole a letra original")
+      return
+    }
 
-  const chorusMatch = lyrics.match(/\[(?:CHORUS|REFRÃO)[^\]]*\]\s*\n([^\n]+)/i)
-  if (chorusMatch?.[1]) {
-    return chorusMatch[1].trim().split(" ").slice(0, 4).join(" ")
+    // ✅ CORREÇÃO: Validação mais robusta que aceita "Sertanejo Raiz"
+    if (!genre || genre.trim() === '') {
+      toast.error("Por favor, selecione um gênero")
+      return
+    }
+
+    setIsRewriting(true)
+
+    try {
+      const syllableConfig = { min: 7, max: 11, ideal: 9 }
+
+      console.log('📤 Enviando para API - Genre:', genre)
+
+      const response = await fetch("/api/rewrite-lyrics", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          letraOriginal: originalLyrics,
+          generoConversao: genre,
+          conservarImagens: true,
+          polirSemMexer: false,
+          formattingStyle: formattingStyle,
+          additionalRequirements: additionalReqs,
+          advancedMode: advancedMode,
+          universalPolish: true,
+          syllableTarget: syllableConfig,
+          metrics:
+            BRAZILIAN_GENRE_METRICS[genre as keyof typeof BRAZILIAN_GENRE_METRICS] || BRAZILIAN_GENRE_METRICS.default,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao reescrever letra")
+      }
+
+      setLyrics(data.letra)
+      if (data.titulo && !title) {
+        setTitle(data.titulo)
+      }
+      toast.success("Letra reescrita com sucesso!")
+    } catch (error) {
+      console.error("[v0] Error rewriting lyrics:", error)
+      toast.error(error instanceof Error ? error.message : "Erro ao reescrever letra")
+    } finally {
+      setIsRewriting(false)
+    }
   }
 
-  return "Sem Título"
+  const handleSaveProject = () => {
+    if (!title || !lyrics) {
+      toast.error("Adicione um título e letra antes de salvar")
+      return
+    }
+
+    const projects = JSON.parse(localStorage.getItem("projects") || "[]")
+    const newProject = {
+      id: Date.now(),
+      title,
+      genre,
+      lyrics,
+      chords,
+      date: new Date().toISOString(),
+    }
+    projects.push(newProject)
+    localStorage.setItem("projects", JSON.stringify(projects))
+
+    toast.success("Projeto salvo com sucesso!")
+  }
+
+  const handleSelectHook = (hook: string) => {
+    setSelectedHook(hook)
+  }
+
+  const handleApplyHook = () => {
+    if (!selectedHook) {
+      toast.error("Selecione um hook")
+      return
+    }
+
+    const hookText = `[HOOK]\n${selectedHook}`
+    const updatedReqs = additionalReqs ? `${additionalReqs}\n\n${hookText}` : hookText
+
+    setAdditionalReqs(updatedReqs)
+    setShowHookDialog(false)
+    setSelectedHook(null)
+
+    toast.success("Hook adicionado aos requisitos!")
+  }
+
+  const handleClearInput = () => {
+    if (
+      window.confirm("Limpar letra original? Esta ação irá limpar a letra colada. Esta ação não pode ser desfeita.")
+    ) {
+      setOriginalLyrics("")
+      toast.success("Letra original limpa!")
+    }
+  }
+
+  const handleClearOutput = () => {
+    if (
+      window.confirm(
+        "Limpar resultado? Esta ação irá limpar o título, letra e acordes reescritos. Esta ação não pode ser desfeita.",
+      )
+    ) {
+      setLyrics("")
+      setTitle("")
+      setChords("")
+      toast.success("Resultado limpo!")
+    }
+  }
+
+  return (
+    <div className="bg-background">
+      <Navigation />
+
+      <div className="container mx-auto px-4 py-4 pt-20">
+        <h1 className="text-2xl font-bold text-left mb-4">Reescrever Letras</h1>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Coluna 1: Parâmetros de Reescrita */}
+          <Card className="order-1 h-fit">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Parâmetros de Reescrita</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <Label className="text-xs">Cole sua letra</Label>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2"
+                    onClick={handleClearInput}
+                    disabled={!originalLyrics}
+                  >
+                    <Trash2 className="h-3 w-3 mr-1" />
+                    <span className="text-xs">Limpar</span>
+                  </Button>
+                </div>
+                <Textarea
+                  placeholder="Cole o rascunho da sua letra..."
+                  value={originalLyrics}
+                  onChange={(e) => setOriginalLyrics(e.target.value)}
+                  rows={6}
+                  className="text-xs"
+                />
+              </div>
+
+              <Button variant="ghost" size="sm" className="w-full text-xs">
+                Mostrar informações dos gêneros
+              </Button>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Gênero para Reescrever</Label>
+                <GenreSelect value={genre} onValueChange={setGenre} className="h-9" />
+                {/* ✅ DEBUG: Mostrar gênero selecionado */}
+                {genre && (
+                  <div className="text-xs text-green-600 font-medium">
+                    ✅ Gênero selecionado: {genre}
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Humor</Label>
+                <Input
+                  placeholder="Ex: Feliz, Triste, Nostálgico, Melancólico..."
+                  value={mood}
+                  onChange={(e) => setMood(e.target.value)}
+                  className="h-9"
+                />
+                <p className="text-xs text-muted-foreground">Descreva o humor/sentimento desejado para a reescrita</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Tema</Label>
+                <Input
+                  placeholder="Amor, Perda, Jornada, etc."
+                  value={theme}
+                  onChange={(e) => setTheme(e.target.value)}
+                  className="h-9"
+                />
+                <Button variant="link" size="sm" className="h-auto p-0 text-xs">
+                  Buscar ideias de Tema
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  Use Tema para definir "o quê" da sua música (a história) e Sensações & Emoções para definir "como" a
+                  história é contada (o sentimento).
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Evitar palavras (separe por vírgula)</Label>
+                <Input
+                  placeholder="Ex: coraçãozinho, saudadezinha, meu lençol"
+                  value={avoidWords}
+                  onChange={(e) => setAvoidWords(e.target.value)}
+                  className="h-9"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Indique palavras ou frases que NÃO devem aparecer na letra.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Requisitos Adicionais</Label>
+                <Textarea
+                  placeholder="Quaisquer elementos específicos..."
+                  value={additionalReqs}
+                  onChange={(e) => setAdditionalReqs(e.target.value)}
+                  rows={2}
+                  className="text-xs"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Forneça referências de artistas, compositores ou estilos específicos para a IA emular durante a
+                  reescrita.
+                </p>
+              </div>
+
+              <div className="flex items-start space-x-2">
+                <Checkbox
+                  id="useDiary"
+                  checked={useDiary}
+                  onCheckedChange={(checked) => setUseDiary(checked as boolean)}
+                />
+                <div>
+                  <Label htmlFor="useDiary" className="text-xs cursor-pointer">
+                    Usar inspirações do Diário
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Inclui automaticamente todas as inspirações salvas no seu diário na reescrita.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-2">
+                <Checkbox
+                  id="advancedMode"
+                  checked={advancedMode}
+                  onCheckedChange={(checked) => setAdvancedMode(checked as boolean)}
+                />
+                <div>
+                  <Label htmlFor="advancedMode" className="text-xs cursor-pointer font-semibold">
+                    Modo Avançado
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Rimas perfeitas, métrica rigorosa de 7-11 sílabas, ganchos premium em PT-BR, linguagem limpa e fidelidade de estilo.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3 border rounded-lg p-3">
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <Label className="text-xs">Nível de Criatividade</Label>
+                    <span className="text-xs text-muted-foreground">Equilibrado</span>
+                  </div>
+                  <Slider value={creativity} onValueChange={setCreativity} max={100} step={1} />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Equilíbrio entre tradição e originalidade com alta qualidade
+                  </p>
+                </div>
+
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <Label className="text-xs">Qualidade do Modelo</Label>
+                    <span className="text-xs text-muted-foreground">Equilíbrio (padrão)</span>
+                  </div>
+                  <select className="w-full h-8 rounded-md border border-input bg-background px-3 py-1 text-xs">
+                    <option value="standard">Equilíbrio (padrão)</option>
+                    <option value="high">Alta Qualidade</option>
+                  </select>
+                </div>
+
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <Label className="text-xs">Estilo de Formatação</Label>
+                    <span className="text-xs text-muted-foreground">
+                      {formattingStyle === "padrao" ? "Padrão" : "Performático"}
+                    </span>
+                  </div>
+                  <select
+                    value={formattingStyle}
+                    onChange={(e) => setFormattingStyle(e.target.value)}
+                    className="w-full h-8 rounded-md border border-input bg-background px-3 py-1 text-xs"
+                  >
+                    <option value="padrao">Padrão</option>
+                    <option value="performatico">Performático</option>
+                  </select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {formattingStyle === "performatico"
+                      ? "✅ FORMATO PROFISSIONAL: Instruções em inglês, letras empilhadas, backing vocals, estrutura A-B-C"
+                      : "Formato simples com marcadores básicos"}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Coluna 2: Inspiração & Sensações */}
+          <Card className="order-2 h-fit">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Inspiração & Sensações</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              {/* Diário de Inspiração */}
+              <div className="border rounded-lg p-3 bg-purple-50/50 space-y-2">
+                <Label className="text-xs font-semibold">Diário de Inspiração</Label>
+                <p className="text-xs text-muted-foreground">
+                  Adicione textos, áudios, imagens ou links que representam experiências, sensações ou histórias reais.
+                </p>
+                <Tabs defaultValue="text">
+                  <TabsList className="grid w-full grid-cols-4 h-8">
+                    <TabsTrigger value="text" className="text-xs">
+                      Texto
+                    </TabsTrigger>
+                    <TabsTrigger value="image" className="text-xs">
+                      Imagem
+                    </TabsTrigger>
+                    <TabsTrigger value="audio" className="text-xs">
+                      Áudio
+                    </TabsTrigger>
+                    <TabsTrigger value="link" className="text-xs">
+                      Link
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="text" className="space-y-2">
+                    <Textarea
+                      placeholder="Adicione uma inspiração textual..."
+                      value={inspirationText}
+                      onChange={(e) => setInspirationText(e.target.value)}
+                      rows={3}
+                      className="text-xs"
+                    />
+                    <Button size="sm" variant="secondary" className="w-full">
+                      Adicionar Inspiração
+                    </Button>
+                    <p className="text-xs text-muted-foreground text-center">Nenhuma inspiração salva ainda.</p>
+                  </TabsContent>
+                </Tabs>
+              </div>
+
+              {/* Inspiração Literária Global */}
+              <div className="border rounded-lg p-3 bg-purple-50/50 space-y-2">
+                <Label className="text-xs font-semibold">Inspiração Literária Global</Label>
+                <p className="text-xs text-muted-foreground">
+                  Busque referências criativas em best-sellers, romances e grandes histórias do mundo todo.
+                </p>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Gênero musical"
+                    value={literaryGenre}
+                    onChange={(e) => setLiteraryGenre(e.target.value)}
+                    className="h-8 text-xs"
+                  />
+                  <Input
+                    placeholder="Emoção (opcional)"
+                    value={literaryEmotion}
+                    onChange={(e) => setLiteraryEmotion(e.target.value)}
+                    className="h-8 text-xs"
+                  />
+                  <Button size="sm" className="h-8">
+                    Buscar
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">Busque por um tema ou palavra-chave.</p>
+              </div>
+
+              {/* Metáforas Inteligentes */}
+              <div className="border rounded-lg p-3 bg-purple-50/50 space-y-2">
+                <Label className="text-xs font-semibold">Metáforas Inteligentes</Label>
+                <p className="text-xs text-muted-foreground">Busque metáforas por tema para enriquecer sua letra.</p>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Buscar metáfora por tema..."
+                    value={metaphorSearch}
+                    onChange={(e) => setMetaphorSearch(e.target.value)}
+                    className="h-8 text-xs"
+                  />
+                  <Button size="sm" variant="secondary" className="h-8">
+                    <Search className="h-3 w-3" />
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">Busque por um tema ou palavra-chave.</p>
+              </div>
+
+              {/* Sensações & Emoções */}
+              <div className="border rounded-lg p-3 bg-purple-50/50 space-y-2">
+                <Label className="text-xs font-semibold">Sensações & Emoções</Label>
+                <p className="text-xs text-muted-foreground">
+                  O "como" a história será contada. O sentimento que dará o ton da letra.
+                </p>
+                <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
+                  {EMOTIONS.map((emotion) => (
+                    <Badge
+                      key={emotion}
+                      variant={selectedEmotions.includes(emotion) ? "default" : "outline"}
+                      className="cursor-pointer text-xs"
+                      onClick={() => toggleEmotion(emotion)}
+                    >
+                      {emotion}
+                    </Badge>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Dica: A letra será reescrita com base no conteúdo que você colar, mas o Tema será inferido pela IA.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Coluna 3: Ferramentas e Resultado */}
+          <div className="order-3 space-y-4">
+            {/* Ferramentas de Composição */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Ferramentas</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Button
+                  variant="outline"
+                  className="w-full bg-transparent justify-start"
+                  size="sm"
+                  onClick={() => setShowHookDialog(true)}
+                  disabled={isRewriting || isGeneratingChorus}
+                >
+                  <Zap className="h-4 w-4 mr-2" />
+                  Gerador de Hook
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="w-full bg-transparent justify-start"
+                  size="sm"
+                  onClick={handleGenerateChorus}
+                  disabled={!genre || !theme || isRewriting || isGeneratingChorus}
+                >
+                  <Wand2 className="h-4 w-4 mr-2" />
+                  Gerar Refrão
+                </Button>
+
+                <Button
+                  className="w-full justify-start"
+                  size="sm"
+                  onClick={handleRewriteLyrics}
+                  disabled={isRewriting || !originalLyrics || !genre}
+                >
+                  {isRewriting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Reescrevendo...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Reescrever Letra
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Resultado */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Resultado</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                <Input
+                  placeholder="Título da música..."
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="h-9"
+                />
+
+                <div className="space-y-2">
+                  <Label className="text-xs">Acordes</Label>
+                  <Textarea
+                    placeholder="Os acordes reescritos aparecerão aqui..."
+                    value={chords}
+                    onChange={(e) => setChords(e.target.value)}
+                    rows={3}
+                    className="font-mono text-xs"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs">Letra</Label>
+                  <Textarea
+                    placeholder="Sua letra reescrita aparecerá aqui..."
+                    value={lyrics}
+                    onChange={(e) => setLyrics(e.target.value)}
+                    rows={12}
+                    className="font-mono text-xs"
+                  />
+                  
+                  {/* VALIDADOR DE SÍLABAS */}
+                  <SyllableValidator
+                    lyrics={lyrics}
+                    maxSyllables={11}
+                    onValidate={(result) => {
+                      if (!result.valid) {
+                        console.log(`⚠️ ${result.linesWithIssues} versos com problemas:`)
+                        result.violations.forEach((v) => {
+                          console.log(`  Linha ${v.line}: "${v.text}" → ${v.syllables} sílabas`)
+                        })
+                        
+                        toast.warning(`${result.linesWithIssues} versos com mais de 11 sílabas`, {
+                          description: "Use o validador para ver detalhes",
+                          duration: 5000
+                        })
+                      } else if (result.totalLines > 0) {
+                        toast.success(`✓ Letra validada: ${result.totalLines} versos dentro do limite`)
+                      }
+                    }}
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 bg-transparent"
+                    onClick={() => {
+                      if (!lyrics.trim()) {
+                        toast.error("Nada para copiar", {
+                          description: "A letra está vazia.",
+                        })
+                        return
+                      }
+                      navigator.clipboard.writeText(lyrics)
+                      toast.success("Letra copiada para a área de transferência!")
+                    }}
+                    disabled={!lyrics}
+                  >
+                    <Copy className="h-3 w-3 mr-1" />
+                    Copiar
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 bg-transparent"
+                    onClick={handleClearOutput}
+                    disabled={!lyrics && !title && !chords}
+                  >
+                    <Trash2 className="h-3 w-3 mr-1" />
+                    Limpar
+                  </Button>
+                  <Button size="sm" className="flex-1" onClick={handleSaveProject} disabled={!title || !lyrics}>
+                    <Save className="h-3 w-3 mr-1" />
+                    Salvar
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+
+      {/* Dialog para Sugestões de Refrão */}
+      <Dialog open={showChorusDialog} onOpenChange={setShowChorusDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Sugestões de Refrão</DialogTitle>
+            <DialogDescription>
+              A IA gerou 5 variações de refrão com base no seu tema e gênero. A opção mais comercial foi selecionada
+              automaticamente. Você pode selecionar até 2 para adicionar aos requisitos.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4 space-y-3">
+            {isGeneratingChorus && (
+              <div className="flex items-center justify-center p-8">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span className="ml-2">Gerando refrões...</span>
+              </div>
+            )}
+
+            {chorusData &&
+              chorusData.variations.map((variation, index) => (
+                <Card
+                  key={index}
+                  className={`cursor-pointer transition-all ${
+                    selectedChoruses.find((c) => c.chorus === variation.chorus)
+                      ? "border-primary ring-2 ring-primary"
+                      : "border-border hover:border-primary/50"
+                  }`}
+                  onClick={() => handleSelectChorus(variation)}
+                >
+                  <CardHeader className="pb-2">
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-1">
+                        <CardTitle className="text-base">{variation.style}</CardTitle>
+                        <div className="flex items-center gap-2">
+                          {renderStars(variation.score)}
+                          <span className="text-xs font-bold text-muted-foreground">({variation.score}/10)</span>
+                        </div>
+                      </div>
+                      {chorusData.bestCommercialOptionIndex === index && (
+                        <Badge variant="default" className="bg-green-600 hover:bg-green-700">
+                          <Trophy className="h-3 w-3 mr-1" />
+                          Melhor Opção Comercial
+                        </Badge>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <p className="text-sm whitespace-pre-line font-mono bg-muted/50 p-3 rounded">
+                      {variation.chorus.replace(/\s\/\s/g, "\n")}
+                    </p>
+                    <p className="text-xs text-muted-foreground italic">{variation.justification}</p>
+                  </CardContent>
+                </Card>
+              ))}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowChorusDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleApplyChoruses} disabled={selectedChoruses.length === 0}>
+              Adicionar aos Requisitos ({selectedChoruses.length})
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para Gerador de Hook */}
+      <Dialog open={showHookDialog} onOpenChange={setShowHookDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Gerador de Hook & Ganchômetro</DialogTitle>
+            <DialogDescription>
+              Analise sua letra e escolha o melhor hook entre 3 variações geradas pela Terceira Via
+            </DialogDescription>
+          </DialogHeader>
+          <HookGenerator
+            onSelectHook={handleSelectHook}
+            showSelectionMode={true}
+            initialLyrics={originalLyrics}
+            initialGenre={genre}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowHookDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleApplyHook} disabled={!selectedHook}>
+              Adicionar aos Requisitos
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
 }
