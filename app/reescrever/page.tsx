@@ -1,3 +1,4 @@
+// app/reescrever/page.tsx
 "use client"
 
 import { useState, useEffect } from "react"
@@ -187,18 +188,35 @@ export default function ReescreverPage() {
     )
   }
 
-  // ✅ FUNÇÃO CORRIGIDA - Validação simples que funciona
+  // ✅ FUNÇÃO CORRIGIDA - Com DEBUG e validação robusta
   const handleRewriteLyrics = async () => {
-    console.log('🔍 Iniciando reescrita - Genre:', genre)
-    
-    if (!originalLyrics) {
+    // ✅ DEBUG DETALHADO
+    console.log('=== DEBUG REWRITE ===')
+    console.log('1. originalLyrics:', originalLyrics?.substring(0, 50) + '...')
+    console.log('2. genre:', genre)
+    console.log('3. genre type:', typeof genre)
+    console.log('4. genre length:', genre?.length)
+    console.log('5. !genre:', !genre)
+    console.log('6. genre === "":', genre === '')
+    console.log('7. genre === undefined:', genre === undefined)
+    console.log('8. genre === null:', genre === null)
+    console.log('=== FIM DEBUG ===')
+
+    if (!originalLyrics?.trim()) {
       toast.error("Por favor, cole a letra original")
       return
     }
 
-    // ✅ VALIDAÇÃO SIMPLES QUE FUNCIONA
-    if (!genre) {
-      toast.error("Por favor, selecione um gênero")
+    // ✅ VALIDAÇÃO ROBUSTA DO GÊNERO
+    const isValidGenre = genre && 
+                         genre.trim() !== '' && 
+                         genre !== 'undefined' && 
+                         genre !== 'null' &&
+                         genre !== 'Selecione um gênero' &&
+                         genre.length > 0
+
+    if (!isValidGenre) {
+      toast.error("Por favor, selecione um gênero válido")
       return
     }
 
@@ -352,7 +370,25 @@ export default function ReescreverPage() {
 
               <div className="space-y-2">
                 <Label className="text-xs">Gênero para Reescrever</Label>
+                {/* ✅ TESTE ALTERNATIVO: Use este select se o GenreSelect não funcionar */}
+                {/* <select 
+                  value={genre} 
+                  onChange={(e) => {
+                    console.log('SELECT CHANGED:', e.target.value)
+                    setGenre(e.target.value)
+                  }}
+                  className="w-full h-9 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                >
+                  <option value="">Selecione um gênero</option>
+                  <option value="Sertanejo Raiz">Sertanejo Raiz</option>
+                  <option value="Sertanejo Moderno">Sertanejo Moderno</option>
+                  <option value="MPB">MPB</option>
+                  <option value="Rock">Rock</option>
+                  <option value="Funk">Funk</option>
+                </select> */}
+                
                 <GenreSelect value={genre} onValueChange={setGenre} className="h-9" />
+                
                 {/* ✅ DEBUG: Mostrar gênero selecionado */}
                 {genre && (
                   <div className="text-xs text-green-600 font-medium">
