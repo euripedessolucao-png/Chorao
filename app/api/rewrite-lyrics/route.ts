@@ -42,7 +42,6 @@ export async function POST(request: Request) {
     const finalTema = body.tema || body.theme || body.subject || "Reescrita"
     const finalHumor = body.humor || body.mood || body.emocao || "Adaptado"
     const selectedChoruses = body.selectedChoruses || body.choruses || body.refroes || []
-    const additionalReqs = body.additionalRequirements || body.requisitos || ''
     const universalPolish = body.universalPolish !== false
 
     console.log('🎯 PARÂMETROS IDENTIFICADOS:', {
@@ -51,7 +50,6 @@ export async function POST(request: Request) {
       finalTema,
       finalHumor,
       selectedChoruses: selectedChoruses.length,
-      additionalReqsLength: additionalReqs.length,
       allParams: Object.keys(body)
     })
 
@@ -103,43 +101,6 @@ export async function POST(request: Request) {
       return configs[genre] || { min: 7, max: 11, ideal: 9 }
     }
 
-    // ✅ CONSTRÓI OS REQUISITOS DE REESCRITA ESPECÍFICOS
-    const rewriteRequirements = `
-REESCRITA DE LETRA EXISTENTE - ${finalGenero.toUpperCase()}
-
-📝 LETRA ORIGINAL PARA REESCREVER (MANTENHA A ESSÊNCIA):
-${finalLyrics}
-
-🎯 OBJETIVO DA REESCRITA:
-1. MANTENHA a história, narrativa e essência da letra original
-2. APERFEIÇOE a estrutura, métrica e rimas
-3. USE os refrões/hooks fornecidos abaixo
-4. MELHORE a fluência e cantabilidade
-5. PRESERVE o tom emocional: ${finalHumor}
-
-🎵 REFRÕES/HOOKS PARA USAR (OBRIGATÓRIO):
-${selectedChoruses.length > 0 ? selectedChoruses.map((chorus: string, i: number) => 
-  `REFRÃO ${i+1}:\n${chorus.split('/').map(line => `• ${line.trim()}`).join('\n')}`
-).join('\n\n') : 'Nenhum refrão específico fornecido'}
-
-${additionalReqs ? `\n⚡ REQUISITOS ADICIONAIS:\n${additionalReqs}` : ''}
-
-📋 REGRAS DA REESCRITA:
-- NÃO invente nova história - APERFEIÇOE a existente
-- NÃO altere o significado original drasticamente
-- INTEGRE os refrões fornecidos naturalmente
-- MANTENHA personagens, situações e narrativa
-- USE contrações: "cê", "tô", "pra", "tá"
-- FOCO em melhorar estrutura e fluência
-
-🎼 ESTRUTURA SUGERIDA:
-- Versos que desenvolvem a história original
-- REFRÕES fornecidos nos momentos certos
-- Ponte que conecta com a narrativa existente
-- Final coerente com o início
-
-IMPORTANTE: Esta é uma REESCRITA, não uma NOVA COMPOSIÇÃO!`
-    
     const compositionRequest = {
       genre: finalGenero,
       theme: finalTema,
@@ -147,7 +108,7 @@ IMPORTANTE: Esta é uma REESCRITA, não uma NOVA COMPOSIÇÃO!`
       syllableTarget: getSyllableConfig(finalGenero),
       applyFinalPolish: universalPolish,
       preservedChoruses: selectedChoruses,
-      additionalRequirements: rewriteRequirements
+      additionalRequirements: "Reescreva esta letra mantendo a essência mas melhorando a estrutura e métrica"
     }
 
     // ✅ TIMEOUT
@@ -166,8 +127,7 @@ IMPORTANTE: Esta é uma REESCRITA, não uma NOVA COMPOSIÇÃO!`
       metadata: {
         score: result.metadata.finalScore,
         polishingApplied: result.metadata.polishingApplied,
-        preservedChorusesUsed: result.metadata.preservedChorusesUsed,
-        chorusPreservation: result.metadata.chorusPreservation
+        preservedChorusesUsed: result.metadata.preservedChorusesUsed
       }
     })
 
