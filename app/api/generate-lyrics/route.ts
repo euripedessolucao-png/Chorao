@@ -2,7 +2,6 @@ import { generateText } from "ai"
 import { NextResponse } from "next/server"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 import { SyllableEnforcer } from "@/lib/validation/syllableEnforcer"
-import { LineStacker } from "@/lib/utils/line-stacker"
 import { MetaComposer } from "@/lib/orchestrator/meta-composer"
 
 // ✅ CONFIGURAÇÃO UNIVERSAL DE QUALIDADE POR GÊNERO
@@ -25,7 +24,7 @@ const GENRE_QUALITY_CONFIG = {
   "default": { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 }
 }
 
-// ✅ FUNÇÕES AUXILIARES
+// ✅ FUNÇÕES AUXILIARES SIMPLIFICADAS
 function extractChorusesFromInstructions(instructions?: string): string[] | null {
   if (!instructions) return null
 
@@ -87,10 +86,17 @@ function getSyllableConfig(genero: string) {
   return GENRE_QUALITY_CONFIG[genero as keyof typeof GENRE_QUALITY_CONFIG] || GENRE_QUALITY_CONFIG.default
 }
 
-// ✅ ROTA PRINCIPAL ATUALIZADA
+// ✅ ROTA PRINCIPAL CORRIGIDA - SEM DEPENDÊNCIA DE LETRA COLADA
 export async function POST(request: Request) {
   try {
     const body = await request.json()
+
+    console.log('🎵 [Generate] Parâmetros recebidos:', {
+      genero: body.genero,
+      tema: body.tema,
+      humor: body.humor,
+      selectedChoruses: body.selectedChoruses?.length || 0
+    })
 
     const {
       genero,
@@ -110,19 +116,26 @@ export async function POST(request: Request) {
       selectedChoruses,
     } = body
 
+    // ✅ VALIDAÇÃO SIMPLES - APENAS GÊNERO E TEMA
     if (!genero) {
-      return NextResponse.json({ error: "Gênero é obrigatório" }, { status: 400 })
+      return NextResponse.json({ 
+        error: "Gênero é obrigatório",
+        suggestion: "Selecione um gênero musical como Sertanejo, MPB, Funk, etc."
+      }, { status: 400 })
     }
 
     if (!tema) {
-      return NextResponse.json({ error: "Tema é obrigatório" }, { status: 400 })
+      return NextResponse.json({ 
+        error: "Tema é obrigatório", 
+        suggestion: "Digite um tema como Amor, Saudade, Festa, Amizade, etc."
+      }, { status: 400 })
     }
 
     // ✅ CONFIGURAÇÃO AUTOMÁTICA POR GÊNERO
     const autoSyllableConfig = getSyllableConfig(genero)
     const finalSyllableTarget = syllableTarget || autoSyllableConfig
 
-    console.log(`[Generate] Configuração ${genero}: ${finalSyllableTarget.min}-${finalSyllableTarget.max}s (ideal: ${finalSyllableTarget.ideal}s)`)
+    console.log(`[Generate] Configuração ${genero}: ${finalSyllableTarget.min}-${finalSyllableTarget.max}s`)
     console.log(`[Generate] Polimento Universal: ${universalPolish ? 'ATIVO' : 'INATIVO'}`)
 
     // ✅ EXTRAI refrões selecionados se existirem
@@ -144,8 +157,6 @@ export async function POST(request: Request) {
         additionalRequirements: additionalRequirements || '',
         syllableTarget: finalSyllableTarget,
         applyFinalPolish: universalPolish,
-        preserveRhymes: true,
-        applyTerceiraVia: true,
         preservedChoruses: extractedChoruses
       }
 
@@ -153,9 +164,7 @@ export async function POST(request: Request) {
       finalLyrics = result.lyrics
 
       console.log(`[Generate] Composição com preservação concluída - Score: ${result.metadata.finalScore.toFixed(2)}`)
-      if (result.metadata.preservedChorusesUsed) {
-        console.log(`[Generate] ✅ ${extractedChoruses.length} refrões preservados aplicados`)
-      }
+      
     } else if (universalPolish) {
       // ✅ SISTEMA UNIVERSAL DE QUALIDADE
       console.log(`[Generate] 🎵 Sistema Universal ativo para: ${genero}`)
@@ -168,43 +177,33 @@ export async function POST(request: Request) {
         additionalRequirements,
         syllableTarget: finalSyllableTarget,
         applyFinalPolish: true,
-        creativity: criatividade,
-        preserveRhymes: true,
-        applyTerceiraVia: true
+        creativity: criatividade
       }
 
       const result = await MetaComposer.compose(compositionRequest)
       finalLyrics = result.lyrics
 
       console.log(`[Generate] Sistema Universal finalizado - Score: ${result.metadata.finalScore.toFixed(2)}`)
-      if (result.metadata.polishingApplied) {
-        console.log(`[Generate] ✅ Polimento específico para ${genero} aplicado`)
-      }
+      
     } else {
       // ✅ FALLBACK: geração normal (sem refrões selecionados e sem polimento universal)
       console.log(`[Generate] Modo geração normal para: ${genero} - ${tema}`)
       generationMode = "normal"
       
-      // Implementação da geração normal aqui (já existente no seu código)
       finalLyrics = await generateNormalLyrics(
         genero,
         humor || 'Romântico',
         tema,
         criatividade,
-        inspiracao,
-        metaforas,
-        emocoes,
         additionalRequirements,
-        universalPolish,
-        finalSyllableTarget,
-        metrics
+        finalSyllableTarget
       )
     }
 
     // ✅ APLICA FORMATAÇÃO FINAL
     finalLyrics = applyFinalFormatting(finalLyrics, genero, metrics)
 
-    console.log(`[Generate] Geração concluída! Modo: ${generationMode}`)
+    console.log(`[Generate] ✅ Geração concluída! Modo: ${generationMode}`)
 
     return NextResponse.json({
       letra: finalLyrics,
@@ -217,6 +216,7 @@ export async function POST(request: Request) {
         genre: genero
       }
     })
+    
   } catch (error) {
     console.error("[Generate] Erro ao gerar letra:", error)
 
@@ -233,23 +233,42 @@ export async function POST(request: Request) {
   }
 }
 
-// ✅ FUNÇÃO DE GERAÇÃO NORMAL (para fallback)
+// ✅ FUNÇÃO DE GERAÇÃO NORMAL SIMPLIFICADA
 async function generateNormalLyrics(
   genero: string,
   humor: string,
   tema: string,
   criatividade: string,
-  inspiracao?: string,
-  metaforas?: string,
-  emocoes: string[] = [],
   additionalRequirements?: string,
-  universalPolish = true,
-  syllableTarget = getSyllableConfig(genero),
-  metrics = { bpm: 100, structure: "VERSO-REFRAO" }
+  syllableTarget = getSyllableConfig(genero)
 ): Promise<string> {
-  // Implementação da geração normal aqui
-  // ... (seu código existente)
-  return "Letra gerada normalmente"
+  
+  const prompt = `COMPOSIÇÃO MUSICAL - ${genero.toUpperCase()}
+
+TEMA: ${tema}
+HUMOR: ${humor}
+GÊNERO: ${genero}
+SÍLABAS: ${syllableTarget.min}-${syllableTarget.max} por linha
+
+CONTRAÇÕES OBRIGATÓRIAS:
+• "você" → "cê" 
+• "estou" → "tô" 
+• "para" → "pra" 
+• "está" → "tá"
+
+${additionalRequirements ? `REQUISITOS ADICIONAIS:\n${additionalRequirements}\n` : ''}
+
+CRIE UMA LETRA AUTÊNTICA NO ESTILO ${genero} SOBRE "${tema}" COM SENTIMENTO ${humor}.
+
+RETORNE APENAS A LETRA COMPLETA:`
+
+  const { text } = await generateText({
+    model: "openai/gpt-4o",
+    prompt,
+    temperature: criatividade === "ousado" ? 0.8 : criatividade === "conservador" ? 0.5 : 0.7
+  })
+
+  return text.trim()
 }
 
 function extractTitleFromLyrics(lyrics: string): string {
@@ -261,5 +280,5 @@ function extractTitleFromLyrics(lyrics: string): string {
     return chorusMatch[1].trim().split(" ").slice(0, 4).join(" ")
   }
 
-  return "Sem Título"
+  return "Composição Musical"
 }
