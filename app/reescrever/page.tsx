@@ -84,12 +84,15 @@ export default function ReescreverPage() {
   const [selectedHook, setSelectedHook] = useState<string | null>(null)
   const [formattingStyle, setFormattingStyle] = useState("performatico")
 
+  // ✅ DEBUG: Monitorar estado do gênero
   useEffect(() => {
     console.log('🎵 Genre state updated:', genre)
   }, [genre])
 
   const toggleEmotion = (emotion: string) => {
-    setSelectedEmotions((prev) => (prev.includes(emotion) ? prev.filter((e) => e !== emotion) : [...prev, emotion]))
+    setSelectedEmotions((prev) => 
+      prev.includes(emotion) ? prev.filter((e) => e !== emotion) : [...prev, emotion]
+    )
   }
 
   const handleGenerateChorus = async () => {
@@ -186,14 +189,18 @@ export default function ReescreverPage() {
     )
   }
 
+  // ✅ FUNÇÃO CORRIGIDA DE REWRITE
   const handleRewriteLyrics = async () => {
-    console.log('=== DEBUG REWRITE ===')
+    console.log('=== 🚀 INICIANDO REWRITE DEBUG ===')
     console.log('1. originalLyrics:', originalLyrics?.substring(0, 50) + '...')
     console.log('2. genre:', genre)
     console.log('3. genre type:', typeof genre)
     console.log('4. genre length:', genre?.length)
+    console.log('5. theme:', theme)
+    console.log('6. mood:', mood)
     console.log('=== FIM DEBUG ===')
 
+    // ✅ VALIDAÇÃO ROBUSTA
     if (!originalLyrics?.trim()) {
       toast.error("Por favor, cole a letra original")
       return
@@ -218,40 +225,73 @@ export default function ReescreverPage() {
 
       console.log('📤 Enviando para API - Genre:', genre)
 
+      // ✅ PREPARA O CORPO DA REQUISIÇÃO
+      const requestBody = {
+        letraOriginal: originalLyrics,
+        genero: genre, // ✅ Campo correto para a API
+        humor: mood || "Romântico",
+        tema: theme || "Amor",
+        criatividade: "equilibrado",
+        formattingStyle: formattingStyle,
+        additionalRequirements: additionalReqs,
+        advancedMode: advancedMode,
+        universalPolish: true,
+        syllableTarget: syllableConfig,
+        metrics: BRAZILIAN_GENRE_METRICS[genre as keyof typeof BRAZILIAN_GENRE_METRICS] || BRAZILIAN_GENRE_METRICS.default,
+        emocoes: selectedEmotions,
+        inspiracao: inspirationText,
+        metaforas: metaphorSearch,
+        titulo: title
+      }
+
+      console.log('📤 Request body preparado:', requestBody)
+
       const response = await fetch("/api/rewrite-lyrics", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          letraOriginal: originalLyrics,
-          genero: genre,
-          humor: mood,
-          tema: theme,
-          criatividade: "equilibrado",
-          formattingStyle: formattingStyle,
-          additionalRequirements: additionalReqs,
-          advancedMode: advancedMode,
-          universalPolish: true,
-          syllableTarget: syllableConfig,
-          metrics: BRAZILIAN_GENRE_METRICS[genre as keyof typeof BRAZILIAN_GENRE_METRICS] || BRAZILIAN_GENRE_METRICS.default,
-        }),
+        headers: { 
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
       })
 
-      console.log('📝 Status da resposta:', response.status)
+      console.log('📥 Status da resposta:', response.status)
+      console.log('📥 OK?', response.ok)
       
-      const data = await response.json()
-      console.log('📝 Resposta da API:', data)
+      // ✅ LÊ A RESPOSTA COMO TEXTO PRIMEIRO
+      const responseText = await response.text()
+      console.log('📥 Response text:', responseText)
+
+      let data
+      try {
+        data = JSON.parse(responseText)
+        console.log('✅ JSON parseado com sucesso:', data)
+      } catch (parseError) {
+        console.error('❌ ERRO PARSE JSON:', parseError)
+        console.log('📥 Texto original que falhou:', responseText)
+        toast.error("Resposta inválida da API")
+        return
+      }
 
       if (!response.ok) {
-        throw new Error(data.error || "Erro ao reescrever letra")
+        throw new Error(data.error || `Erro ${response.status} na API`)
+      }
+
+      // ✅ VALIDA A ESTRUTURA DA RESPOSTA
+      if (!data.letra) {
+        throw new Error("Resposta da API não contém letra")
       }
 
       setLyrics(data.letra)
       if (data.titulo && !title) {
         setTitle(data.titulo)
       }
-      toast.success("Letra reescrita com sucesso!")
+      
+      toast.success("Letra reescrita com sucesso!", {
+        description: `Modo: ${data.metadata?.rewriteMode || 'normal'}`
+      })
+      
     } catch (error) {
-      console.error("[v0] Error rewriting lyrics:", error)
+      console.error("💥 ERRO COMPLETO no rewrite:", error)
       toast.error(error instanceof Error ? error.message : "Erro ao reescrever letra")
     } finally {
       setIsRewriting(false)
@@ -317,7 +357,7 @@ export default function ReescreverPage() {
       setLyrics("")
       setTitle("")
       setChords("")
-      toast.success("Resultado limpa!")
+      toast.success("Resultado limpo!")
     }
   }
 
@@ -329,6 +369,7 @@ export default function ReescreverPage() {
         <h1 className="text-2xl font-bold text-left mb-4">Reescrever Letras</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* ✅ COLUNA 1: PARÂMETROS DE REESCRITA */}
           <Card className="order-1 h-fit">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Parâmetros de Reescrita</CardTitle>
@@ -507,6 +548,7 @@ export default function ReescreverPage() {
             </CardContent>
           </Card>
 
+          {/* ✅ COLUNA 2: INSPIRAÇÃO & SENSAÇÕES */}
           <Card className="order-2 h-fit">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Inspiração & Sensações</CardTitle>
@@ -614,6 +656,7 @@ export default function ReescreverPage() {
             </CardContent>
           </Card>
 
+          {/* ✅ COLUNA 3: FERRAMENTAS E RESULTADO */}
           <div className="order-3 space-y-4">
             <Card>
               <CardHeader className="pb-3">
@@ -753,6 +796,7 @@ export default function ReescreverPage() {
         </div>
       </div>
 
+      {/* ✅ DIALOGS */}
       <Dialog open={showChorusDialog} onOpenChange={setShowChorusDialog}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
