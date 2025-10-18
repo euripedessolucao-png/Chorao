@@ -1,7 +1,31 @@
 import { NextResponse } from "next/server"
+import { generateText } from "ai"
 import { getGenreConfig, detectSubGenre, getGenreRhythm } from "@/lib/genre-config"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 import { MetaComposer } from "@/lib/orchestrator/meta-composer"
+
+// ✅ INTERFACES PARA TIPAGEM
+interface ChorusVariation {
+  chorus: string
+  style: string
+  score: number
+}
+
+interface HookVariation {
+  hook: string
+  style: string
+  score: number
+}
+
+interface ChorusData {
+  variations: ChorusVariation[]
+  bestOptionIndex: number
+}
+
+interface HookData {
+  variations: HookVariation[]
+  bestOptionIndex: number
+}
 
 export async function POST(request: Request) {
   try {
@@ -53,8 +77,8 @@ export async function POST(request: Request) {
     console.log(`[Create-Song] Config: ${genero} | ${finalRhythm} | ${syllableConfig.min}-${syllableConfig.max}s | Mode: ${performanceMode}`)
 
     // ✅ ETAPA 1: GERAR ELEMENTOS COM METACOMPOSER
-    let generatedChorus = null
-    let generatedHook = null
+    let generatedChorus: ChorusData | null = null
+    let generatedHook: HookData | null = null
 
     if (includeChorus) {
       console.log('[Create-Song] 🎵 Gerando refrão com MetaComposer...')
@@ -87,7 +111,7 @@ export async function POST(request: Request) {
         additionalRequirements, 
         generatedChorus, 
         generatedHook,
-        performanceMode // ✅ PASSA O MODO PERFORMÁTICO
+        performanceMode
       ),
       syllableTarget: syllableConfig,
       applyFinalPolish: universalPolish,
@@ -108,7 +132,7 @@ export async function POST(request: Request) {
 
     finalLyrics = capitalizeLines(finalLyrics)
 
-    // ✅ METADADOS COMPLETOS
+    // ✅ METADADOS COMPLETOS COM TIPAGEM CORRETA
     const metadata = {
       score: result.metadata.finalScore,
       polishingApplied: result.metadata.polishingApplied,
@@ -153,6 +177,140 @@ export async function POST(request: Request) {
   }
 }
 
+// ✅ GERADOR DE REFRÃO COM METACOMPOSER - IMPLEMENTAÇÃO COMPLETA
+async function generateChorusWithMetaComposer(params: {
+  genre: string;
+  theme: string;
+  mood?: string;
+  additionalRequirements?: string;
+}): Promise<ChorusData | null> {
+  
+  const chorusRequest = {
+    genre: params.genre,
+    theme: params.theme,
+    mood: params.mood || "Adaptado",
+    additionalRequirements: `CRIAR APENAS REFRÃO - 4 LINHAS
+
+TEMA: ${params.theme}
+${params.additionalRequirements ? `REQUISITOS: ${params.additionalRequirements}` : ''}
+
+Crie UM refrão forte:
+- 4 linhas, máximo 12 sílabas por linha
+- Gancho memorável na primeira linha
+- Linguagem coloquial brasileira
+- Tema: ${params.theme}`,
+    syllableTarget: getSyllableConfig(params.genre),
+    applyFinalPolish: true,
+    preservedChoruses: [],
+  }
+
+  try {
+    const result = await MetaComposer.compose(chorusRequest)
+    const chorusLines = extractChorusLines(result.lyrics)
+    
+    return {
+      variations: [
+        {
+          chorus: chorusLines,
+          style: "Refrão Original",
+          score: Math.round(result.metadata.finalScore * 10)
+        }
+      ],
+      bestOptionIndex: 0
+    }
+  } catch (error) {
+    console.error('[Create-Song] Erro ao gerar refrão:', error)
+    return null
+  }
+}
+
+// ✅ GERADOR DE HOOK COM METACOMPOSER - IMPLEMENTAÇÃO COMPLETA
+async function generateHookWithMetaComposer(params: {
+  genre: string;
+  theme: string;
+  mood?: string;
+  additionalRequirements?: string;
+}): Promise<HookData | null> {
+  
+  const hookRequest = {
+    genre: params.genre,
+    theme: params.theme,
+    mood: params.mood || "Adaptado",
+    additionalRequirements: `CRIAR APENAS UMA FRASE-HOOK
+
+TEMA: ${params.theme}
+${params.additionalRequirements ? `REQUISITOS: ${params.additionalRequirements}` : ''}
+
+Crie UMA frase-hook impactante:
+- 1 linha apenas, máximo 12 sílabas
+- Grude na cabeça imediatamente
+- Represente o tema principal: ${params.theme}
+- Linguagem coloquial brasileira`,
+    syllableTarget: getSyllableConfig(params.genre),
+    applyFinalPolish: true,
+    preservedChoruses: [],
+  }
+
+  try {
+    const result = await MetaComposer.compose(hookRequest)
+    const hookLine = extractFirstLine(result.lyrics)
+    
+    return {
+      variations: [
+        {
+          hook: hookLine,
+          style: "Hook Impactante",
+          score: Math.round(result.metadata.finalScore * 10)
+        }
+      ],
+      bestOptionIndex: 0
+    }
+  } catch (error) {
+    console.error('[Create-Song] Erro ao gerar hook:', error)
+    return null
+  }
+}
+
+// ✅ EXTRAI LINHAS DO REFRÃO
+function extractChorusLines(lyrics: string): string {
+  const lines = lyrics.split('\n')
+  const verseLines: string[] = []
+  
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (trimmed && 
+        !trimmed.startsWith('[') && 
+        !trimmed.startsWith('(') &&
+        !trimmed.includes('Instruments:')) {
+      verseLines.push(trimmed)
+      if (verseLines.length >= 4) break // Pega até 4 linhas
+    }
+  }
+  
+  return verseLines.slice(0, 4).join('\\n')
+}
+
+// ✅ EXTRAI PRIMEIRA LINHA (PARA HOOK)
+function extractFirstLine(lyrics: string): string {
+  const lines = lyrics.split('\n')
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (trimmed && 
+        !trimmed.startsWith('[') && 
+        !trimmed.startsWith('(') &&
+        !trimmed.includes('Instruments:')) {
+      return trimmed
+    }
+  }
+  return "Hook impactante"
+}
+
+// ✅ PEGA MELHOR REFRÃO
+function getBestChorus(chorusData: ChorusData): string {
+  if (!chorusData?.variations?.[0]?.chorus) return ""
+  return chorusData.variations[0].chorus
+}
+
 // ✅ FORMATAÇÃO PERFORMÁTICA (TAGS EM INGLÊS, VERSOS EM PORTUGUÊS)
 function applyPerformanceFormatting(lyrics: string, genre: string, rhythm: string): string {
   const lines = lyrics.split('\n')
@@ -178,18 +336,18 @@ function applyPerformanceFormatting(lyrics: string, genre: string, rhythm: strin
 
     // ✅ INSTRUÇÕES MUSICAIS EM INGLÊS
     if (trimmed.startsWith('(') && trimmed.endsWith(')')) {
-      formattedLines.push(trimmed) // Mantém em inglês
+      formattedLines.push(trimmed)
       continue
     }
 
-    // ✅ VERSOS CANTADOS EM PORTUGUÊS (já estão)
+    // ✅ VERSOS CANTADOS EM PORTUGUÊS
     formattedLines.push(trimmed)
   }
 
   let formattedLyrics = formattedLines.join('\n')
 
   // ✅ INSTRUMENTOS EM INGLÊS NO FINAL
-  if (!formattedLyrics.includes("(Instruments:") && !formattedLyrics.includes("(Instrumentos:")) {
+  if (!formattedLyrics.includes("(Instruments:")) {
     const instruments = getGenreInstruments(genre)
     const bpm = getGenreBPM(genre)
     const style = getPerformanceStyle(genre)
@@ -242,7 +400,7 @@ function convertToPerformanceTag(tag: string, genre: string): string {
   return englishTag
 }
 
-// ✅ INSTRUMENTOS POR SEÇÃO (EM INGLÊS)
+// ✅ FUNÇÕES DE INSTRUMENTOS (mantidas da versão anterior)
 function getIntroInstruments(genre: string): string {
   const instruments: { [key: string]: string } = {
     "Sertanejo": "Slow acoustic guitar, harmonica",
@@ -327,7 +485,7 @@ function getOutroInstruments(genre: string): string {
   return instruments[genre] || "Guitar, pads"
 }
 
-// ✅ FORMATAÇÃO PADRÃO (MAIS SIMPLES)
+// ✅ FORMATAÇÃO PADRÃO
 function applyStandardFormatting(lyrics: string, genre: string): string {
   let formatted = lyrics
   
@@ -348,11 +506,11 @@ function applyStandardFormatting(lyrics: string, genre: string): string {
   return formatted
 }
 
-// ✅ CONSTRÓI REQUISITOS CONSIDERANDO O MODO
+// ✅ CONSTRÓI REQUISITOS
 function buildCompleteRequirements(
   baseRequirements: string, 
-  generatedChorus: any, 
-  generatedHook: any,
+  generatedChorus: ChorusData | null, 
+  generatedHook: HookData | null,
   performanceMode: string
 ): string {
   
@@ -363,8 +521,7 @@ function buildCompleteRequirements(
 - TAGS EM INGLÊS: [SECTION - Instruments]
 - VERSOS EM PORTUGUÊS: Apenas a parte cantada
 - BACKING VOCALS: (Backing: "Oh, oh") em inglês
-- INSTRUMENTOS: Descrições detalhadas em inglês
-- FORMATAÇÃO: Estilo profissional com instrumentação` :
+- INSTRUMENTOS: Descrições detalhadas em inglês` :
     `📝 MODO PADRÃO:
 - Tags em inglês simples
 - Versos em português
@@ -380,12 +537,7 @@ ESTRUTURA COMPLETA:
 REGRAS DE IDIOMA:
 ✅ PORTUGUÊS: Apenas versos cantados
 ✅ INGLÊS: Tags, instruções, instrumentos, backing vocals
-❌ NUNCA MISTURE idiomas nos versos
-
-LINGUAGEM:
-- Versos: Português brasileiro coloquial ("cê", "tô", "pra")
-- Tags: Inglês profissional
-- Backing: Inglês simples ("Oh", "Yeah", "Hey")`
+❌ NUNCA MISTURE idiomas nos versos`
 
   if (generatedChorus) {
     requirements += `\n- Use o refrão sugerido ou crie um similar`
@@ -398,19 +550,7 @@ LINGUAGEM:
   return requirements
 }
 
-// ✅ FUNÇÕES AUXILIARES (mantidas das versões anteriores)
-async function generateChorusWithMetaComposer(params: any) {
-  // ... implementação anterior
-}
-
-async function generateHookWithMetaComposer(params: any) {
-  // ... implementação anterior  
-}
-
-function getBestChorus(chorusData: any): string {
-  // ... implementação anterior
-}
-
+// ✅ FUNÇÕES AUXILIARES
 function getSyllableConfig(genre: string): { min: number; max: number; ideal: number } {
   const configs: { [key: string]: { min: number; max: number; ideal: number } } = {
     "Sertanejo": { min: 9, max: 11, ideal: 10 },
