@@ -28,16 +28,19 @@ const GENRE_QUALITY_CONFIG = {
 // ✅ FUNÇÕES AUXILIARES
 function extractChorusesFromInstructions(instructions?: string): string[] | null {
   if (!instructions) return null
+
   const chorusMatches = instructions.match(/refr[ãa]o[:\s]*([^\.]+)/gi)
   if (!chorusMatches) return null
 
   const choruses: string[] = []
+  
   chorusMatches.forEach(match => {
     const chorusText = match.replace(/refr[ãa]o[:\s]*/gi, '').trim()
     if (chorusText && chorusText.length > 10) {
       choruses.push(chorusText)
     }
   })
+
   return choruses.length > 0 ? choruses : null
 }
 
@@ -67,6 +70,7 @@ function extractMoodFromInput(humor?: string, emocoes?: string[]): string {
   return 'Romântico'
 }
 
+// ✅ FUNÇÃO PARA NORMALIZAR CRIATIVIDADE
 function normalizeCreativity(criatividade: string): "equilibrado" | "conservador" | "ousado" {
   if (criatividade === "conservador") return "conservador"
   if (criatividade === "ousado") return "ousado"
@@ -75,19 +79,22 @@ function normalizeCreativity(criatividade: string): "equilibrado" | "conservador
 
 function applyFinalFormatting(lyrics: string, genero: string, metrics?: any): string {
   let formattedLyrics = lyrics
+
   if (!formattedLyrics.includes("(Instrumentos:")) {
     const instrumentList = `(Instrumentos: guitar, bass, drums, keyboard | BPM: ${metrics?.bpm || 100} | Ritmo: ${genero} | Estilo: ${genero})`
     formattedLyrics = formattedLyrics.trim() + "\n\n" + instrumentList
   }
+
   formattedLyrics = capitalizeLines(formattedLyrics)
   return formattedLyrics
 }
 
+// ✅ OBTÉM CONFIGURAÇÃO DE SÍLABAS POR GÊNERO
 function getSyllableConfig(genero: string) {
   return GENRE_QUALITY_CONFIG[genero as keyof typeof GENRE_QUALITY_CONFIG] || GENRE_QUALITY_CONFIG.default
 }
 
-// ✅ FUNÇÃO PARA REWRITE COM REFRÕES PRESERVADOS
+// ✅ FUNÇÃO PARA REWRITE COM REFRÕES PRESERVADOS USANDO META-COMPOSER
 async function rewriteWithPreservedChoruses(
   letraOriginal: string,
   extractedChoruses: string[],
@@ -116,10 +123,12 @@ async function rewriteWithPreservedChoruses(
 
   try {
     const result = await MetaComposer.compose(compositionRequest)
+    
     console.log(`[RewritePreserved] Reescrita concluída - Score: ${result.metadata.finalScore.toFixed(2)}`)
     if (result.metadata.preservedChorusesUsed) {
       console.log(`[RewritePreserved] ✅ ${extractedChoruses.length} refrões preservados aplicados`)
     }
+    
     return result.lyrics
   } catch (error) {
     console.error('[RewritePreserved] Erro no MetaComposer, usando fallback:', error)
@@ -246,7 +255,11 @@ Rewrite and improve the song now:`
   lyrics = lyrics.replace(/^\*\*(?:Título|Title):\s*.+\*\*$/gm, "").trim()
 
   console.log(`[RewriteNormally] Aplicando imposição rigorosa de sílabas...`)
-  const enforcedResult = await SyllableEnforcer.enforceSyllableLimits(lyrics, syllableTarget, genero)
+  const enforcedResult = await SyllableEnforcer.enforceSyllableLimits(
+    lyrics,
+    syllableTarget,
+    genero
+  )
 
   if (enforcedResult.corrections > 0) {
     console.log(`[RewriteNormally] ${enforcedResult.corrections} linhas corrigidas automaticamente`)
@@ -260,7 +273,7 @@ Rewrite and improve the song now:`
   return lyrics
 }
 
-// ✅ ROTA PRINCIPAL DE REWRITE
+// ✅ ROTA PRINCIPAL DE REWRITE COM VALIDAÇÃO CORRIGIDA
 export async function POST(request: Request) {
   try {
     const body = await request.json()
@@ -268,6 +281,7 @@ export async function POST(request: Request) {
     const {
       letraOriginal,
       genero,
+      generoConversao, // ← ACEITA AMBOS OS NOMES
       humor,
       tema,
       criatividade = "equilibrado",
@@ -284,18 +298,31 @@ export async function POST(request: Request) {
       selectedChoruses,
     } = body
 
-    if (!letraOriginal) {
+    // ✅ DEBUG no servidor
+    console.log('[API] Recebido - genero:', genero)
+    console.log('[API] Recebido - generoConversao:', generoConversao)
+    console.log('[API] Recebido - tipo genero:', typeof genero)
+    console.log('[API] Recebido - letraOriginal:', letraOriginal?.substring(0, 50))
+
+    // ✅ CORREÇÃO: Usa qualquer um dos dois campos de gênero
+    const finalGenero = genero || generoConversao
+
+    if (!letraOriginal || letraOriginal.trim() === '') {
       return NextResponse.json({ error: "Letra original é obrigatória" }, { status: 400 })
     }
 
-    if (!genero) {
+    // ✅ CORREÇÃO: Validação mais flexível do gênero
+    if (!finalGenero || finalGenero.trim() === '' || finalGenero === 'undefined' || finalGenero === 'null') {
+      console.log('[API] ERRO - Gênero inválido:', finalGenero)
       return NextResponse.json({ error: "Gênero é obrigatório" }, { status: 400 })
     }
 
-    const autoSyllableConfig = getSyllableConfig(genero)
+    // ✅ CONTINUA com o processamento normal...
+    const autoSyllableConfig = getSyllableConfig(finalGenero)
     const finalSyllableTarget = syllableTarget || autoSyllableConfig
 
-    console.log(`[Rewrite] Configuração ${genero}: ${finalSyllableTarget.min}-${finalSyllableTarget.max}s (ideal: ${finalSyllableTarget.ideal}s)`)
+    console.log(`[Rewrite] Processando: ${finalGenero} - ${tema}`)
+    console.log(`[Rewrite] Configuração ${finalGenero}: ${finalSyllableTarget.min}-${finalSyllableTarget.max}s (ideal: ${finalSyllableTarget.ideal}s)`)
     console.log(`[Rewrite] Polimento Universal: ${universalPolish ? 'ATIVO' : 'INATIVO'}`)
 
     const extractedChoruses = selectedChoruses || extractChorusesFromInstructions(additionalRequirements) || []
@@ -310,7 +337,7 @@ export async function POST(request: Request) {
       finalLyrics = await rewriteWithPreservedChoruses(
         letraOriginal,
         extractedChoruses,
-        genero,
+        finalGenero,
         tema || 'Amor',
         humor || 'Romântico',
         finalSyllableTarget,
@@ -318,11 +345,11 @@ export async function POST(request: Request) {
         additionalRequirements
       )
     } else if (universalPolish) {
-      console.log(`[Rewrite] 🎵 Sistema Universal ativo para: ${genero}`)
+      console.log(`[Rewrite] 🎵 Sistema Universal ativo para: ${finalGenero}`)
       rewriteMode = "universal"
       
       const compositionRequest = {
-        genre: genero,
+        genre: finalGenero,
         theme: extractThemeFromInput(tema || 'Amor', inspiracao),
         mood: extractMoodFromInput(humor, emocoes),
         additionalRequirements,
@@ -339,15 +366,15 @@ export async function POST(request: Request) {
 
       console.log(`[Rewrite] Sistema Universal finalizado - Score: ${result.metadata.finalScore.toFixed(2)}`)
       if (result.metadata.polishingApplied) {
-        console.log(`[Rewrite] ✅ Polimento específico para ${genero} aplicado`)
+        console.log(`[Rewrite] ✅ Polimento específico para ${finalGenero} aplicado`)
       }
     } else {
-      console.log(`[Rewrite] Modo reescrita normal para: ${genero} - ${tema}`)
+      console.log(`[Rewrite] Modo reescrita normal para: ${finalGenero} - ${tema}`)
       rewriteMode = "normal"
       
       finalLyrics = await rewriteNormally(
         letraOriginal,
-        genero,
+        finalGenero,
         humor || 'Romântico',
         tema || 'Amor',
         criatividade,
@@ -361,7 +388,7 @@ export async function POST(request: Request) {
       )
     }
 
-    finalLyrics = applyFinalFormatting(finalLyrics, genero, metrics)
+    finalLyrics = applyFinalFormatting(finalLyrics, finalGenero, metrics)
 
     console.log(`[Rewrite] Reescrita concluída! Modo: ${rewriteMode}`)
 
@@ -373,11 +400,12 @@ export async function POST(request: Request) {
         rewriteMode: rewriteMode,
         syllableConfig: finalSyllableTarget,
         universalPolish: universalPolish,
-        genre: genero
+        genre: finalGenero
       }
     })
   } catch (error) {
     console.error("[Rewrite] Erro ao reescrever letra:", error)
+
     const errorMessage = error instanceof Error ? error.message : "Erro desconhecido"
 
     return NextResponse.json(
