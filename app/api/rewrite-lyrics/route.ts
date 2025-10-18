@@ -276,7 +276,10 @@ Rewrite and improve the song now:`
 // ✅ ROTA PRINCIPAL DE REWRITE COM VALIDAÇÃO CORRIGIDA
 export async function POST(request: Request) {
   try {
+    console.log('[API] Recebendo requisição...')
+    
     const body = await request.json()
+    console.log('[API] Body recebido:', body)
 
     const {
       letraOriginal,
@@ -307,15 +310,22 @@ export async function POST(request: Request) {
     // ✅ CORREÇÃO: Usa qualquer um dos dois campos de gênero
     const finalGenero = genero || generoConversao
 
+    // ✅ VALIDAÇÕES ROBUSTAS
     if (!letraOriginal || letraOriginal.trim() === '') {
-      return NextResponse.json({ error: "Letra original é obrigatória" }, { status: 400 })
+      console.log('[API] ERRO: Letra original vazia')
+      return NextResponse.json({ 
+        error: "Letra original é obrigatória" 
+      }, { status: 400 })
     }
 
-    // ✅ CORREÇÃO: Validação mais flexível do gênero
     if (!finalGenero || finalGenero.trim() === '' || finalGenero === 'undefined' || finalGenero === 'null') {
-      console.log('[API] ERRO - Gênero inválido:', finalGenero)
-      return NextResponse.json({ error: "Gênero é obrigatório" }, { status: 400 })
+      console.log('[API] ERRO: Gênero inválido:', finalGenero)
+      return NextResponse.json({ 
+        error: "Gênero é obrigatório" 
+      }, { status: 400 })
     }
+
+    console.log('[API] Processando reescrita...')
 
     // ✅ CONTINUA com o processamento normal...
     const autoSyllableConfig = getSyllableConfig(finalGenero)
@@ -392,7 +402,8 @@ export async function POST(request: Request) {
 
     console.log(`[Rewrite] Reescrita concluída! Modo: ${rewriteMode}`)
 
-    return NextResponse.json({
+    // ✅ RESPOSTA CORRETA - NextResponse.json() bem formatado
+    const responseData = {
       letra: finalLyrics,
       titulo: titulo || extractTitleFromLyrics(finalLyrics),
       metadata: {
@@ -402,19 +413,35 @@ export async function POST(request: Request) {
         universalPolish: universalPolish,
         genre: finalGenero
       }
+    }
+
+    console.log('[API] Retornando resposta:', responseData)
+
+    return NextResponse.json(responseData, { 
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8'
+      }
     })
+
   } catch (error) {
     console.error("[Rewrite] Erro ao reescrever letra:", error)
 
     const errorMessage = error instanceof Error ? error.message : "Erro desconhecido"
 
+    // ✅ RESPOSTA DE ERRO CORRETA
     return NextResponse.json(
       {
         error: "Erro ao reescrever letra",
         details: errorMessage,
         suggestion: "Tente novamente com uma letra mais clara",
       },
-      { status: 500 },
+      { 
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8'
+        }
+      },
     )
   }
 }
