@@ -27,25 +27,24 @@ import { EMOTIONS } from "@/lib/genres"
 import { GenreSelect } from "@/components/genre-select"
 import { HookGenerator } from "@/components/hook-generator"
 import { SyllableValidator } from "@/components/syllable-validator"
-import { RhymeAnalyzer } from "@/components/rhyme-analyzer"
 
 const BRAZILIAN_GENRE_METRICS = {
   "Sertanejo Moderno": { syllablesPerLine: 6, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
-  Sertanejo: { syllablesPerLine: 7, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
+  "Sertanejo": { syllablesPerLine: 7, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
   "Sertanejo Universitário": { syllablesPerLine: 6, bpm: 95, structure: "VERSO-REFRAO" },
   "Sertanejo Sofrência": { syllablesPerLine: 8, bpm: 75, structure: "VERSO-REFRAO-PONTE" },
   "Sertanejo Raiz": { syllablesPerLine: 10, bpm: 80, structure: "VERSO-REFRAO" },
-  Pagode: { syllablesPerLine: 7, bpm: 100, structure: "VERSO-REFRAO" },
-  Samba: { syllablesPerLine: 7, bpm: 105, structure: "VERSO-REFRAO-PONTE" },
-  Forró: { syllablesPerLine: 8, bpm: 120, structure: "VERSO-REFRAO" },
-  Axé: { syllablesPerLine: 6, bpm: 130, structure: "VERSO-REFRAO" },
-  MPB: { syllablesPerLine: 9, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
+  "Pagode": { syllablesPerLine: 7, bpm: 100, structure: "VERSO-REFRAO" },
+  "Samba": { syllablesPerLine: 7, bpm: 105, structure: "VERSO-REFRAO-PONTE" },
+  "Forró": { syllablesPerLine: 8, bpm: 120, structure: "VERSO-REFRAO" },
+  "Axé": { syllablesPerLine: 6, bpm: 130, structure: "VERSO-REFRAO" },
+  "MPB": { syllablesPerLine: 9, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
   "Bossa Nova": { syllablesPerLine: 8, bpm: 70, structure: "VERSO-REFRAO" },
-  Rock: { syllablesPerLine: 8, bpm: 115, structure: "VERSO-REFRAO-SOLO" },
-  Pop: { syllablesPerLine: 7, bpm: 110, structure: "VERSO-REFRAO-PONTE" },
-  Funk: { syllablesPerLine: 6, bpm: 125, structure: "REFRAO-VERSO" },
-  Gospel: { syllablesPerLine: 8, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
-  default: { syllablesPerLine: 8, bpm: 100, structure: "VERSO-REFRAO" },
+  "Rock": { syllablesPerLine: 8, bpm: 115, structure: "VERSO-REFRAO-SOLO" },
+  "Pop": { syllablesPerLine: 7, bpm: 110, structure: "VERSO-REFRAO-PONTE" },
+  "Funk": { syllablesPerLine: 6, bpm: 125, structure: "REFRAO-VERSO" },
+  "Gospel": { syllablesPerLine: 8, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
+  "default": { syllablesPerLine: 8, bpm: 100, structure: "VERSO-REFRAO" },
 } as const
 
 // ✅ CONFIGURAÇÃO UNIVERSAL DE QUALIDADE POR GÊNERO
@@ -169,8 +168,8 @@ export default function CriarPage() {
       }
       
       // ✅ FEEDBACK DO SISTEMA UNIVERSAL
-      if (data.metadata?.polishingApplied) {
-        toast.success("Letra gerada com Sistema Universal de Qualidade!", {
+      if (data.metadata?.universalPolish) {
+        toast.success("🎵 Letra gerada com Sistema Universal de Qualidade!", {
           description: `Polimento específico para ${genre} aplicado com sucesso`
         })
       } else {
@@ -620,7 +619,7 @@ export default function CriarPage() {
               <div className="border rounded-lg p-3 bg-purple-50/50 space-y-2">
                 <Label className="text-xs font-semibold">Sensações & Emoções</Label>
                 <p className="text-xs text-muted-foreground">
-                  O "como" a história será contada. O sentimento que dará o ton da letra.
+                  O "como" a história será contada. O sentimento que dará o tom da letra.
                 </p>
                 <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
                   {EMOTIONS.map((emotion) => (
@@ -754,17 +753,6 @@ export default function CriarPage() {
                         })
                       } else if (result.totalLines > 0) {
                         toast.success(`✓ Letra validada: ${result.totalLines} versos dentro do padrão ${genre}`)
-                      }
-                    }}
-                  />
-
-                  {/* ✅ ANALISADOR DE RIMAS */}
-                  <RhymeAnalyzer 
-                    lyrics={lyrics}
-                    genre={genre}
-                    onAnalysis={(report) => {
-                      if (report.overallScore < 60) {
-                        toast.warning(`Rimas precisam de melhoria (Score: ${report.overallScore})`)
                       }
                     }}
                   />
