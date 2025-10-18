@@ -66,6 +66,20 @@ const GENRE_QUALITY_CONFIG = {
   "Gospel": { min: 8, max: 11, ideal: 9, rhymeQuality: 0.5 },
   "default": { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 }
 }
+// No criar/page.tsx - ADICIONE:
+
+import { RhymeAnalyzer } from "@/components/rhyme-analyzer"
+
+// No componente, após o SyllableValidator:
+<RhymeAnalyzer 
+  lyrics={lyrics}
+  genre={genre}
+  onAnalysis={(report) => {
+    if (report.overallScore < 60) {
+      toast.warning(`Rimas precisam de melhoria (Score: ${report.overallScore})`)
+    }
+  }}
+/>
 
 const GENRES = ["Pop", "Sertanejo Moderno", "Sertanejo Universitário", "MPB", "Rock", "Funk", "Pagode", "Forró"]
 
