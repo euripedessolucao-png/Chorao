@@ -99,14 +99,14 @@ export class MetaComposer {
 
     const RHYME_CORRECTION_TIMEOUT = 10000 // 10 segundos máximo
 
-    let rhymeReport
+    let rhymeReport: { overallScore: number; [key: string]: any }
     try {
-      rhymeReport = await Promise.race([
+      rhymeReport = (await Promise.race([
         Promise.resolve(generateRhymeReport(lyrics, genre)),
         new Promise((_, reject) =>
           setTimeout(() => reject(new Error("Timeout no relatório de rimas")), RHYME_CORRECTION_TIMEOUT),
         ),
-      ])
+      ])) as { overallScore: number; [key: string]: any }
     } catch (reportError) {
       console.error("[RhymeCorrection] ⚠️ Erro ao gerar relatório, pulando correção:", reportError)
       return lyrics
