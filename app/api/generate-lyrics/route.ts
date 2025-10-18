@@ -285,7 +285,7 @@ async function applyFinalPolish(lyrics: string, genre: string, syllableConfig: {
   return polishedLyrics
 }
 
-// ✅ CORREÇÃO DE LINHA (SEM COMENTÁRIOS)
+// ✅ CORREÇÃO DE LINHA (SEM COMENTÁRIOS) - CORRIGIDO
 async function correctLine(line: string, targetSyllables: number, genre: string): Promise<string> {
   const prompt = `CORREÇÃO SILENCIOSA - ${genre.toUpperCase()}
 
@@ -301,7 +301,7 @@ RETORNE APENAS A LINHA CORRIGIDA, SEM COMENTÁRIOS:`
     model: "openai/gpt-4o-mini",
     prompt,
     temperature: 0.3,
-    maxTokens: 30
+    // ❌ REMOVIDO: maxTokens: 30 - Não é um parâmetro válido
   })
 
   // ✅ LIMPA QUALQUER COMENTÁRIO QUE A IA POSSA ADICIONAR
@@ -314,7 +314,7 @@ RETORNE APENAS A LINHA CORRIGIDA, SEM COMENTÁRIOS:`
   return cleaned || line
 }
 
-// ✅ FUNÇÕES RESTANTES (MANTIDAS)
+// ✅ GERADOR DE REFRÃO - CORRIGIDO
 async function generateChorus(params: { genre: string; theme: string; mood?: string; additionalRequirements?: string }) {
   const prompt = `CRIAÇÃO DE REFRÃO ORIGINAL - ${params.genre.toUpperCase()}
 
@@ -336,11 +336,17 @@ RETORNE APENAS JSON:
   "bestOptionIndex": 0
 }`
 
-  const { text } = await generateText({ model: "openai/gpt-4o", prompt, temperature: 0.8 })
+  const { text } = await generateText({ 
+    model: "openai/gpt-4o", 
+    prompt, 
+    temperature: 0.8 
+  })
+  
   const jsonMatch = text.match(/\{[\s\S]*\}/)
   return jsonMatch ? JSON.parse(jsonMatch[0]) : null
 }
 
+// ✅ GERADOR DE HOOK - CORRIGIDO
 async function generateHook(params: { genre: string; theme: string; mood?: string; additionalRequirements?: string }) {
   const prompt = `CRIAÇÃO DE HOOK - ${params.genre.toUpperCase()}
 
@@ -361,12 +367,28 @@ RETORNE APENAS JSON:
   "bestOptionIndex": 0
 }`
 
-  const { text } = await generateText({ model: "openai/gpt-4o", prompt, temperature: 0.9 })
+  const { text } = await generateText({ 
+    model: "openai/gpt-4o", 
+    prompt, 
+    temperature: 0.9 
+  })
+  
   const jsonMatch = text.match(/\{[\s\S]*\}/)
   return jsonMatch ? JSON.parse(jsonMatch[0]) : null
 }
 
-async function generateCompleteSong(params: { genre: string; theme: string; mood?: string; additionalRequirements?: string; syllableConfig: any; rhythm: string; generatedChorus?: any; generatedHook?: any }) {
+// ✅ GERADOR DE MÚSICA COMPLETA - CORRIGIDO
+async function generateCompleteSong(params: { 
+  genre: string; 
+  theme: string; 
+  mood?: string; 
+  additionalRequirements?: string; 
+  syllableConfig: any; 
+  rhythm: string; 
+  generatedChorus?: any; 
+  generatedHook?: any; 
+}) {
+  
   const chorusContext = params.generatedChorus ? `REFRÃO SUGERIDO: ${params.generatedChorus.variations?.[0]?.chorus}` : ''
   const hookContext = params.generatedHook ? `HOOK SUGERIDO: ${params.generatedHook.variations?.[0]?.hook}` : ''
 
@@ -380,10 +402,16 @@ ESTRUTURA: [INTRO] → [VERSE 1] → [PRE-CHORUS] → [CHORUS] → [VERSE 2] →
 
 RETORNE APENAS A LETRA, SEM COMENTÁRIOS:`
 
-  const { text } = await generateText({ model: "openai/gpt-4o", prompt, temperature: 0.7 })
+  const { text } = await generateText({ 
+    model: "openai/gpt-4o", 
+    prompt, 
+    temperature: 0.7 
+  })
+  
   return text.trim()
 }
 
+// ✅ FUNÇÕES AUXILIARES
 function calculateSongScore(lyrics: string, syllableConfig: { min: number; max: number; ideal: number }): number {
   const validation = validateLyrics(lyrics, syllableConfig)
   if (validation.analyzedLines === 0) return 75
@@ -401,21 +429,28 @@ function extractTitle(lyrics: string, theme: string): string {
   return theme || "Nova Música"
 }
 
-function getSyllableConfig(genre: string) {
-  const configs = {
+function getSyllableConfig(genre: string): { min: number; max: number; ideal: number } {
+  const configs: { [key: string]: { min: number; max: number; ideal: number } } = {
     "Sertanejo": { min: 9, max: 11, ideal: 10 },
+    "Sertanejo Moderno": { min: 9, max: 11, ideal: 10 },
     "MPB": { min: 7, max: 12, ideal: 9 },
     "Funk": { min: 6, max: 10, ideal: 8 },
+    "Forró": { min: 8, max: 11, ideal: 9 },
+    "Rock": { min: 7, max: 11, ideal: 9 },
+    "Pop": { min: 7, max: 11, ideal: 9 },
     "default": { min: 7, max: 11, ideal: 9 }
   }
   return configs[genre] || configs.default
 }
 
 function getGenreInstruments(genre: string): string {
-  const instruments = {
+  const instruments: { [key: string]: string } = {
     "Sertanejo": "acoustic guitar, viola, bass, drums, accordion",
     "MPB": "nylon guitar, piano, bass, light percussion", 
     "Funk": "drum machine, synth bass, samples, electronic beats",
+    "Forró": "accordion, triangle, zabumba, bass",
+    "Rock": "electric guitar, bass, drums, keyboard",
+    "Pop": "synth, drum machine, bass, piano",
     "default": "guitar, bass, drums, keyboard"
   }
   return instruments[genre] || instruments.default
