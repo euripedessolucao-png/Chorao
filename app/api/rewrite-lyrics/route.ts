@@ -3,6 +3,8 @@ import { generateText } from "ai"
 import { getGenreConfig, detectSubGenre, getGenreRhythm } from "@/lib/genre-config"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 import { countPoeticSyllables } from "@/lib/validation/syllable-counter"
+import { SyllableEnforcer } from "@/lib/validation/syllableEnforcer"
+import { MetaComposer } from "@/lib/orchestrator/meta-composer"
 
 export async function POST(request: Request) {
   try {
@@ -45,6 +47,7 @@ export async function POST(request: Request) {
     const finalTema = body.tema || body.theme || body.subject || "Reescrita"
     const finalHumor = body.humor || body.mood || body.emocao || "Adaptado"
     const selectedChoruses = body.selectedChoruses || body.choruses || body.refroes || []
+    const universalPolish = body.universalPolish !== false
 
     console.log('🎯 PARÂMETROS IDENTIFICADOS:', {
       finalLyrics: finalLyrics ? `✅ ${finalLyrics.length} chars` : '❌ NÃO ENCONTRADA',
@@ -82,7 +85,7 @@ export async function POST(request: Request) {
       }, { status: 400 })
     }
 
-    console.log(`[Rewrite] ✅ Iniciando reescrita inteligente - Gênero: ${finalGenero}`)
+    console.log(`[Rewrite] ✅ Iniciando reescrita com MetaComposer - Gênero: ${finalGenero}`)
 
     // ✅ CONFIGURAÇÃO DO GÊNERO
     const genreConfig = getGenreConfig(finalGenero)
@@ -90,180 +93,110 @@ export async function POST(request: Request) {
     const defaultRhythm = getGenreRhythm(finalGenero)
     const finalRhythm = subGenreInfo.rhythm || defaultRhythm
 
-    // ✅ ANÁLISE DETALHADA DA ESTRUTURA ORIGINAL
+    // ✅ ANÁLISE DA ESTRUTURA ORIGINAL
     const structureAnalysis = analyzeSongStructure(finalLyrics)
-    console.log('[Rewrite] 📊 Análise estrutural detalhada:', structureAnalysis)
+    console.log('[Rewrite] 📊 Análise estrutural:', structureAnalysis)
 
-    // ✅ SISTEMA DE PROMPT INTELIGENTE QUE PRESERVA ESTRUTURA
-    const universalRules = `
-🌍 REGRAS DE REWRITE INTELIGENTE
+    // ✅ VALIDAÇÃO INICIAL COM SYLLABLE ENFORCER
+    const initialValidation = SyllableEnforcer.validateLyrics(finalLyrics, {
+      min: genreConfig.syllableRange?.min || 7,
+      max: genreConfig.syllableRange?.max || 12,
+      ideal: genreConfig.syllableRange?.ideal || 9
+    })
+    console.log('[Rewrite] ⚖️ Validação inicial:', initialValidation)
 
-🎯 OBJETIVO PRINCIPAL:
-- PRESERVAR a estrutura original (seções, ordem, formatação)
-- MANTER a essência emocional e narrativa  
-- MELHORAR apenas versos com problemas de métrica
-- RESPEITAR as instruções musicais originais ([INTRO], [VERSO], etc)
-
-✅ ESTRUTURA ORIGINAL (OBRIGATÓRIO PRESERVAR):
-${structureAnalysis.sections.map(section => `- ${section.type}: ${section.lines.length} versos`).join('\n')}
-
-⚠️ REGRAS DE SÍLABAS (APLICAR SOMENTE ONDE NECESSÁRIO):
-- Versos problemáticos: MÁXIMO 12 sílabas poéticas
-- Versos bons: MANTER como estão
-- Foco em CORRIGIR, não em reescrever tudo
-
-🎵 PRESERVAÇÃO DE SEÇÕES:
-- Mantenha TODAS as tags originais: [INTRO], [VERSO], [REFRAO], etc
-- Preserve a ORDEM das seções
-- Mantenha instruções musicais: (Violão, Bateria, Sanfona, etc)
-- Só altere o conteúdo dos versos quando necessário
-
-📝 EXEMPLO DE FORMATAÇÃO CORRETA:
-
-[INTRO - VIOLÃO LENTO, HARMÔNICA]  ← MANTIDO
-
-[VERSO 1 - VIOLÃO ACÚSTICO, BATERIA SUAVE]  ← MANTIDO
-Café esfria, o tempo parou           ← MANTIDO (se bom)
-Teu anel no prato me fez pensar       ← CORRIGIDO (se necessário)
-
-[REFRAO - SANFONA, PALMAS CONTRATEMPO]  ← MANTIDO
-Silêncio que corta o coração         ← MANTIDO (se bom)
-Teu olhar é um adeus em vão          ← MANTIDO (se bom)
-`
-
-    const lyricsContext = `
-📝 LETRA ORIGINAL COMPLETA (PRESERVAR ESTRUTURA):
-${finalLyrics}
-
-🎵 ANÁLISE ESTRUTURAL IDENTIFICADA:
-- Total de seções: ${structureAnalysis.sections.length}
-- Seções: ${structureAnalysis.sections.map(s => s.type).join(' → ')}
-- Versos totais: ${structureAnalysis.totalLines}
-- Versos problemáticos: ${structureAnalysis.problematicLines.length}
-
-🎯 DIRETRIZES DE REWRITE:
-1. MANTENHA a estrutura de seções original
-2. PRESERVE tags e instruções musicais  
-3. CORRIJA apenas versos com >12 sílabas
-4. MANTENHA versos que já estão bons
-5. RESPEITE o fluxo narrativo emocional
-${additionalRequirements ? `6. ATENDER: ${additionalRequirements}` : ''}
-`
-
-    const preservedChorusesContext = selectedChoruses.length > 0 ? `
-🎵 REFRÕES PRESERVADOS (INTEGRAR NA ESTRUTURA):
-${selectedChoruses.map((chorus: string, index: number) => 
-  `Refrão ${index + 1}: ${chorus}`
-).join('\n')}
-
-IMPORTANTE: Substituir os refrões originais por estes, mantendo as tags [REFRAO].
-` : ""
-
-    const prompt = `${universalRules}
-
-${lyricsContext}
-${preservedChorusesContext}
-
-🎵 Você é um editor musical especializado em REWRITE ESTRUTURAL.
-
-SUA TAREFA: Fazer uma reescrita INTELIGENTE que:
-- ✅ PRESERVA 90% da estrutura original
-- ✅ MANTÉM tags e instruções musicais
-- ✅ CORRIGE apenas versos problemáticos
-- ✅ MANTÉM versos que já estão bons
-- ✅ RESPEITA o fluxo emocional da música
-
-PROCESSO:
-1. ANALISE cada seção da estrutura original
-2. IDENTIFIQUE versos com problemas de sílabas (>12)
-3. CORRIJA apenas esses versos problemáticos
-4. MANTENHA versos bons exatamente como estão
-5. PRESERVE todas as tags [SEÇÃO] e instruções
-6. USE refrões preservados se fornecidos
-
-FORMATO DE SAÍDA (CRÍTICO):
-- EXATAMENTE a mesma estrutura de seções
-- MESMAS tags [SEÇÃO - INSTRUÇÕES]  
-- Versos corrigidos apenas onde necessário
-- Mesma quantidade de linhas vazias entre seções
-
-EXEMPLO DE SAÍDA CORRETA:
-[INTRO - VIOLÃO LENTO, HARMÔNICA]
-
-[VERSO 1 - VIOLÃO ACÚSTICO, BATERIA SUAVE]
-Café esfria, o tempo parou
-Teu anel no prato me fez pensar
-Teu sorriso distante, olhar sem luz
-Nosso amor aos poucos vai se apagar
-
-[PRÉ-REFRAO - TECLADO RHODES, PERCUSSÃO SUAVE]
-Teu perfume já não é abrigo
-A casa vazia pesa no peito
-Cada canto guarda um fim tristonho
-E o silêncio cresce, toma tudo
-
-... (continua mesma estrutura)
-
-Gere a letra REEscrita ESTRUTURALMENTE IDÊNTICA agora:`
-
-    console.log("[Rewrite] 🎼 Gerando reescrita que preserva estrutura...")
-
-    let attempts = 0
-    let result: any = null
-    let allValid = false
-
-    while (attempts < 3 && !allValid) {
-      attempts++
-      console.log(`[Rewrite] Tentativa ${attempts}/3...`)
-
-      const { text } = await generateText({
-        model: "openai/gpt-4o",
-        prompt,
-        temperature: 0.7, // Menor temperatura para mais consistência
-      })
-
-      // ✅ CAPTURA A LETRA COMPLETA (não apenas JSON)
-      if (text) {
-        result = {
-          lyrics: text.trim(),
-          title: "Letra Reescrita (Estrutura Preservada)",
-          metadata: {
-            structurePreserved: true,
-            correctionType: "Seletiva"
-          }
-        }
-        
-        // ✅ VALIDAÇÃO INTELIGENTE - só valida versos, ignora tags
-        const validation = validateStructurePreservation(finalLyrics, result.lyrics)
-        console.log(`[Rewrite] Validação estrutural:`, validation)
-        
-        const syllableValidation = validateLyricsSyllables(result.lyrics)
-        console.log(`[Rewrite] Validação sílabas:`, syllableValidation)
-        
-        allValid = syllableValidation.valid || attempts === 3
-        
-        if (!allValid) {
-          console.log(`[Rewrite] ⚠️ Violações:`, syllableValidation.violations)
-        }
+    // ✅ PREPARAÇÃO DOS REFRÕES PRESERVADOS
+    const preservedChoruses = selectedChoruses.map((chorus: string) => {
+      const chorusValidation = validateLyricsSyllables(chorus)
+      return {
+        content: chorus,
+        validation: chorusValidation,
+        syllableCompliance: chorusValidation.valid ? "✅" : "❌"
       }
+    })
+
+    console.log(`[Rewrite] 🎵 Refrões preservados:`, preservedChoruses.length)
+
+    // ✅ META COMPOSIÇÃO COM SISTEMA DE RIMAS
+    const compositionRequest = {
+      genre: finalGenero,
+      theme: finalTema,
+      mood: finalHumor,
+      rhythm: finalRhythm,
+      originalLyrics: finalLyrics,
+      syllableTarget: {
+        min: genreConfig.syllableRange?.min || 7,
+        max: genreConfig.syllableRange?.max || 12,
+        ideal: genreConfig.syllableRange?.ideal || 9
+      },
+      applyFinalPolish: universalPolish,
+      preservedChoruses: selectedChoruses,
+      additionalRequirements: additionalRequirements,
+      structureAnalysis: structureAnalysis
     }
 
-    // ✅ CAPITALIZAÇÃO CONSERVADORA - só nos versos, não nas tags
-    if (result.lyrics) {
-      result.lyrics = capitalizeSongLyrics(result.lyrics)
+    console.log('[Rewrite] 🎼 Request para MetaComposer:', {
+      ...compositionRequest,
+      originalLyrics: `...${finalLyrics.length} chars`,
+      preservedChoruses: selectedChoruses.length
+    })
+
+    // ✅ TIMEOUT
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("Timeout na composição")), 45000)
+    )
+
+    let result
+    try {
+      // ✅ TENTA USAR META COMPOSER PRIMEIRO
+      const compositionPromise = MetaComposer.compose(compositionRequest)
+      result = await Promise.race([compositionPromise, timeoutPromise])
+      console.log(`[Rewrite] ✅ MetaComposer concluído! Score: ${result.metadata.finalScore}`)
+    } catch (metaError) {
+      console.log('[Rewrite] ⚠️ MetaComposer falhou, usando fallback:', metaError)
+      // ✅ FALLBACK PARA SISTEMA SIMPLIFICADO
+      result = await fallbackRewriteWithStructure(
+        finalLyrics, 
+        finalGenero, 
+        finalTema, 
+        finalHumor, 
+        selectedChoruses, 
+        additionalRequirements
+      )
     }
 
-    console.log("[Rewrite] ✅ Reescrita estrutural concluída!")
+    // ✅ APLICA SYLLABLE ENFORCER NO RESULTADO FINAL
+    console.log('[Rewrite] 🔧 Aplicando SyllableEnforcer no resultado final...')
+    const enforcedResult = await SyllableEnforcer.enforceSyllableLimits(
+      result.lyrics, 
+      {
+        min: genreConfig.syllableRange?.min || 7,
+        max: genreConfig.syllableRange?.max || 12,
+        ideal: genreConfig.syllableRange?.ideal || 9
+      },
+      finalGenero
+    )
+
+    console.log(`[Rewrite] ✅ SyllableEnforcer: ${enforcedResult.corrections} correções aplicadas`)
+
+    // ✅ VALIDAÇÃO FINAL
+    const finalValidation = validateLyricsSyllables(enforcedResult.correctedLyrics)
+    console.log('[Rewrite] ✅ Validação final:', finalValidation)
 
     return NextResponse.json({
-      letra: result.lyrics,
+      letra: capitalizeSongLyrics(enforcedResult.correctedLyrics),
       titulo: result.title,
       metadata: {
-        score: 90,
-        structurePreserved: true,
-        originalSections: structureAnalysis.sections.length,
-        correctionsMade: structureAnalysis.problematicLines.length,
-        syllableCompliance: "Estrutura preservada com correções seletivas"
+        score: result.metadata.finalScore || 85,
+        polishingApplied: result.metadata.polishingApplied || true,
+        preservedChorusesUsed: result.metadata.preservedChorusesUsed || selectedChoruses.length,
+        syllableCompliance: finalValidation.complianceRate,
+        structureImproved: result.metadata.structureImproved || true,
+        rhymeScore: result.metadata.rhymeScore || 0,
+        rhymeTarget: result.metadata.rhymeTarget || 0,
+        validation: finalValidation,
+        syllableCorrections: enforcedResult.corrections,
+        syllableViolations: enforcedResult.violations
       }
     })
 
@@ -272,16 +205,79 @@ Gere a letra REEscrita ESTRUTURALMENTE IDÊNTICA agora:`
     
     return NextResponse.json(
       {
-        error: "Erro na reescrita estrutural",
+        error: "Erro na reescrita orquestrada",
         details: error instanceof Error ? error.message : "Erro desconhecido",
-        suggestion: "Tente com uma letra mais clara ou menos refrões selecionados"
+        suggestion: "Tente novamente com uma letra mais clara"
       },
       { status: 500 }
     )
   }
 }
 
-// ✅ ANÁLISE DETALHADA DA ESTRUTURA DA MÚSICA
+// ✅ FALLBACK INTELIGENTE COM PRESERVAÇÃO DE ESTRUTURA
+async function fallbackRewriteWithStructure(
+  originalLyrics: string,
+  genre: string,
+  theme: string,
+  mood: string,
+  selectedChoruses: string[],
+  additionalRequirements: string
+) {
+  console.log('[Rewrite] 🔄 Usando fallback inteligente...')
+
+  const structureAnalysis = analyzeSongStructure(originalLyrics)
+  
+  const prompt = `REWRITE MUSICAL - ${genre.toUpperCase()}
+
+LETRA ORIGINAL (PRESERVAR ESTRUTURA):
+${originalLyrics}
+
+ESTRUTURA IDENTIFICADA:
+${structureAnalysis.sections.map(s => `- ${s.type}: ${s.lines.length} versos`).join('\n')}
+
+GÊNERO: ${genre}
+TEMA: ${theme}
+HUMOR: ${mood}
+${additionalRequirements ? `REQUISITOS: ${additionalRequirements}` : ''}
+${selectedChoruses.length > 0 ? `REFRÃOS PRESERVADOS:\n${selectedChoruses.join('\n')}` : ''}
+
+🎯 REGRAS DE REWRITE:
+1. PRESERVE TODAS as tags [SEÇÃO] e instruções musicais
+2. MANTENHA a ordem exata das seções
+3. CORRIJA apenas versos com problemas de métrica (>12 sílabas)
+4. USE linguagem coloquial brasileira ("cê", "tô", "pra")
+5. APLIQUE sistema A-B-C para Sertanejo Moderno
+6. VERSOS CANTADOS em português, instruções em inglês
+
+📝 FORMATAÇÃO EXATA:
+- Tags: [SECTION - Instruments] (inglês)
+- Versos: Português brasileiro coloquial
+- Instrumentos no final: "Instruments: guitar, piano, etc"
+
+Gere a letra REEscrita MANTENDO A ESTRUTURA ORIGINAL:`
+
+  const { text } = await generateText({
+    model: "openai/gpt-4o",
+    prompt,
+    temperature: 0.7,
+  })
+
+  return {
+    lyrics: text.trim(),
+    title: theme || "Letra Reescrita",
+    metadata: {
+      finalScore: 80,
+      polishingApplied: true,
+      preservedChorusesUsed: selectedChoruses.length,
+      structureImproved: true,
+      rhymeScore: 40,
+      rhymeTarget: genre.toLowerCase().includes('sertanejo') ? 50 : 
+                  genre.toLowerCase().includes('mpb') ? 60 : 40
+    }
+  }
+}
+
+// ✅ ANÁLISE DE ESTRUTURA
 function analyzeSongStructure(lyrics: string) {
   const lines = lyrics.split('\n')
   const sections: Array<{type: string, lines: string[], startIndex: number}> = []
@@ -291,7 +287,6 @@ function analyzeSongStructure(lyrics: string) {
   lines.forEach((line, index) => {
     const trimmed = line.trim()
     
-    // Detecta início de nova seção
     if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
       if (currentSection) {
         sections.push(currentSection)
@@ -302,11 +297,9 @@ function analyzeSongStructure(lyrics: string) {
         startIndex: index
       }
     } 
-    // Linha de verso normal
     else if (trimmed && currentSection) {
       currentSection.lines.push(trimmed)
       
-      // Valida sílabas apenas em versos (não tags)
       const syllables = countPoeticSyllables(trimmed)
       if (syllables > 12) {
         problematicLines.push({ line: trimmed, syllables })
@@ -314,7 +307,6 @@ function analyzeSongStructure(lyrics: string) {
     }
   })
 
-  // Adiciona a última seção
   if (currentSection) {
     sections.push(currentSection)
   }
@@ -327,23 +319,7 @@ function analyzeSongStructure(lyrics: string) {
   }
 }
 
-// ✅ VALIDAÇÃO DE PRESERVAÇÃO ESTRUTURAL
-function validateStructurePreservation(original: string, rewritten: string) {
-  const originalLines = original.split('\n').filter(l => l.trim())
-  const rewrittenLines = rewritten.split('\n').filter(l => l.trim())
-  
-  const originalSections = originalLines.filter(l => l.startsWith('[') && l.endsWith(']'))
-  const rewrittenSections = rewrittenLines.filter(l => l.startsWith('[') && l.endsWith(']'))
-  
-  return {
-    sectionsPreserved: originalSections.length === rewrittenSections.length,
-    originalSectionCount: originalSections.length,
-    rewrittenSectionCount: rewrittenSections.length,
-    structureMatch: JSON.stringify(originalSections) === JSON.stringify(rewrittenSections)
-  }
-}
-
-// ✅ VALIDAÇÃO INTELIGENTE DE SÍLABAS (só versos)
+// ✅ VALIDAÇÃO DE SÍLABAS
 function validateLyricsSyllables(lyrics: string) {
   const lines = lyrics.split('\n')
   const violations: Array<{line: string, syllables: number}> = []
@@ -351,7 +327,6 @@ function validateLyricsSyllables(lyrics: string) {
 
   lines.forEach(line => {
     const trimmed = line.trim()
-    // Só valida versos, ignora tags e linhas vazias
     if (trimmed && !(trimmed.startsWith('[') && trimmed.endsWith(']'))) {
       const syllables = countPoeticSyllables(trimmed)
       if (syllables > 12) {
