@@ -5,6 +5,15 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
     
+    console.log('🔍 DEBUG - Body recebido:', {
+      keys: Object.keys(body),
+      lyricsType: typeof body.lyrics,
+      lyricsLength: body.lyrics?.length,
+      lyricsPreview: body.lyrics?.substring(0, 100) + '...',
+      genero: body.genero || body.genre,
+      selectedChoruses: body.selectedChoruses?.length
+    })
+
     // ✅ PARÂMETROS FLEXÍVEIS
     const {
       lyrics, 
@@ -19,17 +28,44 @@ export async function POST(request: Request) {
     const finalGenero = genero || genre
     const finalTema = tema || theme || "Reescrita"
     const finalHumor = humor || mood || "Adaptado"
+    const finalLyrics = lyrics?.trim()
 
-    // ✅ VALIDAÇÃO ROBUSTA
-    if (!lyrics) {
-      return NextResponse.json({ error: "Letra é obrigatória" }, { status: 400 })
+    // ✅ VALIDAÇÃO DETALHADA
+    if (!finalLyrics) {
+      console.error('❌ VALIDAÇÃO FALHOU - Letra:', {
+        lyrics: lyrics,
+        isNull: lyrics === null,
+        isUndefined: lyrics === undefined,
+        isEmpty: lyrics === '',
+        isString: typeof lyrics === 'string',
+        trimmed: finalLyrics
+      })
+      
+      return NextResponse.json({ 
+        error: "Letra é obrigatória",
+        details: `Recebido: ${typeof lyrics} - "${lyrics?.substring(0, 50)}..."`,
+        suggestion: "Verifique se a letra foi colada corretamente"
+      }, { status: 400 })
+    }
+
+    if (finalLyrics.length < 10) {
+      return NextResponse.json({ 
+        error: "Letra muito curta",
+        details: `A letra deve ter pelo menos 10 caracteres (recebido: ${finalLyrics.length})`,
+        suggestion: "Cole uma letra completa para reescrever"
+      }, { status: 400 })
     }
 
     if (!finalGenero) {
-      return NextResponse.json({ error: "Gênero é obrigatório" }, { status: 400 })
+      return NextResponse.json({ 
+        error: "Gênero é obrigatório",
+        details: "Selecione um gênero musical",
+        suggestion: "Escolha um gênero como Sertanejo, MPB, Funk, etc."
+      }, { status: 400 })
     }
 
-    console.log(`[Rewrite] Iniciando para: ${finalGenero}, Refrões: ${selectedChoruses?.length || 0}`)
+    console.log(`[Rewrite] ✅ Validação passada - Iniciando para: ${finalGenero}`)
+    console.log(`[Rewrite] Letra: ${finalLyrics.length} chars, Refrões: ${selectedChoruses?.length || 0}`)
 
     // ✅ CONFIGURAÇÃO SIMPLES
     const getSyllableConfig = (genre: string) => {
@@ -57,7 +93,8 @@ export async function POST(request: Request) {
       mood: finalHumor,
       syllableTarget: getSyllableConfig(finalGenero),
       applyFinalPolish: universalPolish,
-      preservedChoruses: selectedChoruses || []
+      preservedChoruses: selectedChoruses || [],
+      additionalRequirements: "Reescreva esta letra mantendo a essência mas melhorando a estrutura, métrica e fluência"
     }
 
     // ✅ TIMEOUT PREVENTIVO
@@ -68,7 +105,7 @@ export async function POST(request: Request) {
     const compositionPromise = MetaComposer.compose(compositionRequest)
     const result = await Promise.race([compositionPromise, timeoutPromise])
 
-    console.log(`[Rewrite] ✅ Concluído! Score: ${result.metadata.finalScore}`)
+    console.log(`[Rewrite] ✅ Reescrita concluída! Score: ${result.metadata.finalScore}`)
 
     return NextResponse.json({
       letra: result.lyrics,
@@ -87,7 +124,9 @@ export async function POST(request: Request) {
     
     let suggestion = "Tente novamente"
     if (errorMessage.includes("Timeout")) {
-      suggestion = "Tente com menos refrões selecionados"
+      suggestion = "Tente com menos refrões selecionados ou uma letra mais curta"
+    } else if (errorMessage.includes("Letra")) {
+      suggestion = "Verifique se a letra foi colada corretamente"
     }
     
     return NextResponse.json(
