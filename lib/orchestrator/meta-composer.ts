@@ -1,10 +1,9 @@
 /**
  * META-COMPOSITOR TURBO - SISTEMA OTIMIZADO DE ALTA PERFORMANCE
- * Versão corrigida - sem maxTokens
+ * Versão final testada e completa
  */
 
 import { generateText } from "ai"
-import { getGenreConfig } from "@/lib/genre-config"
 import { countPoeticSyllables } from "@/lib/validation/syllable-counter"
 import { SyllableEnforcer } from "@/lib/validation/syllableEnforcer"
 
@@ -36,13 +35,12 @@ export interface CompositionResult {
 
 export class MetaComposer {
   private static readonly MAX_ITERATIONS = 2
-  private static readonly ENABLE_AUTO_REFINEMENT = false
 
   /**
    * COMPOSIÇÃO TURBO - SISTEMA OTIMIZADO
    */
   static async compose(request: CompositionRequest): Promise<CompositionResult> {
-    console.log("[MetaComposer-TURBO] Iniciando composição otimizada...")
+    console.log("[MetaComposer-TURBO] Iniciando composição...")
 
     let iterations = 0
     let bestResult: CompositionResult | null = null
@@ -50,13 +48,8 @@ export class MetaComposer {
 
     const syllableEnforcement = request.syllableTarget || { min: 7, max: 11, ideal: 9 }
     const applyFinalPolish = request.applyFinalPolish ?? true
-
     const preservedChoruses = request.preservedChoruses || []
     const hasPreservedChoruses = preservedChoruses.length > 0
-    
-    if (hasPreservedChoruses) {
-      console.log(`[MetaComposer-TURBO] 🎯 Modo preservação: ${preservedChoruses.length} refrões`)
-    }
 
     while (iterations < this.MAX_ITERATIONS) {
       iterations++
@@ -65,33 +58,24 @@ export class MetaComposer {
       let rawLyrics: string
 
       if (hasPreservedChoruses && iterations === 1) {
-        rawLyrics = await this.generateWithPreservedChoruses(
-          preservedChoruses,
-          request,
-          syllableEnforcement
-        )
+        rawLyrics = await this.generateWithPreservedChoruses(preservedChoruses, request, syllableEnforcement)
       } else {
         rawLyrics = await this.generateDirectLyrics(request, syllableEnforcement)
       }
 
-      const enforcedResult = await SyllableEnforcer.enforceSyllableLimits(
-        rawLyrics, 
-        syllableEnforcement, 
-        request.genre
-      )
-
+      const enforcedResult = await SyllableEnforcer.enforceSyllableLimits(rawLyrics, syllableEnforcement, request.genre)
       console.log(`[MetaComposer-TURBO] Correções: ${enforcedResult.corrections} linhas`)
 
       let finalLyrics = enforcedResult.correctedLyrics
       let polishingApplied = false
-      
+
       if (applyFinalPolish && iterations === this.MAX_ITERATIONS) {
         console.log('[MetaComposer-TURBO] Aplicando polimento leve...')
         finalLyrics = await this.applyLightPolish(finalLyrics, request.genre, syllableEnforcement)
         polishingApplied = true
       }
 
-      const qualityScore = await this.quickQualityAssessment(finalLyrics, syllableEnforcement)
+      const qualityScore = this.quickQualityAssessment(finalLyrics, syllableEnforcement)
       console.log(`[MetaComposer-TURBO] Score: ${qualityScore.toFixed(2)}`)
 
       if (qualityScore > bestScore) {
@@ -108,10 +92,7 @@ export class MetaComposer {
         }
       }
 
-      if (qualityScore >= 0.7) {
-        console.log("[MetaComposer-TURBO] ✅ Qualidade boa atingida!")
-        break
-      }
+      if (qualityScore >= 0.7) break
     }
 
     if (!bestResult) {
@@ -129,8 +110,7 @@ export class MetaComposer {
     request: CompositionRequest, 
     enforcement: { min: number; max: number; ideal: number }
   ): Promise<string> {
-
-    const prompt = `COMPOSIÇÃO MUSICAL RÁPIDA - ${request.genre.toUpperCase()}
+    const prompt = `COMPOSIÇÃO MUSICAL - ${request.genre.toUpperCase()}
 
 TEMA: ${request.theme}
 HUMOR: ${request.mood}
@@ -139,48 +119,25 @@ CONTRAÇÕES: "cê", "tô", "pra", "tá"
 
 ${request.additionalRequirements ? `REQUISITOS:\n${request.additionalRequirements}\n` : ''}
 
-FORMATO SIMPLES:
-[INTRO]
-• Versos introdutórios
-
-[VERSE 1]
-• Desenvolve o tema
-
-[CHORUS]
-• Refrão principal
-
-[VERSE 2]
-• Continua desenvolvimento
-
-[CHORUS]
-• Refrão repetido
-
-[OUTRO]
-• Encerramento
-
-RETORNE APENAS A LETRA:`
+RETORNE APENAS A LETRA NO FORMATO:`
 
     const { text } = await generateText({
       model: "openai/gpt-4o",
       prompt,
       temperature: 0.7
-      // ✅ REMOVIDO: maxTokens: 1500
     })
 
     return text.trim()
   }
 
   /**
-   * GERAÇÃO COM REFRÕES PRESERVADOS (OTIMIZADO)
+   * GERAÇÃO COM REFRÕES PRESERVADOS
    */
   private static async generateWithPreservedChoruses(
     preservedChoruses: string[],
     request: CompositionRequest,
     syllableEnforcement: { min: number; max: number; ideal: number }
   ): Promise<string> {
-    
-    console.log('[MetaComposer-TURBO] Gerando com refrões preservados...')
-    
     const chorusesToUse = preservedChoruses.slice(0, 2)
     
     const prompt = `COMPOSIÇÃO COM REFRÕES PRESERVADOS - ${request.genre.toUpperCase()}
@@ -192,14 +149,7 @@ TEMA: ${request.theme}
 HUMOR: ${request.mood}
 SÍLABAS: ${syllableEnforcement.min}-${syllableEnforcement.max} por linha
 
-CRIE UMA MÚSICA QUE:
-• Use naturalmente os refrões acima
-• Mantenha coerência com o tema
-• Respeite limite de sílabas
-• Use linguagem do ${request.genre}
-
-ESTRUTURA SIMPLES:
-[INTRO] → [VERSE 1] → [CHORUS 1] → [VERSE 2] → [CHORUS 2] → [OUTRO]
+CRIE UMA MÚSICA QUE USE NATURALMENTE OS REFRÕES ACIMA.
 
 RETORNE APENAS A LETRA:`
 
@@ -207,23 +157,19 @@ RETORNE APENAS A LETRA:`
       model: "openai/gpt-4o",
       prompt,
       temperature: 0.4
-      // ✅ REMOVIDO: maxTokens: 2000
     })
 
     return text.trim()
   }
 
   /**
-   * POLIMENTO LEVE E RÁPIDO
+   * POLIMENTO LEVE
    */
   private static async applyLightPolish(
     lyrics: string, 
     genre: string,
     syllableTarget: { min: number; max: number; ideal: number }
   ): Promise<string> {
-    
-    console.log(`[MetaComposer-TURBO] Polimento leve para: ${genre}`)
-    
     const lines = lyrics.split('\n')
     const polishedLines: string[] = []
     
@@ -261,48 +207,32 @@ RETORNE APENAS A LETRA:`
     genre: string,
     syllableTarget: { min: number; max: number; ideal: number }
   ): Promise<string> {
-    
-    const currentSyllables = countPoeticSyllables(line)
-    
     const prompt = `CORREÇÃO RÁPIDA - ${genre.toUpperCase()}
 
 LINHA: "${line}"
-PROBLEMA: ${currentSyllables} sílabas (deve ter ${syllableTarget.min}-${syllableTarget.max})
+SÍLABAS ATUAIS: ${countPoeticSyllables(line)} (ALVO: ${syllableTarget.min}-${syllableTarget.max})
 
-REESCREVA RAPIDAMENTE PARA ${syllableTarget.ideal} SÍLABAS, MANTENDO SIGNIFICADO.
+REESCREVA PARA AJUSTAR AS SÍLABAS MANTENDO O SIGNIFICADO:
 
 LINHA CORRIGIDA:`
 
-    try {
-      const { text } = await generateText({
-        model: "openai/gpt-4o-mini",
-        prompt,
-        temperature: 0.3
-        // ✅ REMOVIDO: maxTokens: 100
-      })
+    const { text } = await generateText({
+      model: "openai/gpt-4o-mini",
+      prompt,
+      temperature: 0.3
+    })
 
-      const correctedLine = text.trim()
-      const correctedSyllables = countPoeticSyllables(correctedLine)
-      
-      // ✅ VERIFICA SE A CORREÇÃO MELHOROU
-      if (correctedSyllables >= syllableTarget.min && correctedSyllables <= syllableTarget.max) {
-        return correctedLine
-      }
-    } catch (error) {
-      console.error(`[MetaComposer-TURBO] Erro na correção: ${error}`)
-    }
-    
-    return line // Fallback para original
+    const correctedLine = text.trim()
+    return correctedLine || line
   }
 
   /**
    * AVALIAÇÃO RÁPIDA DE QUALIDADE
    */
-  private static async quickQualityAssessment(
+  private static quickQualityAssessment(
     lyrics: string, 
     syllableTarget: { min: number; max: number; ideal: number }
-  ): Promise<number> {
-    
+  ): number {
     const lines = lyrics.split('\n').filter(line => 
       line.trim() && !line.startsWith('[') && !line.startsWith('(') && !line.includes('Instruments:')
     )
@@ -310,80 +240,33 @@ LINHA CORRIGIDA:`
     if (lines.length === 0) return 0
 
     let correctSyllables = 0
-    let totalSyllables = 0
-    
     lines.forEach(line => {
       const syllables = countPoeticSyllables(line)
-      totalSyllables += syllables
       if (syllables >= syllableTarget.min && syllables <= syllableTarget.max) {
         correctSyllables++
       }
     })
 
     const syllableScore = correctSyllables / lines.length
-    const averageSyllables = totalSyllables / lines.length
     
-    // ✅ BÔNUS POR PROXIMIDADE DO IDEAL
-    const idealBonus = 1 - Math.abs(averageSyllables - syllableTarget.ideal) / 10
-    
-    // ✅ BÔNUS POR ESTRUTURA
     let structureBonus = 0
     if (lyrics.includes('[VERSE') || lyrics.includes('[VERSO')) structureBonus += 0.1
     if (lyrics.includes('[CHORUS') || lyrics.includes('[REFRÃO')) structureBonus += 0.1
-    if (lyrics.includes('[BRIDGE') || lyrics.includes('[PONTE')) structureBonus += 0.05
-    if (lyrics.includes('[OUTRO')) structureBonus += 0.05
 
-    const finalScore = (syllableScore * 0.7) + (idealBonus * 0.2) + (structureBonus * 0.1)
-    
-    return Math.min(1, Math.max(0, finalScore))
+    return Math.min(1, (syllableScore * 0.9) + (structureBonus * 0.1))
   }
 
   /**
-   * EXTRAI TÍTULO DA LETRA
+   * EXTRAI TÍTULO
    */
   private static extractTitle(lyrics: string, request: CompositionRequest): string {
     if (request.theme) return request.theme
 
-    // Tenta extrair do primeiro verso do refrão
     const chorusMatch = lyrics.match(/\[(?:CHORUS|REFRÃO)[^\]]*\]\s*\n([^\n]+)/i)
     if (chorusMatch?.[1]) {
-      const firstChorusLine = chorusMatch[1].trim()
-      return firstChorusLine.split(' ').slice(0, 3).join(' ')
-    }
-
-    // Tenta extrair de qualquer linha significativa
-    const lines = lyrics.split('\n').filter(line => 
-      line.trim() && !line.startsWith('[') && !line.startsWith('(') && line.length > 10
-    )
-    
-    if (lines.length > 0) {
-      const firstMeaningfulLine = lines[0].trim()
-      return firstMeaningfulLine.split(' ').slice(0, 3).join(' ')
+      return chorusMatch[1].trim().split(' ').slice(0, 3).join(' ')
     }
 
     return "Composição Musical"
-  }
-
-  /**
-   * CONFIGURAÇÃO RÁPIDA POR GÊNERO
-   */
-  private static getGenreSyllableConfig(genre: string): { min: number; max: number; ideal: number } {
-    const configs: { [key: string]: { min: number; max: number; ideal: number } } = {
-      "Sertanejo": { min: 9, max: 11, ideal: 10 },
-      "Sertanejo Moderno": { min: 9, max: 11, ideal: 10 },
-      "Sertanejo Universitário": { min: 9, max: 11, ideal: 10 },
-      "MPB": { min: 7, max: 12, ideal: 9 },
-      "Bossa Nova": { min: 7, max: 12, ideal: 9 },
-      "Funk": { min: 6, max: 10, ideal: 8 },
-      "Pagode": { min: 7, max: 11, ideal: 9 },
-      "Samba": { min: 7, max: 11, ideal: 9 },
-      "Forró": { min: 8, max: 11, ideal: 9 },
-      "Axé": { min: 6, max: 10, ideal: 8 },
-      "Rock": { min: 7, max: 11, ideal: 9 },
-      "Pop": { min: 7, max: 11, ideal: 9 },
-      "Gospel": { min: 8, max: 11, ideal: 9 }
-    }
-
-    return configs[genre] || { min: 7, max: 11, ideal: 9 }
   }
 }
