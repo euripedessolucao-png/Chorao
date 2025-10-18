@@ -93,16 +93,16 @@ export async function POST(request: Request) {
     const defaultRhythm = getGenreRhythm(finalGenero)
     const finalRhythm = subGenreInfo.rhythm || defaultRhythm
 
+    // ✅ CONFIGURAÇÃO DE SÍLABAS POR GÊNERO (CORRIGIDO)
+    const syllableConfig = getSyllableConfig(finalGenero)
+    console.log('[Rewrite] ⚙️ Configuração de sílabas:', syllableConfig)
+
     // ✅ ANÁLISE DA ESTRUTURA ORIGINAL
     const structureAnalysis = analyzeSongStructure(finalLyrics)
     console.log('[Rewrite] 📊 Análise estrutural:', structureAnalysis)
 
-    // ✅ VALIDAÇÃO INICIAL COM SYLLABLE ENFORCER
-    const initialValidation = SyllableEnforcer.validateLyrics(finalLyrics, {
-      min: genreConfig.syllableRange?.min || 7,
-      max: genreConfig.syllableRange?.max || 12,
-      ideal: genreConfig.syllableRange?.ideal || 9
-    })
+    // ✅ VALIDAÇÃO INICIAL COM SYLLABLE ENFORCER (CORRIGIDO)
+    const initialValidation = SyllableEnforcer.validateLyrics(finalLyrics, syllableConfig)
     console.log('[Rewrite] ⚖️ Validação inicial:', initialValidation)
 
     // ✅ PREPARAÇÃO DOS REFRÕES PRESERVADOS
@@ -117,18 +117,14 @@ export async function POST(request: Request) {
 
     console.log(`[Rewrite] 🎵 Refrões preservados:`, preservedChoruses.length)
 
-    // ✅ META COMPOSIÇÃO COM SISTEMA DE RIMAS
+    // ✅ META COMPOSIÇÃO COM SISTEMA DE RIMAS (CORRIGIDO)
     const compositionRequest = {
       genre: finalGenero,
       theme: finalTema,
       mood: finalHumor,
       rhythm: finalRhythm,
       originalLyrics: finalLyrics,
-      syllableTarget: {
-        min: genreConfig.syllableRange?.min || 7,
-        max: genreConfig.syllableRange?.max || 12,
-        ideal: genreConfig.syllableRange?.ideal || 9
-      },
+      syllableTarget: syllableConfig, // ✅ USANDO CONFIG CORRETA
       applyFinalPolish: universalPolish,
       preservedChoruses: selectedChoruses,
       additionalRequirements: additionalRequirements,
@@ -165,15 +161,11 @@ export async function POST(request: Request) {
       )
     }
 
-    // ✅ APLICA SYLLABLE ENFORCER NO RESULTADO FINAL
+    // ✅ APLICA SYLLABLE ENFORCER NO RESULTADO FINAL (CORRIGIDO)
     console.log('[Rewrite] 🔧 Aplicando SyllableEnforcer no resultado final...')
     const enforcedResult = await SyllableEnforcer.enforceSyllableLimits(
       result.lyrics, 
-      {
-        min: genreConfig.syllableRange?.min || 7,
-        max: genreConfig.syllableRange?.max || 12,
-        ideal: genreConfig.syllableRange?.ideal || 9
-      },
+      syllableConfig, // ✅ USANDO CONFIG CORRETA
       finalGenero
     )
 
@@ -212,6 +204,27 @@ export async function POST(request: Request) {
       { status: 500 }
     )
   }
+}
+
+// ✅ CONFIGURAÇÃO DE SÍLABAS POR GÊNERO (FUNÇÃO CORRIGIDA)
+function getSyllableConfig(genre: string): { min: number; max: number; ideal: number } {
+  const configs: { [key: string]: { min: number; max: number; ideal: number } } = {
+    "Sertanejo": { min: 9, max: 11, ideal: 10 },
+    "Sertanejo Moderno": { min: 9, max: 11, ideal: 10 },
+    "Sertanejo Universitário": { min: 9, max: 11, ideal: 10 },
+    "MPB": { min: 7, max: 12, ideal: 9 },
+    "Bossa Nova": { min: 7, max: 12, ideal: 9 },
+    "Funk": { min: 6, max: 10, ideal: 8 },
+    "Pagode": { min: 7, max: 11, ideal: 9 },
+    "Samba": { min: 7, max: 11, ideal: 9 },
+    "Forró": { min: 8, max: 11, ideal: 9 },
+    "Axé": { min: 6, max: 10, ideal: 8 },
+    "Rock": { min: 7, max: 11, ideal: 9 },
+    "Pop": { min: 7, max: 11, ideal: 9 },
+    "Gospel": { min: 8, max: 11, ideal: 9 }
+  }
+
+  return configs[genre] || { min: 7, max: 11, ideal: 9 }
 }
 
 // ✅ FALLBACK INTELIGENTE COM PRESERVAÇÃO DE ESTRUTURA
