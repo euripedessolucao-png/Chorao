@@ -47,7 +47,7 @@ export async function enhanceLyricsRhymes(
 ): Promise<RhymeEnhancementResult> {
   console.log(`[RhymeEnhancer] Iniciando aprimoramento para ${genre}...`)
 
-  const MAX_ENHANCEMENT_TIME = 15000 // 15 segundos máximo
+  const MAX_ENHANCEMENT_TIME = 8000 // 8 segundos máximo (reduzido de 15s)
   const startTime = Date.now()
 
   const lines = lyrics.split("\n")
@@ -56,12 +56,11 @@ export async function enhanceLyricsRhymes(
 
   const originalAnalysis = rhymeValidator.analyzeLyricsRhymeScheme(lyrics)
   let improvementCount = 0
-  const MAX_IMPROVEMENTS = 10 // Limita número de melhorias
+  const MAX_IMPROVEMENTS = 5 // Reduzido de 10 para 5
 
-  // Analisa pares de linhas para melhorar rimas
-  for (let i = 0; i < lines.length - 1; i += 2) {
+  for (let i = 0; i < lines.length; i++) {
     if (Date.now() - startTime > MAX_ENHANCEMENT_TIME) {
-      console.warn(`[RhymeEnhancer] ⚠️ Timeout atingido, retornando resultado parcial`)
+      console.warn(`[RhymeEnhancer] ⚠️ Timeout atingido após ${Date.now() - startTime}ms, retornando resultado parcial`)
       enhancedLines.push(...lines.slice(i))
       break
     }
@@ -72,55 +71,52 @@ export async function enhanceLyricsRhymes(
       break
     }
 
-    const line1 = lines[i]
-    const line2 = lines[i + 1]
+    const line = lines[i]
 
     // Mantém linhas de estrutura e metadata
     if (
-      line1.startsWith("[") ||
-      line1.startsWith("(") ||
-      line1.includes("Instrumentos:") ||
-      line1.includes("BPM:") ||
-      !line1.trim()
+      line.startsWith("[") ||
+      line.startsWith("(") ||
+      line.includes("Instrumentos:") ||
+      line.includes("BPM:") ||
+      !line.trim()
     ) {
-      enhancedLines.push(line1)
-      if (line2) enhancedLines.push(line2)
+      enhancedLines.push(line)
       continue
     }
 
-    const word1 = getLastWord(line1)
-    const word2 = getLastWord(line2)
+    if (i < lines.length - 1 && !lines[i + 1].startsWith("[") && !lines[i + 1].startsWith("(")) {
+      const line2 = lines[i + 1]
+      const word1 = getLastWord(line)
+      const word2 = getLastWord(line2)
 
-    if (word1 && word2) {
-      const currentRhyme = rhymeValidator.analyzeRhyme(word1, word2)
+      if (word1 && word2) {
+        const currentRhyme = rhymeValidator.analyzeRhyme(word1, word2)
 
-      // Se a rima precisa de melhoria
-      if (currentRhyme.score < getMinimumRhymeScore(genre)) {
-        const enhancedPair = simpleRhymeImprovement(line1, line2, genre)
+        // Se a rima precisa de melhoria
+        if (currentRhyme.score < getMinimumRhymeScore(genre)) {
+          const enhancedPair = simpleRhymeImprovement(line, line2, genre)
 
-        if (enhancedPair && enhancedPair.improved) {
-          enhancedLines.push(enhancedPair.line1)
-          enhancedLines.push(enhancedPair.line2)
-          improvementCount++
-          improvements.push(`Melhorada rima: "${word1}" + "${word2}" → ${enhancedPair.newRhymeType}`)
-        } else {
-          enhancedLines.push(line1)
-          enhancedLines.push(line2)
+          if (enhancedPair && enhancedPair.improved) {
+            enhancedLines.push(enhancedPair.line1)
+            enhancedLines.push(enhancedPair.line2)
+            improvementCount++
+            improvements.push(`Melhorada rima: "${word1}" + "${word2}" → ${enhancedPair.newRhymeType}`)
+            i++ // Pula próxima linha pois já foi processada
+            continue
+          }
         }
-      } else {
-        enhancedLines.push(line1)
-        enhancedLines.push(line2)
       }
-    } else {
-      enhancedLines.push(line1)
-      if (line2) enhancedLines.push(line2)
     }
+
+    enhancedLines.push(line)
   }
 
   const enhancedLyrics = enhancedLines.join("\n")
   const enhancedAnalysis = rhymeValidator.analyzeLyricsRhymeScheme(enhancedLyrics)
 
-  console.log(`[RhymeEnhancer] ✅ Concluído: ${improvementCount} melhorias em ${Date.now() - startTime}ms`)
+  const elapsedTime = Date.now() - startTime
+  console.log(`[RhymeEnhancer] ✅ Concluído: ${improvementCount} melhorias em ${elapsedTime}ms`)
 
   return {
     enhancedLyrics,
@@ -175,8 +171,7 @@ async function mockRhymeEnhancement(
   genre: string,
   theme: string,
 ): Promise<{ line1: string; line2: string } | null> {
-  // Simula processamento
-  await new Promise((resolve) => setTimeout(resolve, 100))
+  // await new Promise((resolve) => setTimeout(resolve, 100))
 
   const word1 = getLastWord(line1)
   const word2 = getLastWord(line2)

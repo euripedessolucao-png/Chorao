@@ -99,14 +99,19 @@ export class MetaComposer {
 
     const RHYME_CORRECTION_TIMEOUT = 10000 // 10 segundos máximo
 
-    let rhymeReport: { overallScore: number; [key: string]: any }
+    let rhymeReport: any
     try {
-      rhymeReport = (await Promise.race([
-        Promise.resolve(generateRhymeReport(lyrics, genre)),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Timeout no relatório de rimas")), RHYME_CORRECTION_TIMEOUT),
-        ),
-      ])) as { overallScore: number; [key: string]: any }
+      const reportPromise = generateRhymeReport(lyrics, genre)
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Timeout no relatório de rimas")), RHYME_CORRECTION_TIMEOUT),
+      )
+
+      rhymeReport = await Promise.race([reportPromise, timeoutPromise])
+
+      if (!rhymeReport || typeof rhymeReport !== "object" || typeof rhymeReport.overallScore !== "number") {
+        console.warn("[RhymeCorrection] ⚠️ Relatório inválido, pulando correção")
+        return lyrics
+      }
     } catch (reportError) {
       console.error("[RhymeCorrection] ⚠️ Erro ao gerar relatório, pulando correção:", reportError)
       return lyrics
@@ -117,20 +122,30 @@ export class MetaComposer {
       console.log(`[RhymeCorrection] Score baixo (${rhymeReport.overallScore}), aplicando correção...`)
 
       try {
-        const enhancement = (await Promise.race([
-          enhanceLyricsRhymes(lyrics, genre, theme),
-          new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("Timeout na correção de rimas")), RHYME_CORRECTION_TIMEOUT),
-          ),
-        ])) as any
+        const enhancementPromise = enhanceLyricsRhymes(lyrics, genre, theme)
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Timeout na correção de rimas")), RHYME_CORRECTION_TIMEOUT),
+        )
 
-        if (enhancement.enhancedScore > rhymeReport.overallScore) {
+        const enhancement = (await Promise.race([enhancementPromise, timeoutPromise])) as any
+
+        if (
+          enhancement &&
+          typeof enhancement === "object" &&
+          enhancement.enhancedLyrics &&
+          enhancement.enhancedScore > rhymeReport.overallScore
+        ) {
           console.log(
             `[RhymeCorrection] ✅ Rimas melhoradas: ${rhymeReport.overallScore} → ${enhancement.enhancedScore}`,
           )
-          enhancement.improvements.forEach((imp: string) => console.log(`[RhymeCorrection] ${imp}`))
+          if (Array.isArray(enhancement.improvements)) {
+            enhancement.improvements.forEach((imp: string) => console.log(`[RhymeCorrection] ${imp}`))
+          }
 
           return enhancement.enhancedLyrics
+        } else {
+          console.log("[RhymeCorrection] ⚠️ Enhancement não melhorou score, mantendo original")
+          return lyrics
         }
       } catch (enhanceError) {
         console.error("[RhymeCorrection] ⚠️ Erro ou timeout ao corrigir rimas, mantendo original:", enhanceError)
@@ -1320,7 +1335,7 @@ RETORNE APENAS A LETRA NO FORMATO CORRETO.`
 
   private static assessNarrativeCoherence(lyrics: string): number {
     const hasIntro = /\[INTRO\]/i.test(lyrics)
-    const hasVerse = /\[VERS[OE]/i.test(lyrics)
+    const hasVerse = /\[VERS[OE]]/i.test(lyrics)
     const hasChorus = /\[(?:CHORUS|REFRÃO)\]/i.test(lyrics)
     const hasBridge = /\[BRIDGE\]/i.test(lyrics)
     const hasOutro = /\[OUTRO\]/i.test(lyrics)
