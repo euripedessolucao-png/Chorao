@@ -70,6 +70,13 @@ function extractMoodFromInput(humor?: string, emocoes?: string[]): string {
   return 'Romântico'
 }
 
+// ✅ FUNÇÃO PARA NORMALIZAR CRIATIVIDADE
+function normalizeCreativity(criatividade: string): "equilibrado" | "conservador" | "ousado" {
+  if (criatividade === "conservador") return "conservador"
+  if (criatividade === "ousado") return "ousado"
+  return "equilibrado" // padrão
+}
+
 function applyFinalFormatting(lyrics: string, genero: string, metrics?: any): string {
   let formattedLyrics = lyrics
 
@@ -112,7 +119,7 @@ async function rewriteWithPreservedChoruses(
     preserveRhymes: true,
     applyTerceiraVia: true,
     preservedChoruses: extractedChoruses,
-    originalLyrics: letraOriginal // ← ADICIONADO: passa a letra original para o MetaComposer
+    originalLyrics: letraOriginal
   }
 
   try {
@@ -176,7 +183,7 @@ async function rewriteNormally(
       preserveRhymes: true,
       applyTerceiraVia: true,
       originalLyrics: letraOriginal,
-      creativity: criatividade
+      creativity: normalizeCreativity(criatividade) // ✅ CORRIGIDO: usando função de normalização
     }
 
     try {
@@ -347,7 +354,7 @@ export async function POST(request: Request) {
         additionalRequirements,
         syllableTarget: finalSyllableTarget,
         applyFinalPolish: true,
-        creativity: criatividade,
+        creativity: normalizeCreativity(criatividade), // ✅ CORRIGIDO
         preserveRhymes: true,
         applyTerceiraVia: true,
         originalLyrics: letraOriginal
