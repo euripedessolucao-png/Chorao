@@ -52,6 +52,7 @@ export interface CompositionRequest {
   applyTerceiraVia?: boolean
   applyFinalPolish?: boolean
   preservedChoruses?: string[]
+  originalLyrics?: string // Adicionado para uso em rewriteWithPreservedChoruses
 }
 
 export interface CompositionResult {
@@ -156,10 +157,12 @@ export class MetaComposer {
       if (!request.theme) missingParams.push("theme")
       if (!request.mood) missingParams.push("mood")
 
-      throw new Error(
+      const errorMsg =
         `Parâmetros obrigatórios faltando: ${missingParams.join(", ")}. ` +
-          `Recebido: genre="${request.genre}", theme="${request.theme}", mood="${request.mood}"`,
-      )
+        `Recebido: genre="${request.genre}", theme="${request.theme}", mood="${request.mood}"`
+
+      console.error("[MetaComposer] ❌", errorMsg)
+      throw new Error(errorMsg)
     }
 
     let iterations = 0
@@ -178,7 +181,6 @@ export class MetaComposer {
       `[MetaComposer] Configuração: ${preserveRhymes ? "RIMAS PRESERVADAS" : "Rimas não preservadas"} | ${applyTerceiraVia ? "TERCEIRA VIA ATIVA" : "Terceira Via inativa"} | ${applyFinalPolish ? "POLIMENTO UNIVERSAL ATIVO" : "Polimento universal inativo"}`,
     )
 
-    // ✅ VERIFICA SE TEM REFRÕES PARA PRESERVAR (forma type-safe)
     const preservedChoruses = request.preservedChoruses || []
     const hasPreservedChoruses = preservedChoruses.length > 0
 
@@ -197,30 +199,39 @@ export class MetaComposer {
           if (hasPreservedChoruses && iterations === 1) {
             console.log("[MetaComposer] Aplicando reescrita com refrões preservados...")
             rawLyrics = await this.rewriteWithPreservedChoruses(
-              "", // Letra original vazia para primeira iteração
+              request.originalLyrics || "", // Usa originalLyrics do request
               preservedChoruses,
               request,
               syllableEnforcement,
             )
             preservedChorusesUsed = true
           } else {
-            // ✅ GERAÇÃO COM CONTROLE INTELIGENTE
             rawLyrics = await this.generateIntelligentLyrics(request, syllableEnforcement, preserveRhymes)
           }
         } catch (generationError) {
           console.error(`[MetaComposer] ❌ Erro na geração (iteração ${iterations}):`, generationError)
 
           if (iterations === 1) {
-            console.log("[MetaComposer] 🔄 Tentando modo simplificado sem preservação de rimas...")
+            console.log("[MetaComposer] 🔄 Tentando modo simplificado...")
             try {
               rawLyrics = await this.generateIntelligentLyrics(request, syllableEnforcement, false)
             } catch (fallbackError) {
               console.error("[MetaComposer] ❌ Fallback também falhou:", fallbackError)
+
+              if (bestResult) {
+                console.log("[MetaComposer] 🔄 Retornando melhor resultado parcial")
+                return bestResult
+              }
+
               throw new Error(
                 `Falha na geração após fallback: ${fallbackError instanceof Error ? fallbackError.message : "Erro desconhecido"}`,
               )
             }
           } else {
+            if (bestResult) {
+              console.log("[MetaComposer] 🔄 Erro em iteração posterior, retornando melhor resultado")
+              return bestResult
+            }
             throw generationError
           }
         }

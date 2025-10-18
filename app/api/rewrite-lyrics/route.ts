@@ -354,13 +354,10 @@ export async function POST(request: Request) {
 
     // ✅ DEBUG DETALHADO
     console.log("[API] === DEBUG DETALHADO ===")
-    console.log("[API] genero:", genero)
-    console.log("[API] generoConversao:", generoConversao)
+    console.log("[API] genero recebido:", genero)
+    console.log("[API] generoConversao recebido:", generoConversao)
+    console.log("[API] finalGenero usado:", genero || generoConversao || "Sertanejo")
     console.log("[API] letraOriginal (primeiros 100 chars):", letraOriginal?.substring(0, 100))
-    console.log("[API] tema:", tema)
-    console.log("[API] humor:", humor)
-    console.log("[API] universalPolish:", universalPolish)
-    console.log("[API] criatividade:", criatividade)
 
     // ✅ CORREÇÃO: Usa qualquer um dos dois campos de gênero
     const finalGenero = genero || generoConversao || "Sertanejo"
@@ -372,12 +369,24 @@ export async function POST(request: Request) {
         {
           error: "Letra original é obrigatória",
           received: letraOriginal,
+          suggestion: "Cole a letra original antes de reescrever",
         },
-        { status: 400 },
+        {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+          },
+        },
       )
     }
 
-    if (!finalGenero || finalGenero.trim() === "" || finalGenero === "undefined" || finalGenero === "null") {
+    if (
+      !finalGenero ||
+      finalGenero.trim() === "" ||
+      finalGenero === "undefined" ||
+      finalGenero === "null" ||
+      finalGenero === "Selecione um gênero"
+    ) {
       console.log("[API] ERRO: Gênero inválido:", finalGenero)
       return NextResponse.json(
         {
@@ -385,8 +394,14 @@ export async function POST(request: Request) {
           receivedGenero: genero,
           receivedGeneroConversao: generoConversao,
           finalGenero: finalGenero,
+          suggestion: "Selecione um gênero válido antes de reescrever",
         },
-        { status: 400 },
+        {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+          },
+        },
       )
     }
 
@@ -440,12 +455,33 @@ export async function POST(request: Request) {
           originalLyrics: letraOriginal,
         }
 
-        const result = await MetaComposer.compose(compositionRequest)
-        finalLyrics = result.lyrics
+        try {
+          const result = await MetaComposer.compose(compositionRequest)
+          finalLyrics = result.lyrics
 
-        console.log(`[Rewrite] Sistema Universal finalizado - Score: ${result.metadata.finalScore.toFixed(2)}`)
-        if (result.metadata.polishingApplied) {
-          console.log(`[Rewrite] ✅ Polimento específico para ${finalGenero} aplicado`)
+          console.log(`[Rewrite] Sistema Universal finalizado - Score: ${result.metadata.finalScore.toFixed(2)}`)
+          if (result.metadata.polishingApplied) {
+            console.log(`[Rewrite] ✅ Polimento específico para ${finalGenero} aplicado`)
+          }
+        } catch (metaComposerError) {
+          console.error("[Rewrite] ❌ ERRO no MetaComposer:", metaComposerError)
+          console.log("[Rewrite] 🔄 Fallback para reescrita normal...")
+
+          // Fallback para modo normal
+          finalLyrics = await rewriteNormally(
+            letraOriginal,
+            finalGenero,
+            humor || "Romântico",
+            tema || "Amor",
+            criatividade,
+            inspiracao,
+            metaforas,
+            emocoes,
+            additionalRequirements,
+            false, // Desativa polimento universal no fallback
+            finalSyllableTarget,
+            metrics,
+          )
         }
       } else {
         console.log(`[Rewrite] Modo reescrita normal para: ${finalGenero} - ${tema}`)
@@ -476,8 +512,27 @@ export async function POST(request: Request) {
           error: "Erro ao processar reescrita",
           details: errorMessage,
           mode: rewriteMode,
+          genre: finalGenero,
           suggestion: "Tente simplificar os requisitos ou usar modo normal",
           step: "processamento_reescrita",
+        },
+        {
+          status: 500,
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+          },
+        },
+      )
+    }
+
+    if (!finalLyrics || finalLyrics.trim() === "") {
+      console.error("[API] ❌ ERRO: Letra final vazia após processamento")
+      return NextResponse.json(
+        {
+          error: "Falha ao gerar letra",
+          details: "O sistema não conseguiu gerar uma letra válida",
+          mode: rewriteMode,
+          suggestion: "Tente novamente com uma letra mais simples",
         },
         {
           status: 500,
@@ -492,7 +547,6 @@ export async function POST(request: Request) {
 
     console.log(`[Rewrite] ✅ Reescrita concluída! Modo: ${rewriteMode}`)
 
-    // ✅ RESPOSTA DE SUCESSO
     const responseData = {
       success: true,
       letra: finalLyrics,
@@ -523,7 +577,6 @@ export async function POST(request: Request) {
 
     console.error("[API] Stack trace:", errorStack)
 
-    // ✅ RESPOSTA DE ERRO DETALHADA SEMPRE EM JSON
     return NextResponse.json(
       {
         error: "Erro interno ao reescrever letra",
