@@ -1,13 +1,29 @@
 import { generateText } from "ai"
 import { NextResponse } from "next/server"
-import { BACHATA_BRASILEIRA_2024 } from "@/lib/genres/bachata_brasileira_2024"
-import { SERTANEJO_MODERNO_2024 } from "@/lib/genres/sertanejo_moderno_2024"
-import { GENRE_CONFIGS, detectSubGenre, getGenreRhythm } from "@/lib/genre-config"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
-import { validateLyricsSyllables } from "@/lib/validation/syllable-counter"
 import { SyllableEnforcer } from "@/lib/validation/syllableEnforcer"
 import { LineStacker } from "@/lib/utils/line-stacker"
 import { MetaComposer } from "@/lib/orchestrator/meta-composer"
+
+// ✅ CONFIGURAÇÃO UNIVERSAL DE QUALIDADE POR GÊNERO
+const GENRE_QUALITY_CONFIG = {
+  "Sertanejo": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
+  "Sertanejo Moderno": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
+  "Sertanejo Universitário": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
+  "Sertanejo Sofrência": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
+  "Sertanejo Raiz": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
+  "MPB": { min: 7, max: 12, ideal: 9, rhymeQuality: 0.6 },
+  "Bossa Nova": { min: 7, max: 12, ideal: 9, rhymeQuality: 0.6 },
+  "Funk": { min: 6, max: 10, ideal: 8, rhymeQuality: 0.3 },
+  "Pagode": { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
+  "Samba": { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
+  "Forró": { min: 8, max: 11, ideal: 9, rhymeQuality: 0.4 },
+  "Axé": { min: 6, max: 10, ideal: 8, rhymeQuality: 0.3 },
+  "Rock": { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
+  "Pop": { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
+  "Gospel": { min: 8, max: 11, ideal: 9, rhymeQuality: 0.5 },
+  "default": { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 }
+}
 
 // ✅ FUNÇÕES AUXILIARES
 function extractChorusesFromInstructions(instructions?: string): string[] | null {
@@ -28,49 +44,37 @@ function extractChorusesFromInstructions(instructions?: string): string[] | null
   return choruses.length > 0 ? choruses : null
 }
 
-function extractThemeFromLyrics(lyrics: string): string {
-  const lines = lyrics.split('\n').filter(line => 
-    line.trim() && !line.startsWith('[') && !line.startsWith('(') && !line.includes('Instrumentos:')
-  )
-  
-  if (lines.length === 0) return 'Amor'
-  
-  const firstLines = lines.slice(0, 3).join(' ').toLowerCase()
-  
-  if (firstLines.includes('amor') || firstLines.includes('coração') || firstLines.includes('amar')) return 'Amor'
-  if (firstLines.includes('saudade') || firstLines.includes('lembrança') || firstLines.includes('nostalgia')) return 'Saudade'
-  if (firstLines.includes('festa') || firstLines.includes('dançar') || firstLines.includes('noite')) return 'Festa'
-  if (firstLines.includes('vida') || firstLines.includes('tempo') || firstLines.includes('caminho')) return 'Vida'
-  
-  return 'Amor'
+function extractThemeFromInput(tema: string, inspiracao?: string): string {
+  if (tema.toLowerCase().includes('amor') || tema.toLowerCase().includes('coração')) return 'Amor'
+  if (tema.toLowerCase().includes('saudade') || tema.toLowerCase().includes('nostalgia')) return 'Saudade'
+  if (tema.toLowerCase().includes('festa') || tema.toLowerCase().includes('celebração')) return 'Festa'
+  if (tema.toLowerCase().includes('vida') || tema.toLowerCase().includes('caminho')) return 'Vida'
+  if (inspiracao?.toLowerCase().includes('amor')) return 'Amor'
+  return tema
 }
 
-function extractMoodFromLyrics(lyrics: string): string {
-  const lines = lyrics.split('\n').filter(line => 
-    line.trim() && !line.startsWith('[') && !line.startsWith('(') && !line.includes('Instrumentos:')
-  )
+function extractMoodFromInput(humor?: string, emocoes?: string[]): string {
+  if (humor) {
+    if (humor.toLowerCase().includes('triste') || humor.toLowerCase().includes('melancólico')) return 'Melancólico'
+    if (humor.toLowerCase().includes('alegre') || humor.toLowerCase().includes('feliz')) return 'Alegre'
+    if (humor.toLowerCase().includes('romântico') || humor.toLowerCase().includes('paixão')) return 'Romântico'
+    if (humor.toLowerCase().includes('raiva') || humor.toLowerCase().includes('intenso')) return 'Intenso'
+  }
   
-  if (lines.length === 0) return 'Romântico'
-  
-  const text = lines.join(' ').toLowerCase()
-  
-  if (text.includes('triste') || text.includes('chor') || text.includes('sof')) return 'Melancólico'
-  if (text.includes('alegria') || text.includes('feliz') || text.includes('sorri')) return 'Alegre'
-  if (text.includes('paixão') || text.includes('amor') || text.includes('beij')) return 'Romântico'
-  if (text.includes('raiva') || text.includes('ódio') || text.includes('machuc')) return 'Intenso'
+  if (emocoes && emocoes.length > 0) {
+    if (emocoes.some(e => e.toLowerCase().includes('triste'))) return 'Melancólico'
+    if (emocoes.some(e => e.toLowerCase().includes('alegre'))) return 'Alegre'
+    if (emocoes.some(e => e.toLowerCase().includes('amor'))) return 'Romântico'
+  }
   
   return 'Romântico'
 }
 
-function applyFinalFormatting(lyrics: string, genre: string, metrics?: any): string {
+function applyFinalFormatting(lyrics: string, genero: string, metrics?: any): string {
   let formattedLyrics = lyrics
 
   if (!formattedLyrics.includes("(Instrumentos:")) {
-    const subGenreInfo = detectSubGenre('')
-    const defaultRhythm = getGenreRhythm(genre)
-    const finalRhythm = subGenreInfo.rhythm || defaultRhythm
-    
-    const instrumentList = `(Instrumentos: ${subGenreInfo.instruments || "guitar, bass, drums, keyboard"} | BPM: ${subGenreInfo.bpm || metrics?.bpm || 100} | Ritmo: ${finalRhythm} | Estilo: ${genre})`
+    const instrumentList = `(Instrumentos: guitar, bass, drums, keyboard | BPM: ${metrics?.bpm || 100} | Ritmo: ${genero} | Estilo: ${genero})`
     formattedLyrics = formattedLyrics.trim() + "\n\n" + instrumentList
   }
 
@@ -78,47 +82,85 @@ function applyFinalFormatting(lyrics: string, genre: string, metrics?: any): str
   return formattedLyrics
 }
 
+// ✅ OBTÉM CONFIGURAÇÃO DE SÍLABAS POR GÊNERO
+function getSyllableConfig(genero: string) {
+  return GENRE_QUALITY_CONFIG[genero as keyof typeof GENRE_QUALITY_CONFIG] || GENRE_QUALITY_CONFIG.default
+}
+
+// ✅ FUNÇÃO PARA REWRITE COM REFRÕES PRESERVADOS
+async function rewriteWithPreservedChoruses(
+  letraOriginal: string,
+  extractedChoruses: string[],
+  genero: string,
+  tema: string,
+  humor: string,
+  syllableTarget: any,
+  universalPolish: boolean,
+  additionalRequirements?: string
+): Promise<string> {
+  
+  console.log(`[RewritePreserved] Reescrita com ${extractedChoruses.length} refrões preservados`)
+  
+  // ✅ USA O META-COMPOSER DIRETAMENTE COM OS REFRÕES PRESERVADOS
+  const compositionRequest = {
+    genre: genero,
+    theme: extractThemeFromInput(tema),
+    mood: extractMoodFromInput(humor),
+    additionalRequirements: additionalRequirements || '',
+    syllableTarget: syllableTarget,
+    applyFinalPolish: universalPolish,
+    preserveRhymes: true,
+    applyTerceiraVia: true,
+    preservedChoruses: extractedChoruses
+  }
+
+  const result = await MetaComposer.compose(compositionRequest)
+  
+  console.log(`[RewritePreserved] Reescrita concluída - Score: ${result.metadata.finalScore.toFixed(2)}`)
+  if (result.metadata.preservedChorusesUsed) {
+    console.log(`[RewritePreserved] ✅ ${extractedChoruses.length} refrões preservados aplicados`)
+  }
+  
+  return result.lyrics
+}
+
 // ✅ FUNÇÃO DE REWRITE NORMAL
 async function rewriteNormally(
   letraOriginal: string,
-  generoConversao: string,
+  genero: string,
+  humor: string,
+  tema: string,
+  criatividade: string,
+  inspiracao?: string,
+  metaforas?: string,
+  emocoes: string[] = [],
   additionalRequirements?: string,
-  conservarImagens?: boolean,
-  polirSemMexer?: boolean,
-  metrics?: any
+  universalPolish = true,
+  syllableTarget = getSyllableConfig(genero),
+  metrics = { bpm: 100, structure: "VERSO-REFRAO" }
 ): Promise<string> {
   
-  const genreLower = generoConversao.toLowerCase()
-  const isBachata = genreLower.includes("bachata")
-  const isSertanejoRaiz = genreLower.includes("sertanejo raiz") || genreLower.includes("sertanejo-raiz")
-  const isSertanejoModerno = genreLower.includes("sertanejo") && !isSertanejoRaiz
+  console.log(`[RewriteNormally] Reescrita para: ${genero} - ${tema}`)
+  console.log(`[RewriteNormally] Configuração sílabas: ${syllableTarget.min}-${syllableTarget.max} (ideal: ${syllableTarget.ideal})`)
 
-  const subGenreInfo = detectSubGenre(additionalRequirements)
-  const defaultRhythm = getGenreRhythm(generoConversao)
-  const finalRhythm = subGenreInfo.rhythm || defaultRhythm
+  const temperature = criatividade === "conservador" ? 0.5 : criatividade === "ousado" ? 0.9 : 0.7
 
-  let genreConfig
-  if (isBachata) {
-    genreConfig = BACHATA_BRASILEIRA_2024
-  } else if (isSertanejoRaiz) {
-    genreConfig = GENRE_CONFIGS["Sertanejo Raiz"]
-  } else if (isSertanejoModerno) {
-    genreConfig = SERTANEJO_MODERNO_2024
-  } else {
-    genreConfig = GENRE_CONFIGS[generoConversao as keyof typeof GENRE_CONFIGS]
-  }
+  const emotionsText = emocoes.length > 0 ? `Emoções: ${emocoes.join(", ")}` : ""
+  const inspirationText = inspiracao ? `Inspiração: ${inspiracao}` : ""
+  const metaphorsText = metaforas ? `Metáforas relacionadas: ${metaforas}` : ""
 
-  console.log(`[RewriteNormally] Reescrevendo para: ${generoConversao}`)
+  const prompt = `You are a professional Brazilian music composer specializing in ${genero}.
 
-  const instrumentMatch = letraOriginal.match(/\(Instruments?:\s*\[([^\]]+)\]/i)
-  const originalInstruments = instrumentMatch ? instrumentMatch[1].trim() : null
-
-  const prompt = `You are a professional Brazilian music composer specializing in ${generoConversao}.
-
-TASK: Create an improved version of the lyrics below, maintaining the same story and theme.
+TASK: Rewrite and improve the following song lyrics based on the theme and requirements below.
 
 ORIGINAL LYRICS:
 ${letraOriginal}
+
+THEME: ${tema}
+MOOD: ${humor || "varies with the story"}
+${emotionsText}
+${inspirationText}
+${metaphorsText}
 
 UNIVERSAL RULES:
 
@@ -134,194 +176,192 @@ UNIVERSAL RULES:
    - One verse per line (stacked)
    - (Backing: "text") when needed
 
-3. SYLLABLE LIMIT (12 maximum):
-   - Maximum 12 poetic syllables per verse
+3. SYLLABLE LIMIT (${syllableTarget.max} maximum):
+   - Maximum ${syllableTarget.max} poetic syllables per verse
+   - Minimum ${syllableTarget.min} poetic syllables per verse  
+   - Ideal ${syllableTarget.ideal} poetic syllables
    - Use contractions: você→cê, está→tá, para→pra
    - Complete phrases always
 
-4. STRUCTURE ${isSertanejoModerno ? "A, B, C" : "STANDARD"} (3:00-3:30):
-   - [INTRO - Instructions, (8-12 SECONDS)]
-   - [VERSE 1${isSertanejoModerno ? " - A" : ""} - Instructions] (4-8 lines)
-   - [PRE-CHORUS - Instructions] (2-4 lines)
-   - [CHORUS${isSertanejoModerno ? " - B" : ""} - Instructions] (4 lines)
-   - [VERSE 2${isSertanejoModerno ? " - A" : ""} - Instructions] (4-8 lines)
-   - [PRE-CHORUS - Instructions]
-   - [CHORUS${isSertanejoModerno ? " - B" : ""} - Instructions]
-   - [BRIDGE${isSertanejoModerno ? " - C" : ""} - Instructions] (4-6 lines)
-   - [SOLO - Instrument, (8-16 SECONDS)]
-   - [FINAL CHORUS${isSertanejoModerno ? " - B" : ""} - Instructions]
-   - [OUTRO - Instructions] (2-4 lines)
-   - (Instrumentos: list | BPM: number | Ritmo: ${finalRhythm} | Estilo: ${generoConversao})
+4. MAINTAIN STRUCTURE:
+   - Keep the original song structure
+   - Improve lyrics quality and flow
+   - Enhance rhymes and poetic elements
 
-5. CATCHY CHORUS (Priority):
-   - First line = memorable hook
-   - 4 lines maximum, 8-10 syllables each
-   - Simple, direct, easy to sing
-
-REWRITING INSTRUCTIONS:
-${conservarImagens ? "- Preserve images and metaphors exactly" : "- Improve images while maintaining theme"}
-${polirSemMexer ? "- Keep structure, only polish" : "- Adapt to hit song structure"}
-- Preserve central emotional message
-- Keep characters and situations
-- Maximum 12 syllables per verse
-- Intense Brazilian colloquial language
+CREATIVITY LEVEL: ${criatividade}
 ${additionalRequirements ? `\nSPECIAL REQUIREMENTS:\n${additionalRequirements}` : ""}
 
-Create the improved version now:`
+Rewrite and improve the song now:`
 
   console.log("[RewriteNormally] Iniciando reescrita...")
 
-  let finalLyrics = ""
-  let attempt = 0
-  const maxAttempts = 3
+  const { text } = await generateText({
+    model: "openai/gpt-4o",
+    prompt,
+    temperature,
+  })
 
-  while (attempt < maxAttempts) {
-    attempt++
-    console.log(`[RewriteNormally] Tentativa ${attempt}/${maxAttempts}`)
+  let lyrics = text.trim()
 
-    try {
-      const { text } = await generateText({
-        model: "openai/gpt-4o",
-        prompt:
-          attempt > 0
-            ? `${prompt}\n\nATENTION: Previous attempt had verses >12 syllables. REGENERE with MAXIMUM 12 syllables per verse.`
-            : prompt,
-        temperature: 0.8,
-      })
+  // Remove duplicate titles
+  lyrics = lyrics.replace(/^(?:Título|Title):\s*.+$/gm, "").trim()
+  lyrics = lyrics.replace(/^\*\*(?:Título|Title):\s*.+\*\*$/gm, "").trim()
 
-      let lyrics = text.trim()
+  // ✅ VALIDAÇÃO E CORREÇÃO AUTOMÁTICA DE SÍLABAS
+  console.log(`[RewriteNormally] Aplicando imposição rigorosa de sílabas...`)
+  const syllableEnforcement = syllableTarget
 
-      // Remove duplicate titles
-      lyrics = lyrics.replace(/^(?:Título|Title):\s*.+$/gm, "").trim()
-      lyrics = lyrics.replace(/^\*\*(?:Título|Title):\s*.+\*\*$/gm, "").trim()
+  const enforcedResult = await SyllableEnforcer.enforceSyllableLimits(
+    lyrics,
+    syllableEnforcement,
+    genero
+  )
 
-      // ✅ VALIDAÇÃO E CORREÇÃO AUTOMÁTICA DE SÍLABAS
-      console.log(`[RewriteNormally] Aplicando imposição rigorosa de sílabas...`)
-      const syllableEnforcement = { min: 7, max: 11, ideal: 9 }
-
-      const enforcedResult = await SyllableEnforcer.enforceSyllableLimits(
-        lyrics, 
-        syllableEnforcement, 
-        generoConversao
-      )
-
-      if (enforcedResult.corrections > 0) {
-        console.log(`[RewriteNormally] ${enforcedResult.corrections} linhas corrigidas automaticamente`)
-        enforcedResult.violations.forEach(v => {
-          console.log(`[RewriteNormally] CORRIGIDO: ${v}`)
-        })
-        
-        lyrics = enforcedResult.correctedLyrics
-      } else {
-        console.log(`[RewriteNormally] Todas as linhas respeitam o limite de sílabas!`)
-      }
-
-      // ✅ APLICA EMPILHAMENTO PROFISSIONAL
-      console.log("[Stacker] Aplicando empilhamento profissional...")
-      const stackingResult = LineStacker.stackLines(lyrics)
-      lyrics = stackingResult.stackedLyrics
-
-      console.log(`[Stacker] Score de empilhamento: ${(stackingResult.stackingScore * 100).toFixed(1)}%`)
-      stackingResult.improvements.forEach(imp => console.log(`[Stacker] ${imp}`))
-
-      finalLyrics = lyrics
-      break
-
-    } catch (error) {
-      console.error(`[RewriteNormally] Erro na tentativa ${attempt}:`, error)
-      if (attempt === maxAttempts) {
-        throw error
-      }
-    }
+  if (enforcedResult.corrections > 0) {
+    console.log(`[RewriteNormally] ${enforcedResult.corrections} linhas corrigidas automaticamente`)
+    enforcedResult.violations.forEach(v => {
+      console.log(`[RewriteNormally] CORRIGIDO: ${v}`)
+    })
+    lyrics = enforcedResult.correctedLyrics
+  } else {
+    console.log(`[RewriteNormally] Todas as linhas respeitam o limite de sílabas!`)
   }
 
-  return finalLyrics
+  // ✅ APLICA EMPILHAMENTO PROFISSIONAL
+  console.log("[Stacker] Aplicando empilhamento profissional...")
+  const stackingResult = LineStacker.stackLines(lyrics)
+  lyrics = stackingResult.stackedLyrics
+
+  console.log(`[Stacker] Score de empilhamento: ${(stackingResult.stackingScore * 100).toFixed(1)}%`)
+  stackingResult.improvements.forEach(imp => console.log(`[Stacker] ${imp}`))
+
+  return lyrics
 }
 
-// ✅ ROTA PRINCIPAL
+// ✅ ROTA PRINCIPAL DE REWRITE
 export async function POST(request: Request) {
   try {
     const body = await request.json()
 
-    if (!body.letraOriginal || body.letraOriginal.trim().length === 0) {
-      return NextResponse.json({ error: "Letra original é obrigatória para reescrita" }, { status: 400 })
-    }
-
-    if (!body.generoConversao) {
-      return NextResponse.json({ error: "Gênero é obrigatório para reescrita" }, { status: 400 })
-    }
-
     const {
       letraOriginal,
-      generoConversao,
-      conservarImagens,
-      polirSemMexer,
-      metrics,
-      formattingStyle,
+      genero,
+      humor,
+      tema,
+      criatividade = "equilibrado",
+      inspiracao,
+      metaforas,
+      emocoes = [],
+      titulo,
+      formattingStyle = "performatico",
       additionalRequirements,
-      advancedMode,
+      advancedMode = false,
+      universalPolish = true,
+      syllableTarget,
+      metrics = { bpm: 100, structure: "VERSO-REFRAO" },
       selectedChoruses,
     } = body
 
-    // ✅ CONFIGURAÇÃO ESPECÍFICA PARA SERTANEJO
-    const applyFinalPolish = true // SEMPRE aplicar polimento
-    const syllableTarget = generoConversao.toLowerCase().includes('sertanejo') 
-      ? { min: 9, max: 11, ideal: 10 } // Sertanejo mais rigoroso
-      : { min: 7, max: 11, ideal: 9 }  // Outros gêneros
+    if (!letraOriginal) {
+      return NextResponse.json({ error: "Letra original é obrigatória" }, { status: 400 })
+    }
+
+    if (!genero) {
+      return NextResponse.json({ error: "Gênero é obrigatório" }, { status: 400 })
+    }
+
+    // ✅ CONFIGURAÇÃO AUTOMÁTICA POR GÊNERO
+    const autoSyllableConfig = getSyllableConfig(genero)
+    const finalSyllableTarget = syllableTarget || autoSyllableConfig
+
+    console.log(`[Rewrite] Configuração ${genero}: ${finalSyllableTarget.min}-${finalSyllableTarget.max}s (ideal: ${finalSyllableTarget.ideal}s)`)
+    console.log(`[Rewrite] Polimento Universal: ${universalPolish ? 'ATIVO' : 'INATIVO'}`)
 
     // ✅ EXTRAI refrões selecionados se existirem (sempre retorna array)
     const extractedChoruses = selectedChoruses || extractChorusesFromInstructions(additionalRequirements) || []
 
     let finalLyrics: string
+    let rewriteMode: "preservation" | "universal" | "normal" = "normal"
 
-    // ✅ DECISÃO INTELIGENTE: Preservar refrões ou reescrita normal
+    // ✅ DECISÃO INTELIGENTE: Preservar refrões ou reescrita com Sistema Universal
     if (extractedChoruses.length > 0) {
-      console.log(`[RewriteLyrics] 🎯 Modo preservação ativo: ${extractedChoruses.length} refrões selecionados`)
+      console.log(`[Rewrite] 🎯 Modo preservação ativo: ${extractedChoruses.length} refrões selecionados`)
+      rewriteMode = "preservation"
       
-      // ✅ USA META-COMPOSER com refrões preservados
-      finalLyrics = await MetaComposer.rewriteWithPreservedChoruses(
+      // ✅ USA FUNÇÃO ALTERNATIVA PARA REFRÕES PRESERVADOS
+      finalLyrics = await rewriteWithPreservedChoruses(
         letraOriginal,
         extractedChoruses,
-        { 
-          genre: generoConversao, 
-          theme: extractThemeFromLyrics(letraOriginal),
-          mood: extractMoodFromLyrics(letraOriginal),
-          additionalRequirements,
-          syllableTarget: syllableTarget,
-          preservedChoruses: extractedChoruses,
-          applyFinalPolish: applyFinalPolish // ✅ GARANTIR POLIMENTO
-        },
-        syllableTarget
+        genero,
+        tema || 'Amor',
+        humor || 'Romântico',
+        finalSyllableTarget,
+        universalPolish,
+        additionalRequirements
       )
-    } else {
-      console.log(`[RewriteLyrics] Modo reescrita normal para: ${generoConversao}`)
+    } else if (universalPolish) {
+      // ✅ SISTEMA UNIVERSAL DE QUALIDADE
+      console.log(`[Rewrite] 🎵 Sistema Universal ativo para: ${genero}`)
+      rewriteMode = "universal"
       
-      // ✅ FALLBACK: reescrita normal (sem refrões selecionados)
+      const compositionRequest = {
+        genre: genero,
+        theme: extractThemeFromInput(tema || 'Amor', inspiracao),
+        mood: extractMoodFromInput(humor, emocoes),
+        additionalRequirements,
+        syllableTarget: finalSyllableTarget,
+        applyFinalPolish: true,
+        creativity: criatividade,
+        preserveRhymes: true,
+        applyTerceiraVia: true
+      }
+
+      const result = await MetaComposer.compose(compositionRequest)
+      finalLyrics = result.lyrics
+
+      console.log(`[Rewrite] Sistema Universal finalizado - Score: ${result.metadata.finalScore.toFixed(2)}`)
+      if (result.metadata.polishingApplied) {
+        console.log(`[Rewrite] ✅ Polimento específico para ${genero} aplicado`)
+      }
+    } else {
+      // ✅ FALLBACK: reescrita normal (sem refrões selecionados e sem polimento universal)
+      console.log(`[Rewrite] Modo reescrita normal para: ${genero} - ${tema}`)
+      rewriteMode = "normal"
+      
       finalLyrics = await rewriteNormally(
         letraOriginal,
-        generoConversao,
+        genero,
+        humor || 'Romântico',
+        tema || 'Amor',
+        criatividade,
+        inspiracao,
+        metaforas,
+        emocoes,
         additionalRequirements,
-        conservarImagens,
-        polirSemMexer,
+        universalPolish,
+        finalSyllableTarget,
         metrics
       )
     }
 
     // ✅ APLICA FORMATAÇÃO FINAL
-    finalLyrics = applyFinalFormatting(finalLyrics, generoConversao, metrics)
+    finalLyrics = applyFinalFormatting(finalLyrics, genero, metrics)
 
-    console.log("[RewriteLyrics] Reescrita concluída!")
+    console.log(`[Rewrite] Reescrita concluída! Modo: ${rewriteMode}`)
 
     return NextResponse.json({
       letra: finalLyrics,
+      titulo: titulo || extractTitleFromLyrics(finalLyrics),
       metadata: {
         preservedChoruses: extractedChoruses.length,
-        mode: extractedChoruses.length > 0 ? "preservation" : "normal"
+        rewriteMode: rewriteMode,
+        syllableConfig: finalSyllableTarget,
+        universalPolish: universalPolish,
+        genre: genero
       }
     })
-
   } catch (error) {
-    console.error("[RewriteLyrics] Erro ao reescrever letra:", error)
+    console.error("[Rewrite] Erro ao reescrever letra:", error)
 
     const errorMessage = error instanceof Error ? error.message : "Erro desconhecido"
 
@@ -329,9 +369,21 @@ export async function POST(request: Request) {
       {
         error: "Erro ao reescrever letra",
         details: errorMessage,
-        suggestion: "Tente novamente ou simplifique a letra original",
+        suggestion: "Tente novamente com uma letra mais clara",
       },
       { status: 500 },
     )
   }
+}
+
+function extractTitleFromLyrics(lyrics: string): string {
+  const titleMatch = lyrics.match(/^Titulo:\s*(.+)$/m)
+  if (titleMatch?.[1]) return titleMatch[1].trim()
+
+  const chorusMatch = lyrics.match(/\[(?:CHORUS|REFRÃO)[^\]]*\]\s*\n([^\n]+)/i)
+  if (chorusMatch?.[1]) {
+    return chorusMatch[1].trim().split(" ").slice(0, 4).join(" ")
+  }
+
+  return "Sem Título"
 }
