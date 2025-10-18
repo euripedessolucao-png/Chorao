@@ -8,13 +8,7 @@ import { generateRhymeReport } from "@/lib/validation/rhyme-enhancer"
 
 interface RhymeReport {
   overallScore: number
-  rhymeDistribution: {
-    rica: number
-    perfeita: number
-    pobre: number
-    toante: number
-    [key: string]: number
-  }
+  rhymeDistribution: Record<string, number>
   validation: {
     valid: boolean
     errors: string[]
@@ -22,6 +16,11 @@ interface RhymeReport {
   }
   suggestions: string[]
   scheme: string[]
+  qualityBreakdown?: Array<{
+    line: string
+    score: number
+    type: string
+  }>
 }
 
 interface RhymeAnalyzerProps {
@@ -39,7 +38,7 @@ export function RhymeAnalyzer({ lyrics, genre, onAnalysis }: RhymeAnalyzerProps)
     
     setIsAnalyzing(true)
     try {
-      const analysis = generateRhymeReport(lyrics, genre) as RhymeReport
+      const analysis = generateRhymeReport(lyrics, genre)
       setReport(analysis)
       onAnalysis?.(analysis)
     } catch (error) {
@@ -63,6 +62,14 @@ export function RhymeAnalyzer({ lyrics, genre, onAnalysis }: RhymeAnalyzerProps)
       case "toante": return "bg-orange-100 text-orange-800"
       default: return "bg-gray-100 text-gray-800"
     }
+  }
+
+  // Filtrar apenas os tipos de rima relevantes para exibição
+  const getRelevantRhymeTypes = (distribution: Record<string, number>) => {
+    const relevantTypes = ['rica', 'perfeita', 'pobre', 'toante', 'consoante', 'assonante']
+    return Object.entries(distribution).filter(([type]) => 
+      relevantTypes.includes(type) && distribution[type] > 0
+    )
   }
 
   return (
@@ -95,16 +102,16 @@ export function RhymeAnalyzer({ lyrics, genre, onAnalysis }: RhymeAnalyzerProps)
             <div>
               <span className="font-medium">Distribuição:</span>
               <div className="flex flex-wrap gap-1 mt-1">
-                {Object.entries(report.rhymeDistribution).map(([type, count]) => (
+                {getRelevantRhymeTypes(report.rhymeDistribution).map(([type, count]) => (
                   <Badge key={type} variant="secondary" className={getTypeColor(type)}>
-                    {type}: {count as number}
+                    {type}: {count}
                   </Badge>
                 ))}
               </div>
             </div>
 
             {/* Validação */}
-            {!report.validation.valid && (
+            {!report.validation.valid && report.validation.errors.length > 0 && (
               <div className="text-red-600 text-xs">
                 <strong>Problemas:</strong> {report.validation.errors.join(', ')}
               </div>
@@ -124,9 +131,28 @@ export function RhymeAnalyzer({ lyrics, genre, onAnalysis }: RhymeAnalyzerProps)
             )}
 
             {/* Esquema */}
-            <div className="text-xs">
-              <strong>Esquema:</strong> {report.scheme.join('-')}
-            </div>
+            {report.scheme && report.scheme.length > 0 && (
+              <div className="text-xs">
+                <strong>Esquema:</strong> {report.scheme.join('-')}
+              </div>
+            )}
+
+            {/* Breakdown de Qualidade */}
+            {report.qualityBreakdown && report.qualityBreakdown.length > 0 && (
+              <div className="text-xs">
+                <strong>Detalhes por linha:</strong>
+                <div className="mt-1 space-y-1">
+                  {report.qualityBreakdown.slice(0, 5).map((item, index) => (
+                    <div key={index} className="flex justify-between">
+                      <span className="truncate max-w-[200px]">{item.line}</span>
+                      <Badge variant="outline" className={getScoreColor(item.score)}>
+                        {item.score}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </CardContent>
