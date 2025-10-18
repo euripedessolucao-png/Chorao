@@ -10,6 +10,54 @@ import { countPoeticSyllables } from "@/lib/validation/syllable-counter"
 import { SyllableEnforcer } from "@/lib/validation/syllableEnforcer"
 import { ThirdWayEngine } from "@/lib/third-way-converter"
 
+// NO MetaComposer - ADICIONE ESTES MÉTODOS:
+
+/**
+ * APLICA VALIDAÇÃO E CORREÇÃO DE RIMAS
+ */
+private static async applyRhymeCorrection(
+  lyrics: string,
+  genre: string,
+  theme: string
+): Promise<string> {
+  
+  console.log(`[RhymeCorrection] Validando rimas para ${genre}...`)
+  
+  const rhymeReport = generateRhymeReport(lyrics, genre)
+  
+  // Se o score for baixo, aplica correção
+  if (rhymeReport.overallScore < 60) {
+    console.log(`[RhymeCorrection] Score baixo (${rhymeReport.overallScore}), aplicando correção...`)
+    
+    try {
+      const enhancement = await enhanceLyricsRhymes(lyrics, genre, theme)
+      
+      if (enhancement.enhancedScore > rhymeReport.overallScore) {
+        console.log(`[RhymeCorrection] Rimas melhoradas: ${rhymeReport.overallScore} → ${enhancement.enhancedScore}`)
+        enhancement.improvements.forEach(imp => console.log(`[RhymeCorrection] ${imp}`))
+        
+        return enhancement.enhancedLyrics
+      }
+    } catch (error) {
+      console.error('[RhymeCorrection] Erro ao corrigir rimas:', error)
+    }
+  } else {
+    console.log(`[RhymeCorrection] Rimas OK: Score ${rhymeReport.overallScore}`)
+  }
+  
+  return lyrics
+}
+
+/**
+ * VALIDAÇÃO DE RIMAS NO COMPOSE()
+ */
+// No método compose(), após a geração da letra:
+let finalLyrics = enforcedResult.correctedLyrics
+
+// ✅ APLICA CORREÇÃO DE RIMAS SE NECESSÁRIO
+if (request.applyFinalPolish) {
+  finalLyrics = await this.applyRhymeCorrection(finalLyrics, request.genre, request.theme)
+}
 export interface CompositionRequest {
   genre: string
   theme: string
