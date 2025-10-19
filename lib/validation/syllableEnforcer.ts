@@ -104,35 +104,35 @@ export class SyllableEnforcer {
   }
 
   /**
-   * CORREÇÕES INTELIGENTES - PRESERVA RIMAS
+   * CORREÇÕES INTELIGENTES - PRESERVA RIMAS E GRAMÁTICA
    */
   private static applySmartCorrections(line: string, maxSyllables: number): string {
     let corrected = line
 
-    // ✅ APENAS CONTRAÇÕES SEGURAS (não remove palavras)
     const contractions = [
       { from: /\bvocê\b/gi, to: "cê" },
       { from: /\bestá\b/gi, to: "tá" },
       { from: /\bpara\b/gi, to: "pra" },
       { from: /\bestou\b/gi, to: "tô" },
+      { from: /\bestava\b/gi, to: "tava" },
+      { from: /\bestavam\b/gi, to: "tavam" },
     ]
 
     contractions.forEach(({ from, to }) => {
       corrected = corrected.replace(from, to)
     })
 
+    // ✅ NUNCA remove palavras do meio - isso quebra gramática
+    // Se contrações não foram suficientes, retorna para IA regenerar
     return corrected
   }
 
   /**
-   * CORREÇÃO DE EMERGÊNCIA - PRESERVA RIMAS
+   * CORREÇÃO DE EMERGÊNCIA - DESABILITADA
    */
   private static applyEmergencyCorrection(line: string, maxSyllables: number): string {
     console.log(`[SyllableEnforcer] ⚠️ Correção de emergência DESABILITADA para: "${line}"`)
     console.log(`[SyllableEnforcer] ℹ️ Retornando linha original - IA deve regenerar`)
-
-    // NÃO remove palavras - isso quebra a gramática
-    // A IA deve regenerar a linha inteira se necessário
     return line
   }
 

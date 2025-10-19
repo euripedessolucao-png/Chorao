@@ -15,6 +15,7 @@ import {
   shouldUsePerformanceFormat,
 } from "@/lib/formatters/sertanejo-performance-formatter"
 import { validateNarrativeFlow } from "@/lib/validation/narrative-validator"
+import { SyllableEnforcer } from "@/lib/validation/syllableEnforcer"
 
 export interface CompositionRequest {
   genre: string
@@ -160,13 +161,8 @@ export class MetaComposer {
       }
 
       // ✅ ETAPA 3: CORREÇÃO DE SÍLABAS COM LIMITE ABSOLUTO
-      console.log("[MetaComposer-TURBO] 🧪 TESTE: Pulando SyllableEnforcer...")
-      const enforcedResult = {
-        correctedLyrics: rawLyrics,
-        corrections: 0,
-        violations: [],
-      }
-      // const enforcedResult = await SyllableEnforcer.enforceSyllableLimits(rawLyrics, syllableEnforcement, request.genre)
+      console.log("[MetaComposer-TURBO] 📏 Aplicando correção de sílabas...")
+      const enforcedResult = await SyllableEnforcer.enforceSyllableLimits(rawLyrics, syllableEnforcement, request.genre)
       console.log(`[MetaComposer-TURBO] ✅ Correções de sílabas: ${enforcedResult.corrections} linhas`)
 
       const postCorrectionViolations = this.detectCriticalViolations(enforcedResult.correctedLyrics)
