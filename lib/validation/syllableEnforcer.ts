@@ -107,24 +107,9 @@ export class SyllableEnforcer {
    * CORREÇÕES INTELIGENTES - PRESERVA RIMAS
    */
   private static applySmartCorrections(line: string, maxSyllables: number): string {
-    const words = line.split(" ")
-
-    // ✅ PRESERVA RIMA: Nunca remove as últimas 2 palavras
-    if (words.length > 4 && countPoeticSyllables(line) > maxSyllables) {
-      // Tenta reduzir do MEIO, mantendo início e fim
-      const middleReduction = [
-        words[0],
-        ...words.slice(-3), // Mantém as 3 últimas palavras (onde está a rima)
-      ].join(" ")
-
-      if (countPoeticSyllables(middleReduction) <= maxSyllables) {
-        return middleReduction
-      }
-    }
-
     let corrected = line
 
-    // ✅ CONTRACÕES SEGURAS (não afetam rimas)
+    // ✅ APENAS CONTRAÇÕES SEGURAS (não remove palavras)
     const contractions = [
       { from: /\bvocê\b/gi, to: "cê" },
       { from: /\bestá\b/gi, to: "tá" },
