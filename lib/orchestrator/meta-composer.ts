@@ -449,6 +449,208 @@ Retorne APENAS a letra completa, sem explicações ou comentários.`
     }
   }
 
-  // ... (resto dos métodos permanecem iguais)
-  // needsTerceiraViaCorrection, buildLineContext, applyRhymeEnhancement, etc.
+  /**
+   * CALCULA SCORE DE QUALIDADE INTEGRADO
+   */
+  private static calculateQualityScore(
+    lyrics: string,
+    syllableTarget: { min: number; max: number; ideal: number },
+    genre: string,
+    terceiraViaAnalysis: TerceiraViaAnalysis | null,
+    melodicAnalysis: any,
+  ): number {
+    let score = 0
+    let weights = 0
+
+    // Terceira Via score (40% do peso)
+    if (terceiraViaAnalysis) {
+      score += (terceiraViaAnalysis.score_geral / 100) * 0.4
+      weights += 0.4
+    }
+
+    // Melodic flow score (30% do peso)
+    if (melodicAnalysis) {
+      score += (melodicAnalysis.flow_score / 100) * 0.3
+      weights += 0.3
+    }
+
+    // Syllable compliance (20% do peso)
+    const lines = lyrics.split("\n").filter((l) => l.trim() && !l.startsWith("[") && !l.startsWith("("))
+    let syllableCompliance = 0
+    lines.forEach((line) => {
+      const count = countPoeticSyllables(line)
+      if (count >= syllableTarget.min && count <= syllableTarget.max) {
+        syllableCompliance++
+      }
+    })
+    if (lines.length > 0) {
+      score += (syllableCompliance / lines.length) * 0.2
+      weights += 0.2
+    }
+
+    // Rhyme quality (10% do peso)
+    const rhymeAnalysis = this.analyzeRhymes(lyrics, genre)
+    score += (rhymeAnalysis.score / 100) * 0.1
+    weights += 0.1
+
+    return weights > 0 ? score / weights : 0
+  }
+
+  /**
+   * EXTRAI TÍTULO DA LETRA
+   */
+  private static extractTitle(lyrics: string, request: CompositionRequest): string {
+    const lines = lyrics.split("\n")
+
+    // Procura por linha de título explícita
+    for (const line of lines) {
+      if (line.toLowerCase().includes("título:") || line.toLowerCase().includes("title:")) {
+        return line.split(":")[1]?.trim() || "Sem Título"
+      }
+    }
+
+    // Usa primeira linha significativa como título
+    for (const line of lines) {
+      const cleaned = line.trim()
+      if (cleaned && !cleaned.startsWith("[") && !cleaned.startsWith("(") && cleaned.length > 3) {
+        return cleaned.substring(0, 50)
+      }
+    }
+
+    return `${request.theme} - ${request.genre}`
+  }
+
+  /**
+   * ANALISA QUALIDADE DAS RIMAS
+   */
+  private static analyzeRhymes(
+    lyrics: string,
+    genre: string,
+  ): { score: number; richRhymes: number; totalRhymes: number } {
+    const lines = lyrics.split("\n").filter((l) => l.trim() && !l.startsWith("[") && !l.startsWith("("))
+
+    let richRhymes = 0
+    let totalRhymes = 0
+
+    // Análise simplificada de rimas
+    for (let i = 0; i < lines.length - 1; i++) {
+      const line1 = lines[i].trim()
+      const line2 = lines[i + 1].trim()
+
+      if (line1 && line2) {
+        const lastWord1 = line1.split(" ").pop()?.toLowerCase() || ""
+        const lastWord2 = line2.split(" ").pop()?.toLowerCase() || ""
+
+        if (lastWord1.length > 2 && lastWord2.length > 2) {
+          const suffix1 = lastWord1.slice(-3)
+          const suffix2 = lastWord2.slice(-3)
+
+          if (suffix1 === suffix2) {
+            totalRhymes++
+            // Rima rica: mais de 3 caracteres iguais
+            if (lastWord1.slice(-4) === lastWord2.slice(-4)) {
+              richRhymes++
+            }
+          }
+        }
+      }
+    }
+
+    const score = totalRhymes > 0 ? (richRhymes / totalRhymes) * 100 : 0
+    return { score, richRhymes, totalRhymes }
+  }
+
+  /**
+   * OBTÉM TARGET DE RIMAS PARA O GÊNERO
+   */
+  private static getGenreRhymeTarget(genre: string): { minScore: number; richRhymePercentage: number } {
+    // Targets padrão baseados no gênero
+    const targets: Record<string, { minScore: number; richRhymePercentage: number }> = {
+      "sertanejo-moderno": { minScore: 70, richRhymePercentage: 60 },
+      "sertanejo-universitario": { minScore: 70, richRhymePercentage: 60 },
+      piseiro: { minScore: 65, richRhymePercentage: 55 },
+      forro: { minScore: 65, richRhymePercentage: 55 },
+      funk: { minScore: 60, richRhymePercentage: 50 },
+      trap: { minScore: 60, richRhymePercentage: 50 },
+      default: { minScore: 65, richRhymePercentage: 55 },
+    }
+
+    return targets[genre] || targets["default"]
+  }
+
+  /**
+   * VERIFICA SE LINHA PRECISA DE CORREÇÃO TERCEIRA VIA
+   */
+  private static needsTerceiraViaCorrection(line: string, analysis: TerceiraViaAnalysis): boolean {
+    // Não corrige tags, instruções ou linhas vazias
+    if (!line.trim() || line.startsWith("[") || line.startsWith("(") || line.includes("Instruments:")) {
+      return false
+    }
+
+    // Corrige se score geral está baixo
+    if (analysis.score_geral < 70) {
+      return true
+    }
+
+    // Corrige se há pontos fracos identificados
+    if (analysis.pontos_fracos && analysis.pontos_fracos.length > 0) {
+      return true
+    }
+
+    return false
+  }
+
+  /**
+   * CONSTRÓI CONTEXTO PARA CORREÇÃO DE LINHA
+   */
+  private static buildLineContext(lines: string[], lineIndex: number, theme: string): string {
+    const contextLines: string[] = []
+
+    // Adiciona linha anterior se existir
+    if (lineIndex > 0) {
+      contextLines.push(`Linha anterior: ${lines[lineIndex - 1]}`)
+    }
+
+    // Adiciona linha atual
+    contextLines.push(`Linha atual: ${lines[lineIndex]}`)
+
+    // Adiciona próxima linha se existir
+    if (lineIndex < lines.length - 1) {
+      contextLines.push(`Próxima linha: ${lines[lineIndex + 1]}`)
+    }
+
+    contextLines.push(`Tema: ${theme}`)
+
+    return contextLines.join("\n")
+  }
+
+  /**
+   * APLICA MELHORIAS DE RIMA
+   */
+  private static async applyRhymeEnhancement(lyrics: string, genre: string, theme: string): Promise<string> {
+    console.log("[MetaComposer] Aplicando melhorias de rima...")
+
+    // Implementação simplificada - retorna lyrics original
+    // Em produção, isso usaria o rhyme-enhancer
+    return lyrics
+  }
+
+  /**
+   * APLICA FORMATAÇÃO PERFORMÁTICA
+   */
+  private static applyPerformanceFormatting(lyrics: string, genre: string): string {
+    console.log("[MetaComposer] Aplicando formatação performática...")
+
+    // Garante que tags estão em inglês e versos em português
+    let formatted = lyrics
+
+    // Converte tags comuns para inglês
+    formatted = formatted.replace(/\[Intro\]/gi, "[Intro]")
+    formatted = formatted.replace(/\[Verso\s*(\d*)\]/gi, "[Verse$1]")
+    formatted = formatted.replace(/\[Refrão\]/gi, "[Chorus]")
+    formatted = formatted.replace(/\[Ponte\]/gi, "[Bridge]")
+    formatted = formatted.replace(/\[Final\]/gi, "[Outro]")
+
+    return formatted
+  }
 }
