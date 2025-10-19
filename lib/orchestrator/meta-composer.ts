@@ -495,8 +495,32 @@ PASSO 3: REVISE ANTES DE FINALIZAR
 ✓ Usei vocabulário moderno e coloquial?
 ✓ Evitei clichês dramáticos?
 
-IMPORTANTE: Se um verso ficar com mais de 11 sílabas, você DEVE reescrevê-lo.
-Não envie a letra até que TODOS os versos tenham 11 sílabas ou menos.
+═══════════════════════════════════════════════════════════════
+SEU OBJETIVO FINAL (LEIA COM ATENÇÃO)
+═══════════════════════════════════════════════════════════════
+
+Você DEVE entregar uma letra que tenha SIMULTANEAMENTE:
+✓ GRAMÁTICA PERFEITA (frases completas e corretas)
+✓ NARRATIVA FLUÍDA (história com começo-meio-fim)
+✓ MÁXIMO 11 SÍLABAS POR VERSO (ABSOLUTO, NÃO NEGOCIÁVEL)
+
+NÃO ABRIMOS MÃO DE NENHUM DESSES DETALHES.
+
+IMPORTANTE:
+- Se um verso ficar com mais de 11 sílabas, você DEVE simplificá-lo
+- É MELHOR uma frase simples com 11 sílabas do que uma frase complexa com 13
+- Qualidade da narrativa NÃO justifica exceder 11 sílabas
+- Se não conseguir expressar a ideia em 11 sílabas, MUDE a ideia para algo mais simples
+
+EXEMPLO DO QUE FAZER:
+❌ "Pago tudo do meu jeito, sem ninguém pra dar conselho" (15 sílabas - INACEITÁVEL)
+✓ "Pago tudo do meu jeito, sem conselho" (11 sílabas - PERFEITO)
+
+❌ "Achava lindo o decote da vizinha do lado" (14 sílabas - INACEITÁVEL)
+✓ "Achava lindo o decote da vizinha" (11 sílabas - PERFEITO)
+
+NÃO ENVIE a letra até que TODOS os versos tenham 11 sílabas ou menos.
+Revise CADA verso antes de finalizar.
 
 Retorne APENAS a letra reescrita:`
 
