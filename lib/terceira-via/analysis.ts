@@ -1,13 +1,25 @@
-import { generateText } from "ai"
-import { getGenreConfig } from "./genre-config"
-import { ThirdWayEngine, ADVANCED_BRAZILIAN_METRICS } from "./terceira-via/third-way-converter"
-import { countPoeticSyllables } from "./validation/syllable-counter"
+import { getGenreConfig } from "../genre-config"
+import { ADVANCED_BRAZILIAN_METRICS } from "./third-way-converter"
+import { countPoeticSyllables } from "../validation/syllable-counter"
 
-// ✅ RE-EXPORTA THIRD WAY ENGINE
-export { ThirdWayEngine }
+export interface TerceiraViaAnalysis {
+  originalidade: number
+  profundidade_emocional: number
+  tecnica_compositiva: number
+  adequacao_genero: number
+  score_geral: number
+  sugestoes: string[]
+  pontos_fortes: string[]
+  pontos_fracos: string[]
+  metric_analysis: {
+    syllable_compliance: number
+    poetic_contractions: number
+    genre_rhythm_match: number
+    structural_integrity: number
+  }
+}
 
-// ✅ SISTEMA DE ANÁLISE MELODIA-RITMO
-function analisarMelodiaRitmo(
+export function analisarMelodiaRitmo(
   lyrics: string,
   genre: string,
 ): {
@@ -21,7 +33,6 @@ function analisarMelodiaRitmo(
   const rhythmic_patterns: string[] = []
   const melodic_suggestions: string[] = []
 
-  // ✅ ANALISA PADRÕES RÍTMICOS
   const syllablePatterns = lines.map((line) => countPoeticSyllables(line))
   const uniquePatterns = [...new Set(syllablePatterns)]
 
@@ -32,7 +43,6 @@ function analisarMelodiaRitmo(
     melodic_suggestions.push("Use mais variação no número de sílabas entre versos")
   }
 
-  // ✅ ANALISA CONTRACÇÕES POÉTICAS
   const poeticContractions = ["d'amor", "qu'eu", "s'eu", "meuamor", "tualma", "sualma"]
 
   let contractionCount = 0
@@ -54,13 +64,11 @@ function analisarMelodiaRitmo(
   }
 }
 
-// ✅ ANÁLISE TERCEIRA VIA ATUALIZADA
-function analisarTerceiraVia(lyrics: string, genre: string, theme: string): any {
+export function analisarTerceiraVia(lyrics: string, genre: string, theme: string): TerceiraViaAnalysis {
   const sugestoes: string[] = []
   const pontos_fortes: string[] = []
   const pontos_fracos: string[] = []
 
-  // ✅ ANÁLISE DE ORIGINALIDADE (MELHORADA)
   const cliches = [
     "coração partido",
     "lágrimas no travesseiro",
@@ -93,9 +101,8 @@ function analisarTerceiraVia(lyrics: string, genre: string, theme: string): any 
     }
   })
 
-  const originalidade = Math.max(0, 100 - clicheCount * 12) // Penalidade menor
+  const originalidade = Math.max(0, 100 - clicheCount * 12)
 
-  // ✅ ANÁLISE DE PROFUNDIDADE EMOCIONAL (MELHORADA)
   const emocoes_profundas = [
     "vulnerabilidade",
     "crescimento",
@@ -158,7 +165,6 @@ function analisarTerceiraVia(lyrics: string, genre: string, theme: string): any 
 
   const profundidade_emocional = Math.min(100, profundidadeCount * 12 + imagensCount * 8 + 40)
 
-  // ✅ ANÁLISE TÉCNICA COMPOSITIVA (MELHORADA)
   const lines = lyrics
     .split("\n")
     .filter((line) => line.trim() && !line.startsWith("[") && !line.startsWith("(") && !line.includes("Instruments:"))
@@ -168,7 +174,7 @@ function analisarTerceiraVia(lyrics: string, genre: string, theme: string): any 
   const hasBridge = lyrics.includes("[BRIDGE")
   const syllableCompliance = calculateSyllableCompliance(lines, genre)
 
-  let tecnica = 50 // Base
+  let tecnica = 50
   if (hasRhyme) {
     tecnica += 15
     pontos_fortes.push("Rimas bem estruturadas")
@@ -184,17 +190,14 @@ function analisarTerceiraVia(lyrics: string, genre: string, theme: string): any 
     pontos_fortes.push("Presença de ponte/desenvolvimento")
   }
 
-  tecnica += Math.round(syllableCompliance * 10) // Bônus por métrica
+  tecnica += Math.round(syllableCompliance * 10)
 
-  // ✅ ANÁLISE DE MELODIA E RITMO
   const melodiaRitmo = analisarMelodiaRitmo(lyrics, genre)
   tecnica = Math.min(100, tecnica + Math.round((melodiaRitmo.flow_score - 70) / 3))
 
-  // ✅ ADEQUAÇÃO AO GÊNERO (MELHORADA)
   const config = getGenreConfig(genre)
-  let adequacao = 70 // Base mais alta
+  let adequacao = 70
 
-  // Verifica métrica do gênero
   const genreMetrics = ADVANCED_BRAZILIAN_METRICS[genre as keyof typeof ADVANCED_BRAZILIAN_METRICS]
   if (genreMetrics) {
     const avgSyllables = lines.reduce((sum, line) => sum + countPoeticSyllables(line), 0) / lines.length
@@ -206,10 +209,8 @@ function analisarTerceiraVia(lyrics: string, genre: string, theme: string): any 
     }
   }
 
-  // ✅ SCORE GERAL COM PONDERAÇÃO INTELIGENTE
   const score_geral = Math.round(originalidade * 0.25 + profundidade_emocional * 0.3 + tecnica * 0.25 + adequacao * 0.2)
 
-  // ✅ SUGESTÕES ESPECÍFICAS BASEADAS NA ANÁLISE
   if (originalidade < 75) {
     sugestoes.push("🎯 Substitua clichês por observações pessoais únicas da sua experiência")
   }
@@ -222,7 +223,6 @@ function analisarTerceiraVia(lyrics: string, genre: string, theme: string): any 
     sugestoes.push("🎵 Trabalhe estrutura (verso-refrão-ponte) e rimas internas")
   }
 
-  // ✅ ADICIONA SUGESTÕES DE MELODIA/RITMO
   melodiaRitmo.melodic_suggestions.forEach((suggestion) => {
     sugestoes.push(suggestion)
   })
@@ -245,7 +245,6 @@ function analisarTerceiraVia(lyrics: string, genre: string, theme: string): any 
   }
 }
 
-// ✅ VERIFICAÇÃO DE RIMAS AVANÇADA - CORRIGIDA
 function checkAdvancedRhyme(line1: string, line2: string): boolean {
   const getLastStressedSyllable = (line: string): string => {
     const words = line.trim().split(/\s+/)
@@ -253,24 +252,20 @@ function checkAdvancedRhyme(line1: string, line2: string): boolean {
 
     if (!lastWord) return ""
 
-    // Encontra a sílaba tônica (simplificado)
     if (lastWord.match(/[áàâãéèêíìîóòôõúùû]/)) {
       return lastWord
     }
 
-    // Palavras oxítonas (tônica na última)
     if (lastWord.length <= 3 || lastWord.match(/[rsz]$/i)) {
       return lastWord.slice(-2)
     }
 
-    // Palavras paroxítonas (tônica na penúltima)
     return lastWord.slice(-3, -1)
   }
 
   const rhyme1 = getLastStressedSyllable(line1)
   const rhyme2 = getLastStressedSyllable(line2)
 
-  // ✅ CORREÇÃO: Agora rhyme1 e rhyme2 são sempre strings
   if (!rhyme1 || !rhyme2) return false
 
   return (
@@ -280,12 +275,11 @@ function checkAdvancedRhyme(line1: string, line2: string): boolean {
   )
 }
 
-// ✅ CALCULA COMPLIANCE DE SÍLABAS
 function calculateSyllableCompliance(lines: string[], genre: string): number {
   if (lines.length === 0) return 0
 
   const genreMetrics = ADVANCED_BRAZILIAN_METRICS[genre as keyof typeof ADVANCED_BRAZILIAN_METRICS]
-  if (!genreMetrics) return 0.7 // Fallback
+  if (!genreMetrics) return 0.7
 
   const compliantLines = lines.filter((line) => {
     const syllables = countPoeticSyllables(line)
@@ -295,104 +289,7 @@ function calculateSyllableCompliance(lines: string[], genre: string): number {
   return compliantLines.length / lines.length
 }
 
-// ✅ APLICAÇÃO DA TERCEIRA VIA COM THIRD WAY ENGINE
-async function applyTerceiraViaToLine(
-  line: string,
-  index: number,
-  context: string,
-  isPerformanceMode: boolean,
-  additionalRequirements?: string,
-  genre?: string,
-): Promise<string> {
-  if (!line.trim() || line.startsWith("[") || line.startsWith("(") || line.includes("Instruments:")) {
-    return line
-  }
-
-  try {
-    console.log(`[TerceiraVia] 🔧 Processando linha ${index}: "${line.substring(0, 40)}..."`)
-
-    // ✅ USA THIRD WAY ENGINE PARA CORREÇÕES AVANÇADAS
-    if (genre) {
-      const genreConfig = getGenreConfig(genre)
-      const improvedLine = await ThirdWayEngine.generateThirdWayLine(
-        line,
-        genre,
-        genreConfig,
-        context,
-        isPerformanceMode,
-        additionalRequirements,
-      )
-
-      console.log(`[TerceiraVia] ✅ Linha ${index} melhorada com Third Way: "${improvedLine}"`)
-      return improvedLine
-    }
-
-    // ✅ FALLBACK PARA SISTEMA ORIGINAL
-    return await applyLegacyTerceiraVia(line, index, context, additionalRequirements)
-  } catch (error) {
-    console.error(`[TerceiraVia] ❌ Erro na linha ${index}:`, error)
-    return line
-  }
-}
-
-// ✅ SISTEMA LEGACY (PARA COMPATIBILIDADE)
-async function applyLegacyTerceiraVia(
-  line: string,
-  index: number,
-  context: string,
-  additionalRequirements?: string,
-): Promise<string> {
-  const cliches = [
-    "coração partido",
-    "lágrimas",
-    "noite sem luar",
-    "amor eterno",
-    "para sempre",
-    "vazio",
-    "solidão",
-    "saudade",
-    "dor no peito",
-  ]
-
-  let needsImprovement = false
-  for (const cliche of cliches) {
-    if (line.toLowerCase().includes(cliche)) {
-      needsImprovement = true
-      break
-    }
-  }
-
-  if (!needsImprovement && (line.length < 15 || line.split(" ").length < 3)) {
-    needsImprovement = true
-  }
-
-  if (!needsImprovement) return line
-
-  const prompt = `TERCEIRA VIA - COMPOSIÇÃO INTELIGENTE
-
-LINHA ORIGINAL: "${line}"
-CONTEXTO: ${context}
-${additionalRequirements ? `REQUISITOS: ${additionalRequirements}` : ""}
-
-Reescreva APENAS esta linha aplicando os princípios da Terceira Via.
-Retorne SOMENTE a linha reescrita:`
-
-  const { text } = await generateText({
-    model: "openai/gpt-4o-mini",
-    prompt,
-    temperature: 0.7,
-  })
-
-  return (
-    text
-      .trim()
-      .replace(/^["']|["']$/g, "")
-      .split("\n")[0] || line
-  )
-}
-
-// ✅ ANALISADOR DE TENDÊNCIAS PARA MÚLTIPAS LETRAS
-function analisarTendenciasCompositivas(
+export function analisarTendenciasCompositivas(
   lyricsArray: string[],
   genre: string,
 ): {
@@ -437,5 +334,3 @@ function analisarTendenciasCompositivas(
     estilo_identificado,
   }
 }
-
-export { analisarMelodiaRitmo, analisarTerceiraVia, applyTerceiraViaToLine, analisarTendenciasCompositivas }
