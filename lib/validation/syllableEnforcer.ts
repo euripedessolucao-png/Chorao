@@ -143,20 +143,12 @@ export class SyllableEnforcer {
    * CORREÇÃO DE EMERGÊNCIA - PRESERVA RIMAS
    */
   private static applyEmergencyCorrection(line: string, maxSyllables: number): string {
-    console.log(`[SyllableEnforcer] Aplicando correção de emergência para: "${line}"`)
+    console.log(`[SyllableEnforcer] ⚠️ Correção de emergência DESABILITADA para: "${line}"`)
+    console.log(`[SyllableEnforcer] ℹ️ Retornando linha original - IA deve regenerar`)
 
-    const words = line.split(" ").filter((w) => w.trim())
-
-    // ✅ Estratégia inteligente: Remove do início, mantém final (rimas)
-    for (let i = 1; i < words.length - 1; i++) {
-      const candidate = words.slice(i).join(" ")
-      if (countPoeticSyllables(candidate) <= maxSyllables) {
-        return candidate
-      }
-    }
-
-    // Último recurso: Mantém apenas as palavras finais
-    return words.slice(-3).join(" ")
+    // NÃO remove palavras - isso quebra a gramática
+    // A IA deve regenerar a linha inteira se necessário
+    return line
   }
 
   /**

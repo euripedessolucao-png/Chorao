@@ -772,47 +772,12 @@ Retorne APENAS a letra completa, sem explicações ou comentários.`
   }
 
   private static applyEmergencyCorrection(lyrics: string, maxSyllables: number): string {
-    const lines = lyrics.split("\n")
-    const correctedLines: string[] = []
+    console.log(`[MetaComposer] ⚠️ Correção de emergência DESABILITADA`)
+    console.log(`[MetaComposer] ℹ️ Retornando lyrics original - IA deve regenerar`)
 
-    lines.forEach((line) => {
-      const trimmed = line.trim()
-
-      // Não corrige tags, instruções ou linhas vazias
-      if (!trimmed || trimmed.startsWith("[") || trimmed.startsWith("(") || trimmed.includes("Instruments:")) {
-        correctedLines.push(line)
-        return
-      }
-
-      const syllables = countPoeticSyllables(trimmed)
-
-      if (syllables > maxSyllables) {
-        console.log(`[Emergency] Corrigindo: "${trimmed}" (${syllables}s)`)
-
-        // Estratégia: Remove palavras do meio, preserva início e fim (rimas)
-        const words = trimmed.split(" ")
-
-        if (words.length > 4) {
-          // Mantém primeira e últimas 2 palavras
-          let corrected = [words[0], ...words.slice(-2)].join(" ")
-
-          // Se ainda muito longo, mantém só as últimas 2 palavras
-          if (countPoeticSyllables(corrected) > maxSyllables) {
-            corrected = words.slice(-2).join(" ")
-          }
-
-          console.log(`[Emergency] Resultado: "${corrected}" (${countPoeticSyllables(corrected)}s)`)
-          correctedLines.push(corrected)
-        } else {
-          // Se muito curto, mantém original (melhor verso longo que quebrado)
-          correctedLines.push(trimmed)
-        }
-      } else {
-        correctedLines.push(line)
-      }
-    })
-
-    return correctedLines.join("\n")
+    // NÃO remove palavras - isso quebra a gramática
+    // A IA deve regenerar a letra inteira se necessário
+    return lyrics
   }
 
   /**
@@ -900,74 +865,11 @@ Retorne APENAS a letra completa, sem explicações ou comentários.`
     syllableTarget: { min: number; max: number; ideal: number },
     genre: string,
   ): string {
-    console.log("[MetaComposer] 🚨 Aplicando correções emergenciais finais...")
+    console.log("[MetaComposer] ⚠️ Correções emergenciais finais DESABILITADAS")
+    console.log("[MetaComposer] ℹ️ Retornando lyrics original - sistema deve regenerar")
 
-    let fixed = lyrics
-    const lines = fixed.split("\n")
-    const fixedLines: string[] = []
-
-    for (const line of lines) {
-      const trimmed = line.trim()
-
-      // Não corrige tags, instruções ou linhas vazias
-      if (!trimmed || trimmed.startsWith("[") || trimmed.startsWith("(") || trimmed.includes("Instruments:")) {
-        fixedLines.push(line)
-        continue
-      }
-
-      const syllables = countPoeticSyllables(trimmed)
-
-      // CORREÇÃO 1: Versos com mais de 11 sílabas
-      if (syllables > this.ABSOLUTE_MAX_SYLLABLES) {
-        console.log(`[Emergency] Cortando verso longo: "${trimmed}" (${syllables}s)`)
-
-        // Estratégia: Remove palavras do meio, preserva início e fim (rimas)
-        const words = trimmed.split(" ")
-
-        if (words.length > 4) {
-          // Mantém primeira palavra e últimas 2-3 palavras
-          let corrected = [words[0], ...words.slice(-3)].join(" ")
-
-          // Se ainda muito longo, mantém só as últimas 3 palavras
-          if (countPoeticSyllables(corrected) > this.ABSOLUTE_MAX_SYLLABLES) {
-            corrected = words.slice(-3).join(" ")
-          }
-
-          // Se AINDA muito longo, mantém só as últimas 2 palavras
-          if (countPoeticSyllables(corrected) > this.ABSOLUTE_MAX_SYLLABLES) {
-            corrected = words.slice(-2).join(" ")
-          }
-
-          console.log(`[Emergency] Resultado: "${corrected}" (${countPoeticSyllables(corrected)}s)`)
-          fixedLines.push(corrected)
-        } else {
-          // Verso muito curto, mantém original (melhor longo que quebrado)
-          fixedLines.push(trimmed)
-        }
-      }
-      // CORREÇÃO 2: Versos muito curtos (menos de 3 palavras)
-      else if (trimmed.split(" ").length < 3 && syllables < syllableTarget.min) {
-        console.log(`[Emergency] Verso muito curto ignorado: "${trimmed}"`)
-        // Remove versos muito curtos que provavelmente são quebrados
-        continue
-      }
-      // CORREÇÃO 3: Versos com aspas não fechadas
-      else if ((trimmed.match(/"/g) || []).length % 2 !== 0) {
-        console.log(`[Emergency] Corrigindo aspas: "${trimmed}"`)
-        fixedLines.push(trimmed + '"')
-      }
-      // Verso OK
-      else {
-        fixedLines.push(line)
-      }
-    }
-
-    fixed = fixedLines.join("\n")
-
-    // Remove linhas vazias consecutivas
-    fixed = fixed.replace(/\n\n\n+/g, "\n\n")
-
-    console.log("[MetaComposer] ✅ Correções emergenciais aplicadas")
-    return fixed
+    // NÃO aplica correções que quebram frases
+    // Se chegou aqui com erros, o sistema deve REGENERAR a letra inteira
+    return lyrics
   }
 }
