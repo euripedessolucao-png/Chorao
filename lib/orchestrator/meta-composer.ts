@@ -408,47 +408,95 @@ ${request.originalLyrics}
 TEMA: ${request.theme}
 MOOD: ${request.mood}
 
-REGRAS ABSOLUTAS (NÃO NEGOCIÁVEIS):
+═══════════════════════════════════════════════════════════════
+REGRAS ABSOLUTAS (NÃO PODEM SER QUEBRADAS - PRIORIDADE MÁXIMA)
+═══════════════════════════════════════════════════════════════
 
-1. SÍLABAS POÉTICAS:
-   - MÁXIMO ABSOLUTO: 11 sílabas por verso
-   - IDEAL: ${syllableTarget.ideal} sílabas
-   - MÍNIMO: ${syllableTarget.min} sílabas
-   - CONTE as sílabas de CADA verso antes de finalizar
-   - Se passar de 11, REESCREVA o verso
+1. LIMITE DE 11 SÍLABAS POÉTICAS (ABSOLUTO E INEGOCIÁVEL)
+   - Cada verso DEVE ter no máximo 11 sílabas poéticas
+   - Ideal: ${syllableTarget.ideal} sílabas
+   - Mínimo: ${syllableTarget.min} sílabas
+   
+   COMO CONTAR SÍLABAS POÉTICAS:
+   - Conte até a última sílaba tônica
+   - Exemplo: "Eu vou seguir meu caminho sem olhar" = "Eu-vou-se-guir-meu-ca-mi-nho-sem-o-LHAR" = 11 sílabas ✓
+   
+   ESTRATÉGIAS PARA ENCURTAR VERSOS:
+   a) Use contrações: você→cê, está→tá, para→pra, estava→tava
+   b) Remova palavras desnecessárias: "muito", "bem", "tão", "já"
+   c) Simplifique: "que estava tentando" → "que tentava"
+   d) Seja direto: "Eu vou seguir o meu caminho" → "Vou seguir meu caminho"
+   
+   EXEMPLOS PRÁTICOS:
+   ❌ "Eu me libertei de tudo que você fazia pra me prender" (16 sílabas)
+   ✓ "Me libertei do que cê fez pra me prender" (11 sílabas)
+   
+   ❌ "Hoje eu sou dona de mim e da minha própria vida" (14 sílabas)
+   ✓ "Hoje sou dona de mim e da minha vida" (11 sílabas)
 
-2. GRAMÁTICA E ESTRUTURA:
-   - Cada verso deve ser uma FRASE COMPLETA em português correto
-   - Sujeito + Verbo + Complemento
+2. GRAMÁTICA PERFEITA (FRASES COMPLETAS E CORRETAS)
+   - Cada verso = frase completa com sujeito + verbo + complemento
    - NUNCA versos incompletos ou quebrados
-   - NUNCA dois verbos sem conectivo (ex: "Saí tentava" ❌)
+   
+   ERROS COMUNS A EVITAR:
+   ❌ "Vou não podia aceitar" (dois verbos sem conectivo)
+   ✓ "Vou seguir sem aceitar"
+   
+   ❌ "Saí tentava me esconder" (dois verbos sem conectivo)
+   ✓ "Saí da sombra que tentava me esconder"
+   
+   ❌ "Cortei deixei pra trás" (falta objeto)
+   ✓ "Cortei o laço e deixei pra trás"
 
-3. NARRATIVA:
-   - Começo: Apresentação da situação
-   - Meio: Desenvolvimento/conflito
-   - Fim: Resolução/transformação
-   - História FLUÍDA sem cortes abruptos
+3. NARRATIVA FLUÍDA (HISTÓRIA COM COMEÇO-MEIO-FIM)
+   - Começo: Apresenta a situação/problema
+   - Meio: Desenvolve a transformação/conflito
+   - Fim: Resolução com empoderamento
+   - Cada verso deve CONECTAR com o anterior
+   - SEM mudanças abruptas de assunto
 
-4. VOCABULÁRIO DO SERTANEJO MODERNO:
-   PERMITIDO: biquíni, PIX, story, boteco, pickup, praia, zap, rolê, mano, véio, bicho, copo de vitória
-   PROIBIDO: coração em pedaços, mundo desabou, lágrimas no travesseiro, uísque na mesa, perfume na cama, dor vazio, solidão
+═══════════════════════════════════════════════════════════════
+REGRAS DESEJÁVEIS (IMPORTANTE MAS FLEXÍVEL)
+═══════════════════════════════════════════════════════════════
 
-5. LINGUAGEM:
-   - Coloquial e brasileira: use "tô", "cê", "pra", "né"
-   - Simples e direta, como se estivesse conversando
-   - NUNCA rebuscada ou poética demais
+4. VOCABULÁRIO SERTANEJO MODERNO
+   PREFIRA: biquíni, PIX, story, boteco, pickup, praia, zap, rolê, copo de vitória
+   EVITE: coração em pedaços, lágrimas, solidão, mundo desabou, dor vazio
 
-6. ESTRUTURA:
+5. LINGUAGEM COLOQUIAL BRASILEIRA
+   - Use: tô, cê, pra, né, mano, véio
+   - Fale como brasileiro no dia-a-dia
+   - Simples e direto, como numa conversa
+
+6. ESTRUTURA
    - Use PART A (verso), PART B (refrão), PART C (ponte)
    - Refrão deve ser chiclete e repetitivo
    - Mantenha a mesma quantidade de seções da original
 
-CHECKLIST FINAL:
+═══════════════════════════════════════════════════════════════
+PROCESSO DE CRIAÇÃO (SIGA ESTA ORDEM)
+═══════════════════════════════════════════════════════════════
+
+PASSO 1: PENSE ANTES DE ESCREVER
+- Qual é a história que quero contar?
+- Como posso contar em versos curtos (11 sílabas)?
+- Quais palavras posso encurtar ou remover?
+
+PASSO 2: ESCREVA CADA VERSO
+- Escreva o verso
+- CONTE as sílabas poéticas
+- Se passar de 11, REESCREVA usando as estratégias acima
+- Verifique se a gramática está correta
+
+PASSO 3: REVISE ANTES DE FINALIZAR
 ✓ Todos os versos têm 11 sílabas ou menos?
 ✓ Todas as frases estão completas e corretas?
 ✓ A história flui do começo ao fim?
 ✓ Usei vocabulário moderno e coloquial?
 ✓ Evitei clichês dramáticos?
+
+IMPORTANTE: Se um verso ficar com mais de 11 sílabas, você DEVE reescrevê-lo.
+Não envie a letra até que TODOS os versos tenham 11 sílabas ou menos.
 
 Retorne APENAS a letra reescrita:`
 
@@ -526,60 +574,73 @@ Retorne a letra completa com os refrões preservados:`
 MOOD: ${request.mood}
 ${request.rhythm ? `RITMO: ${request.rhythm}` : ""}
 
-REGRAS ABSOLUTAS (NÃO NEGOCIÁVEIS):
+═══════════════════════════════════════════════════════════════
+REGRAS ABSOLUTAS (NÃO PODEM SER QUEBRADAS)
+═══════════════════════════════════════════════════════════════
 
-1. SÍLABAS POÉTICAS:
-   - MÁXIMO ABSOLUTO: 11 sílabas por verso
-   - IDEAL: ${syllableEnforcement.ideal} sílabas
-   - CONTE cada verso antes de finalizar
-   - Se passar de 11, REESCREVA
+1. LIMITE DE 11 SÍLABAS POÉTICAS (ABSOLUTO)
+   - Máximo: 11 sílabas por verso
+   - Ideal: ${syllableEnforcement.ideal} sílabas
+   
+   ESTRATÉGIAS PARA MANTER 11 SÍLABAS:
+   a) Contrações: você→cê, está→tá, para→pra
+   b) Seja direto: "Eu vou seguir" → "Vou seguir"
+   c) Remova palavras extras: "muito", "bem", "tão"
+   
+   EXEMPLOS:
+   ❌ "Eu me libertei de tudo aquilo que me prendia" (14 sílabas)
+   ✓ "Me libertei do que me prendia" (10 sílabas)
 
-2. GRAMÁTICA PERFEITA:
+2. GRAMÁTICA PERFEITA
    - Cada verso = frase completa (sujeito + verbo + complemento)
-   - NUNCA versos incompletos: "Vou não podia" ❌
-   - SEMPRE frases corretas: "Vou seguir sem você" ✓
+   - NUNCA: "Vou não podia" ❌
+   - SEMPRE: "Vou seguir sem você" ✓
 
-3. NARRATIVA FLUÍDA:
-   - Começo: Apresenta a situação
-   - Meio: Desenvolve o conflito/transformação
+3. NARRATIVA FLUÍDA
+   - Começo: Apresenta situação
+   - Meio: Desenvolve transformação
    - Fim: Resolução com empoderamento
-   - SEM cortes abruptos entre versos
 
-4. VOCABULÁRIO SERTANEJO MODERNO:
-   USE: biquíni, PIX, story, boteco, pickup, praia, zap, rolê, copo de vitória
-   EVITE: coração em pedaços, lágrimas, solidão, mundo desabou, dor vazio
+═══════════════════════════════════════════════════════════════
+PROCESSO (SIGA ESTA ORDEM)
+═══════════════════════════════════════════════════════════════
 
-5. LINGUAGEM COLOQUIAL:
-   - Use: tô, cê, pra, né, mano, véio
-   - Fale como brasileiro no dia-a-dia
-   - NUNCA rebuscado ou poético demais
+PASSO 1: PLANEJE A HISTÓRIA
+- Qual é a situação inicial?
+- O que acontece no meio?
+- Como termina?
 
-6. ESTRUTURA:
-   [PART A - Verse 1]
-   4 linhas contando a situação inicial
+PASSO 2: ESCREVA VERSO POR VERSO
+- Escreva o verso
+- CONTE as sílabas
+- Se > 11, REESCREVA usando contrações e simplificações
+- Verifique gramática
 
-   [PART B - Chorus]
-   4 linhas com gancho chiclete e empoderamento
+PASSO 3: REVISE TUDO
+✓ Todos os versos ≤ 11 sílabas?
+✓ Gramática perfeita?
+✓ História fluída?
 
-   [PART A2 - Verse 2]
-   4 linhas desenvolvendo a história
+ESTRUTURA:
+[PART A - Verse 1]
+4 linhas (11 sílabas cada)
 
-   [PART B - Chorus]
-   Repete o refrão
+[PART B - Chorus]
+4 linhas chiclete (11 sílabas cada)
 
-   [PART C - Bridge]
-   2 linhas de clímax/transformação
+[PART A2 - Verse 2]
+4 linhas (11 sílabas cada)
 
-   [PART B - Final Chorus]
-   Refrão final com energia máxima
+[PART B - Chorus]
+Repete
 
-CHECKLIST ANTES DE FINALIZAR:
-✓ Todos os versos têm 11 sílabas ou menos?
-✓ Todas as frases estão gramaticalmente corretas?
-✓ A história flui naturalmente do início ao fim?
-✓ Usei vocabulário moderno (biquíni, PIX, story)?
-✓ Evitei clichês dramáticos?
-✓ A linguagem é coloquial e brasileira?
+[PART C - Bridge]
+2 linhas de clímax (11 sílabas cada)
+
+[PART B - Final Chorus]
+Refrão final
+
+NÃO ENVIE até que TODOS os versos tenham ≤ 11 sílabas.
 
 Retorne APENAS a letra:`
 
