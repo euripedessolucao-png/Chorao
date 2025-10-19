@@ -824,14 +824,16 @@ Retorne APENAS a letra completa, sem explicações ou comentários.`
 
     // 2. VALIDAÇÃO DE INTEGRIDADE DE VERSOS
     const integrityResult = validateVerseIntegrity(lyrics)
-    if (integrityResult.brokenVerses.length > 0) {
-      integrityResult.brokenVerses.forEach((broken) => {
-        criticalErrors.push(`Verso quebrado/incompleto na linha ${broken.lineNumber}: "${broken.line}"`)
-      })
+    if (integrityResult.brokenVerses > 0) {
+      // Itera sobre issues para pegar detalhes dos versos quebrados
+      integrityResult.issues
+        .filter((issue) => issue.severity === "warning")
+        .forEach((issue) => {
+          criticalErrors.push(`Verso quebrado/incompleto na linha ${issue.line}: "${issue.text}"`)
+        })
     }
 
-    const verseIntegrity =
-      lines.length > 0 ? ((lines.length - integrityResult.brokenVerses.length) / lines.length) * 100 : 0
+    const verseIntegrity = lines.length > 0 ? ((lines.length - integrityResult.brokenVerses) / lines.length) * 100 : 0
 
     // 3. VALIDAÇÃO DE RIMAS
     const rhymeValidation = validateRhymesForGenre(lyrics, genre)
