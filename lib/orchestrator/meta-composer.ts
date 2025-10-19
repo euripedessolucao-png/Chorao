@@ -15,6 +15,7 @@ import {
   formatSertanejoPerformance,
   shouldUsePerformanceFormat,
 } from "@/lib/formatters/sertanejo-performance-formatter"
+import { validateNarrativeFlow, validateVerseContribution } from "@/lib/validation/narrative-validator"
 
 export interface CompositionRequest {
   genre: string
@@ -856,13 +857,29 @@ Retorne APENAS a letra completa, sem explicações ou comentários.`
     }
     genreValidation.warnings.forEach((warning) => warnings.push(`Gênero: ${warning}`))
 
-    // 5. VALIDAÇÃO DE NARRATIVA (início, meio, fim)
-    const hasNarrative = this.validateNarrative(lyrics)
-    if (!hasNarrative) {
-      warnings.push("Narrativa: Letra não tem estrutura clara de início, meio e fim")
+    const narrativeValidation = validateNarrativeFlow(lyrics, genre)
+    if (!narrativeValidation.isValid) {
+      narrativeValidation.feedback.forEach((feedback) => {
+        warnings.push(`Narrativa: ${feedback}`)
+      })
     }
 
-    // 6. VALIDAÇÃO DE ESTRUTURA
+    if (narrativeValidation.abruptChanges.length > 2) {
+      narrativeValidation.abruptChanges.forEach((change) => {
+        criticalErrors.push(`Mudança abrupta entre linhas ${change.fromLine}-${change.toLine}: ${change.reason}`)
+      })
+    }
+
+    const verseContribution = validateVerseContribution(lyrics)
+    if (!verseContribution.isValid) {
+      verseContribution.feedback.forEach((feedback) => {
+        warnings.push(`Verso: ${feedback}`)
+      })
+    }
+
+    const hasNarrative = narrativeValidation.isValid && narrativeValidation.score >= 70
+
+    // 7. VALIDAÇÃO DE ESTRUTURA
     const hasVerse = lyrics.toLowerCase().includes("[verse") || lyrics.toLowerCase().includes("[verso")
     const hasChorus = lyrics.toLowerCase().includes("[chorus") || lyrics.toLowerCase().includes("[refrão")
 
@@ -882,7 +899,8 @@ Retorne APENAS a letra completa, sem explicações ou comentários.`
     console.log(`  - Sílabas OK: ${syllableCompliance.toFixed(1)}%`)
     console.log(`  - Qualidade rimas: ${rhymeQuality.toFixed(1)}%`)
     console.log(`  - Integridade versos: ${verseIntegrity.toFixed(1)}%`)
-    console.log(`  - Narrativa: ${hasNarrative ? "✓" : "✗"}`)
+    console.log(`  - Narrativa: ${hasNarrative ? "✓" : "✗"} (score: ${narrativeValidation.score})`)
+    console.log(`  - Continuidade: ${narrativeValidation.hasContinuity ? "✓" : "✗"}`)
 
     return {
       isValid,
@@ -893,31 +911,6 @@ Retorne APENAS a letra completa, sem explicações ou comentários.`
       verseIntegrity,
       hasNarrative,
     }
-  }
-
-  /**
-   * VALIDA SE A LETRA TEM NARRATIVA COMPLETA
-   */
-  private static validateNarrative(lyrics: string): boolean {
-    const lyricsLower = lyrics.toLowerCase()
-
-    // Verifica se tem estrutura básica
-    const hasIntro =
-      lyricsLower.includes("[intro") || lyricsLower.includes("[verse 1") || lyricsLower.includes("[verso 1")
-    const hasMiddle =
-      lyricsLower.includes("[verse 2") ||
-      lyricsLower.includes("[verso 2") ||
-      lyricsLower.includes("[bridge") ||
-      lyricsLower.includes("[ponte")
-    const hasEnd =
-      lyricsLower.includes("[outro") ||
-      lyricsLower.includes("[final") ||
-      lyricsLower.includes("[chorus") ||
-      lyricsLower.includes("[refrão")
-
-    // Narrativa completa precisa de pelo menos 2 das 3 partes
-    const narrativeParts = [hasIntro, hasMiddle, hasEnd].filter(Boolean).length
-    return narrativeParts >= 2
   }
 
   /**
