@@ -397,29 +397,65 @@ export class MetaComposer {
     }
 
     const syllableTarget = request.syllableTarget || this.getGenreSyllableConfig(request.genre)
+    const genreConfig = getGenreConfig(request.genre)
 
     try {
-      const rewritePrompt = `Reescreva esta letra de ${request.genre} mantendo a mesma estrutura e melhorando a qualidade.
+      const rewritePrompt = `Você é um compositor profissional de ${request.genre}. Reescreva esta letra mantendo a estrutura mas melhorando a qualidade.
 
 LETRA ORIGINAL:
 ${request.originalLyrics}
 
-REGRAS SIMPLES:
-- Cada verso deve ser uma frase completa em português correto
-- ${syllableTarget.min} a ${syllableTarget.max} sílabas por verso
-- Mantenha a mesma quantidade de versos e refrões
-- Use linguagem simples e coloquial
-- Conte uma história clara
+TEMA: ${request.theme}
+MOOD: ${request.mood}
 
-Tema: ${request.theme}
-Mood: ${request.mood}
+REGRAS ABSOLUTAS (NÃO NEGOCIÁVEIS):
+
+1. SÍLABAS POÉTICAS:
+   - MÁXIMO ABSOLUTO: 11 sílabas por verso
+   - IDEAL: ${syllableTarget.ideal} sílabas
+   - MÍNIMO: ${syllableTarget.min} sílabas
+   - CONTE as sílabas de CADA verso antes de finalizar
+   - Se passar de 11, REESCREVA o verso
+
+2. GRAMÁTICA E ESTRUTURA:
+   - Cada verso deve ser uma FRASE COMPLETA em português correto
+   - Sujeito + Verbo + Complemento
+   - NUNCA versos incompletos ou quebrados
+   - NUNCA dois verbos sem conectivo (ex: "Saí tentava" ❌)
+
+3. NARRATIVA:
+   - Começo: Apresentação da situação
+   - Meio: Desenvolvimento/conflito
+   - Fim: Resolução/transformação
+   - História FLUÍDA sem cortes abruptos
+
+4. VOCABULÁRIO DO SERTANEJO MODERNO:
+   PERMITIDO: biquíni, PIX, story, boteco, pickup, praia, zap, rolê, mano, véio, bicho, copo de vitória
+   PROIBIDO: coração em pedaços, mundo desabou, lágrimas no travesseiro, uísque na mesa, perfume na cama, dor vazio, solidão
+
+5. LINGUAGEM:
+   - Coloquial e brasileira: use "tô", "cê", "pra", "né"
+   - Simples e direta, como se estivesse conversando
+   - NUNCA rebuscada ou poética demais
+
+6. ESTRUTURA:
+   - Use PART A (verso), PART B (refrão), PART C (ponte)
+   - Refrão deve ser chiclete e repetitivo
+   - Mantenha a mesma quantidade de seções da original
+
+CHECKLIST FINAL:
+✓ Todos os versos têm 11 sílabas ou menos?
+✓ Todas as frases estão completas e corretas?
+✓ A história flui do começo ao fim?
+✓ Usei vocabulário moderno e coloquial?
+✓ Evitei clichês dramáticos?
 
 Retorne APENAS a letra reescrita:`
 
       const response = await generateText({
         model: "openai/gpt-4o",
         prompt: rewritePrompt,
-        temperature: 0.6, // Reduzindo temperatura para mais consistência
+        temperature: 0.7,
       })
 
       return response.text || request.originalLyrics
@@ -440,26 +476,30 @@ Retorne APENAS a letra reescrita:`
     console.log("[MetaComposer] Gerando letra com refrões preservados...")
 
     const syllableTarget = request.syllableTarget || this.getGenreSyllableConfig(request.genre)
+    const genreConfig = getGenreConfig(request.genre)
 
     try {
-      const chorusPrompt = `Crie uma letra de ${request.genre} usando EXATAMENTE estes refrões:
+      const chorusPrompt = `Você é um compositor profissional de ${request.genre}. Crie uma letra usando EXATAMENTE estes refrões:
 
 ${preservedChoruses.join("\n\n")}
 
-REGRAS:
-- Frases completas em português correto
-- ${syllableTarget.min} a ${syllableTarget.max} sílabas por verso
-- Linguagem simples e coloquial
+TEMA: ${request.theme}
+MOOD: ${request.mood}
 
-Tema: ${request.theme}
-Mood: ${request.mood}
+REGRAS ABSOLUTAS:
 
-Retorne a letra completa:`
+1. SÍLABAS: Máximo 11 por verso (conte antes de finalizar)
+2. GRAMÁTICA: Frases completas em português correto
+3. VOCABULÁRIO: Use biquíni, PIX, story, boteco (evite clichês dramáticos)
+4. LINGUAGEM: Coloquial brasileira (tô, cê, pra)
+5. NARRATIVA: História fluída com começo-meio-fim
+
+Retorne a letra completa com os refrões preservados:`
 
       const response = await generateText({
         model: "openai/gpt-4o",
         prompt: chorusPrompt,
-        temperature: 0.6, // Temperatura reduzida
+        temperature: 0.7,
       })
 
       return response.text || ""
@@ -478,37 +518,75 @@ Retorne a letra completa:`
   ): Promise<string> {
     console.log("[MetaComposer] Gerando letra diretamente...")
 
+    const genreConfig = getGenreConfig(request.genre)
+
     try {
-      const directPrompt = `Crie uma letra de ${request.genre} sobre: ${request.theme}
+      const directPrompt = `Você é um compositor profissional de ${request.genre}. Crie uma letra original sobre: ${request.theme}
 
-REGRAS ESSENCIAIS:
-1. Frases completas em português correto
-2. ${syllableEnforcement.min} a ${syllableEnforcement.max} sílabas por verso
-3. Linguagem simples e coloquial
-4. História com começo, meio e fim
+MOOD: ${request.mood}
+${request.rhythm ? `RITMO: ${request.rhythm}` : ""}
 
-Mood: ${request.mood}
-${request.rhythm ? `Ritmo: ${request.rhythm}` : ""}
+REGRAS ABSOLUTAS (NÃO NEGOCIÁVEIS):
 
-ESTRUTURA:
-[Verso 1]
-4 linhas
+1. SÍLABAS POÉTICAS:
+   - MÁXIMO ABSOLUTO: 11 sílabas por verso
+   - IDEAL: ${syllableEnforcement.ideal} sílabas
+   - CONTE cada verso antes de finalizar
+   - Se passar de 11, REESCREVA
 
-[Refrão]
-4 linhas
+2. GRAMÁTICA PERFEITA:
+   - Cada verso = frase completa (sujeito + verbo + complemento)
+   - NUNCA versos incompletos: "Vou não podia" ❌
+   - SEMPRE frases corretas: "Vou seguir sem você" ✓
 
-[Verso 2]
-4 linhas
+3. NARRATIVA FLUÍDA:
+   - Começo: Apresenta a situação
+   - Meio: Desenvolve o conflito/transformação
+   - Fim: Resolução com empoderamento
+   - SEM cortes abruptos entre versos
 
-[Refrão]
-4 linhas
+4. VOCABULÁRIO SERTANEJO MODERNO:
+   USE: biquíni, PIX, story, boteco, pickup, praia, zap, rolê, copo de vitória
+   EVITE: coração em pedaços, lágrimas, solidão, mundo desabou, dor vazio
+
+5. LINGUAGEM COLOQUIAL:
+   - Use: tô, cê, pra, né, mano, véio
+   - Fale como brasileiro no dia-a-dia
+   - NUNCA rebuscado ou poético demais
+
+6. ESTRUTURA:
+   [PART A - Verse 1]
+   4 linhas contando a situação inicial
+
+   [PART B - Chorus]
+   4 linhas com gancho chiclete e empoderamento
+
+   [PART A2 - Verse 2]
+   4 linhas desenvolvendo a história
+
+   [PART B - Chorus]
+   Repete o refrão
+
+   [PART C - Bridge]
+   2 linhas de clímax/transformação
+
+   [PART B - Final Chorus]
+   Refrão final com energia máxima
+
+CHECKLIST ANTES DE FINALIZAR:
+✓ Todos os versos têm 11 sílabas ou menos?
+✓ Todas as frases estão gramaticalmente corretas?
+✓ A história flui naturalmente do início ao fim?
+✓ Usei vocabulário moderno (biquíni, PIX, story)?
+✓ Evitei clichês dramáticos?
+✓ A linguagem é coloquial e brasileira?
 
 Retorne APENAS a letra:`
 
       const response = await generateText({
         model: "openai/gpt-4o",
         prompt: directPrompt,
-        temperature: 0.6, // Temperatura reduzida para mais consistência
+        temperature: 0.7,
       })
 
       return response.text || ""
