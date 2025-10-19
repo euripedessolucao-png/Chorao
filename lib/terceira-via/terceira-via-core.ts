@@ -1,4 +1,6 @@
 // ✅ APLICAÇÃO DA TERCEIRA VIA COM THIRD WAY ENGINE (ATUALIZADA)
+import { ThirdWayEngine } from "./third-way-converter"
+
 export async function applyTerceiraViaToLine(
   line: string,
   index: number,
@@ -6,7 +8,7 @@ export async function applyTerceiraViaToLine(
   isPerformanceMode: boolean,
   additionalRequirements?: string,
   genre?: string,
-  genreConfig?: any // ✅ NOVO PARÂMETRO OPCIONAL
+  genreConfig?: any, // ✅ NOVO PARÂMETRO OPCIONAL
 ): Promise<string> {
   if (!line.trim() || line.startsWith("[") || line.startsWith("(") || line.includes("Instruments:")) {
     return line
@@ -23,7 +25,7 @@ export async function applyTerceiraViaToLine(
         genreConfig, // ✅ USA A CONFIGURAÇÃO PASSADA
         context,
         isPerformanceMode,
-        additionalRequirements
+        additionalRequirements,
       )
 
       console.log(`[TerceiraVia] ✅ Linha ${index} melhorada com Third Way: "${improvedLine}"`)
@@ -32,9 +34,18 @@ export async function applyTerceiraViaToLine(
 
     // ✅ FALLBACK PARA SISTEMA ORIGINAL (se não tiver genreConfig)
     return await applyLegacyTerceiraVia(line, index, context, additionalRequirements)
-
   } catch (error) {
     console.error(`[TerceiraVia] ❌ Erro na linha ${index}:`, error)
     return line
   }
+}
+
+async function applyLegacyTerceiraVia(
+  line: string,
+  index: number,
+  context: string,
+  additionalRequirements?: string,
+): Promise<string> {
+  // Placeholder for legacy implementation
+  return line
 }
