@@ -40,6 +40,18 @@ function detectBrokenVerse(text: string): string[] {
     issues.push("Verso muito curto (menos de 3 palavras)")
   }
 
+  // Versos como "Vou medo, sem falha!" ou "Você decote um charme"
+  const hasInvalidStructure = /\b(vou|vai|você|ele|ela)\s+(sem|com|de|da|do)\s+\w+\b/i.test(trimmed)
+  if (hasInvalidStructure && !hasValidVerb(trimmed)) {
+    issues.push("Estrutura gramatical inválida (falta verbo principal)")
+  }
+
+  // "Vou um dia calou..." ou "Mas um desastre alarde!"
+  const hasIncompletePhrase = /\b(vou|vai|mas|e|ou)\s+\w+\s+(calou|alarde|decote)\b/i.test(trimmed)
+  if (hasIncompletePhrase) {
+    issues.push("Frase incompleta ou sem sentido")
+  }
+
   // Aspas abertas sem fechar
   const openQuotes = (trimmed.match(/"/g) || []).length
   if (openQuotes % 2 !== 0) {
@@ -86,16 +98,33 @@ function detectBrokenVerse(text: string): string[] {
     issues.push(`Termina com "${lastWord}" (verso incompleto)`)
   }
 
-  // Falta verbo (verso sem ação)
-  const hasVerb =
-    /\b(é|são|foi|eram|está|estão|tem|têm|faz|fazem|vai|vão|vem|vêm|quer|querem|pode|podem|deve|devem|sou|somos|era|fosse|seja|sejam|tenho|temos|faço|fazemos|vou|vamos|venho|vimos|quero|queremos|posso|podemos|devo|devemos|ando|amos|indo|imos|endo|emos|ar|er|ir|ou|am|aram|ava|avam|ia|iam)\b/i.test(
-      trimmed,
-    )
-  if (!hasVerb && words.length >= 3) {
-    issues.push("Sem verbo identificável")
+  if (!hasValidVerb(trimmed) && words.length >= 3) {
+    issues.push("Sem verbo identificável ou verbo mal conjugado")
   }
 
   return issues
+}
+
+function hasValidVerb(text: string): boolean {
+  // Verbos comuns em português (presente, passado, futuro, gerúndio, infinitivo)
+  const verbPatterns = [
+    // Verbos ser/estar
+    /\b(sou|é|são|era|eram|foi|foram|será|serão|sendo|ser|estou|está|estão|estava|estavam|esteve|estiveram|estará|estarão|estando|estar)\b/i,
+    // Verbos ter/haver
+    /\b(tenho|tem|têm|tinha|tinham|teve|tiveram|terá|terão|tendo|ter|há|havia|houve|haverá|havendo|haver)\b/i,
+    // Verbos fazer/ir/vir
+    /\b(faço|faz|fazem|fazia|faziam|fez|fizeram|fará|farão|fazendo|fazer|vou|vai|vão|ia|iam|foi|foram|irá|irão|indo|ir|venho|vem|vêm|vinha|vinham|veio|vieram|virá|virão|vindo|vir)\b/i,
+    // Verbos querer/poder/dever
+    /\b(quero|quer|querem|queria|queriam|quis|quiseram|quererá|quererão|querendo|querer|posso|pode|podem|podia|podiam|pôde|puderam|poderá|poderão|podendo|poder|devo|deve|devem|devia|deviam|deveu|deveram|deverá|deverão|devendo|dever)\b/i,
+    // Verbos regulares -ar
+    /\b\w+(ando|ar|ava|avam|ou|aram|ará|arão|aria|ariam)\b/i,
+    // Verbos regulares -er
+    /\b\w+(endo|er|ia|iam|eu|eram|erá|erão|eria|eriam)\b/i,
+    // Verbos regulares -ir
+    /\b\w+(indo|ir|ia|iam|iu|iram|irá|irão|iria|iriam)\b/i,
+  ]
+
+  return verbPatterns.some((pattern) => pattern.test(text))
 }
 
 /**

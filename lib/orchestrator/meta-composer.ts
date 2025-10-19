@@ -806,7 +806,7 @@ Retorne APENAS a letra completa, sem explicações ou comentários.`
 
     console.log("[MetaComposer] 🔍 VALIDAÇÃO FINAL RIGOROSA iniciada...")
 
-    // 1. VALIDAÇÃO DE SÍLABAS - NUNCA MAIS DE 12
+    // 1. VALIDAÇÃO DE SÍLABAS - NUNCA MAIS DE 11
     const lines = lyrics.split("\n").filter((l) => {
       const trimmed = l.trim()
       return trimmed && !trimmed.startsWith("[") && !trimmed.startsWith("(") && !trimmed.includes("Instruments:")
@@ -828,18 +828,22 @@ Retorne APENAS a letra completa, sem explicações ou comentários.`
 
     const syllableCompliance = lines.length > 0 ? (syllableCompliant / lines.length) * 100 : 0
 
-    // 2. VALIDAÇÃO DE INTEGRIDADE DE VERSOS
+    // 2. VALIDAÇÃO DE INTEGRIDADE DE VERSOS - MAIS RIGOROSA
     const integrityResult = validateVerseIntegrity(lyrics)
+
     if (integrityResult.brokenVerses > 0) {
-      // Itera sobre issues para pegar detalhes dos versos quebrados
       integrityResult.issues
-        .filter((issue) => issue.severity === "warning")
+        .filter((issue) => issue.severity === "warning" || issue.severity === "error")
         .forEach((issue) => {
-          criticalErrors.push(`Verso quebrado/incompleto na linha ${issue.line}: "${issue.text}"`)
+          criticalErrors.push(`Verso com problema na linha ${issue.line}: "${issue.text}" - ${issue.issues.join(", ")}`)
         })
     }
 
     const verseIntegrity = lines.length > 0 ? ((lines.length - integrityResult.brokenVerses) / lines.length) * 100 : 0
+
+    if (verseIntegrity < 80) {
+      criticalErrors.push(`Integridade de versos muito baixa: ${verseIntegrity.toFixed(1)}% (mínimo: 80%)`)
+    }
 
     // 3. VALIDAÇÃO DE RIMAS
     const rhymeValidation = validateRhymesForGenre(lyrics, genre)
@@ -857,6 +861,7 @@ Retorne APENAS a letra completa, sem explicações ou comentários.`
     }
     genreValidation.warnings.forEach((warning) => warnings.push(`Gênero: ${warning}`))
 
+    // 5. VALIDAÇÃO DE NARRATIVA - MAIS RIGOROSA
     const narrativeValidation = validateNarrativeFlow(lyrics, genre)
     if (!narrativeValidation.isValid) {
       narrativeValidation.feedback.forEach((feedback) => {
@@ -864,12 +869,19 @@ Retorne APENAS a letra completa, sem explicações ou comentários.`
       })
     }
 
-    if (narrativeValidation.abruptChanges.length > 2) {
+    if (narrativeValidation.abruptChanges.length > 1) {
       narrativeValidation.abruptChanges.forEach((change) => {
         criticalErrors.push(`Mudança abrupta entre linhas ${change.fromLine}-${change.toLine}: ${change.reason}`)
       })
     }
 
+    const hasNarrative = narrativeValidation.isValid && narrativeValidation.score >= 75
+
+    if (!hasNarrative) {
+      criticalErrors.push(`Narrativa insuficiente: score ${narrativeValidation.score} (mínimo: 75)`)
+    }
+
+    // 6. VALIDAÇÃO DE CONTRIBUIÇÃO DE VERSOS
     const verseContribution = validateVerseContribution(lyrics)
     if (!verseContribution.isValid) {
       verseContribution.feedback.forEach((feedback) => {
@@ -877,11 +889,19 @@ Retorne APENAS a letra completa, sem explicações ou comentários.`
       })
     }
 
-    const hasNarrative = narrativeValidation.isValid && narrativeValidation.score >= 70
+    if (verseContribution.emptyVerses.length > 0) {
+      criticalErrors.push(`${verseContribution.emptyVerses.length} verso(s) vazio(s) ou muito curto(s)`)
+    }
 
     // 7. VALIDAÇÃO DE ESTRUTURA
-    const hasVerse = lyrics.toLowerCase().includes("[verse") || lyrics.toLowerCase().includes("[verso")
-    const hasChorus = lyrics.toLowerCase().includes("[chorus") || lyrics.toLowerCase().includes("[refrão")
+    const hasVerse =
+      lyrics.toLowerCase().includes("[verse") ||
+      lyrics.toLowerCase().includes("[verso") ||
+      lyrics.toLowerCase().includes("[part a")
+    const hasChorus =
+      lyrics.toLowerCase().includes("[chorus") ||
+      lyrics.toLowerCase().includes("[refrão") ||
+      lyrics.toLowerCase().includes("[part b")
 
     if (!hasVerse) {
       criticalErrors.push("Estrutura: Letra não tem versos identificados")
@@ -890,7 +910,7 @@ Retorne APENAS a letra completa, sem explicações ou comentários.`
       criticalErrors.push("Estrutura: Letra não tem refrão identificado")
     }
 
-    const isValid = criticalErrors.length === 0 && syllableViolations === 0
+    const isValid = criticalErrors.length === 0 && syllableViolations === 0 && verseIntegrity >= 80 && hasNarrative
 
     console.log(`[MetaComposer] 📊 Resultado da validação:`)
     console.log(`  - Válida: ${isValid ? "✅ SIM" : "❌ NÃO"}`)
@@ -939,7 +959,7 @@ Retorne APENAS a letra completa, sem explicações ou comentários.`
 
       const syllables = countPoeticSyllables(trimmed)
 
-      // CORREÇÃO 1: Versos com mais de 12 sílabas
+      // CORREÇÃO 1: Versos com mais de 11 sílabas
       if (syllables > this.ABSOLUTE_MAX_SYLLABLES) {
         console.log(`[Emergency] Cortando verso longo: "${trimmed}" (${syllables}s)`)
 
