@@ -1,12 +1,17 @@
 /**
- * META-COMPOSITOR TURBO DEFINITIVO
- * Sistema completo com rimas ricas por gênero
- * Metas: MPB 60%, Sertanejo 50% rimas ricas
+ * META-COMPOSITOR TURBO DEFINITIVO COM TERCEIRA VIA
+ * Sistema completo com análise inteligente e correções avançadas
  */
 
 import { generateText } from "ai"
 import { countPoeticSyllables } from "@/lib/validation/syllable-counter"
 import { SyllableEnforcer } from "@/lib/validation/syllableEnforcer"
+import { 
+  TerceiraViaAnalysis, 
+  analisarTerceiraVia, 
+  applyTerceiraViaToLine,
+  analisarMelodiaRitmo 
+} from "@/lib/terceira-via"
 
 export interface CompositionRequest {
   genre: string
@@ -21,6 +26,11 @@ export interface CompositionRequest {
   }
   applyFinalPolish?: boolean
   preservedChoruses?: string[]
+  // ✅ NOVOS PARÂMETROS PARA REWRITE
+  originalLyrics?: string
+  rhythm?: string
+  structureAnalysis?: any
+  performanceMode?: 'standard' | 'performance'
 }
 
 export interface CompositionResult {
@@ -33,26 +43,35 @@ export interface CompositionResult {
     preservedChorusesUsed?: boolean
     rhymeScore?: number
     rhymeTarget?: number
+    structureImproved?: boolean
+    // ✅ NOVO: Análise completa da Terceira Via
+    terceiraViaAnalysis?: TerceiraViaAnalysis
+    melodicAnalysis?: any
+    performanceMode?: string
   }
 }
 
 export class MetaComposer {
-  private static readonly MAX_ITERATIONS = 2
+  private static readonly MAX_ITERATIONS = 3
 
   /**
-   * COMPOSIÇÃO TURBO DEFINITIVA - COM SISTEMA DE RIMAS
+   * COMPOSIÇÃO TURBO COM SISTEMA TERCEIRA VIA INTEGRADO
    */
   static async compose(request: CompositionRequest): Promise<CompositionResult> {
-    console.log("[MetaComposer-TURBO] Iniciando composição com sistema de rimas...")
+    console.log("[MetaComposer-TURBO] Iniciando composição com Terceira Via...")
 
     let iterations = 0
     let bestResult: CompositionResult | null = null
     let bestScore = 0
+    let terceiraViaAnalysis: TerceiraViaAnalysis | null = null
+    let melodicAnalysis: any = null
 
     const syllableEnforcement = request.syllableTarget || this.getGenreSyllableConfig(request.genre)
     const applyFinalPolish = request.applyFinalPolish ?? true
     const preservedChoruses = request.preservedChoruses || []
     const hasPreservedChoruses = preservedChoruses.length > 0
+    const isRewrite = !!request.originalLyrics
+    const performanceMode = request.performanceMode || 'standard'
 
     while (iterations < this.MAX_ITERATIONS) {
       iterations++
@@ -60,29 +79,66 @@ export class MetaComposer {
 
       let rawLyrics: string
 
-      if (hasPreservedChoruses && iterations === 1) {
+      if (isRewrite) {
+        rawLyrics = await this.generateRewrite(request)
+      } else if (hasPreservedChoruses && iterations === 1) {
         rawLyrics = await this.generateWithPreservedChoruses(preservedChoruses, request, syllableEnforcement)
       } else {
         rawLyrics = await this.generateDirectLyrics(request, syllableEnforcement)
       }
 
-      // ✅ CORREÇÃO DE SÍLABAS
-      const enforcedResult = await SyllableEnforcer.enforceSyllableLimits(rawLyrics, syllableEnforcement, request.genre)
-      console.log(`[MetaComposer-TURBO] Correções de sílabas: ${enforcedResult.corrections} linhas`)
+      // ✅ ETAPA 1: ANÁLISE TERCEIRA VIA
+      console.log('[MetaComposer-TURBO] 🔍 Aplicando análise Terceira Via...')
+      terceiraViaAnalysis = analisarTerceiraVia(rawLyrics, request.genre, request.theme)
+      melodicAnalysis = analisarMelodiaRitmo(rawLyrics, request.genre)
+      
+      console.log(`[MetaComposer-TURBO] 📊 Score Terceira Via: ${terceiraViaAnalysis.score_geral}/100`)
+      console.log(`[MetaComposer-TURBO] 🎵 Score Melódico: ${melodicAnalysis.flow_score}/100`)
+      
+      // ✅ ETAPA 2: CORREÇÕES INTELIGENTES BASEADAS NA ANÁLISE
+      if (terceiraViaAnalysis.score_geral < 75 && iterations < this.MAX_ITERATIONS - 1) {
+        console.log('[MetaComposer-TURBO] 🎯 Aplicando correções Terceira Via...')
+        rawLyrics = await this.applyTerceiraViaCorrections(rawLyrics, request, terceiraViaAnalysis)
+        
+        // ✅ RE-ANALISA APÓS CORREÇÕES
+        terceiraViaAnalysis = analisarTerceiraVia(rawLyrics, request.genre, request.theme)
+        console.log(`[MetaComposer-TURBO] 📊 Score após correções: ${terceiraViaAnalysis.score_geral}/100`)
+      }
+
+      // ✅ ETAPA 3: CORREÇÃO DE SÍLABAS
+      const enforcedResult = await SyllableEnforcer.enforceSyllableLimits(
+        rawLyrics, 
+        syllableEnforcement, 
+        request.genre
+      )
+      console.log(`[MetaComposer-TURBO] ✅ Correções de sílabas: ${enforcedResult.corrections} linhas`)
 
       let finalLyrics = enforcedResult.correctedLyrics
       let polishingApplied = false
 
-      // ✅ POLIMENTO FINAL COM SISTEMA DE RIMAS
+      // ✅ ETAPA 4: POLIMENTO FINAL COM TERCEIRA VIA
       if (applyFinalPolish && iterations === this.MAX_ITERATIONS) {
-        console.log('[MetaComposer-TURBO] Aplicando polimento universal com rimas...')
-        finalLyrics = await this.applyUniversalPolish(finalLyrics, request.genre, request.theme, syllableEnforcement)
+        console.log('[MetaComposer-TURBO] ✨ Aplicando polimento universal com Terceira Via...')
+        finalLyrics = await this.applyUniversalPolish(
+          finalLyrics, 
+          request.genre, 
+          request.theme, 
+          syllableEnforcement,
+          performanceMode
+        )
         polishingApplied = true
       }
 
-      // ✅ AVALIAÇÃO DE QUALIDADE COM RIMAS
-      const qualityScore = this.calculateQualityScore(finalLyrics, syllableEnforcement, request.genre)
-      console.log(`[MetaComposer-TURBO] Score: ${qualityScore.toFixed(2)}`)
+      // ✅ ETAPA 5: AVALIAÇÃO DE QUALIDADE INTEGRADA
+      const qualityScore = this.calculateQualityScore(
+        finalLyrics, 
+        syllableEnforcement, 
+        request.genre, 
+        terceiraViaAnalysis,
+        melodicAnalysis
+      )
+      
+      console.log(`[MetaComposer-TURBO] 🎯 Score final: ${qualityScore.toFixed(2)}`)
 
       if (qualityScore > bestScore) {
         bestScore = qualityScore
@@ -95,12 +151,25 @@ export class MetaComposer {
             polishingApplied,
             preservedChorusesUsed: hasPreservedChoruses,
             rhymeScore: this.analyzeRhymes(finalLyrics, request.genre).score,
-            rhymeTarget: this.getGenreRhymeTarget(request.genre).minScore
+            rhymeTarget: this.getGenreRhymeTarget(request.genre).minScore,
+            structureImproved: isRewrite,
+            // ✅ INCLUI ANÁLISES COMPLETAS
+            terceiraViaAnalysis: terceiraViaAnalysis,
+            melodicAnalysis: melodicAnalysis,
+            performanceMode: performanceMode
           },
         }
       }
 
-      if (qualityScore >= 0.7) break
+      // ✅ CRITÉRIO DE PARADA INTELIGENTE
+      const shouldStop = qualityScore >= 0.8 && 
+                        terceiraViaAnalysis.score_geral >= 75 && 
+                        melodicAnalysis.flow_score >= 70
+      
+      if (shouldStop) {
+        console.log('[MetaComposer-TURBO] 🎯 Critério de parada atingido!')
+        break
+      }
     }
 
     if (!bestResult) {
@@ -112,23 +181,127 @@ export class MetaComposer {
   }
 
   /**
-   * POLIMENTO UNIVERSAL COM SISTEMA DE RIMAS
+   * APLICA CORREÇÕES BASEADAS NA ANÁLISE TERCEIRA VIA
+   */
+  private static async applyTerceiraViaCorrections(
+    lyrics: string,
+    request: CompositionRequest,
+    analysis: TerceiraViaAnalysis
+  ): Promise<string> {
+    
+    const lines = lyrics.split('\n')
+    const correctedLines: string[] = []
+    let correctionsApplied = 0
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+      
+      // ✅ SÓ CORRIGE LINHAS QUE PRECISAM
+      if (this.needsTerceiraViaCorrection(line, analysis)) {
+        try {
+          const context = this.buildLineContext(lines, i, request.theme)
+          const correctedLine = await applyTerceiraViaToLine(
+            line, 
+            i, 
+            context, 
+            request.performanceMode === 'performance',
+            request.additionalRequirements,
+            request.genre // ✅ PASSA O GÊNERO PARA O THIRD WAY ENGINE
+          )
+          
+          if (correctedLine !== line) {
+            correctionsApplied++
+            console.log(`[TerceiraVia] 🔄 Linha ${i} corrigida: "${line}" → "${correctedLine}"`)
+          }
+          
+          correctedLines.push(correctedLine)
+          
+        } catch (error) {
+          console.warn(`[TerceiraVia] ❌ Erro na linha ${i}, mantendo original`)
+          correctedLines.push(line)
+        }
+      } else {
+        correctedLines.push(line)
+      }
+    }
+
+    console.log(`[MetaComposer-TURBO] ✅ ${correctionsApplied} correções Terceira Via aplicadas`)
+    return correctedLines.join('\n')
+  }
+
+  /**
+   * VERIFICA SE UMA LINHA PRECISA DE CORREÇÃO TERCEIRA VIA
+   */
+  private static needsTerceiraViaCorrection(line: string, analysis: TerceiraViaAnalysis): boolean {
+    if (!line.trim() || line.startsWith('[') || line.startsWith('(') || line.includes('Instruments:')) {
+      return false
+    }
+
+    // ✅ CLICHÊS IDENTIFICADOS NA ANÁLISE
+    const detectedCliches = analysis.pontos_fracos.filter(p => p.includes('Clichê detectado'))
+    if (detectedCliches.some(cliche => {
+      const clicheText = cliche.replace('Clichê detectado: "', '').replace('"', '')
+      return line.toLowerCase().includes(clicheText.toLowerCase())
+    })) {
+      return true
+    }
+
+    // ✅ LINHAS MUITO GENÉRICAS
+    const genericPhrases = [
+      'meu coração', 'minha vida', 'sem você', 'é tudo', 'não sei', 
+      'muito mais', 'pra sempre', 'nunca mais', 'tão grande', 'muito',
+      'muito tempo', 'toda hora', 'sempre assim', 'nunca vou'
+    ]
+    
+    const words = line.toLowerCase().split(/\s+/)
+    const genericWordCount = words.filter(word => genericPhrases.includes(word)).length
+    
+    return genericWordCount >= 2 || (line.length < 20 && line.split(' ').length < 4)
+  }
+
+  /**
+   * CONSTRÓI CONTEXTO PARA CORREÇÃO DE LINHA
+   */
+  private static buildLineContext(lines: string[], currentIndex: number, theme: string): string {
+    const contextLines = []
+    
+    // Pega 2 linhas antes (se existirem)
+    for (let i = Math.max(0, currentIndex - 2); i < currentIndex; i++) {
+      if (lines[i].trim() && !lines[i].startsWith('[') && !lines[i].startsWith('(')) {
+        contextLines.push(lines[i])
+      }
+    }
+    
+    // Pega 1 linha depois (se existir)
+    if (currentIndex + 1 < lines.length && 
+        lines[currentIndex + 1].trim() && 
+        !lines[currentIndex + 1].startsWith('[') && 
+        !lines[currentIndex + 1].startsWith('(')) {
+      contextLines.push(lines[currentIndex + 1])
+    }
+    
+    return `Tema: ${theme}. Contexto: ${contextLines.join(' | ')}`
+  }
+
+  /**
+   * POLIMENTO UNIVERSAL COM TERCEIRA VIA
    */
   private static async applyUniversalPolish(
     lyrics: string, 
     genre: string,
     theme: string,
-    syllableTarget: { min: number; max: number; ideal: number }
+    syllableTarget: { min: number; max: number; ideal: number },
+    performanceMode: string = 'standard'
   ): Promise<string> {
     
-    console.log(`[MetaComposer-TURBO] Polimento universal para: ${genre}`)
+    console.log(`[MetaComposer-TURBO] ✨ Polimento universal para: ${genre} (${performanceMode})`)
     
     let polishedLyrics = lyrics
     
-    // ✅ ETAPA 1: CORREÇÃO DE RIMAS
+    // ✅ ETAPA 1: CORREÇÃO DE RIMAS COM TERCEIRA VIA
     polishedLyrics = await this.applyRhymeEnhancement(polishedLyrics, genre, theme)
     
-    // ✅ ETAPA 2: CORREÇÃO DE SÍLABAS
+    // ✅ ETAPA 2: CORREÇÃO DE SÍLABAS INTELIGENTE
     const lines = polishedLyrics.split('\n')
     const finalLines: string[] = []
     
@@ -155,11 +328,18 @@ export class MetaComposer {
       }
     }
     
-    return finalLines.join('\n')
+    polishedLyrics = finalLines.join('\n')
+
+    // ✅ ETAPA 3: FORMATAÇÃO PERFORMÁTICA
+    if (performanceMode === 'performance') {
+      polishedLyrics = this.applyPerformanceFormatting(polishedLyrics, genre)
+    }
+    
+    return polishedLyrics
   }
 
   /**
-   * SISTEMA DE APRIMORAMENTO DE RIMAS
+   * APLICA MELHORIA DE RIMAS COM TERCEIRA VIA
    */
   private static async applyRhymeEnhancement(
     lyrics: string, 
@@ -228,6 +408,87 @@ export class MetaComposer {
   }
 
   /**
+   * FORMATAÇÃO PERFORMÁTICA
+   */
+  private static applyPerformanceFormatting(lyrics: string, genre: string): string {
+    let formatted = lyrics
+    
+    // ✅ CORREGE TAGS PARA INGLÊS
+    formatted = formatted
+      .replace(/\[INTRO\]/gi, '[INTRO]')
+      .replace(/\[VERSO\]/gi, '[VERSE]')
+      .replace(/\[REFRÃO\]/gi, '[CHORUS]')
+      .replace(/\[PONTE\]/gi, '[BRIDGE]')
+      .replace(/\[FINAL\]/gi, '[OUTRO]')
+
+    // ✅ GARANTE INSTRUMENTOS EM INGLÊS
+    if (!formatted.includes("(Instruments:")) {
+      const instruments = this.getGenreInstruments(genre)
+      formatted += `\n\n(Instruments: ${instruments})`
+    }
+    
+    return formatted
+  }
+
+  /**
+   * CALCULA SCORE DE QUALIDADE INTEGRADO
+   */
+  private static calculateQualityScore(
+    lyrics: string, 
+    syllableTarget: { min: number; max: number; ideal: number },
+    genre: string,
+    terceiraViaAnalysis: TerceiraViaAnalysis,
+    melodicAnalysis: any
+  ): number {
+    
+    const lines = lyrics.split('\n').filter(line => 
+      line.trim() && !line.startsWith('[') && !line.startsWith('(') && !line.includes('Instruments:')
+    )
+
+    if (lines.length === 0) return 0
+
+    // ✅ SCORE DE SÍLABAS (25%)
+    let correctSyllables = 0
+    let totalSyllables = 0
+    
+    lines.forEach(line => {
+      const syllables = countPoeticSyllables(line)
+      totalSyllables += syllables
+      if (syllables >= syllableTarget.min && syllables <= syllableTarget.max) {
+        correctSyllables++
+      }
+    })
+
+    const syllableScore = correctSyllables / lines.length
+    const averageSyllables = totalSyllables / lines.length
+    const idealBonus = 1 - Math.abs(averageSyllables - syllableTarget.ideal) / 10
+
+    // ✅ SCORE DE RIMAS (20%)
+    const rhymeAnalysis = this.analyzeRhymes(lyrics, genre)
+    const rhymeTarget = this.getGenreRhymeTarget(genre)
+    const rhymeScore = rhymeAnalysis.score >= rhymeTarget.minScore ? 1.0 : rhymeAnalysis.score / rhymeTarget.minScore
+
+    // ✅ SCORE TERCEIRA VIA (35%)
+    const terceiraViaScore = terceiraViaAnalysis.score_geral / 100
+
+    // ✅ SCORE MELÓDICO (20%)
+    const melodicScore = melodicAnalysis.flow_score / 100
+
+    // ✅ SCORE FINAL COM PONDERAÇÃO
+    const finalScore = (
+      syllableScore * 0.25 + 
+      idealBonus * 0.05 + 
+      rhymeScore * 0.20 + 
+      terceiraViaScore * 0.35 + 
+      melodicScore * 0.20
+    )
+    
+    return Math.min(1, Math.max(0, finalScore))
+  }
+
+  // ✅ MÉTODOS EXISTENTES (mantidos para compatibilidade)
+
+  /**
    * ANALISA RIMAS DA LETRA
    */
   private static analyzeRhymes(lyrics: string, genre: string): { score: number; richRhymes: number; totalPairs: number } {
@@ -259,8 +520,13 @@ export class MetaComposer {
    * ANALISA TIPO DE RIMA ENTRE DUAS LINHAS
    */
   private static analyzeRhymeType(line1: string, line2: string): string {
-    const word1 = this.getLastWord(line1)
-    const word2 = this.getLastWord(line2)
+    const getLastWord = (line: string) => {
+      const words = line.trim().split(/\s+/)
+      return words[words.length - 1]?.toLowerCase().replace(/[^\wáàâãéèêíìîóòôõúùûç]/gi, "") || ""
+    }
+
+    const word1 = getLastWord(line1)
+    const word2 = getLastWord(line2)
     
     if (!word1 || !word2) return 'none'
     
@@ -321,7 +587,7 @@ LINHA2_CORRIGIDA`
   }
 
   /**
-   * METAS DE RIMA POR GÊNERO - SEU OBJETIVO PRINCIPAL!
+   * METAS DE RIMA POR GÊNERO
    */
   private static getGenreRhymeTarget(genre: string): { minScore: number; preferredTypes: string[] } {
     const genreLower = genre.toLowerCase()
@@ -378,51 +644,6 @@ LINHA2_CORRIGIDA`
 
     return configs[genre] || { min: 7, max: 11, ideal: 9 }
   }
-
-  /**
-   * CALCULA SCORE DE QUALIDADE COM RIMAS
-   */
-  private static calculateQualityScore(
-    lyrics: string, 
-    syllableTarget: { min: number; max: number; ideal: number },
-    genre: string
-  ): number {
-    
-    const lines = lyrics.split('\n').filter(line => 
-      line.trim() && !line.startsWith('[') && !line.startsWith('(') && !line.includes('Instruments:')
-    )
-
-    if (lines.length === 0) return 0
-
-    // ✅ SCORE DE SÍLABAS (70%)
-    let correctSyllables = 0
-    let totalSyllables = 0
-    
-    lines.forEach(line => {
-      const syllables = countPoeticSyllables(line)
-      totalSyllables += syllables
-      if (syllables >= syllableTarget.min && syllables <= syllableTarget.max) {
-        correctSyllables++
-      }
-    })
-
-    const syllableScore = correctSyllables / lines.length
-    const averageSyllables = totalSyllables / lines.length
-    const idealBonus = 1 - Math.abs(averageSyllables - syllableTarget.ideal) / 10
-
-    // ✅ SCORE DE RIMAS (30%)
-    const rhymeAnalysis = this.analyzeRhymes(lyrics, genre)
-    const rhymeTarget = this.getGenreRhymeTarget(genre)
-    const rhymeScore = rhymeAnalysis.score >= rhymeTarget.minScore ? 1.0 : rhymeAnalysis.score / rhymeTarget.minScore
-
-    // ✅ SCORE FINAL
-    const finalScore = (syllableScore * 0.6) + (idealBonus * 0.1) + (rhymeScore * 0.3)
-    
-    return Math.min(1, Math.max(0, finalScore))
-  }
-
-  // ... (os outros métodos permanecem iguais: generateDirectLyrics, generateWithPreservedChoruses, quickLineFix, extractTitle)
-  // Mantenha a implementação existente desses métodos
 
   /**
    * GERAÇÃO DIRETA DE LETRAS
@@ -486,6 +707,43 @@ RETORNE APENAS A LETRA:`
   }
 
   /**
+   * GERAÇÃO DE REWRITE
+   */
+  private static async generateRewrite(request: CompositionRequest): Promise<string> {
+    const structureInfo = request.structureAnalysis ? 
+      `ESTRUTURA ORIGINAL: ${request.structureAnalysis.sections?.length || 0} seções` : 
+      ''
+
+    const prompt = `REWRITE MUSICAL - ${request.genre.toUpperCase()}
+
+LETRA ORIGINAL:
+${request.originalLyrics}
+
+${structureInfo}
+GÊNERO: ${request.genre}
+TEMA: ${request.theme}
+HUMOR: ${request.mood}
+${request.additionalRequirements ? `REQUISITOS: ${request.additionalRequirements}` : ''}
+${request.preservedChoruses?.length ? `REFRÃOS PRESERVADOS:\n${request.preservedChoruses.join('\n')}` : ''}
+
+🎯 REGRAS DE REWRITE:
+- PRESERVE a estrutura original (seções, ordem, tags)
+- CORRIJA apenas versos com problemas de métrica
+- USE linguagem coloquial brasileira
+- MANTENHA a essência emocional
+
+Gere a letra REEscrita MANTENDO A ESTRUTURA ORIGINAL:`
+
+    const { text } = await generateText({
+      model: "openai/gpt-4o",
+      prompt,
+      temperature: 0.7
+    })
+
+    return text.trim()
+  }
+
+  /**
    * CORREÇÃO RÁPIDA DE LINHA
    */
   private static async quickLineFix(
@@ -530,11 +788,24 @@ LINHA CORRIGIDA:`
   }
 
   /**
-   * EXTRAI ÚLTIMA PALAVRA
+   * INSTRUMENTOS POR GÊNERO
    */
-  private static getLastWord(line: string): string {
-    const words = line.trim().split(/\s+/)
-    const lastWord = words[words.length - 1]?.replace(/[.,!?;:]$/g, '') || ''
-    return lastWord.toLowerCase()
+  private static getGenreInstruments(genre: string): string {
+    const instruments: { [key: string]: string } = {
+      "Sertanejo": "acoustic guitar, viola, bass, drums, accordion",
+      "Sertanejo Moderno": "acoustic guitar, electric guitar, synth, bass, drums, accordion",
+      "MPB": "nylon guitar, piano, bass, light percussion",
+      "Bossa Nova": "nylon guitar, piano, bass, drums, light percussion",
+      "Funk": "drum machine, synth bass, samples, electronic beats",
+      "Pagode": "cavaquinho, pandeiro, tantan, surdo, banjo",
+      "Samba": "cavaquinho, pandeiro, surdo, tamborim, cuíca",
+      "Forró": "accordion, triangle, zabumba, bass",
+      "Axé": "electric guitar, synth, drums, percussion, brass",
+      "Rock": "electric guitar, bass, drums, keyboard",
+      "Pop": "synth, drum machine, bass, piano, electronic elements",
+      "Gospel": "piano, organ, bass, drums, backing vocals"
+    }
+    
+    return instruments[genre] || "guitar, bass, drums, keyboard"
   }
 }
