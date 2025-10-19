@@ -30,41 +30,41 @@ import { SyllableValidator } from "@/components/syllable-validator"
 
 const BRAZILIAN_GENRE_METRICS = {
   "Sertanejo Moderno": { syllablesPerLine: 6, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
-  "Sertanejo": { syllablesPerLine: 7, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
+  Sertanejo: { syllablesPerLine: 7, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
   "Sertanejo Universitário": { syllablesPerLine: 6, bpm: 95, structure: "VERSO-REFRAO" },
   "Sertanejo Sofrência": { syllablesPerLine: 8, bpm: 75, structure: "VERSO-REFRAO-PONTE" },
   "Sertanejo Raiz": { syllablesPerLine: 10, bpm: 80, structure: "VERSO-REFRAO" },
-  "Pagode": { syllablesPerLine: 7, bpm: 100, structure: "VERSO-REFRAO" },
-  "Samba": { syllablesPerLine: 7, bpm: 105, structure: "VERSO-REFRAO-PONTE" },
-  "Forró": { syllablesPerLine: 8, bpm: 120, structure: "VERSO-REFRAO" },
-  "Axé": { syllablesPerLine: 6, bpm: 130, structure: "VERSO-REFRAO" },
-  "MPB": { syllablesPerLine: 9, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
+  Pagode: { syllablesPerLine: 7, bpm: 100, structure: "VERSO-REFRAO" },
+  Samba: { syllablesPerLine: 7, bpm: 105, structure: "VERSO-REFRAO-PONTE" },
+  Forró: { syllablesPerLine: 8, bpm: 120, structure: "VERSO-REFRAO" },
+  Axé: { syllablesPerLine: 6, bpm: 130, structure: "VERSO-REFRAO" },
+  MPB: { syllablesPerLine: 9, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
   "Bossa Nova": { syllablesPerLine: 8, bpm: 70, structure: "VERSO-REFRAO" },
-  "Rock": { syllablesPerLine: 8, bpm: 115, structure: "VERSO-REFRAO-SOLO" },
-  "Pop": { syllablesPerLine: 7, bpm: 110, structure: "VERSO-REFRAO-PONTE" },
-  "Funk": { syllablesPerLine: 6, bpm: 125, structure: "REFRAO-VERSO" },
-  "Gospel": { syllablesPerLine: 8, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
-  "default": { syllablesPerLine: 8, bpm: 100, structure: "VERSO-REFRAO" },
+  Rock: { syllablesPerLine: 8, bpm: 115, structure: "VERSO-REFRAO-SOLO" },
+  Pop: { syllablesPerLine: 7, bpm: 110, structure: "VERSO-REFRAO-PONTE" },
+  Funk: { syllablesPerLine: 6, bpm: 125, structure: "REFRAO-VERSO" },
+  Gospel: { syllablesPerLine: 8, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
+  default: { syllablesPerLine: 8, bpm: 100, structure: "VERSO-REFRAO" },
 } as const
 
 // ✅ CONFIGURAÇÃO UNIVERSAL DE QUALIDADE POR GÊNERO
 const GENRE_QUALITY_CONFIG = {
-  "Sertanejo": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
+  Sertanejo: { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
   "Sertanejo Moderno": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
   "Sertanejo Universitário": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
   "Sertanejo Sofrência": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
   "Sertanejo Raiz": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
-  "MPB": { min: 7, max: 12, ideal: 9, rhymeQuality: 0.6 },
+  MPB: { min: 7, max: 12, ideal: 9, rhymeQuality: 0.6 },
   "Bossa Nova": { min: 7, max: 12, ideal: 9, rhymeQuality: 0.6 },
-  "Funk": { min: 6, max: 10, ideal: 8, rhymeQuality: 0.3 },
-  "Pagode": { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
-  "Samba": { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
-  "Forró": { min: 8, max: 11, ideal: 9, rhymeQuality: 0.4 },
-  "Axé": { min: 6, max: 10, ideal: 8, rhymeQuality: 0.3 },
-  "Rock": { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
-  "Pop": { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
-  "Gospel": { min: 8, max: 11, ideal: 9, rhymeQuality: 0.5 },
-  "default": { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 }
+  Funk: { min: 6, max: 10, ideal: 8, rhymeQuality: 0.3 },
+  Pagode: { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
+  Samba: { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
+  Forró: { min: 8, max: 11, ideal: 9, rhymeQuality: 0.4 },
+  Axé: { min: 6, max: 10, ideal: 8, rhymeQuality: 0.3 },
+  Rock: { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
+  Pop: { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
+  Gospel: { min: 8, max: 11, ideal: 9, rhymeQuality: 0.5 },
+  default: { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
 }
 
 const GENRES = ["Pop", "Sertanejo Moderno", "Sertanejo Universitário", "MPB", "Rock", "Funk", "Pagode", "Forró"]
@@ -110,11 +110,12 @@ export default function CriarPage() {
 
   // ✅ OBTER CONFIGURAÇÃO DE SÍLABAS POR GÊNERO
   const getSyllableConfig = (selectedGenre: string) => {
-    const config = GENRE_QUALITY_CONFIG[selectedGenre as keyof typeof GENRE_QUALITY_CONFIG] || GENRE_QUALITY_CONFIG.default
+    const config =
+      GENRE_QUALITY_CONFIG[selectedGenre as keyof typeof GENRE_QUALITY_CONFIG] || GENRE_QUALITY_CONFIG.default
     return {
       min: config.min,
       max: config.max,
-      ideal: config.ideal
+      ideal: config.ideal,
     }
   }
 
@@ -166,16 +167,15 @@ export default function CriarPage() {
       if (data.titulo && !title) {
         setTitle(data.titulo)
       }
-      
+
       // ✅ FEEDBACK DO SISTEMA UNIVERSAL
       if (data.metadata?.universalPolish) {
         toast.success("🎵 Letra gerada com Sistema Universal de Qualidade!", {
-          description: `Polimento específico para ${genre} aplicado com sucesso`
+          description: `Polimento específico para ${genre} aplicado com sucesso`,
         })
       } else {
         toast.success("Letra gerada com sucesso!")
       }
-      
     } catch (error) {
       console.error("[v0] Error generating lyrics:", error)
       toast.error(error instanceof Error ? error.message : "Erro ao gerar letra")
@@ -348,16 +348,19 @@ export default function CriarPage() {
               <div className="space-y-2">
                 <Label className="text-xs">Gênero</Label>
                 <GenreSelect value={genre} onValueChange={setGenre} className="h-9" />
-                
+
                 {/* ✅ EXIBIR CONFIGURAÇÃO DO GÊNERO SELECIONADO */}
                 {currentSyllableConfig && (
                   <div className="bg-blue-50 border border-blue-200 rounded p-2 text-xs">
                     <div className="font-semibold text-blue-800">Configuração {genre}:</div>
                     <div className="text-blue-700">
-                      Sílabas: {currentSyllableConfig.min}-{currentSyllableConfig.max} (ideal: {currentSyllableConfig.ideal})
+                      Sílabas: {currentSyllableConfig.min}-{currentSyllableConfig.max} (ideal:{" "}
+                      {currentSyllableConfig.ideal})
                     </div>
                     <div className="text-blue-700">
-                      Rimas: {(GENRE_QUALITY_CONFIG[genre as keyof typeof GENRE_QUALITY_CONFIG]?.rhymeQuality * 100 || 40)}% mínimas
+                      Rimas:{" "}
+                      {GENRE_QUALITY_CONFIG[genre as keyof typeof GENRE_QUALITY_CONFIG]?.rhymeQuality * 100 || 40}%
+                      mínimas
                     </div>
                   </div>
                 )}
@@ -478,11 +481,11 @@ export default function CriarPage() {
                   </div>
                   <Slider value={creativity} onValueChange={setCreativity} max={100} step={1} />
                   <p className="text-xs text-muted-foreground mt-1">
-                    {creativity[0] < 33 
-                      ? "Tradicional e previsível" 
-                      : creativity[0] < 66 
-                      ? "Equilíbrio entre tradição e originalidade" 
-                      : "Originalidade e inovação máxima"}
+                    {creativity[0] < 33
+                      ? "Tradicional e previsível"
+                      : creativity[0] < 66
+                        ? "Equilíbrio entre tradição e originalidade"
+                        : "Originalidade e inovação máxima"}
                   </p>
                 </div>
 
@@ -688,7 +691,7 @@ export default function CriarPage() {
                     </>
                   )}
                 </Button>
-                
+
                 {/* ✅ STATUS DO SISTEMA UNIVERSAL */}
                 {universalPolish && genre && (
                   <div className="bg-green-50 border border-green-200 rounded p-2 text-xs text-green-700">
@@ -732,24 +735,24 @@ export default function CriarPage() {
                     rows={12}
                     className="font-mono text-xs"
                   />
-                  
+
                   {/* ✅ VALIDADOR DE SÍLABAS - CORRIGIDO (sem minSyllables) */}
                   <SyllableValidator
                     lyrics={lyrics}
-                    maxSyllables={currentSyllableConfig?.max || 11}
+                    maxSyllables={currentSyllableConfig?.max || 12}
                     onValidate={(result) => {
                       if (!result.valid) {
                         console.log(`⚠️ ${result.linesWithIssues} versos com problemas:`)
                         result.violations.forEach((v) => {
                           console.log(`  Linha ${v.line}: "${v.text}" → ${v.syllables} sílabas`)
                         })
-                        
+
                         const minSyllables = currentSyllableConfig?.min || 7
-                        const maxSyllables = currentSyllableConfig?.max || 11
-                        
+                        const maxSyllables = currentSyllableConfig?.max || 12
+
                         toast.warning(`${result.linesWithIssues} versos fora do padrão ${genre}`, {
                           description: `Use ${minSyllables}-${maxSyllables} sílabas`,
-                          duration: 5000
+                          duration: 5000,
                         })
                       } else if (result.totalLines > 0) {
                         toast.success(`✓ Letra validada: ${result.totalLines} versos dentro do padrão ${genre}`)

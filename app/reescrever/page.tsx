@@ -28,21 +28,21 @@ import { HookGenerator } from "@/components/hook-generator"
 
 const BRAZILIAN_GENRE_METRICS = {
   "Sertanejo Moderno": { syllablesPerLine: 6, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
-  "Sertanejo": { syllablesPerLine: 7, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
+  Sertanejo: { syllablesPerLine: 7, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
   "Sertanejo Universitário": { syllablesPerLine: 6, bpm: 95, structure: "VERSO-REFRAO" },
   "Sertanejo Sofrência": { syllablesPerLine: 8, bpm: 75, structure: "VERSO-REFRAO-PONTE" },
   "Sertanejo Raiz": { syllablesPerLine: 10, bpm: 80, structure: "VERSO-REFRAO" },
-  "Pagode": { syllablesPerLine: 7, bpm: 100, structure: "VERSO-REFRAO" },
-  "Samba": { syllablesPerLine: 7, bpm: 105, structure: "VERSO-REFRAO-PONTE" },
-  "Forró": { syllablesPerLine: 8, bpm: 120, structure: "VERSO-REFRAO" },
-  "Axé": { syllablesPerLine: 6, bpm: 130, structure: "VERSO-REFRAO" },
-  "MPB": { syllablesPerLine: 9, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
+  Pagode: { syllablesPerLine: 7, bpm: 100, structure: "VERSO-REFRAO" },
+  Samba: { syllablesPerLine: 7, bpm: 105, structure: "VERSO-REFRAO-PONTE" },
+  Forró: { syllablesPerLine: 8, bpm: 120, structure: "VERSO-REFRAO" },
+  Axé: { syllablesPerLine: 6, bpm: 130, structure: "VERSO-REFRAO" },
+  MPB: { syllablesPerLine: 9, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
   "Bossa Nova": { syllablesPerLine: 8, bpm: 70, structure: "VERSO-REFRAO" },
-  "Rock": { syllablesPerLine: 8, bpm: 115, structure: "VERSO-REFRAO-SOLO" },
-  "Pop": { syllablesPerLine: 7, bpm: 110, structure: "VERSO-REFRAO-PONTE" },
-  "Funk": { syllablesPerLine: 6, bpm: 125, structure: "REFRAO-VERSO" },
-  "Gospel": { syllablesPerLine: 8, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
-  "default": { syllablesPerLine: 8, bpm: 100, structure: "VERSO-REFRAO" },
+  Rock: { syllablesPerLine: 8, bpm: 115, structure: "VERSO-REFRAO-SOLO" },
+  Pop: { syllablesPerLine: 7, bpm: 110, structure: "VERSO-REFRAO-PONTE" },
+  Funk: { syllablesPerLine: 6, bpm: 125, structure: "REFRAO-VERSO" },
+  Gospel: { syllablesPerLine: 8, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
+  default: { syllablesPerLine: 8, bpm: 100, structure: "VERSO-REFRAO" },
 } as const
 
 type ChorusVariation = {
@@ -86,13 +86,11 @@ export default function ReescreverPage() {
 
   // ✅ DEBUG: Monitorar estado do gênero
   useEffect(() => {
-    console.log('🎵 Genre state updated:', genre)
+    console.log("🎵 Genre state updated:", genre)
   }, [genre])
 
   const toggleEmotion = (emotion: string) => {
-    setSelectedEmotions((prev) => 
-      prev.includes(emotion) ? prev.filter((e) => e !== emotion) : [...prev, emotion]
-    )
+    setSelectedEmotions((prev) => (prev.includes(emotion) ? prev.filter((e) => e !== emotion) : [...prev, emotion]))
   }
 
   const handleGenerateChorus = async () => {
@@ -191,14 +189,14 @@ export default function ReescreverPage() {
 
   // ✅ FUNÇÃO CORRIGIDA DE REWRITE
   const handleRewriteLyrics = async () => {
-    console.log('=== 🚀 INICIANDO REWRITE DEBUG ===')
-    console.log('1. originalLyrics:', originalLyrics?.substring(0, 50) + '...')
-    console.log('2. genre:', genre)
-    console.log('3. genre type:', typeof genre)
-    console.log('4. genre length:', genre?.length)
-    console.log('5. theme:', theme)
-    console.log('6. mood:', mood)
-    console.log('=== FIM DEBUG ===')
+    console.log("=== 🚀 INICIANDO REWRITE DEBUG ===")
+    console.log("1. originalLyrics:", originalLyrics?.substring(0, 50) + "...")
+    console.log("2. genre:", genre)
+    console.log("3. genre type:", typeof genre)
+    console.log("4. genre length:", genre?.length)
+    console.log("5. theme:", theme)
+    console.log("6. mood:", mood)
+    console.log("=== FIM DEBUG ===")
 
     // ✅ VALIDAÇÃO ROBUSTA
     if (!originalLyrics?.trim()) {
@@ -206,12 +204,13 @@ export default function ReescreverPage() {
       return
     }
 
-    const isValidGenre = genre && 
-                         genre.trim() !== '' && 
-                         genre !== 'undefined' && 
-                         genre !== 'null' &&
-                         genre !== 'Selecione um gênero' &&
-                         genre.length > 0
+    const isValidGenre =
+      genre &&
+      genre.trim() !== "" &&
+      genre !== "undefined" &&
+      genre !== "null" &&
+      genre !== "Selecione um gênero" &&
+      genre.length > 0
 
     if (!isValidGenre) {
       toast.error("Por favor, selecione um gênero válido")
@@ -223,7 +222,7 @@ export default function ReescreverPage() {
     try {
       const syllableConfig = { min: 7, max: 11, ideal: 9 }
 
-      console.log('📤 Enviando para API - Genre:', genre)
+      console.log("📤 Enviando para API - Genre:", genre)
 
       // ✅ PREPARA O CORPO DA REQUISIÇÃO
       const requestBody = {
@@ -237,37 +236,39 @@ export default function ReescreverPage() {
         advancedMode: advancedMode,
         universalPolish: true,
         syllableTarget: syllableConfig,
-        metrics: BRAZILIAN_GENRE_METRICS[genre as keyof typeof BRAZILIAN_GENRE_METRICS] || BRAZILIAN_GENRE_METRICS.default,
+        metrics:
+          BRAZILIAN_GENRE_METRICS[genre as keyof typeof BRAZILIAN_GENRE_METRICS] || BRAZILIAN_GENRE_METRICS.default,
         emocoes: selectedEmotions,
         inspiracao: inspirationText,
         metaforas: metaphorSearch,
-        titulo: title
+        titulo: title,
+        performanceMode: formattingStyle === "performatico" ? "performance" : "standard",
       }
 
-      console.log('📤 Request body preparado:', requestBody)
+      console.log("📤 Request body preparado:", requestBody)
 
       const response = await fetch("/api/rewrite-lyrics", {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(requestBody),
       })
 
-      console.log('📥 Status da resposta:', response.status)
-      console.log('📥 OK?', response.ok)
-      
+      console.log("📥 Status da resposta:", response.status)
+      console.log("📥 OK?", response.ok)
+
       // ✅ LÊ A RESPOSTA COMO TEXTO PRIMEIRO
       const responseText = await response.text()
-      console.log('📥 Response text:', responseText)
+      console.log("📥 Response text:", responseText)
 
       let data
       try {
         data = JSON.parse(responseText)
-        console.log('✅ JSON parseado com sucesso:', data)
+        console.log("✅ JSON parseado com sucesso:", data)
       } catch (parseError) {
-        console.error('❌ ERRO PARSE JSON:', parseError)
-        console.log('📥 Texto original que falhou:', responseText)
+        console.error("❌ ERRO PARSE JSON:", parseError)
+        console.log("📥 Texto original que falhou:", responseText)
         toast.error("Resposta inválida da API")
         return
       }
@@ -285,11 +286,10 @@ export default function ReescreverPage() {
       if (data.titulo && !title) {
         setTitle(data.titulo)
       }
-      
+
       toast.success("Letra reescrita com sucesso!", {
-        description: `Modo: ${data.metadata?.rewriteMode || 'normal'}`
+        description: `Modo: ${data.metadata?.performanceMode || "padrão"} | Score: ${data.metadata?.score || "N/A"}`,
       })
-      
     } catch (error) {
       console.error("💥 ERRO COMPLETO no rewrite:", error)
       toast.error(error instanceof Error ? error.message : "Erro ao reescrever letra")
@@ -405,11 +405,7 @@ export default function ReescreverPage() {
               <div className="space-y-2">
                 <Label className="text-xs">Gênero para Reescrever</Label>
                 <GenreSelect value={genre} onValueChange={setGenre} className="h-9" />
-                {genre && (
-                  <div className="text-xs text-green-600 font-medium">
-                    ✅ Gênero selecionado: {genre}
-                  </div>
-                )}
+                {genre && <div className="text-xs text-green-600 font-medium">✅ Gênero selecionado: {genre}</div>}
               </div>
 
               <div className="space-y-2">
@@ -495,7 +491,8 @@ export default function ReescreverPage() {
                     Modo Avançado
                   </Label>
                   <p className="text-xs text-muted-foreground">
-                    Rimas perfeitas, métrica rigorosa de 7-11 sílabas, ganchos premium em PT-BR, linguagem limpa e fidelidade de estilo.
+                    Rimas perfeitas, métrica rigorosa de 7-11 sílabas, ganchos premium em PT-BR, linguagem limpa e
+                    fidelidade de estilo.
                   </p>
                 </div>
               </div>
@@ -738,7 +735,7 @@ export default function ReescreverPage() {
                     rows={12}
                     className="font-mono text-xs"
                   />
-                  
+
                   <SyllableValidator
                     lyrics={lyrics}
                     maxSyllables={11}
@@ -746,7 +743,7 @@ export default function ReescreverPage() {
                       if (!result.valid) {
                         toast.warning(`${result.linesWithIssues} versos com mais de 11 sílabas`, {
                           description: "Use o validador para ver detalhes",
-                          duration: 5000
+                          duration: 5000,
                         })
                       } else if (result.totalLines > 0) {
                         toast.success(`✓ Letra validada: ${result.totalLines} versos dentro do limite`)

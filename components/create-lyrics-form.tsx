@@ -2,11 +2,12 @@
 
 import { useState } from "react"
 import { Sparkles, Copy, Save, Loader2, AlertCircle } from "lucide-react"
+import { countPoeticSyllables } from "@/lib/validation/syllable-counter"
 
 interface GenreMetrics {
-  syllablesPerLine: number;
-  bpm: number;
-  structure: string;
+  syllablesPerLine: number
+  bpm: number
+  structure: string
 }
 
 const BRAZILIAN_GENRE_METRICS: Record<string, GenreMetrics> = {
@@ -29,39 +30,7 @@ const BRAZILIAN_GENRE_METRICS: Record<string, GenreMetrics> = {
 }
 
 function countPortugueseSyllables(word: string): number {
-  if (!word.trim()) return 0
-
-  const cleanWord = word
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zà-úâ-ûã-õä-üç]/g, "")
-
-  if (cleanWord.length === 0) return 0
-
-  let syllableCount = 0
-  let i = 0
-
-  while (i < cleanWord.length) {
-    const currentChar = cleanWord[i]
-
-    if ("aeiouáéíóúâêîôûàèìòùãõ".includes(currentChar)) {
-      syllableCount++
-
-      if (i + 1 < cleanWord.length) {
-        const nextChar = cleanWord[i + 1]
-        if (
-          ("aeo".includes(currentChar) && "iu".includes(nextChar)) ||
-          ("iu".includes(currentChar) && "aeo".includes(nextChar))
-        ) {
-          i++
-        }
-      }
-    }
-    i++
-  }
-
-  return Math.max(1, syllableCount)
+  return countPoeticSyllables(word)
 }
 
 export function CreateLyricsForm() {
@@ -108,7 +77,7 @@ export function CreateLyricsForm() {
   }
 
   const showAlert = (title: string, description?: string) => {
-    alert(title + (description ? `\n\n${description}` : ''))
+    alert(title + (description ? `\n\n${description}` : ""))
   }
 
   const handleGerarLetra = async () => {
@@ -180,11 +149,16 @@ export function CreateLyricsForm() {
 
   // Classes CSS para estilização
   const cardClass = "bg-white rounded-lg border border-gray-200 shadow-sm p-6"
-  const inputClass = "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-  const textareaClass = "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[120px] resize-none"
-  const selectClass = "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-  const buttonClass = "w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 flex items-center justify-center gap-2"
-  const buttonOutlineClass = "w-full border border-gray-300 bg-white text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-center gap-2"
+  const inputClass =
+    "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+  const textareaClass =
+    "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[120px] resize-none"
+  const selectClass =
+    "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+  const buttonClass =
+    "w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 flex items-center justify-center gap-2"
+  const buttonOutlineClass =
+    "w-full border border-gray-300 bg-white text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-center gap-2"
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -198,12 +172,7 @@ export function CreateLyricsForm() {
             <label htmlFor="genero" className="block text-sm font-medium text-gray-700">
               Gênero Musical
             </label>
-            <select
-              id="genero"
-              value={genero}
-              onChange={(e) => setGenero(e.target.value)}
-              className={selectClass}
-            >
+            <select id="genero" value={genero} onChange={(e) => setGenero(e.target.value)} className={selectClass}>
               <option value="">Selecione o gênero</option>
               {Object.keys(BRAZILIAN_GENRE_METRICS)
                 .filter((g) => g !== "default")
@@ -238,12 +207,7 @@ export function CreateLyricsForm() {
             <label htmlFor="humor" className="block text-sm font-medium text-gray-700">
               Humor
             </label>
-            <select
-              id="humor"
-              value={humor}
-              onChange={(e) => setHumor(e.target.value)}
-              className={selectClass}
-            >
+            <select id="humor" value={humor} onChange={(e) => setHumor(e.target.value)} className={selectClass}>
               <option value="">Selecione o humor</option>
               <option value="feliz">Feliz</option>
               <option value="triste">Triste</option>
@@ -402,11 +366,7 @@ export function CreateLyricsForm() {
           )}
 
           <div className="flex flex-col gap-2">
-            <button
-              onClick={handleGerarLetra}
-              className={buttonClass}
-              disabled={isGenerating}
-            >
+            <button onClick={handleGerarLetra} className={buttonClass} disabled={isGenerating}>
               {isGenerating ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
