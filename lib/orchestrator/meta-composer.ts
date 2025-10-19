@@ -359,7 +359,6 @@ Retorne APENAS a letra reescrita, sem explicações.`
         model: "openai/gpt-4o",
         prompt: rewritePrompt,
         temperature: 0.7,
-        maxTokens: 2000,
       })
 
       return response.text || request.originalLyrics
@@ -395,7 +394,6 @@ Retorne APENAS a letra gerada, sem explicações.`
         model: "openai/gpt-4o",
         prompt: chorusPrompt,
         temperature: 0.7,
-        maxTokens: 2000,
       })
 
       return response.text || ""
@@ -438,7 +436,6 @@ Retorne APENAS a letra completa, sem explicações ou comentários.`
         model: "openai/gpt-4o",
         prompt: directPrompt,
         temperature: 0.8,
-        maxTokens: 2000,
       })
 
       return response.text || ""
