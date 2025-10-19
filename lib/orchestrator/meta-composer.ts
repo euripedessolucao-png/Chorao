@@ -398,23 +398,27 @@ export class MetaComposer {
     const syllableTarget = request.syllableTarget || this.getGenreSyllableConfig(request.genre)
 
     try {
-      const rewritePrompt = `Reescreva a seguinte letra mantendo a estrutura mas melhorando qualidade, rimas e fluidez.
+      const rewritePrompt = `Você é um compositor profissional de ${request.genre}. Reescreva a letra abaixo seguindo RIGOROSAMENTE estas regras:
 
-Gênero: ${request.genre}
+REGRAS OBRIGATÓRIAS:
+1. GRAMÁTICA PERFEITA - Cada verso deve ser uma frase completa e gramaticalmente correta
+2. NARRATIVA FLUÍDA - A história deve ter começo, meio e fim sem cortes abruptos
+3. SÍLABAS - Cada verso deve ter entre ${syllableTarget.min} e ${syllableTarget.max} sílabas poéticas (ideal: ${syllableTarget.ideal})
+4. RIMAS RICAS - 60% das rimas devem ser ricas (3+ sílabas iguais)
+5. LINGUAGEM - Simples, coloquial e autêntica para ${request.genre}
+6. COERÊNCIA - Cada verso deve conectar naturalmente com o anterior
+
 Tema: ${request.theme}
 Mood: ${request.mood}
-${request.additionalRequirements ? `Requisitos: ${request.additionalRequirements}` : ""}
-
-Sílabas por verso: ${syllableTarget.min}-${syllableTarget.max} (ideal: ${syllableTarget.ideal})
 
 Letra original:
 ${request.originalLyrics}
 
-Mantenha a mesma estrutura (número de versos, refrões, etc.) mas melhore:
-- Qualidade das rimas (60% rimas ricas)
-- Fluidez e naturalidade
-- Adequação ao gênero ${request.genre}
-- Contagem silábica adequada
+IMPORTANTE: 
+- Mantenha a mesma estrutura (número de versos, refrões)
+- NUNCA escreva versos incompletos como "Vou medo" ou "Você decote"
+- SEMPRE use verbos completos e frases com sentido
+- Conte uma história clara do início ao fim
 
 Retorne APENAS a letra reescrita, sem explicações.`
 
@@ -445,13 +449,25 @@ Retorne APENAS a letra reescrita, sem explicações.`
     const syllableTarget = request.syllableTarget || this.getGenreSyllableConfig(request.genre)
 
     try {
-      const chorusPrompt = `Gere uma letra para o gênero ${request.genre} com o tema ${request.theme} e o mood ${request.mood}.
-Preserve os seguintes refrões:
+      const chorusPrompt = `Você é um compositor profissional de ${request.genre}. Crie uma letra completa seguindo estas regras:
+
+REGRAS OBRIGATÓRIAS:
+1. GRAMÁTICA PERFEITA - Cada verso deve ser uma frase completa e gramaticalmente correta
+2. NARRATIVA FLUÍDA - Conte uma história com começo, meio e fim
+3. SÍLABAS - ${syllableTarget.min} a ${syllableTarget.max} sílabas poéticas por verso (ideal: ${syllableTarget.ideal})
+4. PRESERVE EXATAMENTE estes refrões:
 ${preservedChoruses.join("\n")}
 
-Sílabas por verso: ${syllableTarget.min}-${syllableTarget.max} (ideal: ${syllableTarget.ideal})
+Tema: ${request.theme}
+Mood: ${request.mood}
 
-Retorne APENAS a letra gerada, sem explicações ou comentários.`
+IMPORTANTE:
+- NUNCA escreva versos incompletos ou sem sentido
+- Use linguagem simples e coloquial
+- Conecte os versos naturalmente
+- 60% de rimas ricas
+
+Retorne APENAS a letra completa.`
 
       const response = await generateText({
         model: "openai/gpt-4o",
@@ -478,20 +494,35 @@ Retorne APENAS a letra gerada, sem explicações ou comentários.`
     const genreConfig = getGenreConfig(request.genre)
 
     try {
-      const directPrompt = `Gere uma letra completa para o gênero ${request.genre}.
+      const directPrompt = `Você é um compositor profissional de ${request.genre}. Crie uma letra completa seguindo RIGOROSAMENTE estas regras:
+
+REGRAS OBRIGATÓRIAS:
+1. GRAMÁTICA PERFEITA - Cada verso deve ser uma frase completa e gramaticalmente correta em português
+2. NARRATIVA FLUÍDA - Conte uma história clara com começo, meio e fim, sem cortes abruptos
+3. SÍLABAS - Cada verso deve ter entre ${syllableEnforcement.min} e ${syllableEnforcement.max} sílabas poéticas (ideal: ${syllableEnforcement.ideal})
+4. RIMAS RICAS - 60% das rimas devem ser ricas (3+ sílabas iguais no final)
+5. LINGUAGEM - Simples, coloquial e autêntica para ${request.genre}
+6. COERÊNCIA - Cada verso deve conectar naturalmente com o anterior
 
 Tema: ${request.theme}
 Mood: ${request.mood}
-${request.additionalRequirements ? `Requisitos adicionais: ${request.additionalRequirements}` : ""}
-${request.rhythm ? `Ritmo específico: ${request.rhythm}` : ""}
+${request.additionalRequirements ? `Requisitos: ${request.additionalRequirements}` : ""}
+${request.rhythm ? `Ritmo: ${request.rhythm}` : ""}
 
-Sílabas por verso: ${syllableEnforcement.min}-${syllableEnforcement.max} (ideal: ${syllableEnforcement.ideal})
+ESTRUTURA PARA ${request.genre}:
+- Verso 1: Apresenta a situação/personagem
+- Refrão: Mensagem principal (repetível e memorável)
+- Verso 2: Desenvolve a história
+- Refrão: Repete
+- Ponte (opcional): Momento de reflexão ou virada
+- Refrão final: Encerra com impacto
 
-Requisitos de qualidade:
-- 60% de rimas ricas
-- Estrutura adequada ao gênero ${request.genre}
-- Fluidez natural e autenticidade
-- Contagem silábica consistente
+PROIBIDO:
+- Versos incompletos como "Vou medo" ou "Você decote"
+- Frases sem verbo principal
+- Mudanças abruptas de assunto
+- Erros gramaticais
+- Versos sem sentido
 
 Retorne APENAS a letra completa, sem explicações ou comentários.`
 
