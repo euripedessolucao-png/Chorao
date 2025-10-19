@@ -53,10 +53,30 @@ export class MetaComposer {
    */
   private static getGenreSyllableConfig(genre: string): { min: number; max: number; ideal: number } {
     const genreConfig = getGenreConfig(genre)
+    const syllableRules = genreConfig.prosody_rules?.syllable_count
+
+    // Handle different syllable count structures across genres
+    if (syllableRules && "absolute_max" in syllableRules) {
+      // Sertanejo Moderno structure
+      return {
+        min: 7,
+        max: syllableRules.absolute_max,
+        ideal: 10,
+      }
+    } else if (syllableRules && "without_comma" in syllableRules) {
+      // Other genres structure
+      return {
+        min: syllableRules.without_comma.min,
+        max: syllableRules.without_comma.acceptable_up_to,
+        ideal: Math.floor((syllableRules.without_comma.min + syllableRules.without_comma.max) / 2),
+      }
+    }
+
+    // Default fallback
     return {
-      min: genreConfig.syllable_count?.min || 7,
-      max: genreConfig.syllable_count?.max || 12,
-      ideal: genreConfig.syllable_count?.ideal || 10,
+      min: 7,
+      max: 12,
+      ideal: 10,
     }
   }
 
