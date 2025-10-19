@@ -1,5 +1,4 @@
 import { countPoeticSyllables } from "@/lib/validation/syllable-counter"
-import { SyllableEnforcer } from "@/lib/validation/syllableEnforcer"
 import {
   type TerceiraViaAnalysis,
   analisarTerceiraVia,
@@ -95,6 +94,7 @@ export class MetaComposer {
    */
   static async compose(request: CompositionRequest): Promise<CompositionResult> {
     console.log("[MetaComposer-TURBO] Iniciando composição com Terceira Via...")
+    console.log("[MetaComposer-TURBO] 🧪 MODO EXPERIMENTAL: SyllableEnforcer DESABILITADO")
 
     let iterations = 0
     let bestResult: CompositionResult | null = null
@@ -160,7 +160,13 @@ export class MetaComposer {
       }
 
       // ✅ ETAPA 3: CORREÇÃO DE SÍLABAS COM LIMITE ABSOLUTO
-      const enforcedResult = await SyllableEnforcer.enforceSyllableLimits(rawLyrics, syllableEnforcement, request.genre)
+      console.log("[MetaComposer-TURBO] 🧪 TESTE: Pulando SyllableEnforcer...")
+      const enforcedResult = {
+        correctedLyrics: rawLyrics,
+        corrections: 0,
+        violations: [],
+      }
+      // const enforcedResult = await SyllableEnforcer.enforceSyllableLimits(rawLyrics, syllableEnforcement, request.genre)
       console.log(`[MetaComposer-TURBO] ✅ Correções de sílabas: ${enforcedResult.corrections} linhas`)
 
       const postCorrectionViolations = this.detectCriticalViolations(enforcedResult.correctedLyrics)
