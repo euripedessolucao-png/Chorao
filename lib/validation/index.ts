@@ -22,4 +22,5 @@ export { validateSertanejoLyrics } from "./validateLyrics"
 export { validateChorus } from "./validateChorus"
 
 // Regras específicas
-export { UNIVERSAL_RHYME_RULES } from "./universal-rhyme-rules"
+export type { UniversalRhymeRules } from "./universal-rhyme-rules"
+export { getUniversalRhymeRules } from "./universal-rhyme-rules"
