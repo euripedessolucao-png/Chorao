@@ -3,6 +3,23 @@ import { getGenreConfig } from "./genre-config"
 import { ThirdWayEngine, ADVANCED_BRAZILIAN_METRICS } from "./terceira-via/third-way-converter"
 import { countPoeticSyllables } from "./validation/syllable-counter"
 
+export interface TerceiraViaAnalysis {
+  originalidade: number
+  profundidade_emocional: number
+  tecnica_compositiva: number
+  adequacao_genero: number
+  score_geral: number
+  sugestoes: string[]
+  pontos_fortes: string[]
+  pontos_fracos: string[]
+  metric_analysis: {
+    syllable_compliance: number
+    poetic_contractions: number
+    genre_rhythm_match: number
+    structural_integrity: number
+  }
+}
+
 // ✅ RE-EXPORTA THIRD WAY ENGINE
 export { ThirdWayEngine }
 
@@ -55,7 +72,7 @@ function analisarMelodiaRitmo(
 }
 
 // ✅ ANÁLISE TERCEIRA VIA ATUALIZADA
-function analisarTerceiraVia(lyrics: string, genre: string, theme: string): any {
+function analisarTerceiraVia(lyrics: string, genre: string, theme: string): TerceiraViaAnalysis {
   const sugestoes: string[] = []
   const pontos_fortes: string[] = []
   const pontos_fracos: string[] = []
