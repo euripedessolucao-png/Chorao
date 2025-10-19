@@ -15,7 +15,7 @@ export { validateSertanejoModerno } from "./sertanejo-moderno-validator"
 
 // Validadores de rimas
 export { analyzeRhyme, analyzeLyricsRhymeScheme, validateRhymesForGenre } from "./rhyme-validator"
-export { enhanceRhymes } from "./rhyme-enhancer"
+export { enhanceLyricsRhymes, generateRhymeReport, quickRhymeCheck, suggestRhymingWords } from "./rhyme-enhancer"
 
 // Validadores de estrutura
 export { validateLyrics } from "./validateLyrics"
