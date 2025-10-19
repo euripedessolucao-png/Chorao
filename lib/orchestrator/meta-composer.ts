@@ -394,38 +394,30 @@ export class MetaComposer {
       throw new Error("Original lyrics required for rewrite")
     }
 
-    const genreConfig = getGenreConfig(request.genre)
     const syllableTarget = request.syllableTarget || this.getGenreSyllableConfig(request.genre)
 
     try {
-      const rewritePrompt = `Você é um compositor profissional de ${request.genre}. Reescreva a letra abaixo seguindo RIGOROSAMENTE estas regras:
+      const rewritePrompt = `Reescreva esta letra de ${request.genre} mantendo a mesma estrutura e melhorando a qualidade.
 
-REGRAS OBRIGATÓRIAS:
-1. GRAMÁTICA PERFEITA - Cada verso deve ser uma frase completa e gramaticalmente correta
-2. NARRATIVA FLUÍDA - A história deve ter começo, meio e fim sem cortes abruptos
-3. SÍLABAS - Cada verso deve ter entre ${syllableTarget.min} e ${syllableTarget.max} sílabas poéticas (ideal: ${syllableTarget.ideal})
-4. RIMAS RICAS - 60% das rimas devem ser ricas (3+ sílabas iguais)
-5. LINGUAGEM - Simples, coloquial e autêntica para ${request.genre}
-6. COERÊNCIA - Cada verso deve conectar naturalmente com o anterior
+LETRA ORIGINAL:
+${request.originalLyrics}
+
+REGRAS SIMPLES:
+- Cada verso deve ser uma frase completa em português correto
+- ${syllableTarget.min} a ${syllableTarget.max} sílabas por verso
+- Mantenha a mesma quantidade de versos e refrões
+- Use linguagem simples e coloquial
+- Conte uma história clara
 
 Tema: ${request.theme}
 Mood: ${request.mood}
 
-Letra original:
-${request.originalLyrics}
-
-IMPORTANTE: 
-- Mantenha a mesma estrutura (número de versos, refrões)
-- NUNCA escreva versos incompletos como "Vou medo" ou "Você decote"
-- SEMPRE use verbos completos e frases com sentido
-- Conte uma história clara do início ao fim
-
-Retorne APENAS a letra reescrita, sem explicações.`
+Retorne APENAS a letra reescrita:`
 
       const response = await generateText({
         model: "openai/gpt-4o",
         prompt: rewritePrompt,
-        temperature: 0.7,
+        temperature: 0.6, // Reduzindo temperatura para mais consistência
       })
 
       return response.text || request.originalLyrics
@@ -445,34 +437,27 @@ Retorne APENAS a letra reescrita, sem explicações.`
   ): Promise<string> {
     console.log("[MetaComposer] Gerando letra com refrões preservados...")
 
-    const genreConfig = getGenreConfig(request.genre)
     const syllableTarget = request.syllableTarget || this.getGenreSyllableConfig(request.genre)
 
     try {
-      const chorusPrompt = `Você é um compositor profissional de ${request.genre}. Crie uma letra completa seguindo estas regras:
+      const chorusPrompt = `Crie uma letra de ${request.genre} usando EXATAMENTE estes refrões:
 
-REGRAS OBRIGATÓRIAS:
-1. GRAMÁTICA PERFEITA - Cada verso deve ser uma frase completa e gramaticalmente correta
-2. NARRATIVA FLUÍDA - Conte uma história com começo, meio e fim
-3. SÍLABAS - ${syllableTarget.min} a ${syllableTarget.max} sílabas poéticas por verso (ideal: ${syllableTarget.ideal})
-4. PRESERVE EXATAMENTE estes refrões:
-${preservedChoruses.join("\n")}
+${preservedChoruses.join("\n\n")}
+
+REGRAS:
+- Frases completas em português correto
+- ${syllableTarget.min} a ${syllableTarget.max} sílabas por verso
+- Linguagem simples e coloquial
 
 Tema: ${request.theme}
 Mood: ${request.mood}
 
-IMPORTANTE:
-- NUNCA escreva versos incompletos ou sem sentido
-- Use linguagem simples e coloquial
-- Conecte os versos naturalmente
-- 60% de rimas ricas
-
-Retorne APENAS a letra completa.`
+Retorne a letra completa:`
 
       const response = await generateText({
         model: "openai/gpt-4o",
         prompt: chorusPrompt,
-        temperature: 0.7,
+        temperature: 0.6, // Temperatura reduzida
       })
 
       return response.text || ""
@@ -491,45 +476,37 @@ Retorne APENAS a letra completa.`
   ): Promise<string> {
     console.log("[MetaComposer] Gerando letra diretamente...")
 
-    const genreConfig = getGenreConfig(request.genre)
-
     try {
-      const directPrompt = `Você é um compositor profissional de ${request.genre}. Crie uma letra completa seguindo RIGOROSAMENTE estas regras:
+      const directPrompt = `Crie uma letra de ${request.genre} sobre: ${request.theme}
 
-REGRAS OBRIGATÓRIAS:
-1. GRAMÁTICA PERFEITA - Cada verso deve ser uma frase completa e gramaticalmente correta em português
-2. NARRATIVA FLUÍDA - Conte uma história clara com começo, meio e fim, sem cortes abruptos
-3. SÍLABAS - Cada verso deve ter entre ${syllableEnforcement.min} e ${syllableEnforcement.max} sílabas poéticas (ideal: ${syllableEnforcement.ideal})
-4. RIMAS RICAS - 60% das rimas devem ser ricas (3+ sílabas iguais no final)
-5. LINGUAGEM - Simples, coloquial e autêntica para ${request.genre}
-6. COERÊNCIA - Cada verso deve conectar naturalmente com o anterior
+REGRAS ESSENCIAIS:
+1. Frases completas em português correto
+2. ${syllableEnforcement.min} a ${syllableEnforcement.max} sílabas por verso
+3. Linguagem simples e coloquial
+4. História com começo, meio e fim
 
-Tema: ${request.theme}
 Mood: ${request.mood}
-${request.additionalRequirements ? `Requisitos: ${request.additionalRequirements}` : ""}
 ${request.rhythm ? `Ritmo: ${request.rhythm}` : ""}
 
-ESTRUTURA PARA ${request.genre}:
-- Verso 1: Apresenta a situação/personagem
-- Refrão: Mensagem principal (repetível e memorável)
-- Verso 2: Desenvolve a história
-- Refrão: Repete
-- Ponte (opcional): Momento de reflexão ou virada
-- Refrão final: Encerra com impacto
+ESTRUTURA:
+[Verso 1]
+4 linhas
 
-PROIBIDO:
-- Versos incompletos como "Vou medo" ou "Você decote"
-- Frases sem verbo principal
-- Mudanças abruptas de assunto
-- Erros gramaticais
-- Versos sem sentido
+[Refrão]
+4 linhas
 
-Retorne APENAS a letra completa, sem explicações ou comentários.`
+[Verso 2]
+4 linhas
+
+[Refrão]
+4 linhas
+
+Retorne APENAS a letra:`
 
       const response = await generateText({
         model: "openai/gpt-4o",
         prompt: directPrompt,
-        temperature: 0.8,
+        temperature: 0.6, // Temperatura reduzida para mais consistência
       })
 
       return response.text || ""
