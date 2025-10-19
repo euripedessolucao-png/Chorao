@@ -378,7 +378,6 @@ Retorne APENAS a letra reescrita, sem explicações.`
     request: CompositionRequest,
     syllableEnforcement: { min: number; max: number; ideal: number },
   ): Promise<string> {
-    // Implementação para gerar letra com refrões preservados
     console.log("[MetaComposer] Gerando letra com refrões preservados...")
 
     const genreConfig = getGenreConfig(request.genre)
@@ -404,6 +403,49 @@ Retorne APENAS a letra gerada, sem explicações.`
     } catch (error) {
       console.error("[MetaComposer] Erro ao gerar letra com refrões preservados:", error)
       return ""
+    }
+  }
+
+  /**
+   * GERA LETRA DIRETAMENTE SEM RESTRIÇÕES DE REFRÃO
+   */
+  private static async generateDirectLyrics(
+    request: CompositionRequest,
+    syllableEnforcement: { min: number; max: number; ideal: number },
+  ): Promise<string> {
+    console.log("[MetaComposer] Gerando letra diretamente...")
+
+    const genreConfig = getGenreConfig(request.genre)
+
+    try {
+      const directPrompt = `Gere uma letra completa para o gênero ${request.genre}.
+
+Tema: ${request.theme}
+Mood: ${request.mood}
+${request.additionalRequirements ? `Requisitos adicionais: ${request.additionalRequirements}` : ""}
+${request.rhythm ? `Ritmo específico: ${request.rhythm}` : ""}
+
+Sílabas por verso: ${syllableEnforcement.min}-${syllableEnforcement.max} (ideal: ${syllableEnforcement.ideal})
+
+Requisitos de qualidade:
+- 60% de rimas ricas
+- Estrutura adequada ao gênero ${request.genre}
+- Fluidez natural e autenticidade
+- Contagem silábica consistente
+
+Retorne APENAS a letra completa, sem explicações ou comentários.`
+
+      const response = await generateText({
+        model: "openai/gpt-4o",
+        prompt: directPrompt,
+        temperature: 0.8,
+        maxTokens: 2000,
+      })
+
+      return response.text || ""
+    } catch (error) {
+      console.error("[MetaComposer] Erro ao gerar letra direta:", error)
+      throw error
     }
   }
 
