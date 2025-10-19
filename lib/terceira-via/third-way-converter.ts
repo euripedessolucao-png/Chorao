@@ -1,5 +1,5 @@
 import { generateText } from "ai"
-import { countPoeticSyllables } from "./validation/syllable-counter" //
+import { countPoeticSyllables } from "@/lib/validation/syllable-counter"
 
 export const ADVANCED_BRAZILIAN_METRICS = {
   "Sertanejo Moderno": { syllablesPerLine: 6, maxSyllables: 7, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
