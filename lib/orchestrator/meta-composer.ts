@@ -8,6 +8,7 @@ import {
   ThirdWayEngine,
 } from "@/lib/terceira-via" // ✅ IMPORT UNIFICADA
 import { getGenreConfig } from "@/lib/genre-config" // ✅ IMPORT CORRETA
+import { generateText } from "ai" // Fixed import to use AI SDK directly instead of non-existent wrapper
 
 export interface CompositionRequest {
   genre: string
@@ -319,6 +320,91 @@ export class MetaComposer {
     }
 
     return polishedLyrics
+  }
+
+  /**
+   * GERA REESCRITA DE LETRA EXISTENTE
+   */
+  private static async generateRewrite(request: CompositionRequest): Promise<string> {
+    console.log("[MetaComposer] Gerando reescrita de letra existente...")
+
+    if (!request.originalLyrics) {
+      throw new Error("Original lyrics required for rewrite")
+    }
+
+    const genreConfig = getGenreConfig(request.genre)
+    const syllableTarget = request.syllableTarget || this.getGenreSyllableConfig(request.genre)
+
+    try {
+      const rewritePrompt = `Reescreva a seguinte letra mantendo a estrutura mas melhorando qualidade, rimas e fluidez.
+
+Gênero: ${request.genre}
+Tema: ${request.theme}
+Mood: ${request.mood}
+${request.additionalRequirements ? `Requisitos: ${request.additionalRequirements}` : ""}
+
+Sílabas por verso: ${syllableTarget.min}-${syllableTarget.max} (ideal: ${syllableTarget.ideal})
+
+Letra original:
+${request.originalLyrics}
+
+Mantenha a mesma estrutura (número de versos, refrões, etc.) mas melhore:
+- Qualidade das rimas (60% rimas ricas)
+- Fluidez e naturalidade
+- Adequação ao gênero ${request.genre}
+- Contagem silábica adequada
+
+Retorne APENAS a letra reescrita, sem explicações.`
+
+      const response = await generateText({
+        model: "openai/gpt-4o",
+        prompt: rewritePrompt,
+        temperature: 0.7,
+        maxTokens: 2000,
+      })
+
+      return response.text || request.originalLyrics
+    } catch (error) {
+      console.error("[MetaComposer] Erro ao gerar reescrita:", error)
+      return request.originalLyrics
+    }
+  }
+
+  /**
+   * GERA LETRA COM REFRÕES PRESERVADOS
+   */
+  private static async generateWithPreservedChoruses(
+    preservedChoruses: string[],
+    request: CompositionRequest,
+    syllableEnforcement: { min: number; max: number; ideal: number },
+  ): Promise<string> {
+    // Implementação para gerar letra com refrões preservados
+    console.log("[MetaComposer] Gerando letra com refrões preservados...")
+
+    const genreConfig = getGenreConfig(request.genre)
+    const syllableTarget = request.syllableTarget || this.getGenreSyllableConfig(request.genre)
+
+    try {
+      const chorusPrompt = `Gere uma letra para o gênero ${request.genre} com o tema ${request.theme} e o mood ${request.mood}.
+Preserve os seguintes refrões:
+${preservedChoruses.join("\n")}
+
+Sílabas por verso: ${syllableTarget.min}-${syllableTarget.max} (ideal: ${syllableTarget.ideal})
+
+Retorne APENAS a letra gerada, sem explicações.`
+
+      const response = await generateText({
+        model: "openai/gpt-4o",
+        prompt: chorusPrompt,
+        temperature: 0.7,
+        maxTokens: 2000,
+      })
+
+      return response.text || ""
+    } catch (error) {
+      console.error("[MetaComposer] Erro ao gerar letra com refrões preservados:", error)
+      return ""
+    }
   }
 
   // ... (resto dos métodos permanecem iguais)
