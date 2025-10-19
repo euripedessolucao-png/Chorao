@@ -1,4 +1,3 @@
-// @/lib/terceira-via.ts - VERSÃO INTEGRADA
 import { generateText } from "ai"
 import { getGenreConfig } from "./genre-config"
 import { ThirdWayEngine, ADVANCED_BRAZILIAN_METRICS } from "./third-way-converter"
@@ -227,12 +226,14 @@ export function analisarTerceiraVia(lyrics: string, genre: string, theme: string
   }
 }
 
-// ✅ VERIFICAÇÃO DE RIMAS AVANÇADA
+// ✅ VERIFICAÇÃO DE RIMAS AVANÇADA - CORRIGIDA
 function checkAdvancedRhyme(line1: string, line2: string): boolean {
-  const getLastStressedSyllable = (line: string) => {
+  const getLastStressedSyllable = (line: string): string => {
     const words = line.trim().split(/\s+/)
     const lastWord = words[words.length - 1]?.toLowerCase().replace(/[^\wáàâãéèêíìîóòôõúùûç]/gi, "") || ""
     
+    if (!lastWord) return ""
+
     // Encontra a sílaba tônica (simplificado)
     if (lastWord.match(/[áàâãéèêíìîóòôõúùû]/)) {
       return lastWord
@@ -250,7 +251,10 @@ function checkAdvancedRhyme(line1: string, line2: string): boolean {
   const rhyme1 = getLastStressedSyllable(line1)
   const rhyme2 = getLastStressedSyllable(line2)
 
-  return rhyme1 && rhyme2 && (
+  // ✅ CORREÇÃO: Agora rhyme1 e rhyme2 são sempre strings
+  if (!rhyme1 || !rhyme2) return false
+
+  return (
     rhyme1 === rhyme2 || 
     rhyme1.slice(-2) === rhyme2.slice(-2) ||
     rhyme1.replace(/[^aeiou]/gi, '') === rhyme2.replace(/[^aeiou]/gi, '')
@@ -357,4 +361,41 @@ Retorne SOMENTE a linha reescrita:`
   })
 
   return text.trim().replace(/^["']|["']$/g, "").split('\n')[0] || line
+}
+
+// ✅ ANALISADOR DE TENDÊNCIAS PARA MÚLTIPLAS LETRAS
+export function analisarTendenciasCompositivas(lyricsArray: string[], genre: string): {
+  cliches_comuns: string[]
+  pontos_evolucao: string[]
+  estilo_identificado: string
+} {
+  const allLyrics = lyricsArray.join(' ').toLowerCase()
+  
+  const cliches_comuns = [
+    "coração partido", "lágrimas", "noite sem luar", "amor eterno", 
+    "para sempre", "vazio", "solidão", "saudade", "dor no peito"
+  ].filter(cliche => allLyrics.includes(cliche))
+
+  const pontos_evolucao: string[] = []
+  
+  if (cliches_comuns.length > 2) {
+    pontos_evolucao.push("Forte dependência de clichês emocionais")
+  }
+
+  const imagens_presentes = [
+    "café", "porta", "janela", "chuva", "sofá", "foto", "telefone", "rua"
+  ].filter(imagem => allLyrics.includes(imagem))
+
+  if (imagens_presentes.length >= 3) {
+    pontos_evolucao.push("Bom uso de imagens concretas do cotidiano")
+  }
+
+  const estilo_identificado = cliches_comuns.length > 3 ? "Tradicional" : 
+                             imagens_presentes.length > 4 ? "Terceira Via" : "Misto"
+
+  return {
+    cliches_comuns,
+    pontos_evolucao,
+    estilo_identificado
+  }
 }
