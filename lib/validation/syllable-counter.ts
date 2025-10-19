@@ -98,14 +98,14 @@ function findLastTonicSyllable(line: string): number {
   return Math.max(1, lastTonicPosition)
 }
 
-export function validateSyllableLimit(line: string, maxSyllables = 12): boolean {
+export function validateSyllableLimit(line: string, maxSyllables = 11): boolean {
   const count = countPoeticSyllables(line)
   return count <= maxSyllables
 }
 
 export function validateLyricsSyllables(
   lyrics: string,
-  maxSyllables = 12,
+  maxSyllables = 11,
 ): {
   valid: boolean
   violations: Array<{ line: string; syllables: number; lineNumber: number }>

@@ -4,7 +4,7 @@
  * Detecta problemas além da contagem de sílabas:
  * - Versos incompletos (sem verbo, muito curtos)
  * - Versos quebrados (aspas abertas, vírgulas soltas)
- * - Versos com mais de 12 sílabas (LIMITE ABSOLUTO)
+ * - Versos com mais de 11 sílabas (LIMITE ABSOLUTO)
  */
 
 import { countPoeticSyllables } from "./syllable-counter"
@@ -25,7 +25,7 @@ export interface VerseValidationResult {
   longVerses: number
 }
 
-const ABSOLUTE_MAX_SYLLABLES = 12
+const ABSOLUTE_MAX_SYLLABLES = 11
 
 /**
  * Detecta se um verso está incompleto ou quebrado
@@ -120,7 +120,7 @@ export function validateVerseIntegrity(lyrics: string): VerseValidationResult {
     const syllables = countPoeticSyllables(trimmed)
     const verseIssues = detectBrokenVerse(trimmed)
 
-    // ERRO CRÍTICO: Mais de 12 sílabas
+    // ERRO CRÍTICO: Mais de 11 sílabas
     if (syllables > ABSOLUTE_MAX_SYLLABLES) {
       longVerses++
       issues.push({

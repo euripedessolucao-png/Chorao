@@ -16,7 +16,7 @@ export interface SyllableEnforcement {
 
 // ✅ EXPORTA a classe atual como default
 export class SyllableEnforcer {
-  private static readonly STRICT_MAX_SYLLABLES = 12
+  private static readonly STRICT_MAX_SYLLABLES = 11
   private static readonly MAX_CORRECTION_ATTEMPTS = 2
 
   /**

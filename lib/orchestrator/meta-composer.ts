@@ -50,7 +50,7 @@ export interface CompositionResult {
 
 export class MetaComposer {
   private static readonly MAX_ITERATIONS = 3
-  private static readonly ABSOLUTE_MAX_SYLLABLES = 12
+  private static readonly ABSOLUTE_MAX_SYLLABLES = 11
   private static readonly MIN_QUALITY_SCORE = 0.75 // Score mínimo para aprovar letra
 
   /**
@@ -80,7 +80,7 @@ export class MetaComposer {
     // Default fallback
     return {
       min: 7,
-      max: 12,
+      max: 11,
       ideal: 10,
     }
   }
@@ -124,7 +124,7 @@ export class MetaComposer {
 
       const criticalViolations = this.detectCriticalViolations(rawLyrics)
       if (criticalViolations.length > 0) {
-        console.error(`[MetaComposer-TURBO] ❌ VIOLAÇÃO CRÍTICA: ${criticalViolations.length} versos com >12 sílabas`)
+        console.error(`[MetaComposer-TURBO] ❌ VIOLAÇÃO CRÍTICA: ${criticalViolations.length} versos com >11 sílabas`)
         criticalViolations.forEach((v) => {
           console.error(`  Linha ${v.lineNumber}: "${v.line}" (${v.syllables} sílabas)`)
         })
@@ -813,7 +813,7 @@ Retorne APENAS a letra completa, sem explicações ou comentários.`
       const syllables = countPoeticSyllables(line)
 
       if (syllables > this.ABSOLUTE_MAX_SYLLABLES) {
-        criticalErrors.push(`Linha ${index + 1}: "${line}" tem ${syllables} sílabas (máximo: 12)`)
+        criticalErrors.push(`Linha ${index + 1}: "${line}" tem ${syllables} sílabas (máximo: 11)`)
         syllableViolations++
       } else if (syllables >= syllableTarget.min && syllables <= syllableTarget.max) {
         syllableCompliant++

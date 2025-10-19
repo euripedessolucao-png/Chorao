@@ -5,7 +5,7 @@
  * Este validador detecta e corrige problemas técnicos específicos do gênero.
  *
  * REGRAS CRÍTICAS - NÃO ALTERAR SEM CONSULTA:
- * - Máximo 12 sílabas por verso (ideal 7-11)
+ * - Máximo 11 sílabas por verso (ideal 7-11)
  * - Máximo 3 rimas consecutivas com mesma terminação
  * - Pré-refrão deve ter frases completas
  * - Refrão final deve ter variação emocional
@@ -38,7 +38,7 @@ export function validateSertanejoModerno(lyrics: string): SertanejoValidationRes
 
   const sections = parseLyricSections(lyrics)
 
-  // VALIDAÇÃO 1: Métrica de sílabas (7-12, ideal 10-11)
+  // VALIDAÇÃO 1: Métrica de sílabas (7-11, ideal 10-11)
   const syllableIssues = validateSyllables(sections)
   if (syllableIssues.errors.length > 0) {
     errors.push(...syllableIssues.errors)
@@ -89,19 +89,19 @@ export function validateSertanejoModerno(lyrics: string): SertanejoValidationRes
 }
 
 /**
- * Valida métrica de sílabas (7-12, ideal 10-11)
+ * Valida métrica de sílabas (7-11, ideal 10-11)
  */
 function validateSyllables(sections: Map<string, string[]>) {
   const errors: string[] = []
   const warnings: string[] = []
 
-  const MAX_SYLLABLES_ABSOLUTE = 12
+  const MAX_SYLLABLES_ABSOLUTE = 11
 
   for (const [sectionName, lines] of sections.entries()) {
     lines.forEach((line, index) => {
       const syllables = countPoeticSyllables(line)
 
-      // ERRO: Mais de 12 sílabas
+      // ERRO: Mais de 11 sílabas
       if (syllables > MAX_SYLLABLES_ABSOLUTE) {
         errors.push(
           `${sectionName} linha ${index + 1}: ${syllables} sílabas (máximo ${MAX_SYLLABLES_ABSOLUTE}). ` +
@@ -109,11 +109,11 @@ function validateSyllables(sections: Map<string, string[]>) {
         )
       }
 
-      // AVISO: Menos de 7 ou exatamente 12 sílabas
+      // AVISO: Menos de 7 ou exatamente 11 sílabas
       if (syllables < 7) {
         warnings.push(`${sectionName} linha ${index + 1}: ${syllables} sílabas (mínimo ideal 7)`)
       } else if (syllables === MAX_SYLLABLES_ABSOLUTE) {
-        warnings.push(`${sectionName} linha ${index + 1}: ${syllables} sílabas (no limite, ideal 10-11)`)
+        warnings.push(`${sectionName} linha ${index + 1}: ${syllables} sílabas (no limite, ideal 10)`)
       }
     })
   }
