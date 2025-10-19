@@ -48,6 +48,7 @@ export interface CompositionResult {
 
 export class MetaComposer {
   private static readonly MAX_ITERATIONS = 3
+  private static readonly ABSOLUTE_MAX_SYLLABLES = 12
 
   /**
    * Obtém a configuração de sílabas para um gênero específico
@@ -94,6 +95,8 @@ export class MetaComposer {
     let melodicAnalysis: any = null
 
     const syllableEnforcement = request.syllableTarget || this.getGenreSyllableConfig(request.genre)
+    syllableEnforcement.max = Math.min(syllableEnforcement.max, this.ABSOLUTE_MAX_SYLLABLES)
+
     const applyFinalPolish = request.applyFinalPolish ?? true
     const preservedChoruses = request.preservedChoruses || []
     const hasPreservedChoruses = preservedChoruses.length > 0
@@ -117,6 +120,20 @@ export class MetaComposer {
         rawLyrics = await this.generateDirectLyrics(request, syllableEnforcement)
       }
 
+      const criticalViolations = this.detectCriticalViolations(rawLyrics)
+      if (criticalViolations.length > 0) {
+        console.error(`[MetaComposer-TURBO] ❌ VIOLAÇÃO CRÍTICA: ${criticalViolations.length} versos com >12 sílabas`)
+        criticalViolations.forEach((v) => {
+          console.error(`  Linha ${v.lineNumber}: "${v.line}" (${v.syllables} sílabas)`)
+        })
+
+        // Se não é a última iteração, tenta novamente
+        if (iterations < this.MAX_ITERATIONS) {
+          console.log("[MetaComposer-TURBO] 🔄 Regenerando devido a violações críticas...")
+          continue
+        }
+      }
+
       // ✅ ETAPA 1: ANÁLISE TERCEIRA VIA COM CONFIGURAÇÃO DO GÊNERO
       console.log("[MetaComposer-TURBO] 🔍 Aplicando análise Terceira Via...")
       terceiraViaAnalysis = analisarTerceiraVia(rawLyrics, request.genre, request.theme)
@@ -128,21 +145,27 @@ export class MetaComposer {
       // ✅ ETAPA 2: CORREÇÕES INTELIGENTES COM THIRD WAY ENGINE
       if (terceiraViaAnalysis.score_geral < 75 && iterations < this.MAX_ITERATIONS - 1) {
         console.log("[MetaComposer-TURBO] 🎯 Aplicando correções Terceira Via...")
-        rawLyrics = await this.applyTerceiraViaCorrections(
-          rawLyrics,
-          request,
-          terceiraViaAnalysis,
-          genreConfig, // ✅ PASSA A CONFIGURAÇÃO
-        )
+        rawLyrics = await this.applyTerceiraViaCorrections(rawLyrics, request, terceiraViaAnalysis, genreConfig)
 
         // ✅ RE-ANALISA APÓS CORREÇÕES
         terceiraViaAnalysis = analisarTerceiraVia(rawLyrics, request.genre, request.theme)
         console.log(`[MetaComposer-TURBO] 📊 Score após correções: ${terceiraViaAnalysis.score_geral}/100`)
       }
 
-      // ✅ ETAPA 3: CORREÇÃO DE SÍLABAS
+      // ✅ ETAPA 3: CORREÇÃO DE SÍLABAS COM LIMITE ABSOLUTO
       const enforcedResult = await SyllableEnforcer.enforceSyllableLimits(rawLyrics, syllableEnforcement, request.genre)
       console.log(`[MetaComposer-TURBO] ✅ Correções de sílabas: ${enforcedResult.corrections} linhas`)
+
+      const postCorrectionViolations = this.detectCriticalViolations(enforcedResult.correctedLyrics)
+      if (postCorrectionViolations.length > 0) {
+        console.error(`[MetaComposer-TURBO] ❌ AINDA HÁ VIOLAÇÕES após correção: ${postCorrectionViolations.length}`)
+
+        // Aplica correção emergencial linha por linha
+        enforcedResult.correctedLyrics = this.applyEmergencyCorrection(
+          enforcedResult.correctedLyrics,
+          syllableEnforcement.max,
+        )
+      }
 
       let finalLyrics = enforcedResult.correctedLyrics
       let polishingApplied = false
@@ -156,9 +179,16 @@ export class MetaComposer {
           request.theme,
           syllableEnforcement,
           performanceMode,
-          genreConfig, // ✅ PASSA A CONFIGURAÇÃO
+          genreConfig,
         )
         polishingApplied = true
+      }
+
+      const finalViolations = this.detectCriticalViolations(finalLyrics)
+      if (finalViolations.length > 0) {
+        console.error(`[MetaComposer-TURBO] ❌ VIOLAÇÕES FINAIS DETECTADAS: ${finalViolations.length}`)
+        finalLyrics = this.applyEmergencyCorrection(finalLyrics, syllableEnforcement.max)
+        console.log("[MetaComposer-TURBO] ✅ Correção emergencial aplicada")
       }
 
       // ✅ ETAPA 5: AVALIAÇÃO DE QUALIDADE INTEGRADA
@@ -194,7 +224,10 @@ export class MetaComposer {
 
       // ✅ CRITÉRIO DE PARADA INTELIGENTE
       const shouldStop =
-        qualityScore >= 0.8 && terceiraViaAnalysis.score_geral >= 75 && melodicAnalysis.flow_score >= 70
+        qualityScore >= 0.8 &&
+        terceiraViaAnalysis.score_geral >= 75 &&
+        melodicAnalysis.flow_score >= 70 &&
+        finalViolations.length === 0 // Só para se não houver violações
 
       if (shouldStop) {
         console.log("[MetaComposer-TURBO] 🎯 Critério de parada atingido!")
@@ -388,7 +421,7 @@ ${preservedChoruses.join("\n")}
 
 Sílabas por verso: ${syllableTarget.min}-${syllableTarget.max} (ideal: ${syllableTarget.ideal})
 
-Retorne APENAS a letra gerada, sem explicações.`
+Retorne APENAS a letra gerada, sem explicações ou comentários.`
 
       const response = await generateText({
         model: "openai/gpt-4o",
@@ -648,5 +681,76 @@ Retorne APENAS a letra completa, sem explicações ou comentários.`
     formatted = formatted.replace(/\[Final\]/gi, "[Outro]")
 
     return formatted
+  }
+
+  private static detectCriticalViolations(
+    lyrics: string,
+  ): Array<{ line: string; syllables: number; lineNumber: number }> {
+    const lines = lyrics.split("\n")
+    const violations: Array<{ line: string; syllables: number; lineNumber: number }> = []
+
+    lines.forEach((line, index) => {
+      const trimmed = line.trim()
+
+      // Ignora tags, instruções e linhas vazias
+      if (!trimmed || trimmed.startsWith("[") || trimmed.startsWith("(") || trimmed.includes("Instruments:")) {
+        return
+      }
+
+      const syllables = countPoeticSyllables(trimmed)
+      if (syllables > this.ABSOLUTE_MAX_SYLLABLES) {
+        violations.push({
+          line: trimmed,
+          syllables,
+          lineNumber: index + 1,
+        })
+      }
+    })
+
+    return violations
+  }
+
+  private static applyEmergencyCorrection(lyrics: string, maxSyllables: number): string {
+    const lines = lyrics.split("\n")
+    const correctedLines: string[] = []
+
+    lines.forEach((line) => {
+      const trimmed = line.trim()
+
+      // Não corrige tags, instruções ou linhas vazias
+      if (!trimmed || trimmed.startsWith("[") || trimmed.startsWith("(") || trimmed.includes("Instruments:")) {
+        correctedLines.push(line)
+        return
+      }
+
+      const syllables = countPoeticSyllables(trimmed)
+
+      if (syllables > maxSyllables) {
+        console.log(`[Emergency] Corrigindo: "${trimmed}" (${syllables}s)`)
+
+        // Estratégia: Remove palavras do meio, preserva início e fim (rimas)
+        const words = trimmed.split(" ")
+
+        if (words.length > 4) {
+          // Mantém primeira e últimas 2 palavras
+          let corrected = [words[0], ...words.slice(-2)].join(" ")
+
+          // Se ainda muito longo, mantém só as últimas 2 palavras
+          if (countPoeticSyllables(corrected) > maxSyllables) {
+            corrected = words.slice(-2).join(" ")
+          }
+
+          console.log(`[Emergency] Resultado: "${corrected}" (${countPoeticSyllables(corrected)}s)`)
+          correctedLines.push(corrected)
+        } else {
+          // Se muito curto, mantém original (melhor verso longo que quebrado)
+          correctedLines.push(trimmed)
+        }
+      } else {
+        correctedLines.push(line)
+      }
+    })
+
+    return correctedLines.join("\n")
   }
 }

@@ -10,13 +10,13 @@ import { generateText } from "ai"
 
 export interface SyllableEnforcement {
   min: number
-  max: number 
+  max: number
   ideal: number
 }
 
 // ✅ EXPORTA a classe atual como default
 export class SyllableEnforcer {
-  private static readonly STRICT_MAX_SYLLABLES = 11
+  private static readonly STRICT_MAX_SYLLABLES = 12
   private static readonly MAX_CORRECTION_ATTEMPTS = 2
 
   /**
@@ -24,12 +24,11 @@ export class SyllableEnforcer {
    * Versão atualizada que preserva rimas
    */
   static async enforceSyllableLimits(
-    lyrics: string, 
+    lyrics: string,
     enforcement: SyllableEnforcement,
-    genre: string
+    genre: string,
   ): Promise<{ correctedLyrics: string; corrections: number; violations: string[] }> {
-    
-    const lines = lyrics.split('\n')
+    const lines = lyrics.split("\n")
     const correctedLines: string[] = []
     let corrections = 0
     const violations: string[] = []
@@ -39,37 +38,32 @@ export class SyllableEnforcer {
 
     for (let i = 0; i < lines.length; i++) {
       const originalLine = lines[i]
-      
+
       if (this.shouldSkipLine(originalLine)) {
         correctedLines.push(originalLine)
         continue
       }
 
       const syllables = countPoeticSyllables(originalLine)
-      
+
       if (syllables >= strictEnforcement.min && syllables <= strictEnforcement.max) {
         correctedLines.push(originalLine)
       } else {
-        violations.push(`Linha ${i+1}: "${originalLine}" -> ${syllables}s`)
-        
-        console.log(`[SyllableEnforcer] Corrigindo linha ${i+1}: "${originalLine}" (${syllables}s)`)
-        
-        const correctedLine = await this.correctSyllableLine(
-          originalLine, 
-          syllables, 
-          strictEnforcement, 
-          genre
-        )
-        
+        violations.push(`Linha ${i + 1}: "${originalLine}" -> ${syllables}s`)
+
+        console.log(`[SyllableEnforcer] Corrigindo linha ${i + 1}: "${originalLine}" (${syllables}s)`)
+
+        const correctedLine = await this.correctSyllableLine(originalLine, syllables, strictEnforcement, genre)
+
         correctedLines.push(correctedLine)
         corrections++
       }
     }
 
     return {
-      correctedLyrics: correctedLines.join('\n'),
+      correctedLyrics: correctedLines.join("\n"),
       corrections,
-      violations
+      violations,
     }
   }
 
@@ -80,13 +74,12 @@ export class SyllableEnforcer {
     line: string,
     currentSyllables: number,
     enforcement: SyllableEnforcement,
-    genre: string
+    genre: string,
   ): Promise<string> {
-
     // ✅ PRIMEIRO: Tenta correções automáticas que preservam rimas
     const autoCorrected = this.applySmartCorrections(line, enforcement.max)
     const autoSyllables = countPoeticSyllables(autoCorrected)
-    
+
     if (autoSyllables <= enforcement.max) {
       console.log(`[SyllableEnforcer] Correção automática: "${line}" -> "${autoCorrected}"`)
       return autoCorrected
@@ -94,19 +87,18 @@ export class SyllableEnforcer {
 
     // ✅ SEGUNDO: Se ainda longa, usa IA com foco em preservar rimas
     const correctionPrompt = this.buildSmartCorrectionPrompt(line, currentSyllables, enforcement, genre)
-    
+
     try {
       const { text: correctedLine } = await generateText({
         model: "openai/gpt-4o",
         prompt: correctionPrompt,
-        temperature: 0.3
+        temperature: 0.3,
       })
 
       const correctedText = correctedLine.trim().replace(/^["']|["']$/g, "")
       return correctedText
-
     } catch (error) {
-      console.error('[SyllableEnforcer] Erro na correção:', error)
+      console.error("[SyllableEnforcer] Erro na correção:", error)
       return this.applyEmergencyCorrection(line, enforcement.max)
     }
   }
@@ -115,16 +107,16 @@ export class SyllableEnforcer {
    * CORREÇÕES INTELIGENTES - PRESERVA RIMAS
    */
   private static applySmartCorrections(line: string, maxSyllables: number): string {
-    const words = line.split(' ')
-    
+    const words = line.split(" ")
+
     // ✅ PRESERVA RIMA: Nunca remove as últimas 2 palavras
     if (words.length > 4 && countPoeticSyllables(line) > maxSyllables) {
       // Tenta reduzir do MEIO, mantendo início e fim
       const middleReduction = [
         words[0],
-        ...words.slice(-3) // Mantém as 3 últimas palavras (onde está a rima)
-      ].join(' ')
-      
+        ...words.slice(-3), // Mantém as 3 últimas palavras (onde está a rima)
+      ].join(" ")
+
       if (countPoeticSyllables(middleReduction) <= maxSyllables) {
         return middleReduction
       }
@@ -134,10 +126,10 @@ export class SyllableEnforcer {
 
     // ✅ CONTRACÕES SEGURAS (não afetam rimas)
     const contractions = [
-      { from: /\bvocê\b/gi, to: 'cê' },
-      { from: /\bestá\b/gi, to: 'tá' },
-      { from: /\bpara\b/gi, to: 'pra' },
-      { from: /\bestou\b/gi, to: 'tô' },
+      { from: /\bvocê\b/gi, to: "cê" },
+      { from: /\bestá\b/gi, to: "tá" },
+      { from: /\bpara\b/gi, to: "pra" },
+      { from: /\bestou\b/gi, to: "tô" },
     ]
 
     contractions.forEach(({ from, to }) => {
@@ -152,19 +144,19 @@ export class SyllableEnforcer {
    */
   private static applyEmergencyCorrection(line: string, maxSyllables: number): string {
     console.log(`[SyllableEnforcer] Aplicando correção de emergência para: "${line}"`)
-    
-    const words = line.split(' ').filter(w => w.trim())
-    
+
+    const words = line.split(" ").filter((w) => w.trim())
+
     // ✅ Estratégia inteligente: Remove do início, mantém final (rimas)
     for (let i = 1; i < words.length - 1; i++) {
-      const candidate = words.slice(i).join(' ')
+      const candidate = words.slice(i).join(" ")
       if (countPoeticSyllables(candidate) <= maxSyllables) {
         return candidate
       }
     }
-    
+
     // Último recurso: Mantém apenas as palavras finais
-    return words.slice(-3).join(' ')
+    return words.slice(-3).join(" ")
   }
 
   /**
@@ -174,7 +166,7 @@ export class SyllableEnforcer {
     line: string,
     syllables: number,
     enforcement: SyllableEnforcement,
-    genre: string
+    genre: string,
   ): string {
     return `CORREÇÃO MUSICAL INTELIGENTE - PRESERVE RIMAS
 
@@ -207,11 +199,11 @@ GÊNERO: ${genre}
     const trimmed = line.trim()
     return (
       !trimmed ||
-      trimmed.startsWith('[') ||
-      trimmed.startsWith('(') ||
-      trimmed.startsWith('Titulo:') ||
-      trimmed.startsWith('Instrucao:') ||
-      trimmed.includes('Instrucao:')
+      trimmed.startsWith("[") ||
+      trimmed.startsWith("(") ||
+      trimmed.startsWith("Titulo:") ||
+      trimmed.startsWith("Instrucao:") ||
+      trimmed.includes("Instrucao:")
     )
   }
 
@@ -219,9 +211,7 @@ GÊNERO: ${genre}
    * VALIDAÇÃO RÁPIDA - MÉTODO QUE ESTAVA FALTANDO!
    */
   static validateLyrics(lyrics: string, enforcement: SyllableEnforcement) {
-    const lines = lyrics.split('\n').filter(line => 
-      line.trim() && !this.shouldSkipLine(line)
-    )
+    const lines = lyrics.split("\n").filter((line) => line.trim() && !this.shouldSkipLine(line))
 
     // ✅ USAR LIMITE RIGOROSO
     const strictEnforcement = { ...enforcement, max: this.STRICT_MAX_SYLLABLES }
@@ -229,10 +219,10 @@ GÊNERO: ${genre}
     const stats = {
       totalLines: lines.length,
       withinLimit: 0,
-      problems: [] as Array<{ line: string; syllables: number }>
+      problems: [] as Array<{ line: string; syllables: number }>,
     }
 
-    lines.forEach(line => {
+    lines.forEach((line) => {
       const syllables = countPoeticSyllables(line)
       if (syllables >= strictEnforcement.min && syllables <= strictEnforcement.max) {
         stats.withinLimit++
@@ -244,7 +234,7 @@ GÊNERO: ${genre}
     return {
       valid: stats.problems.length === 0,
       compliance: stats.totalLines > 0 ? stats.withinLimit / stats.totalLines : 1,
-      ...stats
+      ...stats,
     }
   }
 }

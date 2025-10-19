@@ -5,15 +5,12 @@
 const VOWELS = "aeiouáàâãéèêíìîóòôõúùû"
 const VOWEL_REGEX = /[aeiouáàâãéèêíìîóòôõúùû]/i
 
-const TONIC_PATTERNS = [
-  /á|é|í|ó|ú/i,
-  /ão|ões|ãe/i,
-]
+const TONIC_PATTERNS = [/á|é|í|ó|ú/i, /ão|ões|ãe/i]
 
 export function countPoeticSyllables(line: string): number {
   const cleanLine = line
     .replace(/\[.*?\]/g, "")
-    .replace(/\(.*?\)/g, "")
+    .replace(/$$.*?$$/g, "")
     .trim()
 
   if (!cleanLine) return 0
@@ -140,3 +137,5 @@ export function validateLyricsSyllables(
     violations,
   }
 }
+
+export { countPoeticSyllables as countPortugueseSyllables }
