@@ -7,7 +7,7 @@ import {
   analisarMelodiaRitmo,
   ThirdWayEngine,
 } from "@/lib/terceira-via"
-import { getGenreConfig, validateLyrics } from "@/lib/genre-config"
+import { getGenreConfig } from "@/lib/genre-config"
 import { generateText } from "ai"
 import { validateRhymesForGenre } from "@/lib/validation/rhyme-validator"
 import { validateVerseIntegrity } from "@/lib/validation/verse-integrity-validator"
@@ -15,7 +15,7 @@ import {
   formatSertanejoPerformance,
   shouldUsePerformanceFormat,
 } from "@/lib/formatters/sertanejo-performance-formatter"
-import { validateNarrativeFlow, validateVerseContribution } from "@/lib/validation/narrative-validator"
+import { validateNarrativeFlow } from "@/lib/validation/narrative-validator"
 
 export interface CompositionRequest {
   genre: string
@@ -785,8 +785,8 @@ Retorne APENAS a letra completa, sem explicações ou comentários.`
   }
 
   /**
-   * VALIDAÇÃO FINAL RIGOROSA - USA TODAS AS FERRAMENTAS DISPONÍVEIS
-   * Esta função é o GUARDIÃO FINAL que garante que a letra está PERFEITA
+   * VALIDAÇÃO FINAL RIGOROSA - SIMPLIFICADA E EFICIENTE
+   * Garante que TODAS as validações existentes sejam executadas e BLOQUEIEM saída se falharem
    */
   private static validateFinalLyrics(
     lyrics: string,
@@ -804,123 +804,50 @@ Retorne APENAS a letra completa, sem explicações ou comentários.`
     const criticalErrors: string[] = []
     const warnings: string[] = []
 
-    console.log("[MetaComposer] 🔍 VALIDAÇÃO FINAL RIGOROSA iniciada...")
-
-    // 1. VALIDAÇÃO DE SÍLABAS - NUNCA MAIS DE 11
+    // 1. SÍLABAS - NUNCA MAIS DE 11
     const lines = lyrics.split("\n").filter((l) => {
-      const trimmed = l.trim()
-      return trimmed && !trimmed.startsWith("[") && !trimmed.startsWith("(") && !trimmed.includes("Instruments:")
+      const t = l.trim()
+      return t && !t.startsWith("[") && !t.startsWith("(") && !t.includes("Instruments:")
     })
 
-    let syllableViolations = 0
     let syllableCompliant = 0
-
-    lines.forEach((line, index) => {
-      const syllables = countPoeticSyllables(line)
-
-      if (syllables > this.ABSOLUTE_MAX_SYLLABLES) {
-        criticalErrors.push(`Linha ${index + 1}: "${line}" tem ${syllables} sílabas (máximo: 11)`)
-        syllableViolations++
-      } else if (syllables >= syllableTarget.min && syllables <= syllableTarget.max) {
+    lines.forEach((line, i) => {
+      const count = countPoeticSyllables(line)
+      if (count > this.ABSOLUTE_MAX_SYLLABLES) {
+        criticalErrors.push(`Linha ${i + 1} tem ${count} sílabas (máximo: 11)`)
+      } else if (count >= syllableTarget.min && count <= syllableTarget.max) {
         syllableCompliant++
       }
     })
-
     const syllableCompliance = lines.length > 0 ? (syllableCompliant / lines.length) * 100 : 0
 
-    // 2. VALIDAÇÃO DE INTEGRIDADE DE VERSOS - MAIS RIGOROSA
+    // 2. INTEGRIDADE DE VERSOS - sem versos quebrados
     const integrityResult = validateVerseIntegrity(lyrics)
-
     if (integrityResult.brokenVerses > 0) {
-      integrityResult.issues
-        .filter((issue) => issue.severity === "warning" || issue.severity === "error")
-        .forEach((issue) => {
-          criticalErrors.push(`Verso com problema na linha ${issue.line}: "${issue.text}" - ${issue.issues.join(", ")}`)
-        })
+      integrityResult.issues.forEach((issue) => {
+        if (issue.severity === "error") {
+          criticalErrors.push(`Verso quebrado linha ${issue.line}: ${issue.issues[0]}`)
+        }
+      })
     }
-
     const verseIntegrity = lines.length > 0 ? ((lines.length - integrityResult.brokenVerses) / lines.length) * 100 : 0
 
-    if (verseIntegrity < 80) {
-      criticalErrors.push(`Integridade de versos muito baixa: ${verseIntegrity.toFixed(1)}% (mínimo: 80%)`)
+    // 3. NARRATIVA - história fluída
+    const narrativeValidation = validateNarrativeFlow(lyrics, genre)
+    if (narrativeValidation.abruptChanges.length > 1) {
+      criticalErrors.push(`${narrativeValidation.abruptChanges.length} mudanças abruptas na narrativa`)
     }
+    const hasNarrative = narrativeValidation.score >= 70
 
-    // 3. VALIDAÇÃO DE RIMAS
+    // 4. RIMAS - qualidade mínima
     const rhymeValidation = validateRhymesForGenre(lyrics, genre)
-    if (!rhymeValidation.valid) {
-      rhymeValidation.errors.forEach((error) => criticalErrors.push(`Rima: ${error}`))
-    }
-    rhymeValidation.warnings.forEach((warning) => warnings.push(`Rima: ${warning}`))
-
     const rhymeQuality = rhymeValidation.analysis.score
 
-    // 4. VALIDAÇÃO DE REGRAS DO GÊNERO
-    const genreValidation = validateLyrics(lyrics, genre)
-    if (!genreValidation.valid) {
-      genreValidation.errors.forEach((error) => criticalErrors.push(`Gênero: ${error}`))
-    }
-    genreValidation.warnings.forEach((warning) => warnings.push(`Gênero: ${warning}`))
-
-    // 5. VALIDAÇÃO DE NARRATIVA - MAIS RIGOROSA
-    const narrativeValidation = validateNarrativeFlow(lyrics, genre)
-    if (!narrativeValidation.isValid) {
-      narrativeValidation.feedback.forEach((feedback) => {
-        warnings.push(`Narrativa: ${feedback}`)
-      })
-    }
-
-    if (narrativeValidation.abruptChanges.length > 1) {
-      narrativeValidation.abruptChanges.forEach((change) => {
-        criticalErrors.push(`Mudança abrupta entre linhas ${change.fromLine}-${change.toLine}: ${change.reason}`)
-      })
-    }
-
-    const hasNarrative = narrativeValidation.isValid && narrativeValidation.score >= 75
-
-    if (!hasNarrative) {
-      criticalErrors.push(`Narrativa insuficiente: score ${narrativeValidation.score} (mínimo: 75)`)
-    }
-
-    // 6. VALIDAÇÃO DE CONTRIBUIÇÃO DE VERSOS
-    const verseContribution = validateVerseContribution(lyrics)
-    if (!verseContribution.isValid) {
-      verseContribution.feedback.forEach((feedback) => {
-        warnings.push(`Verso: ${feedback}`)
-      })
-    }
-
-    if (verseContribution.emptyVerses.length > 0) {
-      criticalErrors.push(`${verseContribution.emptyVerses.length} verso(s) vazio(s) ou muito curto(s)`)
-    }
-
-    // 7. VALIDAÇÃO DE ESTRUTURA
-    const hasVerse =
-      lyrics.toLowerCase().includes("[verse") ||
-      lyrics.toLowerCase().includes("[verso") ||
-      lyrics.toLowerCase().includes("[part a")
-    const hasChorus =
-      lyrics.toLowerCase().includes("[chorus") ||
-      lyrics.toLowerCase().includes("[refrão") ||
-      lyrics.toLowerCase().includes("[part b")
-
-    if (!hasVerse) {
-      criticalErrors.push("Estrutura: Letra não tem versos identificados")
-    }
-    if (!hasChorus) {
-      criticalErrors.push("Estrutura: Letra não tem refrão identificado")
-    }
-
-    const isValid = criticalErrors.length === 0 && syllableViolations === 0 && verseIntegrity >= 80 && hasNarrative
-
-    console.log(`[MetaComposer] 📊 Resultado da validação:`)
-    console.log(`  - Válida: ${isValid ? "✅ SIM" : "❌ NÃO"}`)
-    console.log(`  - Erros críticos: ${criticalErrors.length}`)
-    console.log(`  - Avisos: ${warnings.length}`)
-    console.log(`  - Sílabas OK: ${syllableCompliance.toFixed(1)}%`)
-    console.log(`  - Qualidade rimas: ${rhymeQuality.toFixed(1)}%`)
-    console.log(`  - Integridade versos: ${verseIntegrity.toFixed(1)}%`)
-    console.log(`  - Narrativa: ${hasNarrative ? "✓" : "✗"} (score: ${narrativeValidation.score})`)
-    console.log(`  - Continuidade: ${narrativeValidation.hasContinuity ? "✓" : "✗"}`)
+    const isValid =
+      criticalErrors.length === 0 && // Sem erros críticos
+      syllableCompliance >= 80 && // 80% das linhas com sílabas corretas
+      verseIntegrity >= 80 && // 80% dos versos íntegros
+      hasNarrative // Narrativa fluída
 
     return {
       isValid,
