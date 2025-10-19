@@ -2,12 +2,12 @@
  * VALIDADORES - BARREL EXPORT
  *
  * Centraliza todos os exports de validação para simplificar imports.
- * Use: import { validateVerseIntegrity, enforceSyllableCount } from '@/lib/validation'
+ * Use: import { validateVerseIntegrity, SyllableEnforcer } from '@/lib/validation'
  */
 
 // Contadores e validadores de sílabas
 export { countPoeticSyllables, countPortugueseSyllables } from "./syllable-counter"
-export { enforceSyllableCount } from "./syllableEnforcer"
+export { SyllableEnforcer } from "./syllableEnforcer"
 
 // Validadores de integridade
 export { validateVerseIntegrity } from "./verse-integrity-validator"
