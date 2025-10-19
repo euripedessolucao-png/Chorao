@@ -237,7 +237,6 @@ export class MetaComposer {
             request.performanceMode === "performance",
             request.additionalRequirements,
             request.genre,
-            genreConfig, // ✅ PASSA CONFIGURAÇÃO PARA O THIRD WAY
           )
 
           if (correctedLine !== line) {
