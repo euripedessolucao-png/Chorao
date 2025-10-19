@@ -14,7 +14,7 @@ export { validateVerseIntegrity } from "./verse-integrity-validator"
 export { validateSertanejoModerno } from "./sertanejo-moderno-validator"
 
 // Validadores de rimas
-export { analyzeRhymes, validateRhymes } from "./rhyme-validator"
+export { analyzeRhyme, analyzeLyricsRhymeScheme, validateRhymesForGenre } from "./rhyme-validator"
 export { enhanceRhymes } from "./rhyme-enhancer"
 
 // Validadores de estrutura
