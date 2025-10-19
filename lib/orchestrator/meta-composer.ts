@@ -11,6 +11,10 @@ import { getGenreConfig, validateLyrics } from "@/lib/genre-config"
 import { generateText } from "ai"
 import { validateRhymesForGenre } from "@/lib/validation/rhyme-validator"
 import { validateVerseIntegrity } from "@/lib/validation/verse-integrity-validator"
+import {
+  formatSertanejoPerformance,
+  shouldUsePerformanceFormat,
+} from "@/lib/formatters/sertanejo-performance-formatter"
 
 export interface CompositionRequest {
   genre: string
@@ -324,7 +328,7 @@ export class MetaComposer {
     theme: string,
     syllableTarget: { min: number; max: number; ideal: number },
     performanceMode = "standard",
-    genreConfig: any, // ✅ RECEBE CONFIGURAÇÃO
+    genreConfig: any,
   ): Promise<string> {
     console.log(`[MetaComposer-TURBO] ✨ Polimento universal para: ${genre} (${performanceMode})`)
 
@@ -350,11 +354,10 @@ export class MetaComposer {
 
       if (needsCorrection) {
         try {
-          // ✅ USA THIRD WAY ENGINE PARA CORREÇÃO DE SÍLABAS
           const polishedLine = await ThirdWayEngine.generateThirdWayLine(
             line,
             genre,
-            genreConfig, // ✅ PASSA CONFIGURAÇÃO
+            genreConfig,
             `Polimento final para ${genre}`,
             performanceMode === "performance",
             `Ajuste para ${syllableTarget.ideal} sílabas poéticas`,
@@ -370,8 +373,10 @@ export class MetaComposer {
 
     polishedLyrics = finalLines.join("\n")
 
-    // ✅ ETAPA 3: FORMATAÇÃO PERFORMÁTICA
-    if (performanceMode === "performance") {
+    if (shouldUsePerformanceFormat(genre, performanceMode)) {
+      console.log("[MetaComposer] 🎭 Aplicando formato de performance para sertanejo moderno...")
+      polishedLyrics = formatSertanejoPerformance(polishedLyrics)
+    } else if (performanceMode === "performance") {
       polishedLyrics = this.applyPerformanceFormatting(polishedLyrics, genre)
     }
 

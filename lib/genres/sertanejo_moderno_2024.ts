@@ -14,6 +14,45 @@ export const SERTANEJO_MODERNO_2024 = {
     tone: "Direto, visual, com ganchos chiclete e elementos concretos do cotidiano brasileiro.",
     narrative_arc: "Início (fim do amor) → Meio (superação com atitude) → Fim (recomeço com dignidade).",
   },
+  structural_variations: {
+    part_naming: {
+      verse: "PART A",
+      chorus: "PART B",
+      bridge: "PART C",
+    },
+    common_structures: [
+      {
+        name: "Completa",
+        pattern: ["A", "B", "A", "B", "C", "B"],
+        description: "Estrutura completa com ponte (mais comum em hits)",
+        probability: 0.5,
+      },
+      {
+        name: "Sem Ponte",
+        pattern: ["A", "B", "A", "B", "B"],
+        description: "Elimina a ponte, foca na repetição do refrão",
+        probability: 0.25,
+      },
+      {
+        name: "Curta",
+        pattern: ["A", "B", "B"],
+        description: "Estrutura minimalista, elimina segundo verso e ponte",
+        probability: 0.15,
+      },
+      {
+        name: "Refrão Primeiro",
+        pattern: ["B", "A", "B", "C", "B"],
+        description: "Começa direto no refrão (gancho imediato)",
+        probability: 0.1,
+      },
+    ],
+    rules: {
+      verse_elimination: "Às vezes elimina o segundo verso para manter a música curta e direta",
+      bridge_elimination: "Às vezes elimina a ponte para focar na repetição do refrão chiclete",
+      chorus_repetition: "O refrão (PART B) é SEMPRE repetido múltiplas vezes - é o elemento mais importante",
+      structure_flexibility: "A estrutura pode variar, mas o refrão deve ser sempre presente e repetitivo",
+    },
+  },
   language_rules: {
     universal_rule:
       "SEMPRE use palavras simples e coloquiais, faladas como um humano no dia-a-dia. Evite vocabulário rebuscado, poético ou formal, EXCETO se especificado em 'Requisitos Adicionais'.",
@@ -77,20 +116,26 @@ export const SERTANEJO_MODERNO_2024 = {
     verse: {
       lines: 4,
       purpose: "Contar o fim do amor com leveza e aprendizado.",
+      label: "PART A",
     },
     chorus: {
       lines_options: [2, 4],
       forbidden_lines: 3,
+      label: "PART B",
       required_elements: [
         "Gancho grudento (ex: 'Copo de vitória')",
         "Referência concreta (ex: 'biquíni', 'PIX', 'story')",
         "Mensagem de empoderamento (ex: 'hoje eu danço sem você')",
       ],
+      repetition_rule: "Deve ser repetido múltiplas vezes - é o elemento mais importante",
     },
     bridge: {
       lines_min: 2,
       lines_max: 2,
+      label: "PART C",
       purpose: "Clímax de transformação — curto e poderoso.",
+      optional: true,
+      note: "Pode ser eliminada em estruturas mais curtas ou focadas no refrão",
     },
     pre_chorus: {
       allowed: false,
