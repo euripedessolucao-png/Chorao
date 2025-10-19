@@ -126,14 +126,16 @@ export function SyllableValidator({ lyrics, maxSyllables = 12, onValidate }: Syl
             {integrityResult.longVerses > 0 && (
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Versos com +12 sílabas:</span>
-                <Badge variant="destructive">{integrityResult.longVerses}</Badge>
+                <Badge className="bg-red-600 text-white hover:bg-red-700 border-red-700">
+                  {integrityResult.longVerses}
+                </Badge>
               </div>
             )}
 
             {integrityResult.brokenVerses > 0 && (
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Versos incompletos:</span>
-                <Badge className="bg-orange-100 text-orange-800 border-orange-200">
+                <Badge className="bg-orange-500 text-white hover:bg-orange-600 border-orange-600">
                   {integrityResult.brokenVerses}
                 </Badge>
               </div>
