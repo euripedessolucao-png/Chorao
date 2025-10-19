@@ -18,7 +18,7 @@ export { analyzeRhyme, analyzeLyricsRhymeScheme, validateRhymesForGenre } from "
 export { enhanceLyricsRhymes, generateRhymeReport, quickRhymeCheck, suggestRhymingWords } from "./rhyme-enhancer"
 
 // Validadores de estrutura
-export { validateLyrics } from "./validateLyrics"
+export { validateSertanejoLyrics } from "./validateLyrics"
 export { validateChorus } from "./validateChorus"
 
 // Regras específicas
