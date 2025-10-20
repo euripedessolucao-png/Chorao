@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { RefreshCw, Sparkles, Trash2, Search, Save, Copy } from "lucide-react"
 import { toast } from "sonner"
+import { SyllableValidator } from "@/components/syllable-validator"
 
 const GENRES = ["Pop", "Sertanejo Moderno", "MPB"]
 const MOODS = ["Feliz", "Triste", "Nostálgico"]
@@ -150,6 +151,22 @@ export default function EditarPage() {
       setLyrics("")
       toast.success("Letra limpa", {
         description: "A letra foi removida do editor.",
+      })
+    }
+  }
+
+  const handlePaste = async () => {
+    try {
+      const text = await navigator.clipboard.readText()
+      if (text.trim()) {
+        setLyrics(text)
+        toast.success("Letra colada com sucesso!")
+      } else {
+        toast.error("Área de transferência vazia")
+      }
+    } catch (error) {
+      toast.error("Erro ao acessar área de transferência", {
+        description: "Use Ctrl+V ou Cmd+V para colar manualmente",
       })
     }
   }
@@ -372,12 +389,13 @@ export default function EditarPage() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Editor</CardTitle>
                 <div className="flex gap-2 mt-2">
+                  <Button variant="outline" size="sm" className="flex-1 bg-transparent" onClick={handlePaste}>
+                    <Copy className="h-3 w-3 mr-1" />
+                    <span className="text-xs">Colar</span>
+                  </Button>
                   <Button variant="outline" size="sm" className="flex-1 bg-transparent">
                     <Sparkles className="h-3 w-3 mr-1" />
                     <span className="text-xs">Sugerir</span>
-                  </Button>
-                  <Button variant="outline" size="sm" className="flex-1 bg-transparent">
-                    <span className="text-xs">📊 Validar</span>
                   </Button>
                   <Button variant="outline" size="sm" className="flex-1 bg-transparent">
                     <RefreshCw className="h-3 w-3 mr-1" />
@@ -406,6 +424,21 @@ export default function EditarPage() {
                     rows={18}
                     className="font-mono text-xs"
                   />
+
+                  {lyrics.trim() && (
+                    <SyllableValidator
+                      lyrics={lyrics}
+                      maxSyllables={11}
+                      onValidate={(result) => {
+                        if (!result.valid) {
+                          toast.warning(`${result.linesWithIssues} versos com problemas`, {
+                            description: "Verifique os versos destacados",
+                            duration: 5000,
+                          })
+                        }
+                      }}
+                    />
+                  )}
                 </div>
 
                 <div className="flex gap-2">
