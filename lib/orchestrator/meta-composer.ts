@@ -421,18 +421,37 @@ REGRAS ABSOLUTAS (NÃO PODEM SER QUEBRADAS - PRIORIDADE MÁXIMA)
    - Conte até a última sílaba tônica
    - Exemplo: "Eu vou seguir meu caminho sem olhar" = "Eu-vou-se-guir-meu-ca-mi-nho-sem-o-LHAR" = 11 sílabas ✓
    
-   ESTRATÉGIAS PARA ENCURTAR VERSOS:
-   a) Use contrações: você→cê, está→tá, para→pra, estava→tava
-   b) Remova palavras desnecessárias: "muito", "bem", "tão", "já"
-   c) Simplifique: "que estava tentando" → "que tentava"
-   d) Seja direto: "Eu vou seguir o meu caminho" → "Vou seguir meu caminho"
+   ESTRATÉGIAS PARA MANTER 11 SÍLABAS (PENSE EM ALTERNATIVAS):
    
-   EXEMPLOS PRÁTICOS:
-   ❌ "Eu me libertei de tudo que você fazia pra me prender" (16 sílabas)
-   ✓ "Me libertei do que cê fez pra me prender" (11 sílabas)
+   a) CONTRAÇÕES (primeira opção):
+      você→cê, está→tá, para→pra, estava→tava
    
-   ❌ "Hoje eu sou dona de mim e da minha própria vida" (14 sílabas)
-   ✓ "Hoje sou dona de mim e da minha vida" (11 sílabas)
+   b) ALTERNATIVAS DE EXPRESSÃO (mantenha o contexto):
+      ❌ "Eu me libertei de tudo que você fazia" (condensar = perder contexto)
+      ✓ "Me soltei do que cê fez pra me prender" (alternativa = mantém contexto)
+      
+      ❌ "Hoje eu sou dona de mim e da minha vida" (condensar = "sou dona")
+      ✓ "Hoje comando minha vida e meu destino" (alternativa = mantém força)
+   
+   c) REFORMULAÇÃO CRIATIVA (não apenas cortar palavras):
+      ❌ "Pago tudo do meu jeito, sem ninguém pra dar conselho" (15 sílabas)
+      ❌ "Pago tudo do meu jeito, sem conselho" (cortar = perde sentido)
+      ✓ "Pago tudo sozinha, sem pedir conselho" (reformular = mantém sentido)
+      
+      ❌ "Achava lindo o decote da vizinha do lado" (14 sílabas)
+      ❌ "Achava lindo o decote da vizinha" (cortar = ok mas genérico)
+      ✓ "Elogiava o decote que a vizinha usava" (reformular = mais específico)
+   
+   d) SINÔNIMOS MAIS CURTOS (mantendo o impacto):
+      "libertei" → "soltei" (mesma força, menos sílabas)
+      "caminho" → "rumo" (mesmo sentido, mais curto)
+      "tentava" → "quis" (ação similar, mais direto)
+   
+   IMPORTANTE: NÃO apenas CONDENSE ou RESUMA. PENSE em ALTERNATIVAS que:
+   - Mantêm o CONTEXTO completo
+   - Preservam a FORÇA emocional
+   - Contam a MESMA história de forma diferente
+   - Usam SINÔNIMOS e REFORMULAÇÕES criativas
 
 2. GRAMÁTICA PERFEITA (FRASES COMPLETAS E CORRETAS)
    - Cada verso = frase completa com sujeito + verbo + complemento
@@ -456,44 +475,28 @@ REGRAS ABSOLUTAS (NÃO PODEM SER QUEBRADAS - PRIORIDADE MÁXIMA)
    - SEM mudanças abruptas de assunto
 
 ═══════════════════════════════════════════════════════════════
-REGRAS DESEJÁVEIS (IMPORTANTE MAS FLEXÍVEL)
-═══════════════════════════════════════════════════════════════
-
-4. VOCABULÁRIO SERTANEJO MODERNO
-   PREFIRA: biquíni, PIX, story, boteco, pickup, praia, zap, rolê, copo de vitória
-   EVITE: coração em pedaços, lágrimas, solidão, mundo desabou, dor vazio
-
-5. LINGUAGEM COLOQUIAL BRASILEIRA
-   - Use: tô, cê, pra, né, mano, véio
-   - Fale como brasileiro no dia-a-dia
-   - Simples e direto, como numa conversa
-
-6. ESTRUTURA
-   - Use PART A (verso), PART B (refrão), PART C (ponte)
-   - Refrão deve ser chiclete e repetitivo
-   - Mantenha a mesma quantidade de seções da original
-
-═══════════════════════════════════════════════════════════════
 PROCESSO DE CRIAÇÃO (SIGA ESTA ORDEM)
 ═══════════════════════════════════════════════════════════════
 
 PASSO 1: PENSE ANTES DE ESCREVER
 - Qual é a história que quero contar?
 - Como posso contar em versos curtos (11 sílabas)?
-- Quais palavras posso encurtar ou remover?
+- Quais ALTERNATIVAS posso usar ao invés de apenas condensar?
+- Que SINÔNIMOS mais curtos mantêm o impacto?
 
 PASSO 2: ESCREVA CADA VERSO
 - Escreva o verso
 - CONTE as sílabas poéticas
-- Se passar de 11, REESCREVA usando as estratégias acima
+- Se passar de 11, PENSE EM ALTERNATIVAS (não apenas corte palavras)
 - Verifique se a gramática está correta
+- Confirme que o CONTEXTO foi mantido
 
 PASSO 3: REVISE ANTES DE FINALIZAR
 ✓ Todos os versos têm 11 sílabas ou menos?
 ✓ Todas as frases estão completas e corretas?
 ✓ A história flui do começo ao fim?
-✓ Usei vocabulário moderno e coloquial?
-✓ Evitei clichês dramáticos?
+✓ O CONTEXTO foi mantido em cada verso?
+✓ Usei ALTERNATIVAS criativas ao invés de apenas condensar?
 
 ═══════════════════════════════════════════════════════════════
 SEU OBJETIVO FINAL (LEIA COM ATENÇÃO)
@@ -503,23 +506,27 @@ Você DEVE entregar uma letra que tenha SIMULTANEAMENTE:
 ✓ GRAMÁTICA PERFEITA (frases completas e corretas)
 ✓ NARRATIVA FLUÍDA (história com começo-meio-fim)
 ✓ MÁXIMO 11 SÍLABAS POR VERSO (ABSOLUTO, NÃO NEGOCIÁVEL)
+✓ CONTEXTO MANTIDO (não apenas condensar, mas reformular criativamente)
 
 NÃO ABRIMOS MÃO DE NENHUM DESSES DETALHES.
 
 IMPORTANTE:
-- Se um verso ficar com mais de 11 sílabas, você DEVE simplificá-lo
-- É MELHOR uma frase simples com 11 sílabas do que uma frase complexa com 13
-- Qualidade da narrativa NÃO justifica exceder 11 sílabas
-- Se não conseguir expressar a ideia em 11 sílabas, MUDE a ideia para algo mais simples
+- Se um verso ficar com mais de 11 sílabas, PENSE EM ALTERNATIVAS
+- NÃO apenas CORTE palavras - isso perde contexto
+- REFORMULE criativamente mantendo o sentido completo
+- Use SINÔNIMOS mais curtos que mantêm o impacto
+- É MELHOR uma reformulação criativa do que uma condensação que perde sentido
 
 EXEMPLO DO QUE FAZER:
-❌ "Pago tudo do meu jeito, sem ninguém pra dar conselho" (15 sílabas - INACEITÁVEL)
-✓ "Pago tudo do meu jeito, sem conselho" (11 sílabas - PERFEITO)
+❌ "Pago tudo do meu jeito, sem ninguém pra dar conselho" (15 sílabas)
+❌ "Pago tudo do meu jeito, sem conselho" (apenas cortou - perde sentido)
+✓ "Pago tudo sozinha, sem pedir conselho" (reformulou - mantém sentido completo)
 
-❌ "Achava lindo o decote da vizinha do lado" (14 sílabas - INACEITÁVEL)
-✓ "Achava lindo o decote da vizinha" (11 sílabas - PERFEITO)
+❌ "Vou usar aquele biquíni que você não sabia apreciar" (16 sílabas)
+❌ "Vou usar meu biquíni" (apenas cortou - perde o conflito)
+✓ "Vou usar o biquíni que cê criticava" (reformulou - mantém o conflito)
 
-NÃO ENVIE a letra até que TODOS os versos tenham 11 sílabas ou menos.
+NÃO ENVIE a letra até que TODOS os versos tenham 11 sílabas ou menos E mantenham o contexto completo.
 Revise CADA verso antes de finalizar.
 
 Retorne APENAS a letra reescrita:`

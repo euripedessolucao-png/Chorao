@@ -15,7 +15,7 @@ import { RefreshCw, Save, Copy, Search, Loader2, Star, Trophy, Trash2, Zap, Wand
 import { toast } from "sonner"
 import { EMOTIONS } from "@/lib/genres"
 import { GenreSelect } from "@/components/genre-select"
-import { SyllableValidator } from "@/components/syllable-validator"
+import { EditableSyllableValidator } from "@/components/syllable-validator-editable"
 import {
   Dialog,
   DialogContent,
@@ -359,6 +359,11 @@ export default function ReescreverPage() {
       setChords("")
       toast.success("Resultado limpo!")
     }
+  }
+
+  const handleLyricsChange = (newLyrics: string) => {
+    setLyrics(newLyrics)
+    toast.success("Letra atualizada após edição manual")
   }
 
   return (
@@ -736,19 +741,21 @@ export default function ReescreverPage() {
                     className="font-mono text-xs"
                   />
 
-                  <SyllableValidator
+                  <EditableSyllableValidator
                     lyrics={lyrics}
                     maxSyllables={11}
                     onValidate={(result) => {
                       if (!result.valid) {
-                        toast.warning(`${result.linesWithIssues} versos com mais de 11 sílabas`, {
-                          description: "Use o validador para ver detalhes",
+                        toast.warning(`${result.linesWithIssues} versos com problemas`, {
+                          description: "Use o validador editável para corrigir",
                           duration: 5000,
                         })
                       } else if (result.totalLines > 0) {
-                        toast.success(`✓ Letra validada: ${result.totalLines} versos dentro do limite`)
+                        toast.success(`✓ Letra validada: ${result.totalLines} versos perfeitos`)
                       }
                     }}
+                    onLyricsChange={handleLyricsChange}
+                    showEditControls={true}
                   />
                 </div>
 
