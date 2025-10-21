@@ -1,8 +1,11 @@
-// @/lib/terceira-via.ts - VERSÃO CORRIGIDA SEM ERROS DE SINTAXE
+// @/lib/terceira-via/terceira-via-unified.ts - VERSÃO COMPLETA E UNIFICADA
 
 import { generateText } from "ai"
 import { getGenreConfig } from "@/lib/genre-config"
-import { ThirdWayEngine } from "./third-way-converter"
+
+// ============================================================================
+// INTERFACES E TIPOS
+// ============================================================================
 
 export interface TerceiraViaAnalysis {
   score_geral: number
@@ -15,13 +18,16 @@ export interface TerceiraViaAnalysis {
   }>
 }
 
+// ============================================================================
+// FUNÇÕES AUXILIARES
+// ============================================================================
+
 /**
- * CORREÇÕES IMEDIATAS PARA PROBLEMAS CRÍTICOS
+ * Correções imediatas para problemas críticos
  */
 function aplicarCorrecoesImediatas(line: string): string {
   let corrected = line
   
-  // ✅ CORREÇÕES CRÍTICAS - APLICADAS SEMPRE
   const correcoesImediatas = [
     { regex: /nã(\s|$)/gi, correction: 'não ' },
     { regex: /direçã(\s|$)/gi, correction: 'direção ' },
@@ -36,7 +42,6 @@ function aplicarCorrecoesImediatas(line: string): string {
   correcoesImediatas.forEach(({ regex, correction }) => {
     if (regex.test(corrected)) {
       corrected = corrected.replace(regex, correction)
-      console.log(`[TerceiraVia-QuickFix] 🔧 Aplicada correção: ${regex} → ${correction}`)
     }
   })
   
@@ -44,7 +49,7 @@ function aplicarCorrecoesImediatas(line: string): string {
 }
 
 /**
- * VERIFICA SE UMA LINHA PRECISA DE MELHORIAS ADICIONAIS
+ * Verifica se uma linha precisa de melhorias adicionais
  */
 function precisaDeMelhorias(line: string): boolean {
   const problemas = [
@@ -60,7 +65,7 @@ function precisaDeMelhorias(line: string): boolean {
 }
 
 /**
- * SUGERE CORREÇÕES PARA PROBLEMAS IDENTIFICADOS
+ * Sugere correções para problemas identificados
  */
 function sugerirCorrecao(line: string, problemas: string[]): string {
   let sugestao = line
@@ -90,7 +95,7 @@ function sugerirCorrecao(line: string, problemas: string[]): string {
 }
 
 /**
- * GERA SUGESTÕES BASEADAS NOS PROBLEMAS E GÊNERO
+ * Gera sugestões baseadas nos problemas e gênero
  */
 function gerarSugestoes(problemas: string[], genre: string): string[] {
   const sugestoes: string[] = []
@@ -105,17 +110,19 @@ function gerarSugestoes(problemas: string[], genre: string): string[] {
     sugestoes.push('Use artigos e preposições quando necessário')
   }
   
-  // SUGESTÕES ESPECÍFICAS POR GÊNERO
   if (genre.includes('sertanejo')) {
     sugestoes.push('Use linguagem coloquial natural: "pra", "tá", "cê"')
-    sugestoes.push('Mantenha a autenticidade da narrativa sertaneja')
   }
   
   return sugestoes
 }
 
+// ============================================================================
+// FUNÇÕES PRINCIPAIS
+// ============================================================================
+
 /**
- * ANALISA UMA LETRA COMPLETA USANDO A TERCEIRA VIA
+ * Analisa uma letra completa usando a Terceira Via
  */
 export function analisarTerceiraVia(lyrics: string, genre: string, theme: string): TerceiraViaAnalysis {
   console.log(`[TerceiraVia] 🔍 Analisando letra do gênero: ${genre}`)
@@ -127,11 +134,11 @@ export function analisarTerceiraVia(lyrics: string, genre: string, theme: string
   const problemas: string[] = []
   const versosProblematicos: Array<{linha: string, problema: string, sugestao: string}> = []
   
-  // ✅ DETECÇÃO DE PROBLEMAS CRÍTICOS
+  // Detecção de problemas críticos
   lines.forEach((line, index) => {
     const problemasLinha: string[] = []
     
-    // 1. PALAVRAS CORTADAS
+    // Palavras cortadas
     if (/(^|\s)nã[^o]/.test(line.toLowerCase())) {
       problemasLinha.push('Palavra cortada: "nã" deve ser "não"')
     }
@@ -148,17 +155,12 @@ export function analisarTerceiraVia(lyrics: string, genre: string, theme: string
       problemasLinha.push('Palavra cortada: "heranç" deve ser "herança"')
     }
     
-    // 2. EXPRESSÕES INCOMPLETAS
+    // Expressões incompletas
     if (line.includes('sem direçã')) {
       problemasLinha.push('Expressão incompleta: "sem direçã"')
     }
     if (line.includes('volto pra heranç')) {
       problemasLinha.push('Expressão incompleta: "volto pra heranç"')
-    }
-    
-    // 3. CONSTRUÇÕES ESTRANHAS
-    if (line.includes("d'ouro")) {
-      problemasLinha.push('Contração forçada: "d\'ouro" soa artificial')
     }
     
     if (problemasLinha.length > 0) {
@@ -171,12 +173,12 @@ export function analisarTerceiraVia(lyrics: string, genre: string, theme: string
     }
   })
   
-  // CALCULA SCORE BASEADO NOS PROBLEMAS
+  // Calcula score baseado nos problemas
   const scoreBase = 100
   const penalidadePorProblema = 8
   const scoreFinal = Math.max(40, scoreBase - (problemas.length * penalidadePorProblema))
   
-  console.log(`[TerceiraVia] 📊 Score calculado: ${scoreFinal} (${problemas.length} problemas)`)
+  console.log(`[TerceiraVia] 📊 Score: ${scoreFinal} (${problemas.length} problemas)`)
   
   return {
     score_geral: scoreFinal,
@@ -187,7 +189,7 @@ export function analisarTerceiraVia(lyrics: string, genre: string, theme: string
 }
 
 /**
- * APLICA CORREÇÕES DA TERCEIRA VIA - VERSÃO CORRIGIDA
+ * Aplica correções da Terceira Via a uma linha
  */
 export async function applyTerceiraViaToLine(
   line: string,
@@ -196,8 +198,6 @@ export async function applyTerceiraViaToLine(
   isPerformanceMode: boolean,
   additionalRequirements?: string,
   genre?: string,
-  // ✅ NOVO: PARÂMETRO genreConfig ADICIONADO
-  genreConfig?: any,
 ): Promise<string> {
   if (!line.trim() || line.startsWith("[") || line.startsWith("(") || line.includes("Instruments:")) {
     return line
@@ -206,26 +206,19 @@ export async function applyTerceiraViaToLine(
   try {
     console.log(`[TerceiraVia] 🔧 Processando linha ${index}: "${line.substring(0, 40)}..."`)
 
-    // ✅ CORREÇÃO CRÍTICA: GARANTIR QUE TEMOS genreConfig
-    const finalGenre = genre || "sertanejo-moderno"
-    const finalGenreConfig = genreConfig || getGenreConfig(finalGenre)
-    
-    console.log(`[TerceiraVia] 🎯 Gênero: ${finalGenre}, Config: ${!!finalGenreConfig}`)
-
-    // ✅ APLICAR CORREÇÕES IMEDIATAS PARA PROBLEMAS CRÍTICOS
+    // Aplicar correções imediatas para problemas críticos
     let correctedLine = aplicarCorrecoesImediatas(line)
     
-    // ✅ SE AINDA PRECISA DE MELHORIAS, USA O THIRD WAY ENGINE
+    // Se ainda precisa de melhorias, usa o mecanismo avançado
     if (precisaDeMelhorias(correctedLine)) {
-      console.log(`[TerceiraVia] 🚀 Usando ThirdWayEngine para linha ${index}`)
+      console.log(`[TerceiraVia] 🚀 Aplicando melhorias avançadas para linha ${index}`)
       
-      const improvedLine = await ThirdWayEngine.generateThirdWayLine(
+      // Simulação de processamento avançado - pode ser expandido posteriormente
+      const improvedLine = await processarLinhaAvancado(
         correctedLine,
-        finalGenre,
-        finalGenreConfig,
+        genre || "sertanejo-moderno",
         context,
-        isPerformanceMode,
-        additionalRequirements,
+        additionalRequirements
       )
 
       console.log(`[TerceiraVia] ✅ Linha ${index} melhorada: "${improvedLine}"`)
@@ -237,21 +230,59 @@ export async function applyTerceiraViaToLine(
 
   } catch (error) {
     console.error(`[TerceiraVia] ❌ Erro na linha ${index}:`, error)
-    // ✅ FALLBACK: APLICA CORREÇÕES BÁSICAS MESMO COM ERRO
     return aplicarCorrecoesImediatas(line)
   }
 }
 
 /**
- * FUNÇÃO LEGACY PARA COMPATIBILIDADE
+ * Processamento avançado de linha (placeholder para futura expansão)
  */
-async function applyLegacyTerceiraVia(
+async function processarLinhaAvancado(
+  line: string,
+  genre: string,
+  context: string,
+  additionalRequirements?: string
+): Promise<string> {
+  try {
+    const prompt = `Melhore esta linha de música ${genre}:
+
+LINHA: "${line}"
+CONTEXTO: ${context}
+${additionalRequirements ? `REQUISITOS: ${additionalRequirements}` : ''}
+
+REGRAS:
+- Mantenha o significado original
+- Use palavras completas e corretas
+- Máximo 11 sílabas
+- Linguagem natural brasileira
+
+Retorne APENAS a linha melhorada:`
+
+    const response = await generateText({
+      model: "openai/gpt-4o",
+      prompt,
+      temperature: 0.3,
+    })
+
+    return response.text?.trim() || line
+  } catch (error) {
+    console.error(`[TerceiraVia-Avancado] ❌ Erro no processamento avançado:`, error)
+    return line
+  }
+}
+
+// ============================================================================
+// COMPATIBILIDADE
+// ============================================================================
+
+/**
+ * Função legacy para compatibilidade
+ */
+export async function applyLegacyTerceiraVia(
   line: string,
   index: number,
   context: string,
   additionalRequirements?: string,
 ): Promise<string> {
-  return line
+  return applyTerceiraViaToLine(line, index, context, false, additionalRequirements)
 }
-
-export { applyLegacyTerceiraVia }
