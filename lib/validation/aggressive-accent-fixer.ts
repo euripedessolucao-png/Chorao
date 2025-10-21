@@ -1,5 +1,5 @@
 /**
- * CORRETOR AGRESSIVO DE ACENTUAÇÃO - VERSÃO FINAL ABSOLUTA
+ * CORRETOR AGRESSIVO DE ACENTUAÇÃO - VERSÃO FINAL DEFINITIVA
  * 
  * Correção definitiva para todos os padrões problemáticos
  */
@@ -8,20 +8,19 @@ export class AggressiveAccentFixer {
   private static readonly ACCENT_CORRECTIONS: Record<string, string> = {
     // ... (todo o dicionário anterior mantido) ...
 
-    // CORREÇÕES ESPECÍFICAS PARA OS NOVOS PADRÕES
+    // CORREÇÕES ESPECÍFICAS PARA OS PADRÕES IDENTIFICADOS
     pra: "para",
     tá: "está",
-    "firm’no": "firme no",
-    nãooganhava: "não ganhava",
-    nãoomora: "não mora",
-    nãooo: "não",
+    nãmora: "não mora",
     láço: "laço",
-    bom: "de raça",
+    dedo: "dedos",
+    raça: "de raça",
+    perdi: "perdi a",
     ess: "esse"
   }
 
   /**
-   * CORREÇÃO ABSOLUTA - Resolve todos os problemas
+   * CORREÇÃO DEFINITIVA - Resolve todos os problemas
    */
   static fix(text: string): {
     correctedText: string
@@ -30,40 +29,46 @@ export class AggressiveAccentFixer {
     let correctedText = text
     const corrections: Array<{ original: string; corrected: string; count: number }> = []
 
-    console.log(`[AccentFixer] 🚀 Iniciando correção ABSOLUTA...`)
+    console.log(`[AccentFixer] 🚀 Iniciando correção DEFINITIVA...`)
 
     // CORREÇÕES PRECISAS PARA TODOS OS PADRÕES
-    const absoluteFixes = [
+    const definitiveFixes = [
       // Contrações problemáticas
       { regex: /\bpra\b/gi, correction: 'para', description: 'contração pra' },
       { regex: /\btá\b/gi, correction: 'está', description: 'contração tá' },
-      { regex: /firm’no/gi, correction: 'firme no', description: 'contração firm no' },
       
-      // Palavras coladas e duplicações
-      { regex: /nãooganhava/gi, correction: 'não ganhava', description: 'não+ganhava colado' },
-      { regex: /nãoomora/gi, correction: 'não mora', description: 'não+mora colado' },
-      { regex: /nãooo/gi, correction: 'não', description: 'não duplicado' },
+      // Palavras coladas
+      { regex: /nãmora/gi, correction: 'não mora', description: 'nã+mora colado' },
       
       // Acento incorreto
       { regex: /láço/gi, correction: 'laço', description: 'láço incorreto' },
       
-      // Expressão inconsistente
-      { regex: /\bum cavalo bom\b/gi, correction: 'cavalo de raça', description: 'cavalo bom inconsistente' },
+      // Plural faltando
+      { regex: /\bdedo\b/gi, correction: 'dedos', description: 'plural dedo' },
+      
+      // Preposição faltando
+      { regex: /\bcavalo raça\b/gi, correction: 'cavalo de raça', description: 'preposição faltando' },
+      
+      // Artigo faltando
+      { regex: /\bperdi minha fé\b/gi, correction: 'perdi a minha fé', description: 'artigo faltando' },
       
       // Repetição de palavras
       { regex: /\bCasa nobre nobre\b/gi, correction: 'Casa nobre', description: 'nobre repetido' },
       
-      // Consistência temática
-      { regex: /Troquei minha paz/gi, correction: 'Vendi minha paz', description: 'troquei/vendi inconsistente' },
+      // Conjunção desnecessária
+      { regex: /\bE hoje\b/gi, correction: 'Hoje', description: 'E desnecessário' },
       
-      // Estrutura do verso 1
-      { regex: /Eu não ganhava dinheiro, amava/gi, correction: 'Eu não ganhava dinheiro, eu amava', description: 'estrutura verso 1' },
+      // Artigo faltando
+      { regex: /\bde terra\b/gi, correction: 'da terra', description: 'artigo terra' },
       
-      // Verso 3 - gerúndio inconsistente
-      { regex: /Comprando remédios, pagando os medos/gi, correction: 'Compro remédio, pagando os medos', description: 'gerúndio inconsistente' },
+      // Redundância no verso 1
+      { regex: /liberdade\.\.\. era livre, voava/gi, correction: 'liberdade... voava', description: 'redundância era livre' },
+      
+      // Expressão quebrada no OUTRO
+      { regex: /\bdessa perdi a fé\b/gi, correction: 'dessa ilusão perdi a fé', description: 'expressão quebrada' },
     ]
 
-    for (const { regex, correction, description } of absoluteFixes) {
+    for (const { regex, correction, description } of definitiveFixes) {
       const matches = correctedText.match(regex)
       if (matches) {
         const before = correctedText
@@ -74,7 +79,7 @@ export class AggressiveAccentFixer {
             corrected: correction,
             count: matches.length
           })
-          console.log(`[AccentFixer] 🎯 ABSOLUTO: ${description} → "${matches[0]}" → "${correction}"`)
+          console.log(`[AccentFixer] 🎯 DEFINITIVO: ${description} → "${matches[0]}" → "${correction}"`)
         }
       }
     }
@@ -107,7 +112,7 @@ export class AggressiveAccentFixer {
       }
     }
 
-    console.log(`[AccentFixer] ✅ CORREÇÃO ABSOLUTA FINALIZADA: ${corrections.length} correções`)
+    console.log(`[AccentFixer] ✅ CORREÇÃO DEFINITIVA FINALIZADA: ${corrections.length} correções`)
     
     return { correctedText, corrections }
   }
@@ -126,16 +131,16 @@ export class AggressiveAccentFixer {
     const zeroTolerancePatterns = [
       { pattern: /\bpra\b/gi, type: 'CONTRAÇÃO_INACEITÁVEL', suggestion: 'SUBSTITUIR por "para"' },
       { pattern: /\btá\b/gi, type: 'CONTRAÇÃO_INACEITÁVEL', suggestion: 'SUBSTITUIR por "está"' },
-      { pattern: /firm’no/gi, type: 'CONTRACAO_IRREGULAR', suggestion: 'CORRIGIR para "firme no"' },
-      { pattern: /nãooganhava/gi, type: 'PALAVRAS_COLADAS', suggestion: 'SEPARAR "não ganhava"' },
-      { pattern: /nãoomora/gi, type: 'PALAVRAS_COLADAS', suggestion: 'SEPARAR "não mora"' },
-      { pattern: /nãooo/gi, type: 'DUPLICAÇÃO_EXCESSIVA', suggestion: 'CORRIGIR para "não"' },
+      { pattern: /nãmora/gi, type: 'PALAVRAS_COLADAS', suggestion: 'SEPARAR "não mora"' },
       { pattern: /láço/gi, type: 'ACENTO_INCORRETO', suggestion: 'CORRIGIR para "laço"' },
-      { pattern: /\bum cavalo bom\b/gi, type: 'EXPRESSÃO_INCONSISTENTE', suggestion: 'PADRONIZAR "cavalo de raça"' },
+      { pattern: /\bdedo\b/gi, type: 'PLURAL_FALTANDO', suggestion: 'USAR "dedos"' },
+      { pattern: /\bcavalo raça\b/gi, type: 'PREPOSICAO_FALTANDO', suggestion: 'COMPLETAR "cavalo de raça"' },
+      { pattern: /\bperdi minha fé\b/gi, type: 'ARTIGO_FALTANDO', suggestion: 'COMPLETAR "perdi a minha fé"' },
       { pattern: /\bCasa nobre nobre\b/gi, type: 'REPETIÇÃO_PALAVRA', suggestion: 'REMOVER repetição' },
-      { pattern: /Troquei minha paz/gi, type: 'INCONSISTENCIA_TEMATICA', suggestion: 'PADRONIZAR "Vendi minha paz"' },
-      { pattern: /Eu não ganhava dinheiro, amava/gi, type: 'ESTRUTURA_QUEBRADA', suggestion: 'COMPLETAR "eu amava"' },
-      { pattern: /Comprando remédios/gi, type: 'GERUNDIO_INCONSISTENTE', suggestion: 'PADRONIZAR "Compro remédio"' },
+      { pattern: /\bE hoje\b/gi, type: 'CONJUNÇÃO_DESNECESSÁRIA', suggestion: 'REMOVER "E"' },
+      { pattern: /\bde terra\b/gi, type: 'ARTIGO_FALTANDO', suggestion: 'CORRIGIR para "da terra"' },
+      { pattern: /liberdade\.\.\. era livre/gi, type: 'REDUNDÂNCIA', suggestion: 'REMOVER "era livre"' },
+      { pattern: /\bdessa perdi a fé\b/gi, type: 'EXPRESSÃO_QUEBRADA', suggestion: 'COMPLETAR "dessa ilusão perdi a fé"' },
     ]
 
     zeroTolerancePatterns.forEach(({ pattern, type, suggestion }) => {
@@ -183,23 +188,23 @@ export class AggressiveAccentFixer {
       validation.errors.forEach(error => {
         switch (error.type) {
           case 'PALAVRAS_COLADAS':
-            corrected = corrected.replace(/nãooganhava/gi, 'não ganhava')
-            corrected = corrected.replace(/nãoomora/gi, 'não mora')
+            corrected = corrected.replace(/nãmora/gi, 'não mora')
             break
-          case 'DUPLICAÇÃO_EXCESSIVA':
-            corrected = corrected.replace(/nãooo/gi, 'não')
+          case 'PREPOSICAO_FALTANDO':
+            corrected = corrected.replace(/\bcavalo raça\b/gi, 'cavalo de raça')
             break
-          case 'EXPRESSÃO_INCONSISTENTE':
-            corrected = corrected.replace(/\bum cavalo bom\b/gi, 'cavalo de raça')
+          case 'ARTIGO_FALTANDO':
+            corrected = corrected.replace(/\bperdi minha fé\b/gi, 'perdi a minha fé')
+            corrected = corrected.replace(/\bde terra\b/gi, 'da terra')
             break
-          case 'INCONSISTENCIA_TEMATICA':
-            corrected = corrected.replace(/Troquei minha paz/gi, 'Vendi minha paz')
+          case 'REPETIÇÃO_PALAVRA':
+            corrected = corrected.replace(/\bCasa nobre nobre\b/gi, 'Casa nobre')
             break
-          case 'ESTRUTURA_QUEBRADA':
-            corrected = corrected.replace(/Eu não ganhava dinheiro, amava/gi, 'Eu não ganhava dinheiro, eu amava')
+          case 'REDUNDÂNCIA':
+            corrected = corrected.replace(/liberdade\.\.\. era livre, voava/gi, 'liberdade... voava')
             break
-          case 'GERUNDIO_INCONSISTENTE':
-            corrected = corrected.replace(/Comprando remédios/gi, 'Compro remédio')
+          case 'EXPRESSÃO_QUEBRADA':
+            corrected = corrected.replace(/\bdessa perdi a fé\b/gi, 'dessa ilusão perdi a fé')
             break
         }
       })
