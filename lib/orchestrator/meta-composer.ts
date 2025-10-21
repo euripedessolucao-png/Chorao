@@ -16,6 +16,7 @@ import {
 } from "@/lib/formatters/sertanejo-performance-formatter"
 import { validateNarrativeFlow } from "@/lib/validation/narrative-validator"
 import { SyllableEnforcer } from "@/lib/validation/syllableEnforcer"
+import { AutoSyllableCorrector } from "@/lib/validation/auto-syllable-corrector"
 
 export interface CompositionRequest {
   genre: string
@@ -91,11 +92,12 @@ export class MetaComposer {
   }
 
   /**
-   * COMPOSIÇÃO TURBO COM SISTEMA TERCEIRA VIA INTEGRADO
+   * COMPOSIÇÃO TURBO COM SISTEMA TERCEIRA VIA INTEGRADO + CORREÇÃO AUTOMÁTICA
    */
   static async compose(request: CompositionRequest): Promise<CompositionResult> {
     console.log("[MetaComposer-TURBO] Iniciando composição com Terceira Via...")
     console.log("[MetaComposer-TURBO] 🧪 MODO EXPERIMENTAL: SyllableEnforcer DESABILITADO")
+    console.log("[MetaComposer-TURBO] ✅ AutoSyllableCorrector ATIVADO")
 
     let iterations = 0
     let bestResult: CompositionResult | null = null
@@ -127,6 +129,11 @@ export class MetaComposer {
       } else {
         rawLyrics = await this.generateDirectLyrics(request, syllableEnforcement)
       }
+
+      console.log("[MetaComposer-TURBO] 🔧 Aplicando correção automática de sílabas...")
+      const autoCorrectionResult = AutoSyllableCorrector.correctLyrics(rawLyrics)
+      rawLyrics = autoCorrectionResult.correctedLyrics
+      console.log(`[MetaComposer-TURBO] ✅ ${autoCorrectionResult.totalCorrected} linhas corrigidas automaticamente`)
 
       const criticalViolations = this.detectCriticalViolations(rawLyrics)
       if (criticalViolations.length > 0) {
