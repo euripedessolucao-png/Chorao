@@ -178,16 +178,35 @@ export class MetaComposer {
       rawLyrics = await this.generateDirectLyrics(request, syllableEnforcement)
     }
 
-    // Validação ABSOLUTA: Máximo 11 sílabas
-    const absoluteValidation = AbsoluteSyllableEnforcer.validate(rawLyrics)
-    if (!absoluteValidation.isValid) {
+    const absoluteValidationBefore = AbsoluteSyllableEnforcer.validate(rawLyrics)
+    if (!absoluteValidationBefore.isValid) {
+      console.error("[MetaComposer] ❌ LETRA GERADA COM MAIS DE 11 SÍLABAS!")
+      console.error(absoluteValidationBefore.message)
+
+      // Tenta correção automática
       const enforcedResult = AbsoluteSyllableEnforcer.enforce(rawLyrics)
       rawLyrics = enforcedResult.correctedLyrics
+
+      // Valida novamente após correção
+      const revalidation = AbsoluteSyllableEnforcer.validate(rawLyrics)
+      if (!revalidation.isValid) {
+        console.error("[MetaComposer] ❌ CORREÇÃO FALHOU - Ainda há versos com mais de 11 sílabas")
+        console.error(revalidation.message)
+        // Retorna string vazia para forçar regeneração no MultiGenerationEngine
+        throw new Error("Letra com versos acima de 11 sílabas - regeneração necessária")
+      }
     }
 
     // Correção automática de sílabas
     const autoCorrectionResult = AutoSyllableCorrector.correctLyrics(rawLyrics)
     rawLyrics = autoCorrectionResult.correctedLyrics
+
+    const absoluteValidationAfterCorrection = AbsoluteSyllableEnforcer.validate(rawLyrics)
+    if (!absoluteValidationAfterCorrection.isValid) {
+      console.error("[MetaComposer] ❌ CORREÇÃO AUTOMÁTICA GEROU VERSOS COM MAIS DE 11 SÍLABAS!")
+      console.error(absoluteValidationAfterCorrection.message)
+      throw new Error("Correção automática falhou - regeneração necessária")
+    }
 
     // Validação multi-camadas
     const multiLayerValidation = validateAllLayers(rawLyrics, request.genre, request.theme)
@@ -197,6 +216,13 @@ export class MetaComposer {
 
     if (terceiraViaAnalysis.score_geral < 75) {
       rawLyrics = await this.applyTerceiraViaCorrections(rawLyrics, request, terceiraViaAnalysis, genreConfig)
+
+      const absoluteValidationAfterTerceiraVia = AbsoluteSyllableEnforcer.validate(rawLyrics)
+      if (!absoluteValidationAfterTerceiraVia.isValid) {
+        console.error("[MetaComposer] ❌ TERCEIRA VIA GEROU VERSOS COM MAIS DE 11 SÍLABAS!")
+        console.error(absoluteValidationAfterTerceiraVia.message)
+        throw new Error("Terceira Via falhou - regeneração necessária")
+      }
     }
 
     // Polimento final
@@ -211,6 +237,13 @@ export class MetaComposer {
         performanceMode,
         genreConfig,
       )
+
+      const absoluteValidationAfterPolish = AbsoluteSyllableEnforcer.validate(finalLyrics)
+      if (!absoluteValidationAfterPolish.isValid) {
+        console.error("[MetaComposer] ❌ POLIMENTO GEROU VERSOS COM MAIS DE 11 SÍLABAS!")
+        console.error(absoluteValidationAfterPolish.message)
+        throw new Error("Polimento falhou - regeneração necessária")
+      }
     }
 
     // Validação de pontuação
@@ -223,14 +256,14 @@ export class MetaComposer {
     const stackingResult = LineStacker.stackLines(finalLyrics)
     finalLyrics = stackingResult.stackedLyrics
 
-    // Validação final absoluta
     const finalAbsoluteValidation = AbsoluteSyllableEnforcer.validate(finalLyrics)
     if (!finalAbsoluteValidation.isValid) {
-      const enforcedResult = AbsoluteSyllableEnforcer.enforce(finalLyrics)
-      finalLyrics = enforcedResult.correctedLyrics
+      console.error("[MetaComposer] ❌ VALIDAÇÃO FINAL FALHOU - LETRA AINDA TEM VERSOS COM MAIS DE 11 SÍLABAS!")
+      console.error(finalAbsoluteValidation.message)
+      throw new Error("Validação final falhou - letra não pode ser entregue")
     }
 
-    // Apenas loga o problema e retorna a letra para que o MultiGenerationEngine decida
+    // Validação de integridade de palavras
     const integrityCheck = WordIntegrityValidator.validate(finalLyrics)
     if (!integrityCheck.isValid) {
       console.warn("[MetaComposer] ⚠️ Versão com problemas de integridade detectados:")
@@ -241,11 +274,12 @@ export class MetaComposer {
           console.warn(`  - Linha ${error.lineNumber}: "${error.word}" parece incompleta`)
         }
       })
-      // Não lança erro - deixa MultiGenerationEngine decidir se aceita ou regenera
+      throw new Error("Integridade de palavras falhou - regeneração necessária")
     } else {
       console.log("[MetaComposer] ✅ Versão aprovada - Integridade de palavras OK")
     }
 
+    console.log("[MetaComposer] ✅ LETRA APROVADA - TODOS OS VERSOS TÊM NO MÁXIMO 11 SÍLABAS!")
     return finalLyrics
   }
 
