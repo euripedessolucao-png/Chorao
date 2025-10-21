@@ -230,23 +230,22 @@ export class MetaComposer {
       finalLyrics = enforcedResult.correctedLyrics
     }
 
+    // Apenas loga o problema e retorna a letra para que o MultiGenerationEngine decida
     const integrityCheck = WordIntegrityValidator.validate(finalLyrics)
     if (!integrityCheck.isValid) {
-      console.error("[MetaComposer] ❌ VERSÃO REJEITADA - Palavras cortadas detectadas:")
+      console.warn("[MetaComposer] ⚠️ Versão com problemas de integridade detectados:")
       integrityCheck.errors.forEach((error) => {
         if (error.suggestion) {
-          console.error(`  - Linha ${error.lineNumber}: "${error.word}" → sugestão: "${error.suggestion}"`)
+          console.warn(`  - Linha ${error.lineNumber}: "${error.word}" → sugestão: "${error.suggestion}"`)
         } else {
-          console.error(`  - Linha ${error.lineNumber}: "${error.word}" parece incompleta`)
+          console.warn(`  - Linha ${error.lineNumber}: "${error.word}" parece incompleta`)
         }
       })
-
-      // Retorna string vazia para forçar regeneração
-      // O MultiGenerationEngine vai gerar outra versão
-      throw new Error("Versão rejeitada por palavras cortadas")
+      // Não lança erro - deixa MultiGenerationEngine decidir se aceita ou regenera
+    } else {
+      console.log("[MetaComposer] ✅ Versão aprovada - Integridade de palavras OK")
     }
 
-    console.log("[MetaComposer] ✅ Versão aprovada - Integridade de palavras OK")
     return finalLyrics
   }
 
