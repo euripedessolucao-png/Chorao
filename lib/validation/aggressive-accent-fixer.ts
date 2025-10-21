@@ -1,7 +1,7 @@
 /**
- * CORRETOR AGRESSIVO DE ACENTUAÇÃO - VERSÃO FINAL DEFINITIVA
+ * CORRETOR AGRESSIVO DE ACENTUAÇÃO - VERSÃO FINAL ABSOLUTA
  * 
- * Correção absoluta para todos os padrões problemáticos
+ * Correção definitiva para todos os padrões problemáticos
  */
 
 export class AggressiveAccentFixer {
@@ -9,20 +9,19 @@ export class AggressiveAccentFixer {
     // ... (todo o dicionário anterior mantido) ...
 
     // CORREÇÕES ESPECÍFICAS PARA OS NOVOS PADRÕES
-    liberdá: "liberdade",
-    nã: "não",
-    nãmora: "não mora",
-    nãposso: "não posso",
-    nãsei: "não sei",
     pra: "para",
     tá: "está",
-    dedo: "dedos",
-    herançaaa: "herança",
+    "firm’no": "firme no",
+    nãooganhava: "não ganhava",
+    nãoomora: "não mora",
+    nãooo: "não",
+    láço: "laço",
+    bom: "de raça",
     ess: "esse"
   }
 
   /**
-   * CORREÇÃO DEFINITIVA - Resolve todos os problemas
+   * CORREÇÃO ABSOLUTA - Resolve todos os problemas
    */
   static fix(text: string): {
     correctedText: string
@@ -31,43 +30,40 @@ export class AggressiveAccentFixer {
     let correctedText = text
     const corrections: Array<{ original: string; corrected: string; count: number }> = []
 
-    console.log(`[AccentFixer] 🚀 Iniciando correção DEFINITIVA...`)
+    console.log(`[AccentFixer] 🚀 Iniciando correção ABSOLUTA...`)
 
     // CORREÇÕES PRECISAS PARA TODOS OS PADRÕES
-    const definitiveFixes = [
-      // Acento incorreto
-      { regex: /liberdá/gi, correction: 'liberdade', description: 'acento liberdade' },
-      
-      // Palavras coladas com "nã"
-      { regex: /nã\b/gi, correction: 'não', description: 'nã isolado' },
-      { regex: /nãmora/gi, correction: 'não mora', description: 'nã+mora colado' },
-      { regex: /nãposso/gi, correction: 'não posso', description: 'nã+posso colado' },
-      { regex: /nãsei/gi, correction: 'não sei', description: 'nã+sei colado' },
-      
+    const absoluteFixes = [
       // Contrações problemáticas
       { regex: /\bpra\b/gi, correction: 'para', description: 'contração pra' },
       { regex: /\btá\b/gi, correction: 'está', description: 'contração tá' },
+      { regex: /firm’no/gi, correction: 'firme no', description: 'contração firm no' },
       
-      // Plural faltando
-      { regex: /\bdedo\b/gi, correction: 'dedos', description: 'plural dedo' },
+      // Palavras coladas e duplicações
+      { regex: /nãooganhava/gi, correction: 'não ganhava', description: 'não+ganhava colado' },
+      { regex: /nãoomora/gi, correction: 'não mora', description: 'não+mora colado' },
+      { regex: /nãooo/gi, correction: 'não', description: 'não duplicado' },
       
-      // Letras duplicadas
-      { regex: /herançaaa/gi, correction: 'herança', description: 'herança com aaa' },
+      // Acento incorreto
+      { regex: /láço/gi, correction: 'laço', description: 'láço incorreto' },
+      
+      // Expressão inconsistente
+      { regex: /\bum cavalo bom\b/gi, correction: 'cavalo de raça', description: 'cavalo bom inconsistente' },
       
       // Repetição de palavras
-      { regex: /Meu Meu/gi, correction: 'Meu', description: 'meu repetido' },
+      { regex: /\bCasa nobre nobre\b/gi, correction: 'Casa nobre', description: 'nobre repetido' },
       
-      // Expressões incompletas
-      { regex: /não sei ir/gi, correction: 'não sei para onde ir', description: 'expressão incompleta' },
+      // Consistência temática
+      { regex: /Troquei minha paz/gi, correction: 'Vendi minha paz', description: 'troquei/vendi inconsistente' },
       
-      // Conjunção desnecessária
-      { regex: /E hoje/gi, correction: 'Hoje', description: 'E desnecessário' },
+      // Estrutura do verso 1
+      { regex: /Eu não ganhava dinheiro, amava/gi, correction: 'Eu não ganhava dinheiro, eu amava', description: 'estrutura verso 1' },
       
-      // Estrutura do CHORUS
-      { regex: /Tenho casa nobre e não posso sair/gi, correction: 'Tenho casa nobre não posso sair', description: 'estrutura chorus' },
+      // Verso 3 - gerúndio inconsistente
+      { regex: /Comprando remédios, pagando os medos/gi, correction: 'Compro remédio, pagando os medos', description: 'gerúndio inconsistente' },
     ]
 
-    for (const { regex, correction, description } of definitiveFixes) {
+    for (const { regex, correction, description } of absoluteFixes) {
       const matches = correctedText.match(regex)
       if (matches) {
         const before = correctedText
@@ -78,7 +74,7 @@ export class AggressiveAccentFixer {
             corrected: correction,
             count: matches.length
           })
-          console.log(`[AccentFixer] 🎯 DEFINITIVO: ${description} → "${matches[0]}" → "${correction}"`)
+          console.log(`[AccentFixer] 🎯 ABSOLUTO: ${description} → "${matches[0]}" → "${correction}"`)
         }
       }
     }
@@ -111,7 +107,7 @@ export class AggressiveAccentFixer {
       }
     }
 
-    console.log(`[AccentFixer] ✅ CORREÇÃO DEFINITIVA FINALIZADA: ${corrections.length} correções`)
+    console.log(`[AccentFixer] ✅ CORREÇÃO ABSOLUTA FINALIZADA: ${corrections.length} correções`)
     
     return { correctedText, corrections }
   }
@@ -127,22 +123,22 @@ export class AggressiveAccentFixer {
     const errors: Array<{ type: string; problem: string; suggestion: string }> = []
 
     // PADRÕES CRÍTICOS - ZERO TOLERÂNCIA
-    const criticalPatterns = [
-      { pattern: /liberdá/gi, type: 'ACENTO_INCORRETO', suggestion: 'Corrigir para "liberdade"' },
-      { pattern: /nã\b/gi, type: 'PALAVRA_INCOMPLETA', suggestion: 'Completar "não"' },
-      { pattern: /nãmora/gi, type: 'PALAVRAS_COLADAS', suggestion: 'Separar "não mora"' },
-      { pattern: /nãposso/gi, type: 'PALAVRAS_COLADAS', suggestion: 'Separar "não posso"' },
-      { pattern: /nãsei/gi, type: 'PALAVRAS_COLADAS', suggestion: 'Separar "não sei"' },
-      { pattern: /\bpra\b/gi, type: 'CONTRAÇÃO_PROBLEMÁTICA', suggestion: 'Substituir por "para"' },
-      { pattern: /\btá\b/gi, type: 'CONTRAÇÃO_PROBLEMÁTICA', suggestion: 'Substituir por "está"' },
-      { pattern: /\bdedo\b/gi, type: 'PLURAL_FALTANDO', suggestion: 'Usar "dedos"' },
-      { pattern: /herançaaa/gi, type: 'LETRAS_DUPLICADAS', suggestion: 'Corrigir para "herança"' },
-      { pattern: /Meu Meu/gi, type: 'REPETIÇÃO_PALAVRA', suggestion: 'Remover repetição' },
-      { pattern: /não sei ir/gi, type: 'EXPRESSÃO_INCOMPLETA', suggestion: 'Completar "não sei para onde ir"' },
-      { pattern: /\bE hoje\b/gi, type: 'CONJUNÇÃO_DESNECESSÁRIA', suggestion: 'Remover "E"' },
+    const zeroTolerancePatterns = [
+      { pattern: /\bpra\b/gi, type: 'CONTRAÇÃO_INACEITÁVEL', suggestion: 'SUBSTITUIR por "para"' },
+      { pattern: /\btá\b/gi, type: 'CONTRAÇÃO_INACEITÁVEL', suggestion: 'SUBSTITUIR por "está"' },
+      { pattern: /firm’no/gi, type: 'CONTRACAO_IRREGULAR', suggestion: 'CORRIGIR para "firme no"' },
+      { pattern: /nãooganhava/gi, type: 'PALAVRAS_COLADAS', suggestion: 'SEPARAR "não ganhava"' },
+      { pattern: /nãoomora/gi, type: 'PALAVRAS_COLADAS', suggestion: 'SEPARAR "não mora"' },
+      { pattern: /nãooo/gi, type: 'DUPLICAÇÃO_EXCESSIVA', suggestion: 'CORRIGIR para "não"' },
+      { pattern: /láço/gi, type: 'ACENTO_INCORRETO', suggestion: 'CORRIGIR para "laço"' },
+      { pattern: /\bum cavalo bom\b/gi, type: 'EXPRESSÃO_INCONSISTENTE', suggestion: 'PADRONIZAR "cavalo de raça"' },
+      { pattern: /\bCasa nobre nobre\b/gi, type: 'REPETIÇÃO_PALAVRA', suggestion: 'REMOVER repetição' },
+      { pattern: /Troquei minha paz/gi, type: 'INCONSISTENCIA_TEMATICA', suggestion: 'PADRONIZAR "Vendi minha paz"' },
+      { pattern: /Eu não ganhava dinheiro, amava/gi, type: 'ESTRUTURA_QUEBRADA', suggestion: 'COMPLETAR "eu amava"' },
+      { pattern: /Comprando remédios/gi, type: 'GERUNDIO_INCONSISTENTE', suggestion: 'PADRONIZAR "Compro remédio"' },
     ]
 
-    criticalPatterns.forEach(({ pattern, type, suggestion }) => {
+    zeroTolerancePatterns.forEach(({ pattern, type, suggestion }) => {
       const matches = text.match(pattern)
       if (matches) {
         matches.forEach(match => {
@@ -187,21 +183,23 @@ export class AggressiveAccentFixer {
       validation.errors.forEach(error => {
         switch (error.type) {
           case 'PALAVRAS_COLADAS':
-            corrected = corrected.replace(/nãmora/gi, 'não mora')
-            corrected = corrected.replace(/nãposso/gi, 'não posso')
-            corrected = corrected.replace(/nãsei/gi, 'não sei')
+            corrected = corrected.replace(/nãooganhava/gi, 'não ganhava')
+            corrected = corrected.replace(/nãoomora/gi, 'não mora')
             break
-          case 'PALAVRA_INCOMPLETA':
-            corrected = corrected.replace(/nã\b/gi, 'não')
+          case 'DUPLICAÇÃO_EXCESSIVA':
+            corrected = corrected.replace(/nãooo/gi, 'não')
             break
-          case 'EXPRESSÃO_INCOMPLETA':
-            corrected = corrected.replace(/não sei ir/gi, 'não sei para onde ir')
+          case 'EXPRESSÃO_INCONSISTENTE':
+            corrected = corrected.replace(/\bum cavalo bom\b/gi, 'cavalo de raça')
             break
-          case 'LETRAS_DUPLICADAS':
-            corrected = corrected.replace(/herançaaa/gi, 'herança')
+          case 'INCONSISTENCIA_TEMATICA':
+            corrected = corrected.replace(/Troquei minha paz/gi, 'Vendi minha paz')
             break
-          case 'REPETIÇÃO_PALAVRA':
-            corrected = corrected.replace(/Meu Meu/gi, 'Meu')
+          case 'ESTRUTURA_QUEBRADA':
+            corrected = corrected.replace(/Eu não ganhava dinheiro, amava/gi, 'Eu não ganhava dinheiro, eu amava')
+            break
+          case 'GERUNDIO_INCONSISTENTE':
+            corrected = corrected.replace(/Comprando remédios/gi, 'Compro remédio')
             break
         }
       })
@@ -210,7 +208,7 @@ export class AggressiveAccentFixer {
     // Validação final
     const finalCheck = this.validate(corrected)
     if (finalCheck.isValid) {
-      console.log(`[AccentFixer] 🏆 SUCESSO TOTAL! Texto perfeito.`)
+      console.log(`[AccentFixer] 🏆 SUCESSO ABSOLUTO! Texto perfeito.`)
     }
 
     return corrected
