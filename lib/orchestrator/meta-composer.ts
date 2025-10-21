@@ -387,10 +387,10 @@ export class MetaComposer {
   }
 
   /**
-   * GERA REESCRITA DE LETRA EXISTENTE - PRIORIDADE: NARRATIVA PRIMEIRO
+   * GERA REESCRITA DE LETRA EXISTENTE - COM EXEMPLOS CONCRETOS DAS TÉCNICAS
    */
   private static async generateRewrite(request: CompositionRequest): Promise<string> {
-    console.log("[MetaComposer] Gerando reescrita com NARRATIVA em primeiro lugar...")
+    console.log("[MetaComposer] Gerando reescrita com técnicas de correção automática...")
 
     if (!request.originalLyrics) {
       throw new Error("Original lyrics required for rewrite")
@@ -400,7 +400,7 @@ export class MetaComposer {
     const genreConfig = getGenreConfig(request.genre)
 
     try {
-      const rewritePrompt = `Você é um compositor profissional de ${request.genre}, inspirado pelos mestres da música brasileira como Chico Buarque e Caetano Veloso.
+      const rewritePrompt = `Você é um compositor profissional de ${request.genre}.
 
 LETRA ORIGINAL:
 ${request.originalLyrics}
@@ -409,118 +409,90 @@ TEMA: ${request.theme}
 MOOD: ${request.mood}
 
 ═══════════════════════════════════════════════════════════════
-🎯 HIERARQUIA DE PRIORIDADES (DO MAIS IMPORTANTE PARA O MENOS)
+🎯 TÉCNICAS OBRIGATÓRIAS PARA AJUSTAR SÍLABAS
 ═══════════════════════════════════════════════════════════════
 
-**1. NARRATIVA ENVOLVENTE (PRIORIDADE MÁXIMA)**
-   - Conte uma HISTÓRIA completa com começo, meio e fim
-   - Cada verso deve CONECTAR com o anterior
-   - A história deve FLUIR naturalmente, sem cortes abruptos
-   - Mantenha COERÊNCIA emocional do início ao fim
-   
-   ❌ ERRADO: Versos desconectados forçados para rimar
-   "Cortei o laço, tratei do cabelo" (ok)
-   "Pago tudo do meu jeito, sem ninguém pra dar conselho" (desconectado!)
-   
-   ✓ CERTO: História fluída e conectada
-   "Cortei o laço que me prendia"
-   "Agora sigo livre, sem pedir permissão"
+Você DEVE usar estas técnicas para manter TODOS os versos com exatamente 11 sílabas:
 
-**2. EMOÇÃO AUTÊNTICA**
-   - Transmita SENTIMENTOS reais e profundos
-   - Use IMAGENS concretas (não abstrações)
-   - Conecte com a EXPERIÊNCIA do ouvinte
-   
-   ❌ ERRADO: Clichês vazios
-   "Meu coração está partido"
-   
-   ✓ CERTO: Emoção concreta
-   "Ainda guardo tuas fotos no celular"
+**TÉCNICA 1: REMOVER ARTIGOS DESNECESSÁRIOS**
+❌ "A lembrança da terra, o cheiro no ar" (12 sílabas)
+✓ "Lembrança da terra, o cheiro no ar" (11 sílabas)
 
-**3. CONEXÃO COM OUVINTE**
-   - Use linguagem COLOQUIAL brasileira (tô, cê, pra)
-   - Vocabulário ATUAL (PIX, story, biquíni, boteco)
-   - Situações RECONHECÍVEIS do dia a dia
+❌ "A casa é grande, mas não posso sair" (12 sílabas)
+✓ "Casa é grande, mas não posso sair" (11 sílabas)
 
-**4. MÉTRICA E RIMAS (FLEXÍVEIS PARA SERVIR À NARRATIVA)**
-   - Ideal: ${syllableTarget.ideal} sílabas por verso
-   - Máximo: 11 sílabas (mas NUNCA sacrifique a narrativa)
-   - Rimas: Importantes, mas NÃO force versos só para rimar
-   
-   IMPORTANTE: Se precisar escolher entre:
-   - Um verso perfeito em sílabas mas que quebra a narrativa
-   - Um verso com 12 sílabas mas que mantém a história fluindo
-   
-   ESCOLHA O SEGUNDO. A narrativa é mais importante.
+**TÉCNICA 2: SIMPLIFICAR EXPRESSÕES**
+❌ "Bota suja de pó, pé na estrada a andar" (14 sílabas)
+✓ "Bota de pó, pé na estrada a andar" (11 sílabas)
+
+❌ "Deixei o riacho, fui pro barulho que humilha" (15 sílabas)
+✓ "Deixei o riacho, fui pro barulho" (11 sílabas)
+
+**TÉCNICA 3: USAR CONTRAÇÕES NATURAIS**
+❌ "Você estava" → ✓ "Cê tava"
+❌ "Você é" → ✓ "Cê é"
+❌ "Para o" → ✓ "Pro"
+❌ "Está" → ✓ "Tá"
+
+**TÉCNICA 4: PLURAL → SINGULAR QUANDO POSSÍVEL**
+❌ "Pago remédios, medos, ilusões em vão" (13 sílabas)
+✓ "Pago remédio, medo, ilusão em vão" (11 sílabas)
+
+❌ "O dinheiro escorre, foge entre as mãos" (13 sílabas)
+✓ "O dinheiro escorre, foge da mão" (11 sílabas)
+
+**TÉCNICA 5: REFORMULAR MANTENDO SENTIDO**
+❌ "Escolhi o falso ouro, a tal segurança" (14 sílabas)
+✓ "Escolhi o falso ouro e a segurança" (12 sílabas)
+✓ "Escolhi falso ouro e segurança" (11 sílabas)
+
+❌ "Ainda hoje eu quebro o laço, volto ao meu chão" (15 sílabas)
+✓ "Hoje eu quebro o laço, volto ao chão" (11 sílabas)
 
 ═══════════════════════════════════════════════════════════════
-📚 APRENDA COM OS MESTRES BRASILEIROS
+✍️ PROCESSO OBRIGATÓRIO (SIGA EXATAMENTE)
 ═══════════════════════════════════════════════════════════════
 
-**Chico Buarque - Mestre da Narrativa:**
-"Ela fez questão de esquecer o meu nome
-E todos os planos que a gente sonhou"
-→ Narrativa clara: ela esqueceu, nós sonhamos juntos
+**PASSO 1: ESCREVA O VERSO**
+Escreva o verso com a ideia completa
 
-**Caetano Veloso - Mestre das Imagens:**
-"Você não sente nem vê
-Mas eu não posso deixar de dizer, meu amigo"
-→ Contraste emocional: você não vê, mas eu preciso falar
+**PASSO 2: CONTE AS SÍLABAS**
+Conte EXATAMENTE quantas sílabas poéticas o verso tem
+(lembre-se: conta até a última tônica)
 
-**Marília Mendonça - Mestre do Cotidiano:**
-"Eu tô bebendo, tô chorando
-Tô ligando pra você"
-→ Ações concretas que contam a história
+**PASSO 3: SE PASSOU DE 11, APLIQUE AS TÉCNICAS**
+a) Remova artigos desnecessários (A, O, As, Os)
+b) Simplifique expressões longas
+c) Use contrações (você→cê, estava→tava, para→pra)
+d) Mude plural para singular se possível
+e) Reformule mantendo o sentido
 
-═══════════════════════════════════════════════════════════════
-✍️ PROCESSO DE CRIAÇÃO (NARRATIVA PRIMEIRO)
-═══════════════════════════════════════════════════════════════
+**PASSO 4: CONTE NOVAMENTE**
+Garanta que ficou com EXATAMENTE 11 sílabas ou menos
 
-**PASSO 1: PLANEJE A HISTÓRIA**
-- Qual é a situação inicial? (ex: relacionamento tóxico)
-- O que acontece no meio? (ex: libertação)
-- Como termina? (ex: empoderamento)
-- Como cada parte CONECTA com a próxima?
-
-**PASSO 2: ESCREVA PENSANDO NA HISTÓRIA**
-- Escreva cada verso CONECTADO ao anterior
-- Mantenha a COERÊNCIA emocional
-- Use IMAGENS concretas
-- NÃO force rimas que quebram a narrativa
-
-**PASSO 3: AJUSTE A MÉTRICA (SEM DESTRUIR A NARRATIVA)**
-- Se um verso ficou longo, use ALTERNATIVAS:
-  a) Contrações: você→cê, está→tá
-  b) Sinônimos curtos: libertei→soltei
-  c) Reformulação mantendo sentido
-- NUNCA corte palavras que quebram a história
-
-**PASSO 4: REVISE A COERÊNCIA**
-✓ A história flui do início ao fim?
-✓ Cada verso conecta com o anterior?
-✓ As emoções são autênticas?
-✓ O ouvinte consegue acompanhar a narrativa?
-✓ As sílabas estão próximas do ideal (sem sacrificar história)?
+**PASSO 5: VERIFIQUE A NARRATIVA**
+O verso ainda faz sentido na história?
+Conecta com o verso anterior?
 
 ═══════════════════════════════════════════════════════════════
-🎵 SEU OBJETIVO FINAL
+🎯 REGRAS ABSOLUTAS
 ═══════════════════════════════════════════════════════════════
 
-Entregue uma letra que seja, NESTA ORDEM:
-1. Uma HISTÓRIA envolvente e coerente
-2. Com EMOÇÕES autênticas e profundas
-3. Que CONECTE com o ouvinte brasileiro
-4. Com métrica e rimas que SERVEM à narrativa (não dominam)
+1. MÁXIMO 11 SÍLABAS POR VERSO (conte antes de finalizar)
+2. NARRATIVA COERENTE (história fluída do início ao fim)
+3. GRAMÁTICA PERFEITA (frases completas em português correto)
+4. VOCABULÁRIO ATUAL (biquíni, PIX, story, boteco)
+5. LINGUAGEM COLOQUIAL (tô, cê, pra, né)
 
-LEMBRE-SE: Uma música é uma HISTÓRIA em forma de canção.
-A técnica (sílabas, rimas) existe para SERVIR a história, não para dominá-la.
+IMPORTANTE: Você DEVE contar as sílabas de CADA verso antes de finalizar.
+Se um verso tiver mais de 11 sílabas, APLIQUE AS TÉCNICAS até ficar com 11.
 
 Retorne APENAS a letra reescrita:`
 
       const response = await generateText({
         model: "openai/gpt-4o",
         prompt: rewritePrompt,
-        temperature: 0.8, // Aumentado para mais criatividade narrativa
+        temperature: 0.7, // Reduzido para mais precisão
       })
 
       return response.text || request.originalLyrics
@@ -575,95 +547,90 @@ Retorne a letra completa com os refrões preservados:`
   }
 
   /**
-   * GERA LETRA DIRETAMENTE - NARRATIVA PRIMEIRO
+   * GERA LETRA DIRETAMENTE - COM EXEMPLOS CONCRETOS DAS TÉCNICAS
    */
   private static async generateDirectLyrics(
     request: CompositionRequest,
     syllableEnforcement: { min: number; max: number; ideal: number },
   ): Promise<string> {
-    console.log("[MetaComposer] Gerando letra com NARRATIVA em primeiro lugar...")
+    console.log("[MetaComposer] Gerando letra com técnicas de correção automática...")
 
     const genreConfig = getGenreConfig(request.genre)
 
     try {
-      const directPrompt = `Você é um compositor profissional de ${request.genre}, inspirado pelos mestres brasileiros.
+      const directPrompt = `Você é um compositor profissional de ${request.genre}.
 
 TEMA: ${request.theme}
 MOOD: ${request.mood}
 ${request.rhythm ? `RITMO: ${request.rhythm}` : ""}
 
 ═══════════════════════════════════════════════════════════════
-🎯 PRIORIDADE #1: CONTE UMA HISTÓRIA
+🎯 TÉCNICAS OBRIGATÓRIAS PARA 11 SÍLABAS
 ═══════════════════════════════════════════════════════════════
 
-Sua missão é contar uma HISTÓRIA envolvente sobre: ${request.theme}
+**TÉCNICA 1: REMOVER ARTIGOS**
+❌ "A lembrança da terra" → ✓ "Lembrança da terra"
+❌ "O dinheiro escorre" → ✓ "Dinheiro escorre"
 
-**Estrutura Narrativa:**
-- COMEÇO: Apresente a situação (onde estamos?)
-- MEIO: Desenvolva o conflito/transformação (o que acontece?)
-- FIM: Resolução com impacto emocional (onde chegamos?)
+**TÉCNICA 2: SIMPLIFICAR**
+❌ "Bota suja de pó" → ✓ "Bota de pó"
+❌ "Deixei o riacho, fui pro barulho que humilha" → ✓ "Deixei o riacho, fui pro barulho"
 
-**Cada verso deve:**
-- CONECTAR com o verso anterior
-- AVANÇAR a história
-- Manter COERÊNCIA emocional
+**TÉCNICA 3: CONTRAÇÕES**
+você→cê, estava→tava, para→pra, está→tá
 
-❌ NÃO faça: Versos soltos só para rimar
-✓ FAÇA: História fluída que emociona
+**TÉCNICA 4: PLURAL→SINGULAR**
+❌ "remédios, medos, ilusões" → ✓ "remédio, medo, ilusão"
 
-═══════════════════════════════════════════════════════════════
-🎯 PRIORIDADE #2: EMOÇÃO AUTÊNTICA
-═══════════════════════════════════════════════════════════════
-
-Use IMAGENS CONCRETAS do cotidiano brasileiro:
-- "Bloqueei teu número" (não "te esqueci")
-- "Apaguei tuas fotos" (não "superei")
-- "Paguei a conta sozinha" (não "sou independente")
+**TÉCNICA 5: REFORMULAR**
+❌ "Ainda hoje eu quebro o laço" → ✓ "Hoje eu quebro o laço"
 
 ═══════════════════════════════════════════════════════════════
-🎯 PRIORIDADE #3: MÉTRICA (FLEXÍVEL)
+✍️ PROCESSO (SIGA EXATAMENTE)
 ═══════════════════════════════════════════════════════════════
 
-- Ideal: ${syllableEnforcement.ideal} sílabas
-- Máximo: 11 sílabas
-- MAS: Se precisar de 12 sílabas para manter a narrativa fluindo, USE
-
-IMPORTANTE: Narrativa > Métrica perfeita
+Para CADA verso:
+1. Escreva a ideia
+2. CONTE as sílabas poéticas
+3. Se > 11: APLIQUE as técnicas
+4. CONTE novamente
+5. Verifique a narrativa
 
 ═══════════════════════════════════════════════════════════════
-✍️ PROCESSO
+🎯 REGRAS ABSOLUTAS
 ═══════════════════════════════════════════════════════════════
 
-1. PENSE na história completa
-2. ESCREVA conectando cada verso
-3. AJUSTE sílabas SEM quebrar a narrativa
-4. REVISE a coerência emocional
+1. MÁXIMO 11 SÍLABAS (conte ANTES de finalizar)
+2. NARRATIVA COERENTE (história completa)
+3. GRAMÁTICA PERFEITA (frases completas)
+4. VOCABULÁRIO ATUAL (PIX, story, biquíni)
+5. LINGUAGEM COLOQUIAL (tô, cê, pra)
 
 ESTRUTURA:
 [PART A - Verse 1]
-4 linhas contando o COMEÇO da história
+4 linhas (11 sílabas cada)
 
 [PART B - Chorus]
-4 linhas com a MENSAGEM principal (chiclete)
+4 linhas (11 sílabas cada)
 
 [PART A2 - Verse 2]
-4 linhas desenvolvendo o MEIO
+4 linhas (11 sílabas cada)
 
 [PART B - Chorus]
-Repete a mensagem
+Repete
 
 [PART C - Bridge]
-2 linhas de CLÍMAX emocional
+2 linhas (11 sílabas cada)
 
 [PART B - Final Chorus]
-Refrão final com impacto
+Repete
 
 Retorne APENAS a letra:`
 
       const response = await generateText({
         model: "openai/gpt-4o",
         prompt: directPrompt,
-        temperature: 0.8, // Aumentado para mais criatividade narrativa
+        temperature: 0.7, // Reduzido para mais precisão
       })
 
       return response.text || ""
