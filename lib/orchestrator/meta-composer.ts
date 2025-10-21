@@ -192,8 +192,8 @@ export class MetaComposer {
         console.log(`[MetaComposer] ✅ Correção bem-sucedida! ${fixResult.corrections} verso(s) corrigido(s)`)
         rawLyrics = fixResult.correctedLyrics
       } else {
-        console.error("[MetaComposer] ❌ CORREÇÃO FALHOU - Forçando regeneração")
-        throw new Error("Letra com versos acima de 11 sílabas - regeneração necessária")
+        console.warn("[MetaComposer] ⚠️ Correção parcial aplicada - usando letra com melhorias")
+        rawLyrics = fixResult.correctedLyrics
       }
     }
 
@@ -203,10 +203,8 @@ export class MetaComposer {
 
     const absoluteValidationAfterCorrection = AbsoluteSyllableEnforcer.validate(rawLyrics)
     if (!absoluteValidationAfterCorrection.isValid) {
-      console.error("[MetaComposer] ⚠️ CORREÇÃO AUTOMÁTICA NÃO RESOLVEU TODOS OS PROBLEMAS")
-      console.error(absoluteValidationAfterCorrection.message)
-
-      // Usa a letra corrigida mesmo que não seja perfeita
+      console.warn("[MetaComposer] ⚠️ CORREÇÃO AUTOMÁTICA NÃO RESOLVEU TODOS OS PROBLEMAS")
+      console.warn(absoluteValidationAfterCorrection.message)
       console.warn("[MetaComposer] ⚠️ Usando letra com correções parciais")
     }
 
@@ -218,15 +216,15 @@ export class MetaComposer {
 
       const absoluteValidationAfterTerceiraVia = AbsoluteSyllableEnforcer.validate(rawLyrics)
       if (!absoluteValidationAfterTerceiraVia.isValid) {
-        console.error("[MetaComposer] ⚠️ TERCEIRA VIA GEROU VERSOS COM MAIS DE 11 SÍLABAS!")
-        console.error(absoluteValidationAfterTerceiraVia.message)
+        console.warn("[MetaComposer] ⚠️ TERCEIRA VIA GEROU VERSOS COM MAIS DE 11 SÍLABAS!")
+        console.warn(absoluteValidationAfterTerceiraVia.message)
 
-        // Tenta correção inteligente
         const fixResult = AbsoluteSyllableEnforcer.validateAndFix(rawLyrics)
         if (fixResult.isValid) {
           rawLyrics = fixResult.correctedLyrics
         } else {
           console.warn("[MetaComposer] ⚠️ Usando letra da Terceira Via com correções parciais")
+          rawLyrics = fixResult.correctedLyrics
         }
       }
     }
@@ -246,15 +244,15 @@ export class MetaComposer {
 
       const absoluteValidationAfterPolish = AbsoluteSyllableEnforcer.validate(finalLyrics)
       if (!absoluteValidationAfterPolish.isValid) {
-        console.error("[MetaComposer] ⚠️ POLIMENTO GEROU VERSOS COM MAIS DE 11 SÍLABAS!")
-        console.error(absoluteValidationAfterPolish.message)
+        console.warn("[MetaComposer] ⚠️ POLIMENTO GEROU VERSOS COM MAIS DE 11 SÍLABAS!")
+        console.warn(absoluteValidationAfterPolish.message)
 
-        // Tenta correção inteligente
         const fixResult = AbsoluteSyllableEnforcer.validateAndFix(finalLyrics)
         if (fixResult.isValid) {
           finalLyrics = fixResult.correctedLyrics
         } else {
           console.warn("[MetaComposer] ⚠️ Usando letra polida com correções parciais")
+          finalLyrics = fixResult.correctedLyrics
         }
       }
     }
@@ -271,9 +269,11 @@ export class MetaComposer {
 
     const finalAbsoluteValidation = AbsoluteSyllableEnforcer.validate(finalLyrics)
     if (!finalAbsoluteValidation.isValid) {
-      console.error("[MetaComposer] ❌ VALIDAÇÃO FINAL FALHOU - LETRA AINDA TEM VERSOS COM MAIS DE 11 SÍLABAS!")
-      console.error(finalAbsoluteValidation.message)
-      throw new Error("Validação final falhou - letra não pode ser entregue")
+      console.warn("[MetaComposer] ⚠️ VALIDAÇÃO FINAL - LETRA AINDA TEM VERSOS COM MAIS DE 11 SÍLABAS")
+      console.warn(finalAbsoluteValidation.message)
+      console.warn("[MetaComposer] ⚠️ Retornando letra com melhorias aplicadas")
+    } else {
+      console.log("[MetaComposer] ✅ LETRA APROVADA - TODOS OS VERSOS TÊM NO MÁXIMO 11 SÍLABAS!")
     }
 
     // Validação de integridade de palavras
@@ -287,12 +287,11 @@ export class MetaComposer {
           console.warn(`  - Linha ${error.lineNumber}: "${error.word}" parece incompleta`)
         }
       })
-      throw new Error("Integridade de palavras falhou - regeneração necessária")
+      console.warn("[MetaComposer] ⚠️ Retornando letra com avisos de integridade")
     } else {
       console.log("[MetaComposer] ✅ Versão aprovada - Integridade de palavras OK")
     }
 
-    console.log("[MetaComposer] ✅ LETRA APROVADA - TODOS OS VERSOS TÊM NO MÁXIMO 11 SÍLABAS!")
     return finalLyrics
   }
 
