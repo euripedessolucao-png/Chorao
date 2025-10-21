@@ -1,265 +1,287 @@
-/**
- * CORRETOR AGRESSIVO DE ACENTUAÇÃO - VERSÃO DEFINITIVA
- * 
- * Correção ULTRA-AGRESSIVA para os padrões problemáticos persistentes
- */
+import { WordIntegrityValidator } from "@/lib/validation/word-integrity-validator"
+import { AggressiveAccentFixer } from "@/lib/validation/aggressive-accent-fixer"
+import { RepetitionValidator } from "@/lib/validation/repetition-validator"
+import { UltraAggressiveSyllableReducer } from "@/lib/validation/ultra-aggressive-syllable-reducer"
 
-export class AggressiveAccentFixer {
-  private static readonly ACCENT_CORRECTIONS: Record<string, string> = {
-    // ... (mantém todo o dicionário original) ...
+export interface GenerationVariation {
+  lyrics: string
+  score: number
+  style: string
+  strengths: string[]
+  weaknesses: string[]
+}
 
-    // CORREÇÕES ESPECÍFICAS PARA OS NOVOS PADRÕES IDENTIFICADOS
-    nãganhava: "não ganhava",
-    láço: "laço",
-    pra: "para", 
-    ta: "tá",
-    ess: "esse",
-    trilha: "estrada", // Para manter consistência métrica
-    bom: "de raça", // Para manter significado original
-  }
+export interface MultiGenerationResult {
+  variations: GenerationVariation[]
+  bestVariationIndex: number
+  bestScore: number
+}
 
+export class MultiGenerationEngine {
   /**
-   * CORREÇÃO DEFINITIVA - Resolve TODOS os padrões problemáticos
+   * GERA MÚLTIPLAS VARIAÇÕES E ESCOLHE A MELHOR
+   * COM CORREÇÃO ULTRA AGRESSIVA DE ACENTOS
    */
-  static ultraFix(text: string): {
-    correctedText: string
-    corrections: Array<{ original: string; corrected: string; count: number }>
-  } {
-    let correctedText = text
-    const corrections: Array<{ original: string; corrected: string; count: number }> = []
+  static async generateMultipleVariations(
+    generateFn: () => Promise<string>,
+    scoreFn: (lyrics: string) => number,
+    count = 3,
+  ): Promise<MultiGenerationResult> {
+    console.log(`[MultiGeneration] 🎯 Gerando ${count} variações...`)
 
-    console.log(`[AccentFixer] 🚀 Iniciando CORREÇÃO DEFINITIVA...`)
+    const variations: GenerationVariation[] = []
+    const rejectedVariations: Array<{ lyrics: string; reason: string }> = []
+    const maxAttempts = count * 5
 
-    // FASE 1: Correções CRÍTICAS de padrões problemáticos
-    const criticalPatterns = [
-      // Padrão: "nã" + palavra (ex: nãganhava, nãmora, nãposso)
-      { regex: /nã(\w+)/gi, replacement: 'não $1', description: 'nã+palavra' },
-      
-      // Padrão: repetição de palavras consecutivas
-      { regex: /\b(\w+)\s+\1\b/gi, replacement: '$1', description: 'palavra repetida' },
-      
-      // Padrão: "láço" com acento incorreto
-      { regex: /láço/gi, replacement: 'laço', description: 'láço incorreto' },
-      
-      // Padrão: contrações que quebram métrica
-      { regex: /\bpra\b/gi, replacement: 'para', description: 'contração pra' },
-      { regex: /\btá\b/gi, replacement: 'está', description: 'contração tá' },
-      
-      // Padrão: palavras soltas que quebram contexto
-      { regex: /\bum cavalo bom\b/gi, replacement: 'cavalo de raça', description: 'cavalo de raça' },
-      { regex: /\bna trilha\b/gi, replacement: 'na estrada', description: 'consistência estrada' },
-    ]
+    let attempts = 0
+    while (variations.length < count && attempts < maxAttempts) {
+      attempts++
+      console.log(
+        `[MultiGeneration] 📝 Tentativa ${attempts}/${maxAttempts} (${variations.length}/${count} válidas)...`,
+      )
 
-    for (const { regex, replacement, description } of criticalPatterns) {
-      const matches = correctedText.match(regex)
-      if (matches) {
-        const before = correctedText
-        correctedText = correctedText.replace(regex, replacement)
-        if (before !== correctedText) {
-          corrections.push({
-            original: matches[0],
-            corrected: replacement,
-            count: matches.length
-          })
-          console.log(`[AccentFixer] 💥 CRÍTICO: ${description} → "${matches[0]}" → "${replacement}"`)
+      try {
+        let lyrics = await generateFn()
+
+        console.log(`[MultiGeneration] 📄 Letra gerada (primeiras 200 chars):`)
+        console.log(lyrics.substring(0, 200))
+
+        // 1. CORREÇÃO DE REPETIÇÕES
+        const repetitionFixResult = RepetitionValidator.fix(lyrics)
+        if (repetitionFixResult.corrections > 0) {
+          console.log(
+            `[MultiGeneration] 🔧 CORREÇÃO DE REPETIÇÕES: ${repetitionFixResult.corrections} repetições removidas`,
+          )
+          lyrics = repetitionFixResult.correctedLyrics
         }
+
+        // 2. CORREÇÃO ULTRA AGRESSIVA DE ACENTOS (NOVA API)
+        console.log(`[MultiGeneration] 🔧 Aplicando correção ULTRA AGRESSIVA de acentos...`)
+        const accentFixResult = AggressiveAccentFixer.completeFixAndValidate(lyrics)
+        
+        if (accentFixResult.appliedCorrections > 0) {
+          console.log(
+            `[MultiGeneration] 🔧 CORREÇÃO ULTRA AGRESSIVA DE ACENTOS: ${accentFixResult.appliedCorrections} correções aplicadas (Score: ${accentFixResult.validation.score}/100)`,
+          )
+          lyrics = accentFixResult.correctedLyrics
+        }
+
+        // 3. VALIDAÇÃO DE QUALIDADE APÓS CORREÇÃO DE ACENTOS
+        if (accentFixResult.validation.score < 70) {
+          console.warn(`[MultiGeneration] ⚠️ Baixa qualidade após correção: ${accentFixResult.validation.score}/100`)
+          rejectedVariations.push({
+            lyrics,
+            reason: `Baixa qualidade de acentuação: ${accentFixResult.validation.score}/100`,
+          })
+          continue
+        }
+
+        // 4. CORREÇÃO ULTRA AGRESSIVA DE SÍLABAS
+        console.log(`[MultiGeneration] 🎯 Aplicando correção ULTRA AGRESSIVA de sílabas...`)
+        const syllableFixResult = new UltraAggressiveSyllableReducer().correctFullLyrics(lyrics)
+
+        if (syllableFixResult.report.correctedVerses > 0) {
+          console.log(
+            `[MultiGeneration] 🔧 CORREÇÃO ULTRA AGRESSIVA DE SÍLABAS: ${syllableFixResult.report.correctedVerses}/${syllableFixResult.report.totalVerses} versos corrigidos (${syllableFixResult.report.successRate.toFixed(1)}% sucesso)`,
+          )
+          lyrics = syllableFixResult.correctedLyrics
+        } else {
+          console.log(`[MultiGeneration] ✅ Todos os versos já têm 11 sílabas`)
+        }
+
+        // 5. CORREÇÃO DE INTEGRIDADE DE PALAVRAS
+        const integrityFixResult = WordIntegrityValidator.fix(lyrics)
+        if (integrityFixResult.corrections > 0) {
+          console.log(`[MultiGeneration] 🔧 Aplicadas ${integrityFixResult.corrections} correções de integridade:`)
+          integrityFixResult.details.forEach((detail) => {
+            console.log(`  - "${detail.original}" → "${detail.corrected}"`)
+          })
+          lyrics = integrityFixResult.correctedLyrics
+        }
+
+        // 6. VALIDAÇÃO FINAL DE INTEGRIDADE
+        const integrityCheck = WordIntegrityValidator.validate(lyrics)
+        if (!integrityCheck.isValid) {
+          console.warn(`[MultiGeneration] ⚠️ Tentativa ${attempts} AINDA tem problemas após correção:`)
+          integrityCheck.errors.forEach((error) => {
+            console.warn(
+              `  - Linha ${error.lineNumber}: "${error.word}"${error.suggestion ? ` → sugestão: "${error.suggestion}"` : ""}`,
+            )
+          })
+          rejectedVariations.push({
+            lyrics,
+            reason: `Palavras cortadas não corrigíveis: ${integrityCheck.errors.map((e) => e.word).join(", ")}`,
+          })
+          continue
+        }
+
+        // 7. VALIDAÇÃO FINAL DE SÍLABAS
+        const finalSyllableCheck = new UltraAggressiveSyllableReducer().correctFullLyrics(lyrics)
+        if (finalSyllableCheck.report.successRate < 80) {
+          console.warn(
+            `[MultiGeneration] ⚠️ Tentativa ${attempts} AINDA tem ${finalSyllableCheck.report.failedVerses} versos com sílabas incorretas`,
+          )
+          rejectedVariations.push({
+            lyrics,
+            reason: `${finalSyllableCheck.report.failedVerses} versos com sílabas incorretas (${finalSyllableCheck.report.successRate.toFixed(1)}% sucesso)`,
+          })
+          continue
+        }
+
+        // 8. CALCULAR SCORE E ADICIONAR Variação VÁLIDA
+        const score = scoreFn(lyrics)
+
+        // Score mínimo para aceitação
+        if (score < 0.4) {
+          rejectedVariations.push({
+            lyrics,
+            reason: `Score muito baixo: ${score}`,
+          })
+          continue
+        }
+
+        const variation: GenerationVariation = {
+          lyrics,
+          score,
+          style: this.detectStyle(lyrics),
+          strengths: this.analyzeStrengths(lyrics),
+          weaknesses: this.analyzeWeaknesses(lyrics),
+        }
+
+        variations.push(variation)
+        console.log(`[MultiGeneration] ✅ Variação ${variations.length} válida - Score: ${score.toFixed(2)}`)
+
+      } catch (error) {
+        console.error(`[MultiGeneration] ❌ Erro na tentativa ${attempts}:`, error)
+        rejectedVariations.push({
+          lyrics: "",
+          reason: `Erro: ${error instanceof Error ? error.message : String(error)}`,
+        })
       }
     }
 
-    // FASE 2: Correções do dicionário tradicional
-    const sortedCorrections = Object.entries(this.ACCENT_CORRECTIONS)
-      .sort(([a], [b]) => b.length - a.length)
-
-    for (const [wrong, correct] of sortedCorrections) {
-      // Pula correções já aplicadas na fase 1
-      if (correctedText.toLowerCase().includes(wrong)) {
-        const regex = this.createSafeRegex(wrong)
-        const matches = correctedText.match(regex)
-        const count = matches ? matches.length : 0
-
-        if (count > 0) {
-          correctedText = correctedText.replace(regex, (match) => {
-            return this.preserveCapitalization(match, correct)
-          })
-
-          corrections.push({
-            original: wrong,
-            corrected: correct,
-            count,
-          })
-
-          console.log(`[AccentFixer] 🔧 Dicionário: "${wrong}" → "${correct}"`)
-        }
-      }
-    }
-
-    // FASE 3: Correção de estrutura e métrica
-    correctedText = this.fixVerseStructure(correctedText)
-
-    console.log(`[AccentFixer] ✅ CORREÇÃO DEFINITIVA FINALIZADA: ${corrections.length} correções`)
-    
-    return { correctedText, corrections }
-  }
-
-  /**
-   * Correção ESPECÍFICA para estrutura de versos problemáticos
-   */
-  private static fixVerseStructure(text: string): string {
-    const lines = text.split('\n')
-    const correctedLines: string[] = []
-    
-    for (const line of lines) {
-      let correctedLine = line
-      
-      // CORREÇÃO ESPECÍFICA PARA VERSO 1: "Eu nãganhava dinheiro, amava vida, liberdade... voava"
-      if (line.includes('nãganhava') || line.includes('não ganhava')) {
-        correctedLine = line
-          .replace(/nãganhava dinheiro,\s*amava vida,\s*liberdade\.\.\. voava/gi, 
-                   'não ganhava dinheiro, eu amava\nAmava vida, liberdade... voava')
-      }
-      
-      // CORREÇÃO ESPECÍFICA PARA CHORUS: "Casa nobre nobre" e estrutura repetida
-      if (line.includes('Casa nobre nobre')) {
-        correctedLine = 'Casa nobre não posso sair'
-      }
-      
-      // CORREÇÃO ESPECÍFICA PARA CHORUS: "Comprei um cavalo bom, mas láço prendeu"
-      if (line.includes('cavalo bom') || line.includes('láço prendeu')) {
-        correctedLine = line
-          .replace(/Comprei um cavalo bom,\s*mas láço prendeu/gi, 
-                   'Comprei cavalo de raça, mas me prendeu')
-          .replace(/Comprei um cavalo bom,\s*mas laço prendeu/gi, 
-                   'Comprei cavalo de raça, mas me prendeu')
-      }
-      
-      correctedLines.push(correctedLine)
-    }
-    
-    return correctedLines.join('\n')
-  }
-
-  /**
-   * VALIDAÇÃO SUPER-RIGOROSA para garantir qualidade
-   */
-  static validateStrict(text: string): { 
-    isValid: boolean;
-    score: number;
-    errors: Array<{ type: string; details: string; line: string }>
-  } {
-    const errors: Array<{ type: string; details: string; line: string }> = []
-    const lines = text.split('\n')
-    let errorCount = 0
-
-    // Padrões PROBLEMÁTICOS que NÃO podem existir
-    const forbiddenPatterns = [
-      { pattern: /nã\w+/gi, type: 'PALAVRA_CORTADA_COM_NÃ', description: 'Palavra cortada com "nã"' },
-      { pattern: /\b(\w+)\s+\1\b/gi, type: 'REPETIÇÃO_PALAVRA', description: 'Palavra repetida consecutivamente' },
-      { pattern: /láço/gi, type: 'ACENTO_INCORRETO', description: '"láço" com acento incorreto' },
-      { pattern: /\w+aa\b/gi, type: 'LETRAS_DUPLICADAS', description: 'Letras "aa" no final da palavra' },
-    ]
-
-    lines.forEach((line, index) => {
-      // Ignora linhas vazias e tags
-      if (!line.trim() || line.trim().startsWith('[') || line.trim().startsWith('(')) {
-        return
-      }
-
-      // Verifica padrões problemáticos
-      forbiddenPatterns.forEach(({ pattern, type, description }) => {
-        const matches = line.match(pattern)
-        if (matches) {
-          matches.forEach(match => {
-            errorCount++
-            errors.push({
-              type,
-              details: `${description}: "${match}"`,
-              line: `Linha ${index + 1}: ${line}`
-            })
-          })
-        }
+    // FALLBACK PARA CASO NENHUMA VARIAÇÃO SEJA VÁLIDA
+    if (variations.length === 0) {
+      console.error(`[MultiGeneration] ❌ Nenhuma variação válida após ${attempts} tentativas`)
+      console.error(`[MultiGeneration] 📋 Variações rejeitadas:`)
+      rejectedVariations.forEach((rejected, index) => {
+        console.error(`  ${index + 1}. ${rejected.reason}`)
       })
 
-      // Verifica palavras do dicionário incorretas
-      for (const [wrong] of Object.entries(this.ACCENT_CORRECTIONS)) {
-        const regex = this.createSafeRegex(wrong)
-        const matches = line.match(regex)
-        if (matches) {
-          matches.forEach(match => {
-            errorCount++
-            errors.push({
-              type: 'ACENTUAÇÃO_INCORRETA',
-              details: `Palavra sem acento: "${match}"`,
-              line: `Linha ${index + 1}: ${line}`
-            })
-          })
-        }
+      // Tenta usar a melhor variação rejeitada como fallback
+      if (rejectedVariations.length > 0 && rejectedVariations[0].lyrics) {
+        console.warn(`[MultiGeneration] ⚠️ Usando variação rejeitada como fallback`)
+        const fallbackLyrics = rejectedVariations[0].lyrics
+        const fallbackScore = scoreFn(fallbackLyrics)
+
+        variations.push({
+          lyrics: fallbackLyrics,
+          score: fallbackScore,
+          style: this.detectStyle(fallbackLyrics),
+          strengths: ["Fallback - melhor tentativa disponível"],
+          weaknesses: [rejectedVariations[0].reason],
+        })
+      } else {
+        throw new Error(
+          `Falha ao gerar qualquer variação válida após ${attempts} tentativas. Razões: ${rejectedVariations.map((r) => r.reason).join("; ")}`,
+        )
       }
-    })
-
-    // Calcula score de qualidade (0-100)
-    const totalLines = lines.filter(l => l.trim() && !l.startsWith('[') && !l.startsWith('(')).length
-    const qualityScore = totalLines > 0 ? Math.max(0, 100 - (errorCount * 10)) : 100
-    const isValid = qualityScore >= 80 // Pelo menos 80% de qualidade
-
-    console.log(`[AccentFixer] 📊 VALIDAÇÃO: Score ${qualityScore}/100 (${errorCount} erros, ${totalLines} linhas)`)
-
-    if (!isValid) {
-      console.warn(`[AccentFixer] ⚠️ VALIDAÇÃO FALHOU:`)
-      errors.forEach(error => {
-        console.warn(`  - ${error.type}: ${error.details}`)
-      })
     }
 
-    return { isValid, score: qualityScore, errors }
-  }
+    // ESCOLHE A MELHOR VARIAÇÃO
+    let bestIndex = 0
+    let bestScore = variations[0].score
 
-  // ... (mantém os métodos auxiliares createSafeRegex, preserveCapitalization, escapeRegex) ...
-
-  /**
-   * PROCESSO COMPLETO DE CORREÇÃO E VALIDAÇÃO
-   */
-  static completeFixAndValidate(lyrics: string): {
-    correctedLyrics: string;
-    validation: { isValid: boolean; score: number; errors: any[] };
-    appliedCorrections: number;
-  } {
-    console.log(`[AccentFixer] 🎯 INICIANDO PROCESSO COMPLETO...`)
-    
-    // 1. Correção Ultra Agressiva
-    const fixResult = this.ultraFix(lyrics)
-    
-    // 2. Validação Rigorosa
-    const validation = this.validateStrict(fixResult.correctedText)
-    
-    // 3. Se ainda não estiver válido, aplica correções extras
-    let finalLyrics = fixResult.correctedText
-    if (!validation.isValid) {
-      console.log(`[AccentFixer] 🔄 Aplicando correções extras...`)
-      finalLyrics = this.applyEmergencyFixes(fixResult.correctedText, validation.errors)
+    for (let i = 1; i < variations.length; i++) {
+      if (variations[i].score > bestScore) {
+        bestScore = variations[i].score
+        bestIndex = i
+      }
     }
 
-    console.log(`[AccentFixer] ✅ PROCESSO COMPLETO FINALIZADO: ${fixResult.corrections.length} correções aplicadas`)
-    
+    console.log(`[MultiGeneration] 🏆 Melhor variação: ${bestIndex + 1} (Score: ${bestScore.toFixed(2)})`)
+
     return {
-      correctedLyrics: finalLyrics,
-      validation: this.validateStrict(finalLyrics),
-      appliedCorrections: fixResult.corrections.length
+      variations,
+      bestVariationIndex: bestIndex,
+      bestScore,
     }
   }
 
-  private static applyEmergencyFixes(text: string, errors: any[]): string {
-    let corrected = text
-    
-    // Aplica correções baseadas nos erros encontrados
-    errors.forEach(error => {
-      if (error.type === 'PALAVRA_CORTADA_COM_NÃ') {
-        const word = error.details.match(/"([^"]+)"/)?.[1]
-        if (word) {
-          corrected = corrected.replace(new RegExp(word, 'gi'), word.replace('nã', 'não '))
-        }
-      }
-    })
-    
-    return corrected
+  /**
+   * DETECTA ESTILO DA LETRA
+   */
+  private static detectStyle(lyrics: string): string {
+    const lowerLyrics = lyrics.toLowerCase()
+
+    if (lowerLyrics.includes("cê") || lowerLyrics.includes("tô") || lowerLyrics.includes("pra")) {
+      return "Coloquial Brasileiro"
+    }
+
+    if (lowerLyrics.match(/\b(amor|coração|paixão|saudade)\b/g)) {
+      return "Romântico"
+    }
+
+    if (lowerLyrics.match(/\b(festa|balada|cerveja|boteco)\b/g)) {
+      return "Festivo"
+    }
+
+    return "Narrativo"
+  }
+
+  /**
+   * ANALISA PONTOS FORTES
+   */
+  private static analyzeStrengths(lyrics: string): string[] {
+    const strengths: string[] = []
+    const lines = lyrics.split("\n").filter((l) => l.trim() && !l.startsWith("[") && !l.startsWith("("))
+
+    // Verifica acentuação correta
+    const accentValidation = AggressiveAccentFixer.validateStrict(lyrics)
+    if (accentValidation.score >= 90) {
+      strengths.push("Acentuação perfeita")
+    }
+
+    // Verifica repetição (chorus memorável)
+    const uniqueLines = new Set(lines)
+    if (lines.length > uniqueLines.size) {
+      strengths.push("Repetição estratégica (memorável)")
+    }
+
+    // Verifica estrutura consistente
+    const syllableCheck = new UltraAggressiveSyllableReducer().correctFullLyrics(lyrics)
+    if (syllableCheck.report.successRate >= 90) {
+      strengths.push("Métrica consistente")
+    }
+
+    return strengths
+  }
+
+  /**
+   * ANALISA PONTOS FRACOS
+   */
+  private static analyzeWeaknesses(lyrics: string): string[] {
+    const weaknesses: string[] = []
+    const lines = lyrics.split("\n").filter((l) => l.trim() && !l.startsWith("[") && !l.startsWith("("))
+
+    // Verifica qualidade de acentuação
+    const accentValidation = AggressiveAccentFixer.validateStrict(lyrics)
+    if (accentValidation.score < 80) {
+      weaknesses.push(`Problemas de acentuação (${accentValidation.score}/100)`)
+    }
+
+    // Verifica sílabas
+    const syllableCheck = new UltraAggressiveSyllableReducer().correctFullLyrics(lyrics)
+    if (syllableCheck.report.successRate < 80) {
+      weaknesses.push(`Problemas de métrica (${syllableCheck.report.successRate.toFixed(1)}% sucesso)`)
+    }
+
+    // Verifica palavras cortadas
+    const integrityCheck = WordIntegrityValidator.validate(lyrics)
+    if (!integrityCheck.isValid) {
+      weaknesses.push("Palavras cortadas ou incompletas")
+    }
+
+    return weaknesses
   }
 }
