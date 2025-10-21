@@ -315,15 +315,8 @@ export class MetaComposer {
       // ✅ SÓ CORRIGE LINHAS QUE PRECISAM
       if (this.needsTerceiraViaCorrection(line, analysis)) {
         try {
-          const context = this.buildLineContext(lines, i, request.theme)
-          const correctedLine = await applyTerceiraViaToLine(
-            line,
-            i,
-            context,
-            request.performanceMode === "performance",
-            request.additionalRequirements,
-            request.genre,
-          )
+          const context = this.buildLineContext(lines, i, "")
+          const correctedLine = await applyTerceiraViaToLine(line, i, context, false, "", request.genre)
 
           if (correctedLine !== line) {
             correctionsApplied++
@@ -927,7 +920,7 @@ Retorne APENAS a letra (sem explicações):`
 
       if (this.needsTerceiraViaCorrection(line, analysis)) {
         try {
-          const context = this.buildLineContext(lines, i, analysis.theme)
+          const context = this.buildLineContext(lines, i, "")
           const correctedLine = await applyTerceiraViaToLine(line, i, context, false, "", genre)
 
           if (correctedLine !== line) {
