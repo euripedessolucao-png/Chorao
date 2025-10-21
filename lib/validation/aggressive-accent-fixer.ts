@@ -12,8 +12,8 @@ export class AggressiveAccentFixer {
     pra: "para",
     tá: "está",
     láço: "laço",
-    dedo: "dedos",
-    bom: "de raça",
+    firmeestrada: "firme na estrada",
+    raça: "de raça",
     perdi: "perdi a",
     ess: "esse"
   }
@@ -32,6 +32,9 @@ export class AggressiveAccentFixer {
 
     // CORREÇÕES PRECISAS PARA TODOS OS PADRÕES
     const definitiveFixes = [
+      // Palavras coladas
+      { regex: /firmeestrada/gi, correction: 'firme na estrada', description: 'firme+estrada colado' },
+      
       // Contrações problemáticas
       { regex: /\bpra\b/gi, correction: 'para', description: 'contração pra' },
       { regex: /\btá\b/gi, correction: 'está', description: 'contração tá' },
@@ -39,27 +42,26 @@ export class AggressiveAccentFixer {
       // Acento incorreto
       { regex: /láço/gi, correction: 'laço', description: 'láço incorreto' },
       
-      // Plural faltando
-      { regex: /\bdedo\b/gi, correction: 'dedos', description: 'plural dedo' },
-      
-      // Expressão inconsistente
-      { regex: /\bum cavalo bom\b/gi, correction: 'cavalo de raça', description: 'cavalo bom inconsistente' },
+      // Preposição faltando
+      { regex: /\bcavalo raça\b/gi, correction: 'cavalo de raça', description: 'preposição faltando' },
       
       // Artigo faltando
       { regex: /\bperdi minha fé\b/gi, correction: 'perdi a minha fé', description: 'artigo faltando' },
       
+      // Palavra faltando
+      { regex: /\bnão mora fé\b/gi, correction: 'não mora esperança', description: 'esperança faltando' },
+      
       // Repetição de palavras
       { regex: /\bCasa nobre nobre\b/gi, correction: 'Casa nobre', description: 'nobre repetido' },
       
-      // Inconsistência temática
-      { regex: /Troquei minha paz/gi, correction: 'Vendi minha paz', description: 'troquei/vendi inconsistente' },
+      // Conjunção desnecessária
+      { regex: /\bE hoje\b/gi, correction: 'Hoje', description: 'E desnecessário' },
       
-      // Estrutura do verso 1
-      { regex: /Eu Não ganhava dinheiro, amava/gi, correction: 'Eu não ganhava dinheiro, eu amava', description: 'estrutura e maiúscula' },
-      { regex: /A vida livre, liberdade\.\.\. voava/gi, correction: 'Amava vida, liberdade... voava', description: 'fluxo verso 1' },
+      // Redundância
+      { regex: /liberdade\.\.\. era livre, voava/gi, correction: 'liberdade... voava', description: 'redundância era livre' },
       
-      // Expressão incompleta
-      { regex: /por um rio ruído/gi, correction: 'por um rio de ruído', description: 'preposição faltando' },
+      // Artigo faltando
+      { regex: /Escolhi dinheiro/gi, correction: 'Escolhi o dinheiro', description: 'artigo dinheiro' },
       
       // Expressão quebrada
       { regex: /\bdessa perdi a fé\b/gi, correction: 'dessa ilusão perdi a fé', description: 'expressão quebrada' },
@@ -126,18 +128,17 @@ export class AggressiveAccentFixer {
 
     // PADRÕES CRÍTICOS - ZERO TOLERÂNCIA
     const zeroTolerancePatterns = [
+      { pattern: /firmeestrada/gi, type: 'PALAVRAS_COLADAS', suggestion: 'SEPARAR "firme na estrada"' },
       { pattern: /\bpra\b/gi, type: 'CONTRAÇÃO_INACEITÁVEL', suggestion: 'SUBSTITUIR por "para"' },
       { pattern: /\btá\b/gi, type: 'CONTRAÇÃO_INACEITÁVEL', suggestion: 'SUBSTITUIR por "está"' },
       { pattern: /láço/gi, type: 'ACENTO_INCORRETO', suggestion: 'CORRIGIR para "laço"' },
-      { pattern: /\bdedo\b/gi, type: 'PLURAL_FALTANDO', suggestion: 'USAR "dedos"' },
-      { pattern: /\bum cavalo bom\b/gi, type: 'EXPRESSÃO_INCONSISTENTE', suggestion: 'PADRONIZAR "cavalo de raça"' },
+      { pattern: /\bcavalo raça\b/gi, type: 'PREPOSICAO_FALTANDO', suggestion: 'COMPLETAR "cavalo de raça"' },
       { pattern: /\bperdi minha fé\b/gi, type: 'ARTIGO_FALTANDO', suggestion: 'COMPLETAR "perdi a minha fé"' },
+      { pattern: /\bnão mora fé\b/gi, type: 'PALAVRA_FALTANDO', suggestion: 'COMPLETAR "não mora esperança"' },
       { pattern: /\bCasa nobre nobre\b/gi, type: 'REPETIÇÃO_PALAVRA', suggestion: 'REMOVER repetição' },
-      { pattern: /Troquei minha paz/gi, type: 'INCONSISTENCIA_TEMATICA', suggestion: 'PADRONIZAR "Vendi minha paz"' },
-      { pattern: /Eu Não ganhava/gi, type: 'MAIÚSCULA_INCORRETA', suggestion: 'CORRIGIR "não" minúsculo' },
-      { pattern: /Eu não ganhava dinheiro, amava/gi, type: 'ESTRUTURA_QUEBRADA', suggestion: 'COMPLETAR "eu amava"' },
-      { pattern: /A vida livre/gi, type: 'FLUXO_QUEBRADO', suggestion: 'PADRONIZAR "Amava vida"' },
-      { pattern: /por um rio ruído/gi, type: 'PREPOSICAO_FALTANDO', suggestion: 'COMPLETAR "por um rio de ruído"' },
+      { pattern: /\bE hoje\b/gi, type: 'CONJUNÇÃO_DESNECESSÁRIA', suggestion: 'REMOVER "E"' },
+      { pattern: /liberdade\.\.\. era livre/gi, type: 'REDUNDÂNCIA', suggestion: 'REMOVER "era livre"' },
+      { pattern: /Escolhi dinheiro/gi, type: 'ARTIGO_FALTANDO', suggestion: 'COMPLETAR "Escolhi o dinheiro"' },
       { pattern: /\bdessa perdi a fé\b/gi, type: 'EXPRESSÃO_QUEBRADA', suggestion: 'COMPLETAR "dessa ilusão perdi a fé"' },
     ]
 
@@ -185,23 +186,24 @@ export class AggressiveAccentFixer {
       
       validation.errors.forEach(error => {
         switch (error.type) {
-          case 'EXPRESSÃO_INCONSISTENTE':
-            corrected = corrected.replace(/\bum cavalo bom\b/gi, 'cavalo de raça')
-            break
-          case 'INCONSISTENCIA_TEMATICA':
-            corrected = corrected.replace(/Troquei minha paz/gi, 'Vendi minha paz')
-            break
-          case 'MAIÚSCULA_INCORRETA':
-            corrected = corrected.replace(/Eu Não ganhava/gi, 'Eu não ganhava')
-            break
-          case 'ESTRUTURA_QUEBRADA':
-            corrected = corrected.replace(/Eu não ganhava dinheiro, amava/gi, 'Eu não ganhava dinheiro, eu amava')
-            break
-          case 'FLUXO_QUEBRADO':
-            corrected = corrected.replace(/A vida livre, liberdade\.\.\. voava/gi, 'Amava vida, liberdade... voava')
+          case 'PALAVRAS_COLADAS':
+            corrected = corrected.replace(/firmeestrada/gi, 'firme na estrada')
             break
           case 'PREPOSICAO_FALTANDO':
-            corrected = corrected.replace(/por um rio ruído/gi, 'por um rio de ruído')
+            corrected = corrected.replace(/\bcavalo raça\b/gi, 'cavalo de raça')
+            break
+          case 'PALAVRA_FALTANDO':
+            corrected = corrected.replace(/\bnão mora fé\b/gi, 'não mora esperança')
+            break
+          case 'ARTIGO_FALTANDO':
+            corrected = corrected.replace(/\bperdi minha fé\b/gi, 'perdi a minha fé')
+            corrected = corrected.replace(/Escolhi dinheiro/gi, 'Escolhi o dinheiro')
+            break
+          case 'REPETIÇÃO_PALAVRA':
+            corrected = corrected.replace(/\bCasa nobre nobre\b/gi, 'Casa nobre')
+            break
+          case 'REDUNDÂNCIA':
+            corrected = corrected.replace(/liberdade\.\.\. era livre, voava/gi, 'liberdade... voava')
             break
           case 'EXPRESSÃO_QUEBRADA':
             corrected = corrected.replace(/\bdessa perdi a fé\b/gi, 'dessa ilusão perdi a fé')
