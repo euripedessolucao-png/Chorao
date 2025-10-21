@@ -496,8 +496,7 @@ Retorne APENAS a letra reescrita (sem explicações):`
       const response = await generateText({
         model: "openai/gpt-4o",
         prompt: rewritePrompt,
-        temperature: 0.5, // Reduzido para máxima precisão
-        maxTokens: 2000,
+        temperature: 0.5,
       })
 
       return response.text || request.originalLyrics
@@ -688,8 +687,7 @@ Retorne APENAS a letra (sem explicações):`
       const response = await generateText({
         model: "openai/gpt-4o",
         prompt: directPrompt,
-        temperature: 0.5, // Reduzido ainda mais para máxima precisão
-        maxTokens: 2000,
+        temperature: 0.5,
       })
 
       return response.text || ""
