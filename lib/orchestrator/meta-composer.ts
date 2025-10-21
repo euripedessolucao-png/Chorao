@@ -319,15 +319,15 @@ export class MetaComposer {
         try {
           const context = this.buildLineContext(lines, i, "")
           
-          // ✅ CORREÇÃO CRÍTICA: PASSA TODOS OS PARÂMETROS NECESSÁRIOS
+          // ✅ CORREÇÃO CRÍTICA: PASSA APENAS OS 6 PARÂMETROS ESPERADOS
           const correctedLine = await applyTerceiraViaToLine(
             line, 
             i, 
             context, 
             false, 
             "", 
-            request.genre,
-            genreConfig  // ← PARÂMETRO QUE ESTAVA FALTANDO!
+            request.genre
+            // ❌ REMOVIDO: genreConfig (7º parâmetro não suportado)
           )
 
           if (correctedLine !== line) {
