@@ -248,22 +248,23 @@ export class AggressiveAccentFixer {
     let correctedText = text
     const corrections: Array<{ original: string; corrected: string; count: number }> = []
 
-    // Para cada palavra no dicionário, substitui TODAS as ocorrências
+    // Isso evita remoção de espaços e funciona melhor com caracteres acentuados
     for (const [wrong, correct] of Object.entries(this.ACCENT_CORRECTIONS)) {
-      // Cria regex que encontra a palavra errada com limites de palavra que funcionam com português
-      // Usa negative lookahead/lookbehind para garantir que não está no meio de outra palavra
-      const regex = new RegExp(
-        `(?<![a-záàâãéêíóôõúüçA-ZÁÀÂÃÉÊÍÓÔÕÚÜÇ])${this.escapeRegex(wrong)}(?![a-záàâãéêíóôõúüçA-ZÁÀÂÃÉÊÍÓÔÕÚÜÇ])`,
-        "g",
-      )
+      // Cria regex que encontra a palavra errada com limites de palavra
+      const regex = new RegExp(`\\b${this.escapeRegex(wrong)}\\b`, "gi")
 
       // Conta quantas vezes a palavra aparece
       const matches = correctedText.match(regex)
       const count = matches ? matches.length : 0
 
       if (count > 0) {
-        // Substitui todas as ocorrências
-        correctedText = correctedText.replace(regex, correct)
+        correctedText = correctedText.replace(regex, (match) => {
+          // Preserva capitalização (primeira letra maiúscula)
+          if (match.charAt(0) === match.charAt(0).toUpperCase()) {
+            return correct.charAt(0).toUpperCase() + correct.slice(1)
+          }
+          return correct
+        })
 
         corrections.push({
           original: wrong,
@@ -290,20 +291,17 @@ export class AggressiveAccentFixer {
     const wordsWithoutAccents: string[] = []
 
     for (const [wrong] of Object.entries(this.ACCENT_CORRECTIONS)) {
-      const regex = new RegExp(
-        `(?<![a-záàâãéêíóôõúüçA-ZÁÀÂÃÉÊÍÓÔÕÚÜÇ])${this.escapeRegex(wrong)}(?![a-záàâãéêíóôõúüçA-ZÁÀÂÃÉÊÍÓÔÕÚÜÇ])`,
-        "g",
-      )
+      const regex = new RegExp(`\\b${this.escapeRegex(wrong)}\\b`, "gi")
       const matches = text.match(regex)
 
       if (matches && matches.length > 0) {
-        wordsWithoutAccents.push(wrong)
+        wordsWithoutAccents.push(...matches)
       }
     }
 
     return {
       isValid: wordsWithoutAccents.length === 0,
-      wordsWithoutAccents,
+      wordsWithoutAccents: [...new Set(wordsWithoutAccents)], // Remove duplicatas
     }
   }
 }
