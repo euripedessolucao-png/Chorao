@@ -414,7 +414,7 @@ export class MetaComposer {
     const syllableTarget = request.syllableTarget || this.getGenreSyllableConfig(request.genre)
     const genreConfig = getGenreConfig(request.genre)
 
-    const rewritePrompt = `Você é um compositor profissional de ${request.genre}.
+    const rewritePrompt = `Você é um compositor profissional de ${request.genre} que cria MEGA HITS BRASILEIROS.
 
 LETRA ORIGINAL:
 ${request.originalLyrics}
@@ -423,96 +423,73 @@ TEMA: ${request.theme}
 MOOD: ${request.mood}
 
 ═══════════════════════════════════════════════════════════════
-🎯 MÉTODO DE TRABALHO OBRIGATÓRIO
+🎯 HIERARQUIA DE PRIORIDADES (MEGA HITS BRASILEIROS)
 ═══════════════════════════════════════════════════════════════
 
-Você NÃO deve escrever um verso longo e depois tentar corrigir.
-Você DEVE construir cada verso JÁ CORRETO desde o início.
+**PRIORIDADE MÁXIMA (Não negociável):**
+1. Emoção autêntica e história envolvente
+2. Chorus memorável que gruda na cabeça
+3. Linguagem coloquial brasileira (cê, tô, pra)
+4. Frases completas e coerentes
 
-PROCESSO PARA CADA VERSO:
+**PRIORIDADE IMPORTANTE (Guia, não bloqueio):**
+5. Limite de 11 sílabas (flexível para emoção)
+6. Rimas ricas 50% (objetivo, não obrigatório)
 
-1️⃣ PENSE na ideia do verso
-2️⃣ ESCREVA uma primeira versão MENTALMENTE
-3️⃣ CONTE as sílabas MENTALMENTE
-4️⃣ Se > 11, SIMPLIFIQUE antes de escrever
-5️⃣ SÓ ENTÃO escreva o verso final
-
-═══════════════════════════════════════════════════════════════
-📝 EXEMPLO DO PROCESSO CORRETO
-═══════════════════════════════════════════════════════════════
-
-**IDEIA:** Quero falar sobre a lembrança da terra
-
-**PRIMEIRA VERSÃO (mental):**
-"A lembrança da terra, o cheiro no ar"
-
-**CONTAGEM (mental):**
-A-lem-bran-ça-da-ter-ra-o-chei-ro-no-ar = 12 sílabas ❌
-
-**SIMPLIFICAÇÃO (mental):**
-Remover "A" do início
-"Lembrança da terra, o cheiro no ar"
-Lem-bran-ça-da-ter-ra-o-chei-ro-no-ar = 11 sílabas ✅
-
-**VERSO FINAL (escrito):**
-Lembrança da terra, o cheiro no ar
+**REGRA DE OURO:**
+Técnica SERVE à emoção, não o contrário!
 
 ═══════════════════════════════════════════════════════════════
-🔧 TÉCNICAS DE SIMPLIFICAÇÃO (USE ANTES DE ESCREVER)
+🎵 CARACTERÍSTICAS DOS MEGA HITS
 ═══════════════════════════════════════════════════════════════
 
-**1. Remova artigos:**
-"A lembrança" → "Lembrança"
-"O dinheiro" → "Dinheiro"
-"A chave" → "Chave"
+**CHORUS MEMORÁVEL:**
+- Frases curtas (máximo 8-9 sílabas)
+- Extremamente repetitivo
+- Gruda na cabeça imediatamente
+- Fácil de cantar junto (karaoke-friendly)
 
-**2. Simplifique expressões:**
-"papel colorido" → "nota falsa"
-"Bota suja de pó" → "Bota de pó"
-"que humilha" → (remova se não essencial)
+**LINGUAGEM COLOQUIAL:**
+- "cê" ao invés de "você"
+- "tô" ao invés de "estou"
+- "pra" ao invés de "para"
+- "tá" ao invés de "está"
 
-**3. Use sinônimos curtos:**
-"segurança" → "ilusão"
-"esperança" → "fé"
-"herança" → "chão"
-
-**4. Contrações naturais:**
-"você estava" → "cê tava"
-"para o" → "pro"
-"está" → "tá"
-
-**5. Plural → Singular:**
-"remédios" → "remédio"
-"medos" → "medo"
+**NARRATIVA ENVOLVENTE:**
+- Começo-meio-fim claro
+- História que emociona
+- Autenticidade (não forçado)
 
 ═══════════════════════════════════════════════════════════════
-✅ EXEMPLOS DE VERSOS CONSTRUÍDOS CORRETAMENTE
+✅ BANCO DE SUBSTITUIÇÕES TESTADAS E APROVADAS
 ═══════════════════════════════════════════════════════════════
 
-**VERSO 1:** (11 sílabas)
-Lembrança da terra, o cheiro no ar
-Lem-bran-ça-da-ter-ra-o-chei-ro-no-ar = 11 ✅
+**QUANDO FALTA 1 SÍLABA:**
+✅ "mas amava" → "mas eu amava"
+✅ "Comprei cavalo" → "Comprei um cavalo"
+✅ "Coração dispara" → "Meu coração dispara"
+✅ "nota falsa" → "notas falsas"
+✅ "a andar" → "na estrada"
 
-**VERSO 2:** (11 sílabas)
-Bota de pó, pé firme a andar
-Bo-ta-de-pó-pé-fir-me-a-an-dar = 11 ✅
+**QUANDO FALTA 2 SÍLABAS:**
+✅ "sou eu no cabresto" → "quem tá no cabresto sou eu"
 
-**VERSO 3:** (11 sílabas)
-Não tinha dinheiro, mas amava
-Não-ti-nha-di-nhei-ro-mas-a-ma-va = 11 ✅
-
-**VERSO 4:** (11 sílabas)
-Vida livre, liberdade, voava
-Vi-da-li-vre-li-ber-da-de-vo-a-va = 11 ✅
+**QUANDO SOBRA 1 SÍLABA:**
+✅ "por entre os dedos" → "entre os dedos"
+✅ "Comprando remédio" → "Compro remédio"
+✅ "entre os dedos meus" → "entre meus dedos"
 
 ═══════════════════════════════════════════════════════════════
-⚠️ REGRA ABSOLUTA
+⚠️ IMPORTANTE
 ═══════════════════════════════════════════════════════════════
 
-CADA VERSO DEVE TER EXATAMENTE 11 SÍLABAS OU MENOS.
+Se precisar escolher entre:
+- Verso com 10-12 sílabas MAS emocionalmente perfeito
+- Verso com 11 sílabas MAS sem emoção
 
-Você DEVE construir cada verso JÁ CORRETO.
-NÃO escreva versos longos para corrigir depois.
+ESCOLHA O PRIMEIRO! A emoção é mais importante.
+
+(Mas tente sempre atingir 11 sílabas usando as técnicas acima)
 
 ═══════════════════════════════════════════════════════════════
 
@@ -587,103 +564,80 @@ Retorne a letra completa com os refrões preservados:`
 
     const genreConfig = getGenreConfig(request.genre)
 
-    const directPrompt = `Você é um compositor profissional de ${request.genre}.
+    const directPrompt = `Você é um compositor profissional de ${request.genre} que cria MEGA HITS BRASILEIROS.
 
 TEMA: ${request.theme}
 MOOD: ${request.mood}
 ${request.rhythm ? `RITMO: ${request.rhythm}` : ""}
 
 ═══════════════════════════════════════════════════════════════
-🎯 MÉTODO DE TRABALHO OBRIGATÓRIO
+🎯 HIERARQUIA DE PRIORIDADES (MEGA HITS BRASILEIROS)
 ═══════════════════════════════════════════════════════════════
 
-Você NÃO deve escrever um verso longo e depois tentar corrigir.
-Você DEVE construir cada verso JÁ CORRETO desde o início.
+**PRIORIDADE MÁXIMA (Não negociável):**
+1. Emoção autêntica e história envolvente
+2. Chorus memorável que gruda na cabeça
+3. Linguagem coloquial brasileira (cê, tô, pra)
+4. Frases completas e coerentes
 
-PROCESSO PARA CADA VERSO:
+**PRIORIDADE IMPORTANTE (Guia, não bloqueio):**
+5. Limite de 11 sílabas (flexível para emoção)
+6. Rimas ricas 50% (objetivo, não obrigatório)
 
-1️⃣ PENSE na ideia do verso
-2️⃣ ESCREVA uma primeira versão MENTALMENTE
-3️⃣ CONTE as sílabas MENTALMENTE
-4️⃣ Se ≠ 11, AJUSTE antes de escrever
-5️⃣ SÓ ENTÃO escreva o verso final
-
-═══════════════════════════════════════════════════════════════
-✅ EXEMPLOS REAIS DE CORREÇÕES TESTADAS
-═══════════════════════════════════════════════════════════════
-
-**EXEMPLO 1: Falta 1 sílaba - Adicionar pronome**
-❌ "Não tinha dinheiro, mas amava" (10 sílabas)
-✅ "Não tinha dinheiro, mas eu amava" (11 sílabas)
-TÉCNICA: Adicionar "eu"
-
-**EXEMPLO 2: Falta 1 sílaba - Adicionar artigo**
-❌ "Comprei cavalo, mas fiquei preso" (10 sílabas)
-✅ "Comprei um cavalo, mas fiquei preso" (11 sílabas)
-TÉCNICA: Adicionar "um"
-
-**EXEMPLO 3: Falta 1 sílaba - Adicionar possessivo**
-❌ "Coração dispara, quer escapar" (10 sílabas)
-✅ "Meu coração dispara, quer escapar" (11 sílabas)
-TÉCNICA: Adicionar "Meu"
-
-**EXEMPLO 4: Falta 1 sílaba - Mudar singular para plural**
-❌ "Troquei minha paz por nota falsa" (10 sílabas)
-✅ "Troquei minha paz por notas falsas" (11 sílabas)
-TÉCNICA: "nota" → "notas"
-
-**EXEMPLO 5: Falta 1 sílaba - Substituir expressão**
-❌ "Bota de pó, pé firme a andar" (10 sílabas)
-✅ "Bota de pó, pé firme na estrada" (11 sílabas)
-TÉCNICA: "a andar" → "na estrada"
-
-**EXEMPLO 6: Falta 1 sílaba - Adicionar possessivo no meio**
-❌ "Hoje na alma não mora mais fé" (10 sílabas)
-✅ "Hoje na minha alma não mora fé" (11 sílabas)
-TÉCNICA: Adicionar "minha" e remover "mais"
-
-**EXEMPLO 7: Falta 2 sílabas - Reformular completamente**
-❌ "Ai-ai-ai, sou eu no cabresto" (9 sílabas)
-✅ "Ai-ai-ai, quem tá no cabresto sou eu" (11 sílabas)
-TÉCNICA: Inverter ordem e adicionar "quem tá"
-
-**EXEMPLO 8: Sobra 1 sílaba - Remover preposição**
-❌ "Dinheiro escorre por entre os dedos" (12 sílabas)
-✅ "Dinheiro escorre entre os dedos" (11 sílabas)
-TÉCNICA: Remover "por"
-
-**EXEMPLO 9: Sobra 1 sílaba - Mudar gerúndio para presente**
-❌ "Comprando remédio, pagando medo" (12 sílabas)
-✅ "Compro remédio, pagando o medo" (11 sílabas)
-TÉCNICA: "Comprando" → "Compro"
+**REGRA DE OURO:**
+Técnica SERVE à emoção, não o contrário!
 
 ═══════════════════════════════════════════════════════════════
-🔧 BANCO DE TÉCNICAS TESTADAS
+🎵 CARACTERÍSTICAS DOS MEGA HITS
+═══════════════════════════════════════════════════════════════
+
+**CHORUS MEMORÁVEL:**
+- Frases curtas (máximo 8-9 sílabas)
+- Extremamente repetitivo
+- Gruda na cabeça imediatamente
+- Fácil de cantar junto (karaoke-friendly)
+
+**LINGUAGEM COLOQUIAL:**
+- "cê" ao invés de "você"
+- "tô" ao invés de "estou"
+- "pra" ao invés de "para"
+- "tá" ao invés de "está"
+
+**NARRATIVA ENVOLVENTE:**
+- Começo-meio-fim claro
+- História que emociona
+- Autenticidade (não forçado)
+
+═══════════════════════════════════════════════════════════════
+✅ BANCO DE SUBSTITUIÇÕES TESTADAS E APROVADAS
 ═══════════════════════════════════════════════════════════════
 
 **QUANDO FALTA 1 SÍLABA:**
-1. Adicionar pronome: "mas amava" → "mas eu amava"
-2. Adicionar artigo: "Comprei cavalo" → "Comprei um cavalo"
-3. Adicionar possessivo: "Coração" → "Meu coração"
-4. Mudar singular → plural: "nota" → "notas"
-5. Substituir expressão: "a andar" → "na estrada"
+✅ "mas amava" → "mas eu amava"
+✅ "Comprei cavalo" → "Comprei um cavalo"
+✅ "Coração dispara" → "Meu coração dispara"
+✅ "nota falsa" → "notas falsas"
+✅ "a andar" → "na estrada"
 
 **QUANDO FALTA 2 SÍLABAS:**
-1. Reformular completamente invertendo ordem
-2. Adicionar "quem tá" ou "que é"
+✅ "sou eu no cabresto" → "quem tá no cabresto sou eu"
 
 **QUANDO SOBRA 1 SÍLABA:**
-1. Remover preposição: "por entre" → "entre"
-2. Gerúndio → Presente: "Comprando" → "Compro"
-3. Remover advérbio: "não mora mais" → "não mora"
+✅ "por entre os dedos" → "entre os dedos"
+✅ "Comprando remédio" → "Compro remédio"
+✅ "entre os dedos meus" → "entre meus dedos"
 
 ═══════════════════════════════════════════════════════════════
-⚠️ REGRA ABSOLUTA
+⚠️ IMPORTANTE
 ═══════════════════════════════════════════════════════════════
 
-CADA VERSO DEVE TER EXATAMENTE 11 SÍLABAS.
+Se precisar escolher entre:
+- Verso com 10-12 sílabas MAS emocionalmente perfeito
+- Verso com 11 sílabas MAS sem emoção
 
-Use as técnicas testadas acima para ajustar ANTES de escrever.
+ESCOLHA O PRIMEIRO! A emoção é mais importante.
+
+(Mas tente sempre atingir 11 sílabas usando as técnicas acima)
 
 ═══════════════════════════════════════════════════════════════
 
