@@ -210,6 +210,61 @@ export class AutoSyllableCorrector {
   }
 
   /**
+   * TÉCNICA 8: Ajusta versos que ficaram com sílabas incorretas
+   * Adiciona palavras quando falta, remove quando sobra
+   */
+  private static adjustVerseSyllables(line: string, target = 11): { text: string; applied: boolean } {
+    const currentSyllables = countPoeticSyllables(line)
+
+    if (currentSyllables === target) {
+      return { text: line, applied: false }
+    }
+
+    const diff = target - currentSyllables
+
+    // Se falta 1 sílaba
+    if (diff === 1) {
+      // Adiciona artigo ou possessivo no início
+      if (!line.startsWith("Meu ") && !line.startsWith("Minha ")) {
+        return { text: `Meu ${line}`, applied: true }
+      }
+      // Adiciona "na" ao invés de "a"
+      if (line.includes(" a ")) {
+        return { text: line.replace(" a ", " na "), applied: true }
+      }
+      // Adiciona "do" ao invés de "de"
+      if (line.includes(" de ")) {
+        return { text: line.replace(" de ", " do "), applied: true }
+      }
+    }
+
+    // Se falta 2 sílabas
+    if (diff === 2) {
+      // Adiciona "Minha" no início
+      if (!line.startsWith("Minha ")) {
+        return { text: `Minha ${line}`, applied: true }
+      }
+    }
+
+    // Se sobra 1 sílaba
+    if (diff === -1) {
+      // Remove primeiro artigo encontrado
+      if (line.includes(" a ")) {
+        return { text: line.replace(" a ", " "), applied: true }
+      }
+      if (line.includes(" o ")) {
+        return { text: line.replace(" o ", " "), applied: true }
+      }
+      // Remove possessivo
+      if (line.includes(" meu ")) {
+        return { text: line.replace(" meu ", " "), applied: true }
+      }
+    }
+
+    return { text: line, applied: false }
+  }
+
+  /**
    * Aplica TODAS as técnicas em sequência até atingir 11 sílabas ou menos
    */
   static correctLine(line: string): CorrectionResult {
@@ -237,7 +292,8 @@ export class AutoSyllableCorrector {
       { name: "Simplificar expressões", fn: this.simplifyExpressions.bind(this) },
       { name: "Plural → Singular", fn: this.convertPluralToSingular.bind(this) },
       { name: "Remover redundâncias", fn: this.removeRedundantWords.bind(this) },
-      { name: "Reformulação agressiva", fn: this.aggressiveReformulation.bind(this) }, // Nova técnica
+      { name: "Reformulação agressiva", fn: this.aggressiveReformulation.bind(this) },
+      { name: "Ajuste fino de sílabas", fn: this.adjustVerseSyllables.bind(this) },
     ]
 
     for (const technique of techniques) {
