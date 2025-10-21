@@ -27,6 +27,7 @@ export class MultiGenerationEngine {
     console.log(`[MultiGeneration] 🎯 Gerando ${count} variações...`)
 
     const variations: GenerationVariation[] = []
+    const rejectedVariations: Array<{ lyrics: string; reason: string }> = []
     const maxAttempts = count * 3 // Tenta até 3x mais para garantir versões válidas
 
     let attempts = 0
@@ -39,10 +40,25 @@ export class MultiGenerationEngine {
       try {
         const lyrics = await generateFn()
 
+        console.log(`[MultiGeneration] 📄 Letra gerada (primeiras 200 chars):`)
+        console.log(lyrics.substring(0, 200))
+
         const integrityCheck = WordIntegrityValidator.validate(lyrics)
         if (!integrityCheck.isValid) {
-          console.warn(`[MultiGeneration] ⚠️ Tentativa ${attempts} rejeitada - Palavras cortadas`)
-          continue // Pula para próxima tentativa
+          console.warn(`[MultiGeneration] ⚠️ Tentativa ${attempts} tem problemas de integridade:`)
+          integrityCheck.errors.forEach((error) => {
+            console.warn(`  - Linha ${error.lineNumber}: "${error.word}"`)
+          })
+          rejectedVariations.push({
+            lyrics,
+            reason: `Palavras cortadas: ${integrityCheck.errors.map((e) => e.word).join(", ")}`,
+          })
+
+          if (attempts >= maxAttempts - 1 && variations.length === 0) {
+            console.warn(`[MultiGeneration] ⚠️ Aceitando versão com problemas (última tentativa)`)
+          } else {
+            continue // Pula para próxima tentativa
+          }
         }
 
         const score = scoreFn(lyrics)
@@ -59,11 +75,37 @@ export class MultiGenerationEngine {
         console.log(`[MultiGeneration] ✅ Variação ${variations.length} válida - Score: ${score}`)
       } catch (error) {
         console.error(`[MultiGeneration] ❌ Erro na tentativa ${attempts}:`, error)
+        rejectedVariations.push({
+          lyrics: "",
+          reason: `Erro: ${error instanceof Error ? error.message : String(error)}`,
+        })
       }
     }
 
     if (variations.length === 0) {
-      throw new Error("Falha ao gerar qualquer variação válida após múltiplas tentativas")
+      console.error(`[MultiGeneration] ❌ Nenhuma variação válida após ${attempts} tentativas`)
+      console.error(`[MultiGeneration] 📋 Variações rejeitadas:`)
+      rejectedVariations.forEach((rejected, index) => {
+        console.error(`  ${index + 1}. ${rejected.reason}`)
+      })
+
+      if (rejectedVariations.length > 0 && rejectedVariations[0].lyrics) {
+        console.warn(`[MultiGeneration] ⚠️ Usando variação rejeitada como fallback`)
+        const fallbackLyrics = rejectedVariations[0].lyrics
+        const fallbackScore = scoreFn(fallbackLyrics)
+
+        variations.push({
+          lyrics: fallbackLyrics,
+          score: fallbackScore,
+          style: this.detectStyle(fallbackLyrics),
+          strengths: ["Fallback - melhor tentativa disponível"],
+          weaknesses: [rejectedVariations[0].reason],
+        })
+      } else {
+        throw new Error(
+          `Falha ao gerar qualquer variação válida após ${attempts} tentativas. Razões: ${rejectedVariations.map((r) => r.reason).join("; ")}`,
+        )
+      }
     }
 
     // Escolhe a melhor variação
