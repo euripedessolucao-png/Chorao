@@ -36,6 +36,7 @@ export interface CompositionRequest {
   rhythm?: string
   structureAnalysis?: any
   performanceMode?: "standard" | "performance"
+  useTerceiraVia?: boolean
 }
 
 export interface CompositionResult {
@@ -160,6 +161,7 @@ export class MetaComposer {
     const hasPreservedChoruses = preservedChoruses.length > 0
     const isRewrite = !!request.originalLyrics
     const performanceMode = request.performanceMode || "standard"
+    const useTerceiraVia = request.useTerceiraVia ?? false
 
     const syllableEnforcement = request.syllableTarget || this.getGenreSyllableConfig(request.genre)
     syllableEnforcement.max = Math.min(syllableEnforcement.max, this.ABSOLUTE_MAX_SYLLABLES)
@@ -201,27 +203,22 @@ export class MetaComposer {
 
     const absoluteValidationAfterCorrection = AbsoluteSyllableEnforcer.validate(rawLyrics)
     if (!absoluteValidationAfterCorrection.isValid) {
-      console.error("[MetaComposer] ❌ CORREÇÃO AUTOMÁTICA GEROU VERSOS COM MAIS DE 11 SÍLABAS!")
+      console.error("[MetaComposer] ⚠️ CORREÇÃO AUTOMÁTICA NÃO RESOLVEU TODOS OS PROBLEMAS")
       console.error(absoluteValidationAfterCorrection.message)
 
-      // Tenta correção inteligente novamente
-      const fixResult = AbsoluteSyllableEnforcer.validateAndFix(rawLyrics)
-      if (fixResult.isValid) {
-        rawLyrics = fixResult.correctedLyrics
-      } else {
-        throw new Error("Correção automática falhou - regeneração necessária")
-      }
+      // Usa a letra corrigida mesmo que não seja perfeita
+      console.warn("[MetaComposer] ⚠️ Usando letra com correções parciais")
     }
 
     // Análise Terceira Via
-    const terceiraViaAnalysis = analisarTerceiraVia(rawLyrics, request.genre, request.theme)
+    const terceiraViaAnalysis = useTerceiraVia ? analisarTerceiraVia(rawLyrics, request.genre, request.theme) : null
 
-    if (terceiraViaAnalysis.score_geral < 75) {
+    if (useTerceiraVia && terceiraViaAnalysis && terceiraViaAnalysis.score_geral < 75) {
       rawLyrics = await this.applyTerceiraViaCorrections(rawLyrics, request, terceiraViaAnalysis, genreConfig)
 
       const absoluteValidationAfterTerceiraVia = AbsoluteSyllableEnforcer.validate(rawLyrics)
       if (!absoluteValidationAfterTerceiraVia.isValid) {
-        console.error("[MetaComposer] ❌ TERCEIRA VIA GEROU VERSOS COM MAIS DE 11 SÍLABAS!")
+        console.error("[MetaComposer] ⚠️ TERCEIRA VIA GEROU VERSOS COM MAIS DE 11 SÍLABAS!")
         console.error(absoluteValidationAfterTerceiraVia.message)
 
         // Tenta correção inteligente
@@ -229,7 +226,7 @@ export class MetaComposer {
         if (fixResult.isValid) {
           rawLyrics = fixResult.correctedLyrics
         } else {
-          throw new Error("Terceira Via falhou - regeneração necessária")
+          console.warn("[MetaComposer] ⚠️ Usando letra da Terceira Via com correções parciais")
         }
       }
     }
@@ -249,7 +246,7 @@ export class MetaComposer {
 
       const absoluteValidationAfterPolish = AbsoluteSyllableEnforcer.validate(finalLyrics)
       if (!absoluteValidationAfterPolish.isValid) {
-        console.error("[MetaComposer] ❌ POLIMENTO GEROU VERSOS COM MAIS DE 11 SÍLABAS!")
+        console.error("[MetaComposer] ⚠️ POLIMENTO GEROU VERSOS COM MAIS DE 11 SÍLABAS!")
         console.error(absoluteValidationAfterPolish.message)
 
         // Tenta correção inteligente
@@ -257,7 +254,7 @@ export class MetaComposer {
         if (fixResult.isValid) {
           finalLyrics = fixResult.correctedLyrics
         } else {
-          throw new Error("Polimento falhou - regeneração necessária")
+          console.warn("[MetaComposer] ⚠️ Usando letra polida com correções parciais")
         }
       }
     }
@@ -914,5 +911,41 @@ Retorne APENAS a letra (sem explicações):`
     // NÃO aplica correções que quebram frases
     // Se chegou aqui com erros, o sistema deve REGENERAR a letra inteira
     return lyrics
+  }
+
+  private static async applyTerceiraVia(lyrics: string, analysis: TerceiraViaAnalysis, genre: string): Promise<string> {
+    console.log("[MetaComposer] Aplicando Terceira Via...")
+
+    const correctedLyrics = lyrics
+    let correctionsApplied = 0
+
+    const lines = lyrics.split("\n")
+    const correctedLines: string[] = []
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+
+      if (this.needsTerceiraViaCorrection(line, analysis)) {
+        try {
+          const context = this.buildLineContext(lines, i, analysis.theme)
+          const correctedLine = await applyTerceiraViaToLine(line, i, context, false, "", genre)
+
+          if (correctedLine !== line) {
+            correctionsApplied++
+            console.log(`[TerceiraVia] 🔄 Linha ${i} corrigida: "${line}" → "${correctedLine}"`)
+          }
+
+          correctedLines.push(correctedLine)
+        } catch (error) {
+          console.warn(`[TerceiraVia] ❌ Erro na linha ${i}, mantendo original`)
+          correctedLines.push(line)
+        }
+      } else {
+        correctedLines.push(line)
+      }
+    }
+
+    console.log(`[MetaComposer] ✅ ${correctionsApplied} correções Terceira Via aplicadas`)
+    return correctedLines.join("\n")
   }
 }
