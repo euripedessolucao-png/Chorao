@@ -1,5 +1,6 @@
 import { WordIntegrityValidator } from "@/lib/validation/word-integrity-validator"
 import { AggressiveAccentFixer } from "@/lib/validation/aggressive-accent-fixer"
+import { RepetitionValidator } from "@/lib/validation/repetition-validator"
 
 export interface GenerationVariation {
   lyrics: string
@@ -44,7 +45,14 @@ export class MultiGenerationEngine {
         console.log(`[MultiGeneration] 📄 Letra gerada (primeiras 200 chars):`)
         console.log(lyrics.substring(0, 200))
 
-        // PRIMEIRA CORREÇÃO: Acentuação agressiva
+        const repetitionFixResult = RepetitionValidator.fix(lyrics)
+        if (repetitionFixResult.corrections > 0) {
+          console.log(
+            `[MultiGeneration] 🔧 CORREÇÃO DE REPETIÇÕES: ${repetitionFixResult.corrections} repetições removidas`,
+          )
+          lyrics = repetitionFixResult.correctedLyrics
+        }
+
         const accentFixResult = AggressiveAccentFixer.fix(lyrics)
         if (accentFixResult.corrections.length > 0) {
           console.log(

@@ -135,6 +135,8 @@ export class AggressiveAccentFixer {
     cacada: "caçada",
     laco: "laço",
     laç: "laço",
+    láço: "laço",
+    láco: "laço",
     braco: "braço",
     abraco: "abraço",
     pedaco: "pedaço",
