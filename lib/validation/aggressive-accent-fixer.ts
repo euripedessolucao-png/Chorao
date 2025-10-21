@@ -1,287 +1,307 @@
-import { WordIntegrityValidator } from "@/lib/validation/word-integrity-validator"
-import { AggressiveAccentFixer } from "@/lib/validation/aggressive-accent-fixer"
-import { RepetitionValidator } from "@/lib/validation/repetition-validator"
-import { UltraAggressiveSyllableReducer } from "@/lib/validation/ultra-aggressive-syllable-reducer"
+/**
+ * CORRETOR AGRESSIVO DE ACENTUAÇÃO - ALFABETO BRASILEIRO COMPLETO
+ *
+ * Corrige TODAS as palavras sem acentos corretos ANTES de qualquer validação.
+ * Baseado nas regras oficiais de acentuação do português brasileiro.
+ */
 
-export interface GenerationVariation {
-  lyrics: string
-  score: number
-  style: string
-  strengths: string[]
-  weaknesses: string[]
-}
+export class AggressiveAccentFixer {
+  private static readonly ACCENT_CORRECTIONS: Record<string, string> = {
+    // MONOSSÍLABOS TÔNICOS (terminados em -a(s), -e(s), -o(s))
+    nao: "não",
+    nã: "não",
+    la: "lá",
+    ca: "cá",
+    ja: "já",
+    pa: "pá",
+    pe: "pé",
+    fe: "fé",
+    po: "pó",
+    so: "só",
+    vo: "vó",
 
-export interface MultiGenerationResult {
-  variations: GenerationVariation[]
-  bestVariationIndex: number
-  bestScore: number
-}
+    // OXÍTONAS (última sílaba tônica)
+    voce: "você",
+    cafe: "café",
+    ate: "até",
+    apos: "após",
+    atras: "atrás",
+    tambem: "também",
+    alem: "além",
+    ninguem: "ninguém",
+    alguem: "alguém",
+    porem: "porém",
+    parabens: "parabéns",
+    refens: "reféns",
+    armazem: "armazém",
+    vintém: "vintém",
+    refem: "refém",
+    bebe: "bebê",
+    mante: "mantê",
+    avo: "avó",
+    vovo: "vovó",
+    bisavo: "bisavó",
 
-export class MultiGenerationEngine {
+    // PAROXÍTONAS (penúltima sílaba tônica)
+    facil: "fácil",
+    dificil: "difícil",
+    movel: "móvel",
+    util: "útil",
+    fragil: "frágil",
+    esteril: "estéril",
+    fertil: "fértil",
+    volatil: "volátil",
+    acucar: "açúcar",
+    carater: "caráter",
+    cancer: "câncer",
+    juri: "júri",
+    tenis: "tênis",
+    lapis: "lápis",
+    gratis: "grátis",
+    bonus: "bônus",
+    virus: "vírus",
+    orfao: "órfão",
+    orgao: "órgão",
+    bencao: "bênção",
+    irmao: "irmão",
+    irma: "irmã",
+    maos: "mãos",
+    paes: "pães",
+    caes: "cães",
+    mae: "mãe",
+    mao: "mão",
+    alemao: "alemão",
+    alema: "alemã",
+    cidadao: "cidadão",
+    cidada: "cidadã",
+    cristao: "cristão",
+    crista: "cristã",
+
+    // PROPAROXÍTONAS (antepenúltima sílaba tônica - TODAS são acentuadas)
+    musica: "música",
+    lampada: "lâmpada",
+    arvore: "árvore",
+    numero: "número",
+    ultimo: "último",
+    proximo: "próximo",
+    maximo: "máximo",
+    minimo: "mínimo",
+    otimo: "ótimo",
+    pessimo: "péssimo",
+    rapido: "rápido",
+    liquido: "líquido",
+    solido: "sólido",
+    publico: "público",
+    pratico: "prático",
+    teorico: "teórico",
+    historico: "histórico",
+    geografico: "geográfico",
+    matematica: "matemática",
+    fisica: "física",
+    quimica: "química",
+    biologica: "biológica",
+    economico: "econômico",
+    politico: "político",
+    juridico: "jurídico",
+    medico: "médico",
+    tecnico: "técnico",
+    eletrico: "elétrico",
+    mecanico: "mecânico",
+    organico: "orgânico",
+    inorganico: "inorgânico",
+
+    // PALAVRAS COM CEDILHA (ç)
+    seguranca: "segurança",
+    seguranç: "segurança",
+    segurançaa: "segurança",
+    esperanca: "esperança",
+    esperanç: "esperança",
+    lembranca: "lembrança",
+    mudanca: "mudança",
+    crianca: "criança",
+    danca: "dança",
+    heranca: "herança",
+    heranç: "herança",
+    alianca: "aliança",
+    balanca: "balança",
+    confianca: "confiança",
+    raca: "raça",
+    raç: "raça",
+    raçaa: "raça",
+    racaa: "raça",
+    graca: "graça",
+    praca: "praça",
+    cacador: "caçador",
+    cacada: "caçada",
+    laco: "laço",
+    laç: "laço",
+    láço: "laço",
+    láco: "laço",
+    braco: "braço",
+    abraco: "abraço",
+    pedaco: "pedaço",
+
+    // PALAVRAS COM TIL (~) - NASALIDADE
+    coracao: "coração",
+    coraçao: "coração",
+    emocao: "emoção",
+    emoçao: "emoção",
+    solidao: "solidão",
+    paixao: "paixão",
+    ilusao: "ilusão",
+    cancao: "canção",
+    cançao: "canção",
+    razao: "razão",
+    licao: "lição",
+    liçao: "lição",
+    opcao: "opção",
+    opçao: "opção",
+    atencao: "atenção",
+    atençao: "atenção",
+    intencao: "intenção",
+    intençao: "intenção",
+    direcao: "direção",
+    direçao: "direção",
+    protecao: "proteção",
+    proteçao: "proteção",
+    tradicao: "tradição",
+    tradiçao: "tradição",
+    revolucao: "revolução",
+    revoluçao: "revolução",
+    solucao: "solução",
+    soluçao: "solução",
+    confusao: "confusão",
+    conclusao: "conclusão",
+    decisao: "decisão",
+    precisao: "precisão",
+    divisao: "divisão",
+    visao: "visão",
+    revisao: "revisão",
+    televisao: "televisão",
+
+    // VERBOS NO FUTURO (terminados em -ão)
+    sao: "são",
+    vao: "vão",
+    dao: "dão",
+    estao: "estão",
+    serao: "serão",
+    terao: "terão",
+    poderao: "poderão",
+    deverao: "deverão",
+    quererao: "quererão",
+    saberao: "saberão",
+    irao: "irão",
+    virao: "virão",
+    darao: "darão",
+    estarao: "estarão",
+    farao: "farão",
+    dirao: "dirão",
+    trarao: "trarão",
+    verao: "verão",
+    lerao: "lerão",
+    crerao: "crerão",
+
+    // PALAVRAS COMUNS EM LETRAS MUSICAIS
+    esta: "está",
+    sera: "será",
+    estara: "estará",
+    tera: "terá",
+    fara: "fará",
+    dira: "dirá",
+    dara: "dará",
+    ira: "irá",
+    vira: "virá",
+    vera: "verá",
+    lera: "lerá",
+    crera: "crerá",
+    podera: "poderá",
+    devera: "deverá",
+    querer: "quererá",
+    sabera: "saberá",
+    trara: "trará",
+    havera: "haverá",
+    comeca: "começa",
+    comecara: "começará",
+    esqueca: "esqueça",
+    esquecera: "esquecerá",
+    conheca: "conheça",
+    conhecera: "conhecerá",
+    apareca: "apareça",
+    aparecera: "aparecerá",
+    mereca: "mereça",
+    merecera: "merecerá",
+    permaneca: "permaneça",
+    permanecera: "permanecerá",
+    pertenca: "pertença",
+    pertencera: "pertencerá",
+    aconteca: "aconteça",
+    acontecera: "acontecerá",
+  }
+
   /**
-   * GERA MÚLTIPLAS VARIAÇÕES E ESCOLHE A MELHOR
-   * COM CORREÇÃO ULTRA AGRESSIVA DE ACENTOS
+   * Corrige AGRESSIVAMENTE todas as palavras sem acentos
    */
-  static async generateMultipleVariations(
-    generateFn: () => Promise<string>,
-    scoreFn: (lyrics: string) => number,
-    count = 3,
-  ): Promise<MultiGenerationResult> {
-    console.log(`[MultiGeneration] 🎯 Gerando ${count} variações...`)
+  static fix(text: string): {
+    correctedText: string
+    corrections: Array<{ original: string; corrected: string; count: number }>
+  } {
+    let correctedText = text
+    const corrections: Array<{ original: string; corrected: string; count: number }> = []
 
-    const variations: GenerationVariation[] = []
-    const rejectedVariations: Array<{ lyrics: string; reason: string }> = []
-    const maxAttempts = count * 5
+    // Para cada palavra no dicionário, substitui TODAS as ocorrências
+    for (const [wrong, correct] of Object.entries(this.ACCENT_CORRECTIONS)) {
+      // Cria regex que encontra a palavra errada com limites de palavra
+      const regex = new RegExp(`\\b${this.escapeRegex(wrong)}\\b`, "gi")
 
-    let attempts = 0
-    while (variations.length < count && attempts < maxAttempts) {
-      attempts++
-      console.log(
-        `[MultiGeneration] 📝 Tentativa ${attempts}/${maxAttempts} (${variations.length}/${count} válidas)...`,
-      )
+      // Conta quantas vezes a palavra aparece
+      const matches = correctedText.match(regex)
+      const count = matches ? matches.length : 0
 
-      try {
-        let lyrics = await generateFn()
+      if (count > 0) {
+        // Substitui todas as ocorrências preservando capitalização
+        correctedText = correctedText.replace(regex, (match) => {
+          if (match.charAt(0) === match.charAt(0).toUpperCase()) {
+            return correct.charAt(0).toUpperCase() + correct.slice(1)
+          }
+          return correct
+        })
 
-        console.log(`[MultiGeneration] 📄 Letra gerada (primeiras 200 chars):`)
-        console.log(lyrics.substring(0, 200))
-
-        // 1. CORREÇÃO DE REPETIÇÕES
-        const repetitionFixResult = RepetitionValidator.fix(lyrics)
-        if (repetitionFixResult.corrections > 0) {
-          console.log(
-            `[MultiGeneration] 🔧 CORREÇÃO DE REPETIÇÕES: ${repetitionFixResult.corrections} repetições removidas`,
-          )
-          lyrics = repetitionFixResult.correctedLyrics
-        }
-
-        // 2. CORREÇÃO ULTRA AGRESSIVA DE ACENTOS (NOVA API)
-        console.log(`[MultiGeneration] 🔧 Aplicando correção ULTRA AGRESSIVA de acentos...`)
-        const accentFixResult = AggressiveAccentFixer.completeFixAndValidate(lyrics)
-        
-        if (accentFixResult.appliedCorrections > 0) {
-          console.log(
-            `[MultiGeneration] 🔧 CORREÇÃO ULTRA AGRESSIVA DE ACENTOS: ${accentFixResult.appliedCorrections} correções aplicadas (Score: ${accentFixResult.validation.score}/100)`,
-          )
-          lyrics = accentFixResult.correctedLyrics
-        }
-
-        // 3. VALIDAÇÃO DE QUALIDADE APÓS CORREÇÃO DE ACENTOS
-        if (accentFixResult.validation.score < 70) {
-          console.warn(`[MultiGeneration] ⚠️ Baixa qualidade após correção: ${accentFixResult.validation.score}/100`)
-          rejectedVariations.push({
-            lyrics,
-            reason: `Baixa qualidade de acentuação: ${accentFixResult.validation.score}/100`,
-          })
-          continue
-        }
-
-        // 4. CORREÇÃO ULTRA AGRESSIVA DE SÍLABAS
-        console.log(`[MultiGeneration] 🎯 Aplicando correção ULTRA AGRESSIVA de sílabas...`)
-        const syllableFixResult = new UltraAggressiveSyllableReducer().correctFullLyrics(lyrics)
-
-        if (syllableFixResult.report.correctedVerses > 0) {
-          console.log(
-            `[MultiGeneration] 🔧 CORREÇÃO ULTRA AGRESSIVA DE SÍLABAS: ${syllableFixResult.report.correctedVerses}/${syllableFixResult.report.totalVerses} versos corrigidos (${syllableFixResult.report.successRate.toFixed(1)}% sucesso)`,
-          )
-          lyrics = syllableFixResult.correctedLyrics
-        } else {
-          console.log(`[MultiGeneration] ✅ Todos os versos já têm 11 sílabas`)
-        }
-
-        // 5. CORREÇÃO DE INTEGRIDADE DE PALAVRAS
-        const integrityFixResult = WordIntegrityValidator.fix(lyrics)
-        if (integrityFixResult.corrections > 0) {
-          console.log(`[MultiGeneration] 🔧 Aplicadas ${integrityFixResult.corrections} correções de integridade:`)
-          integrityFixResult.details.forEach((detail) => {
-            console.log(`  - "${detail.original}" → "${detail.corrected}"`)
-          })
-          lyrics = integrityFixResult.correctedLyrics
-        }
-
-        // 6. VALIDAÇÃO FINAL DE INTEGRIDADE
-        const integrityCheck = WordIntegrityValidator.validate(lyrics)
-        if (!integrityCheck.isValid) {
-          console.warn(`[MultiGeneration] ⚠️ Tentativa ${attempts} AINDA tem problemas após correção:`)
-          integrityCheck.errors.forEach((error) => {
-            console.warn(
-              `  - Linha ${error.lineNumber}: "${error.word}"${error.suggestion ? ` → sugestão: "${error.suggestion}"` : ""}`,
-            )
-          })
-          rejectedVariations.push({
-            lyrics,
-            reason: `Palavras cortadas não corrigíveis: ${integrityCheck.errors.map((e) => e.word).join(", ")}`,
-          })
-          continue
-        }
-
-        // 7. VALIDAÇÃO FINAL DE SÍLABAS
-        const finalSyllableCheck = new UltraAggressiveSyllableReducer().correctFullLyrics(lyrics)
-        if (finalSyllableCheck.report.successRate < 80) {
-          console.warn(
-            `[MultiGeneration] ⚠️ Tentativa ${attempts} AINDA tem ${finalSyllableCheck.report.failedVerses} versos com sílabas incorretas`,
-          )
-          rejectedVariations.push({
-            lyrics,
-            reason: `${finalSyllableCheck.report.failedVerses} versos com sílabas incorretas (${finalSyllableCheck.report.successRate.toFixed(1)}% sucesso)`,
-          })
-          continue
-        }
-
-        // 8. CALCULAR SCORE E ADICIONAR Variação VÁLIDA
-        const score = scoreFn(lyrics)
-
-        // Score mínimo para aceitação
-        if (score < 0.4) {
-          rejectedVariations.push({
-            lyrics,
-            reason: `Score muito baixo: ${score}`,
-          })
-          continue
-        }
-
-        const variation: GenerationVariation = {
-          lyrics,
-          score,
-          style: this.detectStyle(lyrics),
-          strengths: this.analyzeStrengths(lyrics),
-          weaknesses: this.analyzeWeaknesses(lyrics),
-        }
-
-        variations.push(variation)
-        console.log(`[MultiGeneration] ✅ Variação ${variations.length} válida - Score: ${score.toFixed(2)}`)
-
-      } catch (error) {
-        console.error(`[MultiGeneration] ❌ Erro na tentativa ${attempts}:`, error)
-        rejectedVariations.push({
-          lyrics: "",
-          reason: `Erro: ${error instanceof Error ? error.message : String(error)}`,
+        corrections.push({
+          original: wrong,
+          corrected: correct,
+          count,
         })
       }
     }
 
-    // FALLBACK PARA CASO NENHUMA VARIAÇÃO SEJA VÁLIDA
-    if (variations.length === 0) {
-      console.error(`[MultiGeneration] ❌ Nenhuma variação válida após ${attempts} tentativas`)
-      console.error(`[MultiGeneration] 📋 Variações rejeitadas:`)
-      rejectedVariations.forEach((rejected, index) => {
-        console.error(`  ${index + 1}. ${rejected.reason}`)
-      })
+    return { correctedText, corrections }
+  }
 
-      // Tenta usar a melhor variação rejeitada como fallback
-      if (rejectedVariations.length > 0 && rejectedVariations[0].lyrics) {
-        console.warn(`[MultiGeneration] ⚠️ Usando variação rejeitada como fallback`)
-        const fallbackLyrics = rejectedVariations[0].lyrics
-        const fallbackScore = scoreFn(fallbackLyrics)
+  /**
+   * Escapa caracteres especiais de regex
+   */
+  private static escapeRegex(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  }
 
-        variations.push({
-          lyrics: fallbackLyrics,
-          score: fallbackScore,
-          style: this.detectStyle(fallbackLyrics),
-          strengths: ["Fallback - melhor tentativa disponível"],
-          weaknesses: [rejectedVariations[0].reason],
-        })
-      } else {
-        throw new Error(
-          `Falha ao gerar qualquer variação válida após ${attempts} tentativas. Razões: ${rejectedVariations.map((r) => r.reason).join("; ")}`,
-        )
+  /**
+   * Valida se o texto tem palavras sem acentos
+   */
+  static validate(text: string): { isValid: boolean; wordsWithoutAccents: string[] } {
+    const wordsWithoutAccents: string[] = []
+
+    for (const [wrong] of Object.entries(this.ACCENT_CORRECTIONS)) {
+      const regex = new RegExp(`\\b${this.escapeRegex(wrong)}\\b`, "gi")
+      const matches = text.match(regex)
+
+      if (matches && matches.length > 0) {
+        wordsWithoutAccents.push(...matches)
       }
     }
-
-    // ESCOLHE A MELHOR VARIAÇÃO
-    let bestIndex = 0
-    let bestScore = variations[0].score
-
-    for (let i = 1; i < variations.length; i++) {
-      if (variations[i].score > bestScore) {
-        bestScore = variations[i].score
-        bestIndex = i
-      }
-    }
-
-    console.log(`[MultiGeneration] 🏆 Melhor variação: ${bestIndex + 1} (Score: ${bestScore.toFixed(2)})`)
 
     return {
-      variations,
-      bestVariationIndex: bestIndex,
-      bestScore,
+      isValid: wordsWithoutAccents.length === 0,
+      wordsWithoutAccents: [...new Set(wordsWithoutAccents)], // Remove duplicatas
     }
-  }
-
-  /**
-   * DETECTA ESTILO DA LETRA
-   */
-  private static detectStyle(lyrics: string): string {
-    const lowerLyrics = lyrics.toLowerCase()
-
-    if (lowerLyrics.includes("cê") || lowerLyrics.includes("tô") || lowerLyrics.includes("pra")) {
-      return "Coloquial Brasileiro"
-    }
-
-    if (lowerLyrics.match(/\b(amor|coração|paixão|saudade)\b/g)) {
-      return "Romântico"
-    }
-
-    if (lowerLyrics.match(/\b(festa|balada|cerveja|boteco)\b/g)) {
-      return "Festivo"
-    }
-
-    return "Narrativo"
-  }
-
-  /**
-   * ANALISA PONTOS FORTES
-   */
-  private static analyzeStrengths(lyrics: string): string[] {
-    const strengths: string[] = []
-    const lines = lyrics.split("\n").filter((l) => l.trim() && !l.startsWith("[") && !l.startsWith("("))
-
-    // Verifica acentuação correta
-    const accentValidation = AggressiveAccentFixer.validateStrict(lyrics)
-    if (accentValidation.score >= 90) {
-      strengths.push("Acentuação perfeita")
-    }
-
-    // Verifica repetição (chorus memorável)
-    const uniqueLines = new Set(lines)
-    if (lines.length > uniqueLines.size) {
-      strengths.push("Repetição estratégica (memorável)")
-    }
-
-    // Verifica estrutura consistente
-    const syllableCheck = new UltraAggressiveSyllableReducer().correctFullLyrics(lyrics)
-    if (syllableCheck.report.successRate >= 90) {
-      strengths.push("Métrica consistente")
-    }
-
-    return strengths
-  }
-
-  /**
-   * ANALISA PONTOS FRACOS
-   */
-  private static analyzeWeaknesses(lyrics: string): string[] {
-    const weaknesses: string[] = []
-    const lines = lyrics.split("\n").filter((l) => l.trim() && !l.startsWith("[") && !l.startsWith("("))
-
-    // Verifica qualidade de acentuação
-    const accentValidation = AggressiveAccentFixer.validateStrict(lyrics)
-    if (accentValidation.score < 80) {
-      weaknesses.push(`Problemas de acentuação (${accentValidation.score}/100)`)
-    }
-
-    // Verifica sílabas
-    const syllableCheck = new UltraAggressiveSyllableReducer().correctFullLyrics(lyrics)
-    if (syllableCheck.report.successRate < 80) {
-      weaknesses.push(`Problemas de métrica (${syllableCheck.report.successRate.toFixed(1)}% sucesso)`)
-    }
-
-    // Verifica palavras cortadas
-    const integrityCheck = WordIntegrityValidator.validate(lyrics)
-    if (!integrityCheck.isValid) {
-      weaknesses.push("Palavras cortadas ou incompletas")
-    }
-
-    return weaknesses
   }
 }
