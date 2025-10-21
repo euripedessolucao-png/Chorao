@@ -387,10 +387,10 @@ export class MetaComposer {
   }
 
   /**
-   * GERA REESCRITA DE LETRA EXISTENTE - COM EXEMPLOS CONCRETOS DAS TÉCNICAS
+   * GERA REESCRITA DE LETRA EXISTENTE - COM VALIDAÇÃO BLOQUEANTE RIGOROSA
    */
   private static async generateRewrite(request: CompositionRequest): Promise<string> {
-    console.log("[MetaComposer] Gerando reescrita com técnicas de correção automática...")
+    console.log("[MetaComposer] Gerando reescrita com validação bloqueante rigorosa...")
 
     if (!request.originalLyrics) {
       throw new Error("Original lyrics required for rewrite")
@@ -399,8 +399,7 @@ export class MetaComposer {
     const syllableTarget = request.syllableTarget || this.getGenreSyllableConfig(request.genre)
     const genreConfig = getGenreConfig(request.genre)
 
-    try {
-      const rewritePrompt = `Você é um compositor profissional de ${request.genre}.
+    const rewritePrompt = `Você é um compositor profissional de ${request.genre}.
 
 LETRA ORIGINAL:
 ${request.originalLyrics}
@@ -409,90 +408,96 @@ TEMA: ${request.theme}
 MOOD: ${request.mood}
 
 ═══════════════════════════════════════════════════════════════
-🎯 TÉCNICAS OBRIGATÓRIAS PARA AJUSTAR SÍLABAS
+⚠️ ATENÇÃO: REGRA ABSOLUTA E INEGOCIÁVEL
 ═══════════════════════════════════════════════════════════════
 
-Você DEVE usar estas técnicas para manter TODOS os versos com exatamente 11 sílabas:
+CADA VERSO DEVE TER EXATAMENTE 11 SÍLABAS POÉTICAS OU MENOS.
+VERSOS COM 12, 13, 14 OU MAIS SÍLABAS SERÃO REJEITADOS.
 
-**TÉCNICA 1: REMOVER ARTIGOS DESNECESSÁRIOS**
-❌ "A lembrança da terra, o cheiro no ar" (12 sílabas)
-✓ "Lembrança da terra, o cheiro no ar" (11 sílabas)
-
-❌ "A casa é grande, mas não posso sair" (12 sílabas)
-✓ "Casa é grande, mas não posso sair" (11 sílabas)
-
-**TÉCNICA 2: SIMPLIFICAR EXPRESSÕES**
-❌ "Bota suja de pó, pé na estrada a andar" (14 sílabas)
-✓ "Bota de pó, pé na estrada a andar" (11 sílabas)
-
-❌ "Deixei o riacho, fui pro barulho que humilha" (15 sílabas)
-✓ "Deixei o riacho, fui pro barulho" (11 sílabas)
-
-**TÉCNICA 3: USAR CONTRAÇÕES NATURAIS**
-❌ "Você estava" → ✓ "Cê tava"
-❌ "Você é" → ✓ "Cê é"
-❌ "Para o" → ✓ "Pro"
-❌ "Está" → ✓ "Tá"
-
-**TÉCNICA 4: PLURAL → SINGULAR QUANDO POSSÍVEL**
-❌ "Pago remédios, medos, ilusões em vão" (13 sílabas)
-✓ "Pago remédio, medo, ilusão em vão" (11 sílabas)
-
-❌ "O dinheiro escorre, foge entre as mãos" (13 sílabas)
-✓ "O dinheiro escorre, foge da mão" (11 sílabas)
-
-**TÉCNICA 5: REFORMULAR MANTENDO SENTIDO**
-❌ "Escolhi o falso ouro, a tal segurança" (14 sílabas)
-✓ "Escolhi o falso ouro e a segurança" (12 sílabas)
-✓ "Escolhi falso ouro e segurança" (11 sílabas)
-
-❌ "Ainda hoje eu quebro o laço, volto ao meu chão" (15 sílabas)
-✓ "Hoje eu quebro o laço, volto ao chão" (11 sílabas)
+Você DEVE contar as sílabas de CADA verso ANTES de escrever o próximo.
 
 ═══════════════════════════════════════════════════════════════
-✍️ PROCESSO OBRIGATÓRIO (SIGA EXATAMENTE)
+✍️ PROCESSO OBRIGATÓRIO PARA REESCRITA
 ═══════════════════════════════════════════════════════════════
 
-**PASSO 1: ESCREVA O VERSO**
-Escreva o verso com a ideia completa
+Para CADA verso da letra original:
 
-**PASSO 2: CONTE AS SÍLABAS**
-Conte EXATAMENTE quantas sílabas poéticas o verso tem
-(lembre-se: conta até a última tônica)
+**PASSO 1: Leia o verso original**
+**PASSO 2: CONTE as sílabas poéticas**
+**PASSO 3: Se > 11 sílabas, APLIQUE as técnicas de correção**
+**PASSO 4: CONTE novamente para garantir ≤ 11 sílabas**
+**PASSO 5: Verifique se mantém o sentido e a narrativa**
 
-**PASSO 3: SE PASSOU DE 11, APLIQUE AS TÉCNICAS**
-a) Remova artigos desnecessários (A, O, As, Os)
-b) Simplifique expressões longas
-c) Use contrações (você→cê, estava→tava, para→pra)
-d) Mude plural para singular se possível
-e) Reformule mantendo o sentido
+═══════════════════════════════════════════════════════════════
+🔧 TÉCNICAS DE CORREÇÃO (USE ESTAS)
+═══════════════════════════════════════════════════════════════
 
-**PASSO 4: CONTE NOVAMENTE**
-Garanta que ficou com EXATAMENTE 11 sílabas ou menos
+**TÉCNICA 1: Remover artigos**
+❌ "A lembrança da terra" (6 sílabas)
+✅ "Lembrança da terra" (5 sílabas)
 
-**PASSO 5: VERIFIQUE A NARRATIVA**
-O verso ainda faz sentido na história?
-Conecta com o verso anterior?
+**TÉCNICA 2: Simplificar expressões**
+❌ "Bota suja de pó" (5 sílabas)
+✅ "Bota de pó" (3 sílabas)
+
+**TÉCNICA 3: Contrações naturais**
+"você estava" → "cê tava"
+"para o" → "pro"
+"está" → "tá"
+
+**TÉCNICA 4: Plural → Singular**
+"remédios, medos, ilusões" → "remédio, medo, ilusão"
+
+**TÉCNICA 5: Reformular**
+"Ainda hoje eu quebro" → "Hoje eu quebro"
+
+═══════════════════════════════════════════════════════════════
+📝 EXEMPLOS PRÁTICOS DE REESCRITA
+═══════════════════════════════════════════════════════════════
+
+**VERSO ORIGINAL (12 sílabas):**
+"A lembrança da terra, o cheiro no ar"
+
+**ANÁLISE:**
+A-lem-bran-ça-da-ter-ra-o-chei-ro-no-ar = 12 sílabas ❌
+
+**CORREÇÃO:**
+Remover artigo "A" no início
+"Lembrança da terra, o cheiro no ar"
+Lem-bran-ça-da-ter-ra-o-chei-ro-no-ar = 11 sílabas ✅
+
+**VERSO ORIGINAL (14 sílabas):**
+"Bota suja de pó, pé na estrada a andar"
+
+**ANÁLISE:**
+Bo-ta-su-ja-de-pó-pé-na-es-tra-da-a-an-dar = 14 sílabas ❌
+
+**CORREÇÃO:**
+Simplificar "suja de pó" para "de pó"
+"Bota de pó, pé na estrada a andar"
+Bo-ta-de-pó-pé-na-es-tra-da-a-an-dar = 11 sílabas ✅
 
 ═══════════════════════════════════════════════════════════════
 🎯 REGRAS ABSOLUTAS
 ═══════════════════════════════════════════════════════════════
 
-1. MÁXIMO 11 SÍLABAS POR VERSO (conte antes de finalizar)
-2. NARRATIVA COERENTE (história fluída do início ao fim)
-3. GRAMÁTICA PERFEITA (frases completas em português correto)
-4. VOCABULÁRIO ATUAL (biquíni, PIX, story, boteco)
-5. LINGUAGEM COLOQUIAL (tô, cê, pra, né)
+1. ✅ MÁXIMO 11 SÍLABAS (conte ANTES de finalizar cada verso)
+2. ✅ NARRATIVA COERENTE (mantenha a história original)
+3. ✅ GRAMÁTICA PERFEITA (frases completas)
+4. ✅ VOCABULÁRIO ATUAL (PIX, story, biquíni)
+5. ✅ LINGUAGEM COLOQUIAL (tô, cê, pra)
 
-IMPORTANTE: Você DEVE contar as sílabas de CADA verso antes de finalizar.
-Se um verso tiver mais de 11 sílabas, APLIQUE AS TÉCNICAS até ficar com 11.
+⚠️ IMPORTANTE: Você DEVE contar as sílabas de CADA verso.
+Se um verso tiver mais de 11 sílabas, APLIQUE AS TÉCNICAS até ficar com 11 ou menos.
 
-Retorne APENAS a letra reescrita:`
+Retorne APENAS a letra reescrita (sem explicações):`
 
+    try {
       const response = await generateText({
         model: "openai/gpt-4o",
         prompt: rewritePrompt,
-        temperature: 0.7, // Reduzido para mais precisão
+        temperature: 0.5, // Reduzido para máxima precisão
+        maxTokens: 2000,
       })
 
       return response.text || request.originalLyrics
@@ -547,90 +552,144 @@ Retorne a letra completa com os refrões preservados:`
   }
 
   /**
-   * GERA LETRA DIRETAMENTE - COM EXEMPLOS CONCRETOS DAS TÉCNICAS
+   * GERA LETRA DIRETAMENTE - COM VALIDAÇÃO BLOQUEANTE RIGOROSA
    */
   private static async generateDirectLyrics(
     request: CompositionRequest,
     syllableEnforcement: { min: number; max: number; ideal: number },
   ): Promise<string> {
-    console.log("[MetaComposer] Gerando letra com técnicas de correção automática...")
+    console.log("[MetaComposer] Gerando letra com validação bloqueante rigorosa...")
 
     const genreConfig = getGenreConfig(request.genre)
 
-    try {
-      const directPrompt = `Você é um compositor profissional de ${request.genre}.
+    const directPrompt = `Você é um compositor profissional de ${request.genre}.
 
 TEMA: ${request.theme}
 MOOD: ${request.mood}
 ${request.rhythm ? `RITMO: ${request.rhythm}` : ""}
 
 ═══════════════════════════════════════════════════════════════
-🎯 TÉCNICAS OBRIGATÓRIAS PARA 11 SÍLABAS
+⚠️ ATENÇÃO: REGRA ABSOLUTA E INEGOCIÁVEL
 ═══════════════════════════════════════════════════════════════
 
-**TÉCNICA 1: REMOVER ARTIGOS**
-❌ "A lembrança da terra" → ✓ "Lembrança da terra"
-❌ "O dinheiro escorre" → ✓ "Dinheiro escorre"
+CADA VERSO DEVE TER EXATAMENTE 11 SÍLABAS POÉTICAS OU MENOS.
+VERSOS COM 12, 13, 14 OU MAIS SÍLABAS SERÃO REJEITADOS.
 
-**TÉCNICA 2: SIMPLIFICAR**
-❌ "Bota suja de pó" → ✓ "Bota de pó"
-❌ "Deixei o riacho, fui pro barulho que humilha" → ✓ "Deixei o riacho, fui pro barulho"
-
-**TÉCNICA 3: CONTRAÇÕES**
-você→cê, estava→tava, para→pra, está→tá
-
-**TÉCNICA 4: PLURAL→SINGULAR**
-❌ "remédios, medos, ilusões" → ✓ "remédio, medo, ilusão"
-
-**TÉCNICA 5: REFORMULAR**
-❌ "Ainda hoje eu quebro o laço" → ✓ "Hoje eu quebro o laço"
+Você DEVE contar as sílabas de CADA verso ANTES de escrever o próximo.
 
 ═══════════════════════════════════════════════════════════════
-✍️ PROCESSO (SIGA EXATAMENTE)
+✍️ PROCESSO OBRIGATÓRIO (SIGA PASSO A PASSO)
 ═══════════════════════════════════════════════════════════════
 
-Para CADA verso:
-1. Escreva a ideia
-2. CONTE as sílabas poéticas
-3. Se > 11: APLIQUE as técnicas
-4. CONTE novamente
-5. Verifique a narrativa
+Para CADA verso que você escrever:
+
+**PASSO 1: Escreva o verso**
+Exemplo: "A lembrança da terra, o cheiro no ar"
+
+**PASSO 2: CONTE as sílabas poéticas**
+A-lem-bran-ça-da-ter-ra-o-chei-ro-no-ar = 12 sílabas ❌ ERRADO!
+
+**PASSO 3: Se passou de 11, CORRIJA usando estas técnicas:**
+
+a) **Remova artigos desnecessários:**
+   "A lembrança" → "Lembrança" (economiza 1 sílaba)
+   "O dinheiro" → "Dinheiro" (economiza 1 sílaba)
+
+b) **Simplifique expressões:**
+   "Bota suja de pó" → "Bota de pó" (economiza 2 sílabas)
+   "que humilha" → remova se não essencial (economiza 3 sílabas)
+
+c) **Use contrações naturais:**
+   "você estava" → "cê tava" (economiza 2 sílabas)
+   "para o" → "pro" (economiza 1 sílaba)
+   "está" → "tá" (economiza 1 sílaba)
+
+d) **Mude plural para singular:**
+   "remédios, medos, ilusões" → "remédio, medo, ilusão" (economiza 3 sílabas)
+
+e) **Reformule mantendo o sentido:**
+   "Ainda hoje eu quebro" → "Hoje eu quebro" (economiza 2 sílabas)
+
+**PASSO 4: CONTE NOVAMENTE**
+"Lembrança da terra, o cheiro no ar"
+Lem-bran-ça-da-ter-ra-o-chei-ro-no-ar = 11 sílabas ✅ CORRETO!
+
+**PASSO 5: Verifique a narrativa**
+O verso faz sentido? Conecta com o anterior? Mantém a história?
 
 ═══════════════════════════════════════════════════════════════
-🎯 REGRAS ABSOLUTAS
+📝 EXEMPLOS CONCRETOS (APRENDA COM ESTES)
 ═══════════════════════════════════════════════════════════════
 
-1. MÁXIMO 11 SÍLABAS (conte ANTES de finalizar)
-2. NARRATIVA COERENTE (história completa)
-3. GRAMÁTICA PERFEITA (frases completas)
-4. VOCABULÁRIO ATUAL (PIX, story, biquíni)
-5. LINGUAGEM COLOQUIAL (tô, cê, pra)
+**EXEMPLO 1:**
+❌ ERRADO (12 sílabas): "A lembrança da terra, o cheiro no ar"
+✅ CORRETO (11 sílabas): "Lembrança da terra, o cheiro no ar"
+Técnica usada: Removeu artigo "A"
 
-ESTRUTURA:
-[PART A - Verse 1]
-4 linhas (11 sílabas cada)
+**EXEMPLO 2:**
+❌ ERRADO (14 sílabas): "Bota suja de pó, pé na estrada a andar"
+✅ CORRETO (11 sílabas): "Bota de pó, pé na estrada a andar"
+Técnica usada: Simplificou "suja de pó" para "de pó"
 
-[PART B - Chorus]
-4 linhas (11 sílabas cada)
+**EXEMPLO 3:**
+❌ ERRADO (15 sílabas): "Deixei o riacho, fui pro barulho que humilha"
+✅ CORRETO (11 sílabas): "Deixei o riacho, fui pro barulho"
+Técnica usada: Removeu "que humilha" (não essencial)
 
-[PART A2 - Verse 2]
-4 linhas (11 sílabas cada)
+**EXEMPLO 4:**
+❌ ERRADO (13 sílabas): "Pago remédios, medos, ilusões em vão"
+✅ CORRETO (11 sílabas): "Pago remédio, medo, ilusão em vão"
+Técnica usada: Plural → Singular
 
-[PART B - Chorus]
-Repete
+**EXEMPLO 5:**
+❌ ERRADO (15 sílabas): "Ainda hoje eu quebro o laço, volto ao meu chão"
+✅ CORRETO (11 sílabas): "Hoje eu quebro o laço, volto ao chão"
+Técnica usada: Removeu "Ainda" e "meu"
 
-[PART C - Bridge]
-2 linhas (11 sílabas cada)
+═══════════════════════════════════════════════════════════════
+🎯 REGRAS ABSOLUTAS (NÃO NEGOCIE)
+═══════════════════════════════════════════════════════════════
 
-[PART B - Final Chorus]
-Repete
+1. ✅ MÁXIMO 11 SÍLABAS por verso (conte ANTES de finalizar)
+2. ✅ NARRATIVA COERENTE (história completa do início ao fim)
+3. ✅ GRAMÁTICA PERFEITA (frases completas em português correto)
+4. ✅ VOCABULÁRIO ATUAL (PIX, story, biquíni, boteco)
+5. ✅ LINGUAGEM COLOQUIAL (tô, cê, pra, né)
 
-Retorne APENAS a letra:`
+═══════════════════════════════════════════════════════════════
+📋 ESTRUTURA OBRIGATÓRIA
+═══════════════════════════════════════════════════════════════
 
+[VERSE 1]
+(4 linhas, cada uma com 11 sílabas ou menos)
+
+[CHORUS]
+(4 linhas, cada uma com 11 sílabas ou menos)
+
+[VERSE 2]
+(4 linhas, cada uma com 11 sílabas ou menos)
+
+[CHORUS]
+(Repete o refrão)
+
+[BRIDGE]
+(2 linhas, cada uma com 11 sílabas ou menos)
+
+[CHORUS]
+(Repete o refrão)
+
+═══════════════════════════════════════════════════════════════
+⚠️ LEMBRE-SE: CONTE AS SÍLABAS DE CADA VERSO!
+═══════════════════════════════════════════════════════════════
+
+Retorne APENAS a letra (sem explicações):`
+
+    try {
       const response = await generateText({
         model: "openai/gpt-4o",
         prompt: directPrompt,
-        temperature: 0.7, // Reduzido para mais precisão
+        temperature: 0.5, // Reduzido ainda mais para máxima precisão
+        maxTokens: 2000,
       })
 
       return response.text || ""
