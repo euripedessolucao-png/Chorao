@@ -12,7 +12,6 @@ import {
   shouldUsePerformanceFormat,
 } from "@/lib/formatters/sertanejo-performance-formatter"
 import { AutoSyllableCorrector } from "@/lib/validation/auto-syllable-corrector"
-import { validateAllLayers } from "@/lib/validation/multi-layer-validator"
 import { PunctuationValidator } from "@/lib/validation/punctuation-validator"
 import { LineStacker } from "@/lib/utils/line-stacker"
 import { AbsoluteSyllableEnforcer } from "@/lib/validation/absolute-syllable-enforcer"
@@ -183,16 +182,15 @@ export class MetaComposer {
       console.error("[MetaComposer] ❌ LETRA GERADA COM MAIS DE 11 SÍLABAS!")
       console.error(absoluteValidationBefore.message)
 
-      // Tenta correção automática
-      const enforcedResult = AbsoluteSyllableEnforcer.enforce(rawLyrics)
-      rawLyrics = enforcedResult.correctedLyrics
+      // Tenta correção automática inteligente
+      console.log("[MetaComposer] 🔧 Aplicando correção automática inteligente...")
+      const fixResult = AbsoluteSyllableEnforcer.validateAndFix(rawLyrics)
 
-      // Valida novamente após correção
-      const revalidation = AbsoluteSyllableEnforcer.validate(rawLyrics)
-      if (!revalidation.isValid) {
-        console.error("[MetaComposer] ❌ CORREÇÃO FALHOU - Ainda há versos com mais de 11 sílabas")
-        console.error(revalidation.message)
-        // Retorna string vazia para forçar regeneração no MultiGenerationEngine
+      if (fixResult.isValid) {
+        console.log(`[MetaComposer] ✅ Correção bem-sucedida! ${fixResult.corrections} verso(s) corrigido(s)`)
+        rawLyrics = fixResult.correctedLyrics
+      } else {
+        console.error("[MetaComposer] ❌ CORREÇÃO FALHOU - Forçando regeneração")
         throw new Error("Letra com versos acima de 11 sílabas - regeneração necessária")
       }
     }
@@ -205,11 +203,15 @@ export class MetaComposer {
     if (!absoluteValidationAfterCorrection.isValid) {
       console.error("[MetaComposer] ❌ CORREÇÃO AUTOMÁTICA GEROU VERSOS COM MAIS DE 11 SÍLABAS!")
       console.error(absoluteValidationAfterCorrection.message)
-      throw new Error("Correção automática falhou - regeneração necessária")
-    }
 
-    // Validação multi-camadas
-    const multiLayerValidation = validateAllLayers(rawLyrics, request.genre, request.theme)
+      // Tenta correção inteligente novamente
+      const fixResult = AbsoluteSyllableEnforcer.validateAndFix(rawLyrics)
+      if (fixResult.isValid) {
+        rawLyrics = fixResult.correctedLyrics
+      } else {
+        throw new Error("Correção automática falhou - regeneração necessária")
+      }
+    }
 
     // Análise Terceira Via
     const terceiraViaAnalysis = analisarTerceiraVia(rawLyrics, request.genre, request.theme)
@@ -221,7 +223,14 @@ export class MetaComposer {
       if (!absoluteValidationAfterTerceiraVia.isValid) {
         console.error("[MetaComposer] ❌ TERCEIRA VIA GEROU VERSOS COM MAIS DE 11 SÍLABAS!")
         console.error(absoluteValidationAfterTerceiraVia.message)
-        throw new Error("Terceira Via falhou - regeneração necessária")
+
+        // Tenta correção inteligente
+        const fixResult = AbsoluteSyllableEnforcer.validateAndFix(rawLyrics)
+        if (fixResult.isValid) {
+          rawLyrics = fixResult.correctedLyrics
+        } else {
+          throw new Error("Terceira Via falhou - regeneração necessária")
+        }
       }
     }
 
@@ -242,7 +251,14 @@ export class MetaComposer {
       if (!absoluteValidationAfterPolish.isValid) {
         console.error("[MetaComposer] ❌ POLIMENTO GEROU VERSOS COM MAIS DE 11 SÍLABAS!")
         console.error(absoluteValidationAfterPolish.message)
-        throw new Error("Polimento falhou - regeneração necessária")
+
+        // Tenta correção inteligente
+        const fixResult = AbsoluteSyllableEnforcer.validateAndFix(finalLyrics)
+        if (fixResult.isValid) {
+          finalLyrics = fixResult.correctedLyrics
+        } else {
+          throw new Error("Polimento falhou - regeneração necessária")
+        }
       }
     }
 

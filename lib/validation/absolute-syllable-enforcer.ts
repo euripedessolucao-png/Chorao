@@ -5,6 +5,7 @@
  */
 
 import { countPoeticSyllables } from "./syllable-counter"
+import { IntelligentSyllableReducer } from "./intelligent-syllable-reducer"
 
 export class AbsoluteSyllableEnforcer {
   private static readonly ABSOLUTE_MAX_SYLLABLES = 11
@@ -208,5 +209,77 @@ export class AbsoluteSyllableEnforcer {
     }
 
     return true
+  }
+
+  /**
+   * Valida e corrige automaticamente versos com mais de 11 sílabas
+   * Usa técnicas poéticas inteligentes para reduzir sílabas
+   */
+  static validateAndFix(lyrics: string): {
+    isValid: boolean
+    correctedLyrics: string
+    corrections: number
+    details: string[]
+  } {
+    console.log("[AbsoluteSyllableEnforcer] 🔍 Validando e corrigindo letra...")
+
+    const validation = this.validate(lyrics)
+
+    if (validation.isValid) {
+      console.log("[AbsoluteSyllableEnforcer] ✅ Letra já está perfeita!")
+      return {
+        isValid: true,
+        correctedLyrics: lyrics,
+        corrections: 0,
+        details: [],
+      }
+    }
+
+    console.log(
+      `[AbsoluteSyllableEnforcer] 🔧 Aplicando correção inteligente em ${validation.violations.length} verso(s)...`,
+    )
+
+    const reductionResult = IntelligentSyllableReducer.reduceLyrics(lyrics, this.ABSOLUTE_MAX_SYLLABLES)
+
+    // Valida resultado da correção
+    const revalidation = this.validate(reductionResult.result)
+
+    if (revalidation.isValid) {
+      console.log(
+        `[AbsoluteSyllableEnforcer] ✅ Correção bem-sucedida! ${reductionResult.versesModified} verso(s) corrigido(s)`,
+      )
+      return {
+        isValid: true,
+        correctedLyrics: reductionResult.result,
+        corrections: reductionResult.versesModified,
+        details: [`${reductionResult.totalReductionsApplied} técnicas aplicadas`],
+      }
+    }
+
+    // Se correção inteligente falhou, tenta correção agressiva
+    console.warn("[AbsoluteSyllableEnforcer] ⚠️ Correção inteligente não resolveu todos os problemas")
+    console.warn("[AbsoluteSyllableEnforcer] 🔨 Tentando correção agressiva...")
+
+    const enforcedResult = this.enforce(reductionResult.result)
+    const finalValidation = this.validate(enforcedResult.correctedLyrics)
+
+    if (finalValidation.isValid) {
+      console.log("[AbsoluteSyllableEnforcer] ✅ Correção agressiva bem-sucedida!")
+      return {
+        isValid: true,
+        correctedLyrics: enforcedResult.correctedLyrics,
+        corrections: enforcedResult.corrections,
+        details: enforcedResult.details.map((d) => `${d.original} → ${d.corrected}`),
+      }
+    }
+
+    // Se tudo falhou, retorna erro
+    console.error("[AbsoluteSyllableEnforcer] ❌ FALHA TOTAL - Não foi possível corrigir")
+    return {
+      isValid: false,
+      correctedLyrics: lyrics,
+      corrections: 0,
+      details: ["Correção falhou - regeneração necessária"],
+    }
   }
 }
