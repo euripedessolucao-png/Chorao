@@ -2,7 +2,7 @@
  * CORRETOR AGRESSIVO DE ACENTUAÇÃO
  *
  * Corrige TODAS as palavras sem acentos corretos ANTES de qualquer validação.
- * Este é o LOCAL DO PROBLEMA - a IA gera palavras sem acentos e precisamos corrigir IMEDIATAMENTE.
+ * Este é o LOCAL DO PROBLEMA - a IA gera palavras sem acento e precisamos corrigir IMEDIATAMENTE.
  */
 
 export class AggressiveAccentFixer {
@@ -89,7 +89,6 @@ export class AggressiveAccentFixer {
     deverao: "deverão",
     quererao: "quererão",
     saberao: "saberão",
-    farao: "farão",
     irao: "irão",
     virao: "virão",
     darao: "darão",
