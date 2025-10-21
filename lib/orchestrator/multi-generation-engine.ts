@@ -1,6 +1,7 @@
 import { WordIntegrityValidator } from "@/lib/validation/word-integrity-validator"
 import { AggressiveAccentFixer } from "@/lib/validation/aggressive-accent-fixer"
 import { RepetitionValidator } from "@/lib/validation/repetition-validator"
+import { UltraAggressiveSyllableReducer } from "@/lib/validation/ultra-aggressive-syllable-reducer"
 
 export interface GenerationVariation {
   lyrics: string
@@ -56,12 +57,32 @@ export class MultiGenerationEngine {
         const accentFixResult = AggressiveAccentFixer.fix(lyrics)
         if (accentFixResult.corrections.length > 0) {
           console.log(
-            `[MultiGeneration] 🔧 CORREÇÃO AGRESSIVA: ${accentFixResult.corrections.length} palavras sem acentos corrigidas:`,
+            `[MultiGeneration] 🔧 CORREÇÃO AGRESSIVA DE ACENTOS: ${accentFixResult.corrections.length} palavras corrigidas:`,
           )
           accentFixResult.corrections.forEach((correction) => {
             console.log(`  - "${correction.original}" → "${correction.corrected}" (${correction.count}x)`)
           })
           lyrics = accentFixResult.correctedText
+        }
+
+        console.log(`[MultiGeneration] 🎯 Aplicando correção ULTRA AGRESSIVA de sílabas...`)
+        const syllableFixResult = UltraAggressiveSyllableReducer.fixAllVerses(lyrics)
+
+        if (syllableFixResult.totalCorrections > 0) {
+          console.log(
+            `[MultiGeneration] 🔧 CORREÇÃO ULTRA AGRESSIVA DE SÍLABAS: ${syllableFixResult.totalCorrections} versos corrigidos`,
+          )
+          syllableFixResult.corrections.forEach((correction) => {
+            console.log(
+              `  - Linha ${correction.lineNumber}: ${correction.originalSyllables} → ${correction.correctedSyllables} sílabas`,
+            )
+            console.log(`    Original: "${correction.original}"`)
+            console.log(`    Corrigido: "${correction.corrected}"`)
+            console.log(`    Técnicas: ${correction.techniquesApplied.join(", ")}`)
+          })
+          lyrics = syllableFixResult.correctedLyrics
+        } else {
+          console.log(`[MultiGeneration] ✅ Todos os versos já têm 11 sílabas`)
         }
 
         const fixResult = WordIntegrityValidator.fix(lyrics)
@@ -84,6 +105,20 @@ export class MultiGenerationEngine {
           rejectedVariations.push({
             lyrics,
             reason: `Palavras cortadas não corrigíveis: ${integrityCheck.errors.map((e) => e.word).join(", ")}`,
+          })
+          continue
+        }
+
+        const finalSyllableCheck = UltraAggressiveSyllableReducer.validateAllVerses(lyrics)
+        if (!finalSyllableCheck.isValid) {
+          console.warn(`[MultiGeneration] ⚠️ Tentativa ${attempts} AINDA tem versos com sílabas incorretas:`)
+          finalSyllableCheck.errors.forEach((error) => {
+            console.warn(`  - Linha ${error.lineNumber}: ${error.syllables} sílabas (esperado: 11)`)
+            console.warn(`    "${error.line}"`)
+          })
+          rejectedVariations.push({
+            lyrics,
+            reason: `Versos com sílabas incorretas: ${finalSyllableCheck.errors.map((e) => `linha ${e.lineNumber} (${e.syllables} sílabas)`).join(", ")}`,
           })
           continue
         }
