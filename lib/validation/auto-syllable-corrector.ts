@@ -91,16 +91,27 @@ export class AutoSyllableCorrector {
   }
 
   /**
-   * TÉCNICA 4: Simplifica expressões longas
+   * TÉCNICA 4: Simplifica expressões longas - FORTALECIDA
    */
   private static simplifyExpressions(line: string): { text: string; applied: boolean } {
     const replacements = [
-      { from: /suja de pó/gi, to: "de pó" }, // "bota suja de pó" → "bota de pó"
-      { from: /de raça/gi, to: "bom" }, // "cavalo de raça" → "cavalo bom"
-      { from: /papel colorido/gi, to: "papel" }, // "papel colorido" → "papel"
-      { from: /rio de ruído/gi, to: "rio ruidoso" }, // "rio de ruído" → "rio ruidoso"
-      { from: /dessa /gi, to: "da " }, // "dessa cela" → "da cela"
-      { from: /chamo de/gi, to: "é meu" }, // "que chamo de" → "que é meu"
+      // Expressões originais
+      { from: /suja de pó/gi, to: "de pó" },
+      { from: /de raça/gi, to: "bom" },
+      { from: /papel colorido/gi, to: "nota" }, // "papel" → "nota" (mais curto)
+      { from: /rio de ruído/gi, to: "barulho" }, // "rio ruidoso" → "barulho" (mais curto)
+      { from: /dessa /gi, to: "da " },
+      { from: /chamo de/gi, to: "é" }, // "é meu" → "é" (mais curto)
+
+      { from: /mas tô sem/gi, to: "sem" }, // "mas tô sem" → "sem"
+      { from: /mas sem/gi, to: "sem" }, // "mas sem" → "sem"
+      { from: /mas me/gi, to: "me" }, // "mas me" → "me"
+      { from: /que eu junto/gi, to: "que junto" }, // "que eu junto" → "que junto"
+      { from: /pagando os/gi, to: "pagando" }, // "pagando os" → "pagando"
+      { from: /dos dedos/gi, to: "do dedo" }, // "dos dedos" → "do dedo"
+      { from: /que é meu/gi, to: "que é" }, // "que é meu" → "que é"
+      { from: /falsa segurança/gi, to: "falsa ilusão" }, // "segurança" → "ilusão" (mais curto)
+      { from: /pra herança/gi, to: "pra casa" }, // "herança" → "casa" (mais curto)
     ]
 
     let result = line
@@ -167,6 +178,38 @@ export class AutoSyllableCorrector {
   }
 
   /**
+   * TÉCNICA 7: Reformulação agressiva para versos muito longos
+   */
+  private static aggressiveReformulation(line: string): { text: string; applied: boolean } {
+    const syllables = countPoeticSyllables(line)
+
+    // Se tem 12+ sílabas, aplica reformulações drásticas
+    if (syllables >= 12) {
+      let result = line
+
+      // Remove conectivos desnecessários
+      result = result.replace(/ mas /gi, " ")
+      result = result.replace(/ e /gi, " ")
+      result = result.replace(/ que /gi, " ")
+
+      // Remove advérbios de tempo redundantes
+      result = result.replace(/^Hoje /gi, "")
+      result = result.replace(/^Ainda /gi, "")
+
+      // Simplifica verbos compostos
+      result = result.replace(/ querendo /gi, " quer ")
+      result = result.replace(/ comprando /gi, " compra ")
+      result = result.replace(/ pagando /gi, " paga ")
+
+      if (result !== line) {
+        return { text: result.trim(), applied: true }
+      }
+    }
+
+    return { text: line, applied: false }
+  }
+
+  /**
    * Aplica TODAS as técnicas em sequência até atingir 11 sílabas ou menos
    */
   static correctLine(line: string): CorrectionResult {
@@ -187,7 +230,6 @@ export class AutoSyllableCorrector {
 
     let current = line
 
-    // Aplica técnicas em ordem de prioridade
     const techniques = [
       { name: "Remover artigos", fn: this.removeUnnecessaryArticles.bind(this) },
       { name: "Remover possessivos", fn: this.removePossessives.bind(this) },
@@ -195,6 +237,7 @@ export class AutoSyllableCorrector {
       { name: "Simplificar expressões", fn: this.simplifyExpressions.bind(this) },
       { name: "Plural → Singular", fn: this.convertPluralToSingular.bind(this) },
       { name: "Remover redundâncias", fn: this.removeRedundantWords.bind(this) },
+      { name: "Reformulação agressiva", fn: this.aggressiveReformulation.bind(this) }, // Nova técnica
     ]
 
     for (const technique of techniques) {
