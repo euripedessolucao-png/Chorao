@@ -29,7 +29,6 @@ export class SyllableSuggestionEngine {
     porque: "pq",
     também: "tbm",
     vamos: "vamo",
-    estava: "tava",
     estavam: "tavam",
   }
 
