@@ -14,6 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { RefreshCw, Sparkles, Trash2, Search, Save, Copy } from "lucide-react"
 import { toast } from "sonner"
 import { SyllableValidator } from "@/components/syllable-validator"
+import { InspirationManager } from "@/components/inspiration-manager"
 
 const GENRES = ["Pop", "Sertanejo Moderno", "MPB"]
 const MOODS = ["Feliz", "Triste", "Nostálgico"]
@@ -66,6 +67,7 @@ export default function EditarPage() {
   const [title, setTitle] = useState("")
   const [lyrics, setLyrics] = useState("")
   const [projectId, setProjectId] = useState<number | null>(null)
+  const [savedInspirations, setSavedInspirations] = useState<any[]>([])
 
   useEffect(() => {
     const editingProject = localStorage.getItem("editingProject")
@@ -209,17 +211,7 @@ export default function EditarPage() {
                     </TabsTrigger>
                   </TabsList>
                   <TabsContent value="text" className="space-y-2">
-                    <Textarea
-                      placeholder="Adicione uma inspiração textual..."
-                      value={inspirationText}
-                      onChange={(e) => setInspirationText(e.target.value)}
-                      rows={3}
-                      className="text-xs"
-                    />
-                    <Button size="sm" variant="secondary" className="w-full">
-                      Adicionar Inspiração
-                    </Button>
-                    <p className="text-xs text-muted-foreground text-center">Nenhuma inspiração salva ainda.</p>
+                    <InspirationManager onInspirationsChange={setSavedInspirations} />
                   </TabsContent>
                 </Tabs>
               </div>

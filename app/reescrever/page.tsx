@@ -16,6 +16,7 @@ import { toast } from "sonner"
 import { EMOTIONS } from "@/lib/genres"
 import { GenreSelect } from "@/components/genre-select"
 import { EditableSyllableValidator } from "@/components/syllable-validator-editable"
+import { InspirationManager } from "@/components/inspiration-manager"
 import {
   Dialog,
   DialogContent,
@@ -83,6 +84,7 @@ export default function ReescreverPage() {
   const [showHookDialog, setShowHookDialog] = useState(false)
   const [selectedHook, setSelectedHook] = useState<string | null>(null)
   const [formattingStyle, setFormattingStyle] = useState("performatico")
+  const [savedInspirations, setSavedInspirations] = useState<any[]>([])
 
   // ✅ DEBUG: Monitorar estado do gênero
   useEffect(() => {
@@ -225,6 +227,8 @@ export default function ReescreverPage() {
       console.log("📤 Enviando para API - Genre:", genre)
 
       // ✅ PREPARA O CORPO DA REQUISIÇÃO
+      const inspirationsText = savedInspirations.map((i) => i.text).join("\n\n")
+
       const requestBody = {
         letraOriginal: originalLyrics,
         genero: genre, // ✅ Campo correto para a API
@@ -239,7 +243,7 @@ export default function ReescreverPage() {
         metrics:
           BRAZILIAN_GENRE_METRICS[genre as keyof typeof BRAZILIAN_GENRE_METRICS] || BRAZILIAN_GENRE_METRICS.default,
         emocoes: selectedEmotions,
-        inspiracao: inspirationText,
+        inspiracao: inspirationsText || inspirationText, // Usando inspirações salvas
         metaforas: metaphorSearch,
         titulo: title,
         performanceMode: formattingStyle === "performatico" ? "performance" : "standard",
@@ -577,17 +581,7 @@ export default function ReescreverPage() {
                     </TabsTrigger>
                   </TabsList>
                   <TabsContent value="text" className="space-y-2">
-                    <Textarea
-                      placeholder="Adicione uma inspiração textual..."
-                      value={inspirationText}
-                      onChange={(e) => setInspirationText(e.target.value)}
-                      rows={3}
-                      className="text-xs"
-                    />
-                    <Button size="sm" variant="secondary" className="w-full">
-                      Adicionar Inspiração
-                    </Button>
-                    <p className="text-xs text-muted-foreground text-center">Nenhuma inspiração salva ainda.</p>
+                    <InspirationManager onInspirationsChange={setSavedInspirations} />
                   </TabsContent>
                 </Tabs>
               </div>

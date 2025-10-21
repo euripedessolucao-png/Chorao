@@ -27,6 +27,7 @@ import { EMOTIONS } from "@/lib/genres"
 import { GenreSelect } from "@/components/genre-select"
 import { HookGenerator } from "@/components/hook-generator"
 import { SyllableValidator } from "@/components/syllable-validator"
+import { InspirationManager } from "@/components/inspiration-manager"
 
 const BRAZILIAN_GENRE_METRICS = {
   "Sertanejo Moderno": { syllablesPerLine: 6, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
@@ -107,6 +108,7 @@ export default function CriarPage() {
   const [selectedHook, setSelectedHook] = useState<string | null>(null)
   const [formattingStyle, setFormattingStyle] = useState("performatico")
   const [universalPolish, setUniversalPolish] = useState(true)
+  const [savedInspirations, setSavedInspirations] = useState<any[]>([])
 
   // ✅ OBTER CONFIGURAÇÃO DE SÍLABAS POR GÊNERO
   const getSyllableConfig = (selectedGenre: string) => {
@@ -135,6 +137,8 @@ export default function CriarPage() {
       const genreConfig = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS]
       const syllableConfig = getSyllableConfig(genre)
 
+      const inspirationsText = savedInspirations.map((i) => i.text).join("\n\n")
+
       const response = await fetch("/api/generate-lyrics", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -143,7 +147,7 @@ export default function CriarPage() {
           humor: mood,
           tema: theme,
           criatividade: creativity[0] < 33 ? "conservador" : creativity[0] < 66 ? "equilibrado" : "ousado",
-          inspiracao: inspirationText,
+          inspiracao: inspirationsText || inspirationText,
           metaforas: metaphorSearch,
           emocoes: selectedEmotions,
           titulo: title,
@@ -559,17 +563,7 @@ export default function CriarPage() {
                     </TabsTrigger>
                   </TabsList>
                   <TabsContent value="text" className="space-y-2">
-                    <Textarea
-                      placeholder="Adicione uma inspiração textual..."
-                      value={inspirationText}
-                      onChange={(e) => setInspirationText(e.target.value)}
-                      rows={3}
-                      className="text-xs"
-                    />
-                    <Button size="sm" variant="secondary" className="w-full">
-                      Adicionar Inspiração
-                    </Button>
-                    <p className="text-xs text-muted-foreground text-center">Nenhuma inspiração salva ainda.</p>
+                    <InspirationManager onInspirationsChange={setSavedInspirations} />
                   </TabsContent>
                 </Tabs>
               </div>
