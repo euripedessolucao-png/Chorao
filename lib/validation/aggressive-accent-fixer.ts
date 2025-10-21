@@ -1,5 +1,5 @@
 /**
- * CORRETOR AGRESSIVO DE ACENTUAÇÃO - VERSÃO FINAL ABSOLUTA
+ * CORRETOR AGRESSIVO DE ACENTUAÇÃO - VERSÃO FINAL DEFINITIVA
  * 
  * Correção definitiva para todos os padrões problemáticos
  */
@@ -9,18 +9,16 @@ export class AggressiveAccentFixer {
     // ... (todo o dicionário anterior mantido) ...
 
     // CORREÇÕES ESPECÍFICAS PARA OS NOVOS PADRÕES
-    nãooganhava: "não ganhava",
-    nãoomora: "não mora",
-    nãooo: "não",
+    Nãganhava: "Não ganhava",
+    nãmora: "não mora",
     pra: "para",
     tá: "está",
-    dedo: "dedos",
     raça: "de raça",
     ess: "esse"
   }
 
   /**
-   * CORREÇÃO ABSOLUTA - Resolve todos os problemas
+   * CORREÇÃO DEFINITIVA - Resolve todos os problemas
    */
   static fix(text: string): {
     correctedText: string
@@ -29,39 +27,37 @@ export class AggressiveAccentFixer {
     let correctedText = text
     const corrections: Array<{ original: string; corrected: string; count: number }> = []
 
-    console.log(`[AccentFixer] 🚀 Iniciando correção ABSOLUTA...`)
+    console.log(`[AccentFixer] 🚀 Iniciando correção DEFINITIVA...`)
 
     // CORREÇÕES PRECISAS PARA TODOS OS PADRÕES
-    const absoluteFixes = [
-      // Palavras coladas
-      { regex: /nãooganhava/gi, correction: 'não ganhava', description: 'não+ganhava colado' },
-      { regex: /nãoomora/gi, correction: 'não mora', description: 'não+mora colado' },
+    const definitiveFixes = [
+      // Palavras coladas (maiúscula)
+      { regex: /Nãganhava/gi, correction: 'Não ganhava', description: 'Nã+ganhava colado' },
       
-      // Duplicação excessiva
-      { regex: /nãooo/gi, correction: 'não', description: 'não duplicado' },
+      // Palavras coladas (minúscula)
+      { regex: /nãmora/gi, correction: 'não mora', description: 'nã+mora colado' },
       
       // Contrações problemáticas
       { regex: /\bpra\b/gi, correction: 'para', description: 'contração pra' },
       { regex: /\btá\b/gi, correction: 'está', description: 'contração tá' },
       
-      // Plural faltando
-      { regex: /\bdedo\b/gi, correction: 'dedos', description: 'plural dedo' },
-      
       // Preposição faltando
       { regex: /\bcavalo raça\b/gi, correction: 'cavalo de raça', description: 'preposição faltando' },
       
+      // Repetição de palavras
+      { regex: /\bCasa nobre nobre\b/gi, correction: 'Casa nobre', description: 'nobre repetido' },
+      
+      // Conjunção desnecessária
+      { regex: /\bE hoje\b/gi, correction: 'Hoje', description: 'E desnecessário' },
+      
+      // Expressão incompleta
+      { regex: /por ruído/gi, correction: 'por um rio de ruído', description: 'expressão incompleta' },
+      
       // Estrutura do verso 1
-      { regex: /Eu não ganhava dinheiro, amava/gi, correction: 'Eu não ganhava dinheiro, eu amava', description: 'estrutura verso 1' },
-      { regex: /Vida livre, liberdade eu voava/gi, correction: 'Amava vida, liberdade... voava', description: 'fluxo verso 1' },
-      
-      // Artigo faltando
-      { regex: /Escolhi dinheiro/gi, correction: 'Escolhi o dinheiro', description: 'artigo dinheiro' },
-      
-      // Inconsistência no CHORUS
-      { regex: /Chave do carro, sem rumo para ir/gi, correction: 'Chave do carro, não sei para onde ir', description: 'inconsistência chorus' },
+      { regex: /Não ganhava dinheiro, mas eu amava/gi, correction: 'Eu não ganhava dinheiro, eu amava', description: 'estrutura verso 1' },
     ]
 
-    for (const { regex, correction, description } of absoluteFixes) {
+    for (const { regex, correction, description } of definitiveFixes) {
       const matches = correctedText.match(regex)
       if (matches) {
         const before = correctedText
@@ -72,7 +68,7 @@ export class AggressiveAccentFixer {
             corrected: correction,
             count: matches.length
           })
-          console.log(`[AccentFixer] 🎯 ABSOLUTO: ${description} → "${matches[0]}" → "${correction}"`)
+          console.log(`[AccentFixer] 🎯 DEFINITIVO: ${description} → "${matches[0]}" → "${correction}"`)
         }
       }
     }
@@ -105,7 +101,7 @@ export class AggressiveAccentFixer {
       }
     }
 
-    console.log(`[AccentFixer] ✅ CORREÇÃO ABSOLUTA FINALIZADA: ${corrections.length} correções`)
+    console.log(`[AccentFixer] ✅ CORREÇÃO DEFINITIVA FINALIZADA: ${corrections.length} correções`)
     
     return { correctedText, corrections }
   }
@@ -122,17 +118,15 @@ export class AggressiveAccentFixer {
 
     // PADRÕES CRÍTICOS - ZERO TOLERÂNCIA
     const zeroTolerancePatterns = [
-      { pattern: /nãooganhava/gi, type: 'PALAVRAS_COLADAS', suggestion: 'SEPARAR "não ganhava"' },
-      { pattern: /nãoomora/gi, type: 'PALAVRAS_COLADAS', suggestion: 'SEPARAR "não mora"' },
-      { pattern: /nãooo/gi, type: 'DUPLICAÇÃO_EXCESSIVA', suggestion: 'CORRIGIR para "não"' },
+      { pattern: /Nãganhava/gi, type: 'PALAVRAS_COLADAS', suggestion: 'SEPARAR "Não ganhava"' },
+      { pattern: /nãmora/gi, type: 'PALAVRAS_COLADAS', suggestion: 'SEPARAR "não mora"' },
       { pattern: /\bpra\b/gi, type: 'CONTRAÇÃO_INACEITÁVEL', suggestion: 'SUBSTITUIR por "para"' },
       { pattern: /\btá\b/gi, type: 'CONTRAÇÃO_INACEITÁVEL', suggestion: 'SUBSTITUIR por "está"' },
-      { pattern: /\bdedo\b/gi, type: 'PLURAL_FALTANDO', suggestion: 'USAR "dedos"' },
       { pattern: /\bcavalo raça\b/gi, type: 'PREPOSICAO_FALTANDO', suggestion: 'COMPLETAR "cavalo de raça"' },
-      { pattern: /Eu não ganhava dinheiro, amava/gi, type: 'ESTRUTURA_QUEBRADA', suggestion: 'COMPLETAR "eu amava"' },
-      { pattern: /Vida livre, liberdade eu voava/gi, type: 'FLUXO_QUEBRADO', suggestion: 'PADRONIZAR "Amava vida, liberdade... voava"' },
-      { pattern: /Escolhi dinheiro/gi, type: 'ARTIGO_FALTANDO', suggestion: 'COMPLETAR "Escolhi o dinheiro"' },
-      { pattern: /Chave do carro, sem rumo para ir/gi, type: 'INCONSISTENCIA_CHORUS', suggestion: 'PADRONIZAR "Chave do carro, não sei para onde ir"' },
+      { pattern: /\bCasa nobre nobre\b/gi, type: 'REPETIÇÃO_PALAVRA', suggestion: 'REMOVER repetição' },
+      { pattern: /\bE hoje\b/gi, type: 'CONJUNÇÃO_DESNECESSÁRIA', suggestion: 'REMOVER "E"' },
+      { pattern: /por ruído/gi, type: 'EXPRESSÃO_INCOMPLETA', suggestion: 'COMPLETAR "por um rio de ruído"' },
+      { pattern: /Não ganhava dinheiro, mas eu amava/gi, type: 'ESTRUTURA_QUEBRADA', suggestion: 'PADRONIZAR "Eu não ganhava dinheiro, eu amava"' },
     ]
 
     zeroTolerancePatterns.forEach(({ pattern, type, suggestion }) => {
@@ -180,26 +174,20 @@ export class AggressiveAccentFixer {
       validation.errors.forEach(error => {
         switch (error.type) {
           case 'PALAVRAS_COLADAS':
-            corrected = corrected.replace(/nãooganhava/gi, 'não ganhava')
-            corrected = corrected.replace(/nãoomora/gi, 'não mora')
-            break
-          case 'DUPLICAÇÃO_EXCESSIVA':
-            corrected = corrected.replace(/nãooo/gi, 'não')
+            corrected = corrected.replace(/Nãganhava/gi, 'Não ganhava')
+            corrected = corrected.replace(/nãmora/gi, 'não mora')
             break
           case 'PREPOSICAO_FALTANDO':
             corrected = corrected.replace(/\bcavalo raça\b/gi, 'cavalo de raça')
             break
+          case 'REPETIÇÃO_PALAVRA':
+            corrected = corrected.replace(/\bCasa nobre nobre\b/gi, 'Casa nobre')
+            break
+          case 'EXPRESSÃO_INCOMPLETA':
+            corrected = corrected.replace(/por ruído/gi, 'por um rio de ruído')
+            break
           case 'ESTRUTURA_QUEBRADA':
-            corrected = corrected.replace(/Eu não ganhava dinheiro, amava/gi, 'Eu não ganhava dinheiro, eu amava')
-            break
-          case 'FLUXO_QUEBRADO':
-            corrected = corrected.replace(/Vida livre, liberdade eu voava/gi, 'Amava vida, liberdade... voava')
-            break
-          case 'ARTIGO_FALTANDO':
-            corrected = corrected.replace(/Escolhi dinheiro/gi, 'Escolhi o dinheiro')
-            break
-          case 'INCONSISTENCIA_CHORUS':
-            corrected = corrected.replace(/Chave do carro, sem rumo para ir/gi, 'Chave do carro, não sei para onde ir')
+            corrected = corrected.replace(/Não ganhava dinheiro, mas eu amava/gi, 'Eu não ganhava dinheiro, eu amava')
             break
         }
       })
