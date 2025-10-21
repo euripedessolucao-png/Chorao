@@ -8,15 +8,13 @@ import {
 } from "@/lib/terceira-via"
 import { getGenreConfig } from "@/lib/genre-config"
 import { generateText } from "ai"
-import { validateRhymesForGenre } from "@/lib/validation/rhyme-validator"
-import { validateVerseIntegrity } from "@/lib/validation/verse-integrity-validator"
 import {
   formatSertanejoPerformance,
   shouldUsePerformanceFormat,
 } from "@/lib/formatters/sertanejo-performance-formatter"
-import { validateNarrativeFlow } from "@/lib/validation/narrative-validator"
 import { SyllableEnforcer } from "@/lib/validation/syllableEnforcer"
 import { AutoSyllableCorrector } from "@/lib/validation/auto-syllable-corrector"
+import { validateAllLayers } from "@/lib/validation/multi-layer-validator"
 
 export interface CompositionRequest {
   genre: string
@@ -92,12 +90,13 @@ export class MetaComposer {
   }
 
   /**
-   * COMPOSIÇÃO TURBO COM SISTEMA TERCEIRA VIA INTEGRADO + CORREÇÃO AUTOMÁTICA
+   * COMPOSIÇÃO TURBO COM SISTEMA TERCEIRA VIA INTEGRADO + VALIDAÇÃO MULTI-CAMADAS
    */
   static async compose(request: CompositionRequest): Promise<CompositionResult> {
-    console.log("[MetaComposer-TURBO] Iniciando composição com Terceira Via...")
+    console.log("[MetaComposer-TURBO] Iniciando composição com Terceira Via + Validação Multi-Camadas...")
     console.log("[MetaComposer-TURBO] 🧪 MODO EXPERIMENTAL: SyllableEnforcer DESABILITADO")
     console.log("[MetaComposer-TURBO] ✅ AutoSyllableCorrector ATIVADO")
+    console.log("[MetaComposer-TURBO] ✅ Validação Multi-Camadas ATIVADA")
 
     let iterations = 0
     let bestResult: CompositionResult | null = null
@@ -135,17 +134,39 @@ export class MetaComposer {
       rawLyrics = autoCorrectionResult.correctedLyrics
       console.log(`[MetaComposer-TURBO] ✅ ${autoCorrectionResult.totalCorrected} linhas corrigidas automaticamente`)
 
-      const criticalViolations = this.detectCriticalViolations(rawLyrics)
-      if (criticalViolations.length > 0) {
-        console.error(`[MetaComposer-TURBO] ❌ VIOLAÇÃO CRÍTICA: ${criticalViolations.length} versos com >11 sílabas`)
-        criticalViolations.forEach((v) => {
-          console.error(`  Linha ${v.lineNumber}: "${v.line}" (${v.syllables} sílabas)`)
-        })
+      console.log("[MetaComposer-TURBO] 🔍 Executando validação multi-camadas...")
+      const multiLayerValidation = validateAllLayers(rawLyrics, request.genre, request.theme)
 
-        // Se não é a última iteração, tenta novamente
+      console.log(`[MetaComposer-TURBO] 📊 Score Multi-Camadas: ${multiLayerValidation.overallScore.toFixed(0)}/100`)
+      console.log(
+        `[MetaComposer-TURBO] - Sílabas: ${multiLayerValidation.layers.syllables.passed ? "✅" : "❌"} (${multiLayerValidation.layers.syllables.score})`,
+      )
+      console.log(
+        `[MetaComposer-TURBO] - Narrativa: ${multiLayerValidation.layers.narrative.passed ? "✅" : "❌"} (${multiLayerValidation.layers.narrative.score})`,
+      )
+      console.log(
+        `[MetaComposer-TURBO] - Rimas: ${multiLayerValidation.layers.rhymes.passed ? "✅" : "❌"} (${multiLayerValidation.layers.rhymes.score})`,
+      )
+      console.log(
+        `[MetaComposer-TURBO] - Gramática: ${multiLayerValidation.layers.grammar.passed ? "✅" : "❌"} (${multiLayerValidation.layers.grammar.score})`,
+      )
+      console.log(
+        `[MetaComposer-TURBO] - Anti-Forcing: ${multiLayerValidation.layers.antiForcing.passed ? "✅" : "❌"} (${multiLayerValidation.layers.antiForcing.score})`,
+      )
+      console.log(
+        `[MetaComposer-TURBO] - Emoção: ${multiLayerValidation.layers.emotion.passed ? "✅" : "⚠️"} (${multiLayerValidation.layers.emotion.score})`,
+      )
+
+      if (!multiLayerValidation.isValid) {
+        console.error(`[MetaComposer-TURBO] ❌ VALIDAÇÃO MULTI-CAMADAS FALHOU:`)
+        multiLayerValidation.blockers.forEach((blocker) => console.error(`  ${blocker}`))
+
         if (iterations < this.MAX_ITERATIONS) {
-          console.log("[MetaComposer-TURBO] 🔄 Regenerando devido a violações críticas...")
+          console.log("[MetaComposer-TURBO] 🔄 Regenerando devido a falhas na validação multi-camadas...")
           continue
+        } else {
+          console.log("[MetaComposer-TURBO] ⚠️ Última iteração - aplicando correções emergenciais...")
+          rawLyrics = this.applyEmergencyCorrection(rawLyrics, syllableEnforcement.max)
         }
       }
 
@@ -175,8 +196,6 @@ export class MetaComposer {
       const postCorrectionViolations = this.detectCriticalViolations(enforcedResult.correctedLyrics)
       if (postCorrectionViolations.length > 0) {
         console.error(`[MetaComposer-TURBO] ❌ AINDA HÁ VIOLAÇÕES após correção: ${postCorrectionViolations.length}`)
-
-        // Aplica correção emergencial linha por linha
         enforcedResult.correctedLyrics = this.applyEmergencyCorrection(
           enforcedResult.correctedLyrics,
           syllableEnforcement.max,
@@ -207,37 +226,26 @@ export class MetaComposer {
         console.log("[MetaComposer-TURBO] ✅ Correção emergencial aplicada")
       }
 
-      const finalValidation = this.validateFinalLyrics(finalLyrics, request.genre, syllableEnforcement)
+      console.log("[MetaComposer-TURBO] 🔍 Validação final multi-camadas...")
+      const finalMultiLayerValidation = validateAllLayers(finalLyrics, request.genre, request.theme)
 
-      if (!finalValidation.isValid) {
-        console.error(`[MetaComposer-TURBO] ❌ VALIDAÇÃO FINAL FALHOU:`)
-        finalValidation.criticalErrors.forEach((error) => console.error(`  - ${error}`))
+      if (!finalMultiLayerValidation.isValid) {
+        console.error(`[MetaComposer-TURBO] ❌ VALIDAÇÃO FINAL MULTI-CAMADAS FALHOU:`)
+        finalMultiLayerValidation.blockers.forEach((blocker) => console.error(`  ${blocker}`))
 
-        // Se não é a última iteração, REGENERA
         if (iterations < this.MAX_ITERATIONS) {
           console.log("[MetaComposer-TURBO] 🔄 REGENERANDO devido a falhas críticas...")
           continue
         } else {
-          // Última iteração: aplica correções emergenciais
-          console.log("[MetaComposer-TURBO] ⚠️ Última iteração - aplicando correções emergenciais...")
+          console.log("[MetaComposer-TURBO] ⚠️ Última iteração - aplicando correções emergenciais finais...")
           finalLyrics = this.applyFinalEmergencyFixes(finalLyrics, syllableEnforcement, request.genre)
         }
       } else {
-        console.log("[MetaComposer-TURBO] ✅ VALIDAÇÃO FINAL APROVADA!")
-        console.log(`  - Sílabas: ${finalValidation.syllableCompliance}% dentro do limite`)
-        console.log(`  - Rimas: ${finalValidation.rhymeQuality}% de qualidade`)
-        console.log(`  - Integridade: ${finalValidation.verseIntegrity}% versos completos`)
-        console.log(`  - Narrativa: ${finalValidation.hasNarrative ? "✓" : "✗"}`)
+        console.log("[MetaComposer-TURBO] ✅ VALIDAÇÃO FINAL MULTI-CAMADAS APROVADA!")
+        console.log(`  - Score Geral: ${finalMultiLayerValidation.overallScore.toFixed(0)}/100`)
       }
 
-      // ✅ ETAPA 5: AVALIAÇÃO DE QUALIDADE INTEGRADA
-      const qualityScore = this.calculateQualityScore(
-        finalLyrics,
-        syllableEnforcement,
-        request.genre,
-        terceiraViaAnalysis,
-        melodicAnalysis,
-      )
+      const qualityScore = finalMultiLayerValidation.overallScore
 
       console.log(`[MetaComposer-TURBO] 🎯 Score final: ${qualityScore.toFixed(2)}`)
 
@@ -251,7 +259,7 @@ export class MetaComposer {
             finalScore: qualityScore,
             polishingApplied,
             preservedChorusesUsed: hasPreservedChoruses,
-            rhymeScore: this.analyzeRhymes(finalLyrics, request.genre).score,
+            rhymeScore: finalMultiLayerValidation.layers.rhymes.score,
             rhymeTarget: this.getGenreRhymeTarget(request.genre).minScore,
             structureImproved: isRewrite,
             terceiraViaAnalysis: terceiraViaAnalysis,
@@ -262,10 +270,10 @@ export class MetaComposer {
       }
 
       const shouldStop =
-        qualityScore >= this.MIN_QUALITY_SCORE &&
+        qualityScore >= this.MIN_QUALITY_SCORE * 100 &&
+        finalMultiLayerValidation.isValid &&
         terceiraViaAnalysis.score_geral >= 75 &&
-        melodicAnalysis.flow_score >= 70 &&
-        finalValidation.isValid // Só para se validação final passou
+        melodicAnalysis.flow_score >= 70
 
       if (shouldStop) {
         console.log("[MetaComposer-TURBO] 🎯 Critério de parada atingido!")
@@ -705,53 +713,6 @@ Retorne APENAS a letra (sem explicações):`
   }
 
   /**
-   * CALCULA SCORE DE QUALIDADE INTEGRADO
-   */
-  private static calculateQualityScore(
-    lyrics: string,
-    syllableTarget: { min: number; max: number; ideal: number },
-    genre: string,
-    terceiraViaAnalysis: TerceiraViaAnalysis | null,
-    melodicAnalysis: any,
-  ): number {
-    let score = 0
-    let weights = 0
-
-    // Terceira Via score (40% do peso)
-    if (terceiraViaAnalysis) {
-      score += (terceiraViaAnalysis.score_geral / 100) * 0.4
-      weights += 0.4
-    }
-
-    // Melodic flow score (30% do peso)
-    if (melodicAnalysis) {
-      score += (melodicAnalysis.flow_score / 100) * 0.3
-      weights += 0.3
-    }
-
-    // Syllable compliance (20% do peso)
-    const lines = lyrics.split("\n").filter((l) => l.trim() && !l.startsWith("[") && !l.startsWith("("))
-    let syllableCompliance = 0
-    lines.forEach((line) => {
-      const count = countPoeticSyllables(line)
-      if (count >= syllableTarget.min && count <= syllableTarget.max) {
-        syllableCompliance++
-      }
-    })
-    if (lines.length > 0) {
-      score += (syllableCompliance / lines.length) * 0.2
-      weights += 0.2
-    }
-
-    // Rhyme quality (10% do peso)
-    const rhymeAnalysis = this.analyzeRhymes(lyrics, genre)
-    score += (rhymeAnalysis.score / 100) * 0.1
-    weights += 0.1
-
-    return weights > 0 ? score / weights : 0
-  }
-
-  /**
    * EXTRAI TÍTULO DA LETRA
    */
   private static extractTitle(lyrics: string, request: CompositionRequest): string {
@@ -943,82 +904,6 @@ Retorne APENAS a letra (sem explicações):`
     // NÃO remove palavras - isso quebra a gramática
     // A IA deve regenerar a letra inteira se necessário
     return lyrics
-  }
-
-  /**
-   * VALIDAÇÃO FINAL RIGOROSA - SIMPLIFICADA E EFICIENTE
-   * Garante que TODAS as validações existentes sejam executadas e BLOQUEIEM saída se falharem
-   */
-  private static validateFinalLyrics(
-    lyrics: string,
-    genre: string,
-    syllableTarget: { min: number; max: number; ideal: number },
-  ): {
-    isValid: boolean
-    criticalErrors: string[]
-    warnings: string[]
-    syllableCompliance: number
-    rhymeQuality: number
-    verseIntegrity: number
-    hasNarrative: boolean
-  } {
-    const criticalErrors: string[] = []
-    const warnings: string[] = []
-
-    // 1. SÍLABAS - NUNCA MAIS DE 11
-    const lines = lyrics.split("\n").filter((l) => {
-      const t = l.trim()
-      return t && !t.startsWith("[") && !t.startsWith("(") && !t.includes("Instruments:")
-    })
-
-    let syllableCompliant = 0
-    lines.forEach((line, i) => {
-      const count = countPoeticSyllables(line)
-      if (count > this.ABSOLUTE_MAX_SYLLABLES) {
-        criticalErrors.push(`Linha ${i + 1} tem ${count} sílabas (máximo: 11)`)
-      } else if (count >= syllableTarget.min && count <= syllableTarget.max) {
-        syllableCompliant++
-      }
-    })
-    const syllableCompliance = lines.length > 0 ? (syllableCompliant / lines.length) * 100 : 0
-
-    // 2. INTEGRIDADE DE VERSOS - sem versos quebrados
-    const integrityResult = validateVerseIntegrity(lyrics)
-    if (integrityResult.brokenVerses > 0) {
-      integrityResult.issues.forEach((issue) => {
-        if (issue.severity === "error") {
-          criticalErrors.push(`Verso quebrado linha ${issue.line}: ${issue.issues[0]}`)
-        }
-      })
-    }
-    const verseIntegrity = lines.length > 0 ? ((lines.length - integrityResult.brokenVerses) / lines.length) * 100 : 0
-
-    // 3. NARRATIVA - história fluída
-    const narrativeValidation = validateNarrativeFlow(lyrics, genre)
-    if (narrativeValidation.abruptChanges.length > 1) {
-      criticalErrors.push(`${narrativeValidation.abruptChanges.length} mudanças abruptas na narrativa`)
-    }
-    const hasNarrative = narrativeValidation.score >= 70
-
-    // 4. RIMAS - qualidade mínima
-    const rhymeValidation = validateRhymesForGenre(lyrics, genre)
-    const rhymeQuality = rhymeValidation.analysis.score
-
-    const isValid =
-      criticalErrors.length === 0 && // Sem erros críticos
-      syllableCompliance >= 80 && // 80% das linhas com sílabas corretas
-      verseIntegrity >= 80 && // 80% dos versos íntegros
-      hasNarrative // Narrativa fluída
-
-    return {
-      isValid,
-      criticalErrors,
-      warnings,
-      syllableCompliance,
-      rhymeQuality,
-      verseIntegrity,
-      hasNarrative,
-    }
   }
 
   /**
