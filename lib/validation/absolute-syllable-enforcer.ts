@@ -114,58 +114,99 @@ export class AbsoluteSyllableEnforcer {
 
   /**
    * Força um verso a ter no máximo 11 sílabas
-   * Remove palavras agressivamente até atingir o limite
+   * NUNCA corta palavras - apenas reformula ou regenera
    */
   private static forceMaxSyllables(line: string): string {
     let current = line
     let currentSyllables = countPoeticSyllables(current)
 
+    // Melhor retornar com erro do que entregar palavra cortada
+    const originalLine = line
+
     // Técnica 1: Remove artigos
     if (currentSyllables > this.ABSOLUTE_MAX_SYLLABLES) {
-      current = current
+      const attempt = current
         .replace(/\b(o|a|os|as|um|uma|uns|umas)\b/gi, "")
         .replace(/\s+/g, " ")
         .trim()
-      currentSyllables = countPoeticSyllables(current)
+
+      if (this.isValidLine(attempt)) {
+        current = attempt
+        currentSyllables = countPoeticSyllables(current)
+      }
     }
 
     // Técnica 2: Remove possessivos
     if (currentSyllables > this.ABSOLUTE_MAX_SYLLABLES) {
-      current = current
+      const attempt = current
         .replace(/\b(meu|minha|meus|minhas)\b/gi, "")
         .replace(/\s+/g, " ")
         .trim()
-      currentSyllables = countPoeticSyllables(current)
+
+      if (this.isValidLine(attempt)) {
+        current = attempt
+        currentSyllables = countPoeticSyllables(current)
+      }
     }
 
     // Técnica 3: Remove advérbios
     if (currentSyllables > this.ABSOLUTE_MAX_SYLLABLES) {
-      current = current
+      const attempt = current
         .replace(/\b(muito|mais|ainda|hoje|sempre|nunca)\b/gi, "")
         .replace(/\s+/g, " ")
         .trim()
-      currentSyllables = countPoeticSyllables(current)
+
+      if (this.isValidLine(attempt)) {
+        current = attempt
+        currentSyllables = countPoeticSyllables(current)
+      }
     }
 
     // Técnica 4: Remove conectivos
     if (currentSyllables > this.ABSOLUTE_MAX_SYLLABLES) {
-      current = current
+      const attempt = current
         .replace(/\b(mas|e|que|quando|porque)\b/gi, "")
         .replace(/\s+/g, " ")
         .trim()
-      currentSyllables = countPoeticSyllables(current)
+
+      if (this.isValidLine(attempt)) {
+        current = attempt
+        currentSyllables = countPoeticSyllables(current)
+      }
     }
 
-    // Técnica 5: Remove última palavra (drástico)
-    while (currentSyllables > this.ABSOLUTE_MAX_SYLLABLES) {
-      const words = current.split(" ")
-      if (words.length <= 2) break // Não remove se sobrar apenas 2 palavras
+    // NUNCA remove palavras - isso corta o verso
 
-      words.pop()
-      current = words.join(" ")
-      currentSyllables = countPoeticSyllables(current)
+    if (currentSyllables > this.ABSOLUTE_MAX_SYLLABLES) {
+      console.error(`[AbsoluteSyllableEnforcer] ❌ FALHA: Não conseguiu corrigir sem cortar palavras`)
+      console.error(`  Original: "${originalLine}" (${countPoeticSyllables(originalLine)} sílabas)`)
+      console.error(`  Tentativa: "${current}" (${currentSyllables} sílabas)`)
+      console.error(`  AÇÃO: Retornando original - verso precisa ser REGENERADO`)
+      return originalLine // Retorna original para ser detectado pela auditoria
     }
 
     return current.trim()
+  }
+
+  /**
+   * Verifica se uma linha é válida (não tem palavras cortadas)
+   */
+  private static isValidLine(line: string): boolean {
+    // Verifica se não termina com preposição
+    if (/\b(na|no|da|do|em|de|pra|pro|com|sem|por)\s*$/i.test(line)) {
+      return false
+    }
+
+    // Verifica se não tem palavras obviamente cortadas
+    const words = line.split(/\s+/)
+    for (const word of words) {
+      const clean = word.replace(/[.,!?;:]/g, "")
+      // Palavras com menos de 2 caracteres (exceto pronomes comuns)
+      if (clean.length < 2 && !["é", "e", "a", "o"].includes(clean.toLowerCase())) {
+        return false
+      }
+    }
+
+    return true
   }
 }

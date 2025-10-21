@@ -1,6 +1,7 @@
 import { PunctuationValidator } from "./punctuation-validator"
 import { validateAllLayers } from "./multi-layer-validator"
 import { AbsoluteSyllableEnforcer } from "./absolute-syllable-enforcer"
+import { WordIntegrityValidator } from "./word-integrity-validator"
 
 export interface AuditResult {
   isApproved: boolean
@@ -49,6 +50,28 @@ export class LyricsAuditor {
     const errors: AuditError[] = []
     const warnings: AuditWarning[] = []
     let score = 100
+
+    // ✅ AUDITORIA 0: INTEGRIDADE DE PALAVRAS (CRÍTICA - PRIMEIRA)
+    console.log("[LyricsAuditor] 📝 Auditando integridade de palavras (CRÍTICO)...")
+    const wordIntegrityValidation = WordIntegrityValidator.validate(lyrics)
+
+    if (!wordIntegrityValidation.isValid) {
+      wordIntegrityValidation.errors.forEach((error) => {
+        errors.push({
+          type: "grammar",
+          severity: "critical",
+          message: error.suggestion
+            ? `Palavra sem acento: "${error.word}" → "${error.suggestion}" (linha ${error.lineNumber})`
+            : `Palavra incompleta: "${error.word}" (linha ${error.lineNumber})`,
+          lineNumber: error.lineNumber,
+          line: error.line,
+        })
+      })
+      score -= 40 // Penalidade SEVERA - palavras cortadas são inaceitáveis
+      console.log(`[LyricsAuditor] ❌ FALHA CRÍTICA: ${wordIntegrityValidation.message}`)
+    } else {
+      console.log(`[LyricsAuditor] ✅ ${wordIntegrityValidation.message}`)
+    }
 
     // ✅ AUDITORIA 1: VALIDAÇÃO ABSOLUTA DE 11 SÍLABAS (CRÍTICA)
     console.log("[LyricsAuditor] 📏 Auditando sílabas (CRÍTICO)...")
