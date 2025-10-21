@@ -18,6 +18,7 @@ import { LineStacker } from "@/lib/utils/line-stacker"
 import { AbsoluteSyllableEnforcer } from "@/lib/validation/absolute-syllable-enforcer"
 import { LyricsAuditor } from "@/lib/validation/lyrics-auditor"
 import { MultiGenerationEngine } from "./multi-generation-engine"
+import { WordIntegrityValidator } from "@/lib/validation/word-integrity-validator"
 
 export interface CompositionRequest {
   genre: string
@@ -94,7 +95,7 @@ export class MetaComposer {
   }
 
   /**
-   * COMPOSIÇÃO TURBO COM SISTEMA DE MÚLTIPLAS GERAÇÕES
+   * COMPOSIÇÃO TURBO COM SISTEMA DE MÚLTIPLES GERAÇÕES
    *
    * Replica a lógica do gerador de refrão:
    * - Gera 3-5 versões de cada elemento
@@ -229,6 +230,19 @@ export class MetaComposer {
       finalLyrics = enforcedResult.correctedLyrics
     }
 
+    const integrityCheck = WordIntegrityValidator.validate(finalLyrics)
+    if (!integrityCheck.isValid) {
+      console.error("[MetaComposer] ❌ VERSÃO REJEITADA - Palavras cortadas detectadas:")
+      integrityCheck.errors.forEach((error) => {
+        console.error(`  - Linha ${error.lineNumber}: "${error.word}" (${error.type})`)
+      })
+
+      // Retorna string vazia para forçar regeneração
+      // O MultiGenerationEngine vai gerar outra versão
+      throw new Error("Versão rejeitada por palavras cortadas")
+    }
+
+    console.log("[MetaComposer] ✅ Versão aprovada - Integridade de palavras OK")
     return finalLyrics
   }
 

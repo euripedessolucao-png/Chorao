@@ -1,3 +1,5 @@
+import { WordIntegrityValidator } from "@/lib/validation/word-integrity-validator"
+
 export interface GenerationVariation {
   lyrics: string
   score: number
@@ -25,12 +27,24 @@ export class MultiGenerationEngine {
     console.log(`[MultiGeneration] 🎯 Gerando ${count} variações...`)
 
     const variations: GenerationVariation[] = []
+    const maxAttempts = count * 3 // Tenta até 3x mais para garantir versões válidas
 
-    for (let i = 0; i < count; i++) {
-      console.log(`[MultiGeneration] 📝 Gerando variação ${i + 1}/${count}...`)
+    let attempts = 0
+    while (variations.length < count && attempts < maxAttempts) {
+      attempts++
+      console.log(
+        `[MultiGeneration] 📝 Tentativa ${attempts}/${maxAttempts} (${variations.length}/${count} válidas)...`,
+      )
 
       try {
         const lyrics = await generateFn()
+
+        const integrityCheck = WordIntegrityValidator.validate(lyrics)
+        if (!integrityCheck.isValid) {
+          console.warn(`[MultiGeneration] ⚠️ Tentativa ${attempts} rejeitada - Palavras cortadas`)
+          continue // Pula para próxima tentativa
+        }
+
         const score = scoreFn(lyrics)
 
         const variation: GenerationVariation = {
@@ -42,14 +56,14 @@ export class MultiGenerationEngine {
         }
 
         variations.push(variation)
-        console.log(`[MultiGeneration] ✅ Variação ${i + 1} - Score: ${score}`)
+        console.log(`[MultiGeneration] ✅ Variação ${variations.length} válida - Score: ${score}`)
       } catch (error) {
-        console.error(`[MultiGeneration] ❌ Erro na variação ${i + 1}:`, error)
+        console.error(`[MultiGeneration] ❌ Erro na tentativa ${attempts}:`, error)
       }
     }
 
     if (variations.length === 0) {
-      throw new Error("Falha ao gerar qualquer variação")
+      throw new Error("Falha ao gerar qualquer variação válida após múltiplas tentativas")
     }
 
     // Escolhe a melhor variação
