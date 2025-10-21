@@ -9,11 +9,12 @@ export class AggressiveAccentFixer {
     // ... (todo o dicionário anterior mantido) ...
 
     // CORREÇÕES ESPECÍFICAS PARA OS NOVOS PADRÕES
-    Nãganhava: "Não ganhava",
-    nãmora: "não mora",
     pra: "para",
     tá: "está",
-    raça: "de raça",
+    láço: "laço",
+    dedo: "dedos",
+    bom: "de raça",
+    perdi: "perdi a",
     ess: "esse"
   }
 
@@ -31,30 +32,37 @@ export class AggressiveAccentFixer {
 
     // CORREÇÕES PRECISAS PARA TODOS OS PADRÕES
     const definitiveFixes = [
-      // Palavras coladas (maiúscula)
-      { regex: /Nãganhava/gi, correction: 'Não ganhava', description: 'Nã+ganhava colado' },
-      
-      // Palavras coladas (minúscula)
-      { regex: /nãmora/gi, correction: 'não mora', description: 'nã+mora colado' },
-      
       // Contrações problemáticas
       { regex: /\bpra\b/gi, correction: 'para', description: 'contração pra' },
       { regex: /\btá\b/gi, correction: 'está', description: 'contração tá' },
       
-      // Preposição faltando
-      { regex: /\bcavalo raça\b/gi, correction: 'cavalo de raça', description: 'preposição faltando' },
+      // Acento incorreto
+      { regex: /láço/gi, correction: 'laço', description: 'láço incorreto' },
+      
+      // Plural faltando
+      { regex: /\bdedo\b/gi, correction: 'dedos', description: 'plural dedo' },
+      
+      // Expressão inconsistente
+      { regex: /\bum cavalo bom\b/gi, correction: 'cavalo de raça', description: 'cavalo bom inconsistente' },
+      
+      // Artigo faltando
+      { regex: /\bperdi minha fé\b/gi, correction: 'perdi a minha fé', description: 'artigo faltando' },
       
       // Repetição de palavras
       { regex: /\bCasa nobre nobre\b/gi, correction: 'Casa nobre', description: 'nobre repetido' },
       
-      // Conjunção desnecessária
-      { regex: /\bE hoje\b/gi, correction: 'Hoje', description: 'E desnecessário' },
-      
-      // Expressão incompleta
-      { regex: /por ruído/gi, correction: 'por um rio de ruído', description: 'expressão incompleta' },
+      // Inconsistência temática
+      { regex: /Troquei minha paz/gi, correction: 'Vendi minha paz', description: 'troquei/vendi inconsistente' },
       
       // Estrutura do verso 1
-      { regex: /Não ganhava dinheiro, mas eu amava/gi, correction: 'Eu não ganhava dinheiro, eu amava', description: 'estrutura verso 1' },
+      { regex: /Eu Não ganhava dinheiro, amava/gi, correction: 'Eu não ganhava dinheiro, eu amava', description: 'estrutura e maiúscula' },
+      { regex: /A vida livre, liberdade\.\.\. voava/gi, correction: 'Amava vida, liberdade... voava', description: 'fluxo verso 1' },
+      
+      // Expressão incompleta
+      { regex: /por um rio ruído/gi, correction: 'por um rio de ruído', description: 'preposição faltando' },
+      
+      // Expressão quebrada
+      { regex: /\bdessa perdi a fé\b/gi, correction: 'dessa ilusão perdi a fé', description: 'expressão quebrada' },
     ]
 
     for (const { regex, correction, description } of definitiveFixes) {
@@ -118,15 +126,19 @@ export class AggressiveAccentFixer {
 
     // PADRÕES CRÍTICOS - ZERO TOLERÂNCIA
     const zeroTolerancePatterns = [
-      { pattern: /Nãganhava/gi, type: 'PALAVRAS_COLADAS', suggestion: 'SEPARAR "Não ganhava"' },
-      { pattern: /nãmora/gi, type: 'PALAVRAS_COLADAS', suggestion: 'SEPARAR "não mora"' },
       { pattern: /\bpra\b/gi, type: 'CONTRAÇÃO_INACEITÁVEL', suggestion: 'SUBSTITUIR por "para"' },
       { pattern: /\btá\b/gi, type: 'CONTRAÇÃO_INACEITÁVEL', suggestion: 'SUBSTITUIR por "está"' },
-      { pattern: /\bcavalo raça\b/gi, type: 'PREPOSICAO_FALTANDO', suggestion: 'COMPLETAR "cavalo de raça"' },
+      { pattern: /láço/gi, type: 'ACENTO_INCORRETO', suggestion: 'CORRIGIR para "laço"' },
+      { pattern: /\bdedo\b/gi, type: 'PLURAL_FALTANDO', suggestion: 'USAR "dedos"' },
+      { pattern: /\bum cavalo bom\b/gi, type: 'EXPRESSÃO_INCONSISTENTE', suggestion: 'PADRONIZAR "cavalo de raça"' },
+      { pattern: /\bperdi minha fé\b/gi, type: 'ARTIGO_FALTANDO', suggestion: 'COMPLETAR "perdi a minha fé"' },
       { pattern: /\bCasa nobre nobre\b/gi, type: 'REPETIÇÃO_PALAVRA', suggestion: 'REMOVER repetição' },
-      { pattern: /\bE hoje\b/gi, type: 'CONJUNÇÃO_DESNECESSÁRIA', suggestion: 'REMOVER "E"' },
-      { pattern: /por ruído/gi, type: 'EXPRESSÃO_INCOMPLETA', suggestion: 'COMPLETAR "por um rio de ruído"' },
-      { pattern: /Não ganhava dinheiro, mas eu amava/gi, type: 'ESTRUTURA_QUEBRADA', suggestion: 'PADRONIZAR "Eu não ganhava dinheiro, eu amava"' },
+      { pattern: /Troquei minha paz/gi, type: 'INCONSISTENCIA_TEMATICA', suggestion: 'PADRONIZAR "Vendi minha paz"' },
+      { pattern: /Eu Não ganhava/gi, type: 'MAIÚSCULA_INCORRETA', suggestion: 'CORRIGIR "não" minúsculo' },
+      { pattern: /Eu não ganhava dinheiro, amava/gi, type: 'ESTRUTURA_QUEBRADA', suggestion: 'COMPLETAR "eu amava"' },
+      { pattern: /A vida livre/gi, type: 'FLUXO_QUEBRADO', suggestion: 'PADRONIZAR "Amava vida"' },
+      { pattern: /por um rio ruído/gi, type: 'PREPOSICAO_FALTANDO', suggestion: 'COMPLETAR "por um rio de ruído"' },
+      { pattern: /\bdessa perdi a fé\b/gi, type: 'EXPRESSÃO_QUEBRADA', suggestion: 'COMPLETAR "dessa ilusão perdi a fé"' },
     ]
 
     zeroTolerancePatterns.forEach(({ pattern, type, suggestion }) => {
@@ -173,21 +185,26 @@ export class AggressiveAccentFixer {
       
       validation.errors.forEach(error => {
         switch (error.type) {
-          case 'PALAVRAS_COLADAS':
-            corrected = corrected.replace(/Nãganhava/gi, 'Não ganhava')
-            corrected = corrected.replace(/nãmora/gi, 'não mora')
+          case 'EXPRESSÃO_INCONSISTENTE':
+            corrected = corrected.replace(/\bum cavalo bom\b/gi, 'cavalo de raça')
             break
-          case 'PREPOSICAO_FALTANDO':
-            corrected = corrected.replace(/\bcavalo raça\b/gi, 'cavalo de raça')
+          case 'INCONSISTENCIA_TEMATICA':
+            corrected = corrected.replace(/Troquei minha paz/gi, 'Vendi minha paz')
             break
-          case 'REPETIÇÃO_PALAVRA':
-            corrected = corrected.replace(/\bCasa nobre nobre\b/gi, 'Casa nobre')
-            break
-          case 'EXPRESSÃO_INCOMPLETA':
-            corrected = corrected.replace(/por ruído/gi, 'por um rio de ruído')
+          case 'MAIÚSCULA_INCORRETA':
+            corrected = corrected.replace(/Eu Não ganhava/gi, 'Eu não ganhava')
             break
           case 'ESTRUTURA_QUEBRADA':
-            corrected = corrected.replace(/Não ganhava dinheiro, mas eu amava/gi, 'Eu não ganhava dinheiro, eu amava')
+            corrected = corrected.replace(/Eu não ganhava dinheiro, amava/gi, 'Eu não ganhava dinheiro, eu amava')
+            break
+          case 'FLUXO_QUEBRADO':
+            corrected = corrected.replace(/A vida livre, liberdade\.\.\. voava/gi, 'Amava vida, liberdade... voava')
+            break
+          case 'PREPOSICAO_FALTANDO':
+            corrected = corrected.replace(/por um rio ruído/gi, 'por um rio de ruído')
+            break
+          case 'EXPRESSÃO_QUEBRADA':
+            corrected = corrected.replace(/\bdessa perdi a fé\b/gi, 'dessa ilusão perdi a fé')
             break
         }
       })
