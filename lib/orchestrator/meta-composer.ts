@@ -234,7 +234,11 @@ export class MetaComposer {
     if (!integrityCheck.isValid) {
       console.error("[MetaComposer] ❌ VERSÃO REJEITADA - Palavras cortadas detectadas:")
       integrityCheck.errors.forEach((error) => {
-        console.error(`  - Linha ${error.lineNumber}: "${error.word}" (${error.type})`)
+        if (error.suggestion) {
+          console.error(`  - Linha ${error.lineNumber}: "${error.word}" → sugestão: "${error.suggestion}"`)
+        } else {
+          console.error(`  - Linha ${error.lineNumber}: "${error.word}" parece incompleta`)
+        }
       })
 
       // Retorna string vazia para forçar regeneração
