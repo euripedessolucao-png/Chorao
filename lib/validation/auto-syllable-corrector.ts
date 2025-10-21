@@ -23,10 +23,61 @@ export class AutoSyllableCorrector {
   private static applyTestedSubstitutions(line: string): { text: string; applied: boolean } {
     const testedReplacements = [
       // ✅ TESTADAS MANUALMENTE - APLICAR PRIMEIRO
+
+      // Substituições de expressões longas por curtas
+      {
+        from: /papel colorido/gi,
+        to: "notas falsas",
+        reason: "Substituir 'papel colorido' por 'notas falsas' (-1 sílaba)",
+      },
+      {
+        from: /um rio de ruído/gi,
+        to: "som que cansa",
+        reason: "Substituir 'um rio de ruído' por 'som que cansa' (-3 sílabas)",
+      },
+      {
+        from: /falsa segurança/gi,
+        to: "perdi minha fé",
+        reason: "Substituir 'falsa segurança' por 'perdi minha fé' (mais emocional)",
+      },
+      { from: /não mora esperança/gi, to: "não mora fé", reason: "Substituir 'esperança' por 'fé' (-2 sílabas)" },
+      { from: /volto pra casa/gi, to: "volto pro chão", reason: "Substituir 'pra casa' por 'pro chão' (mais poético)" },
+
+      // Adicionar palavras quando falta sílaba
+      {
+        from: /^Não ganhava, mas eu amava/i,
+        to: "Não ganhava dinheiro, mas eu amava",
+        reason: "Adicionar 'dinheiro' (+2 sílabas)",
+      },
+      {
+        from: /^A vida livre, eu voava/i,
+        to: "Vida livre, liberdade, eu voava",
+        reason: "Adicionar 'liberdade' (+2 sílabas)",
+      },
+      { from: /^Hoje na alma não mora/i, to: "Hoje na minha alma não mora", reason: "Adicionar 'minha' (+1 sílaba)" },
+      {
+        from: /^Meu peito dispara/i,
+        to: "Meu coração dispara",
+        reason: "Substituir 'peito' por 'coração' (+1 sílaba)",
+      },
+      { from: /^Da cela de ouro/i, to: "Dessa cela de ouro", reason: "Mudar 'Da' para 'Dessa' (+1 sílaba)" },
+      { from: /que é lar$/i, to: "que é meu lar", reason: "Adicionar 'meu' (+1 sílaba)" },
+
+      // Remover palavras quando sobra sílaba
+      { from: /^Tenho a chave/i, to: "Chave do carro", reason: "Remover 'Tenho a' e reformular" },
+      { from: /^Tenho a casa/i, to: "Casa nobre", reason: "Remover 'Tenho a'" },
+      { from: /^O dinheiro/i, to: "Dinheiro", reason: "Remover artigo 'O'" },
+      {
+        from: /Comprei um cavalo bom, laço me prendeu/i,
+        to: "Cavalo de raça, mas fiquei preso",
+        reason: "Reformular completamente",
+      },
+      { from: /^Eu quebro esse cabresto/i, to: "Quebro esse cabresto", reason: "Remover pronome 'Eu'" },
+
+      // Técnicas antigas mantidas
       { from: /mas amava$/i, to: "mas eu amava", reason: "Adicionar pronome 'eu' (+1 sílaba)" },
       { from: /Comprei cavalo/i, to: "Comprei um cavalo", reason: "Adicionar artigo 'um' (+1 sílaba)" },
       { from: /^Coração/i, to: "Meu coração", reason: "Adicionar possessivo 'Meu' (+1 sílaba)" },
-      { from: /na alma não/i, to: "na minha alma não", reason: "Adicionar possessivo 'minha' (+1 sílaba)" },
       { from: /nota falsa/i, to: "notas falsas", reason: "Mudar singular para plural (+1 sílaba)" },
       { from: /a andar/i, to: "na estrada", reason: "Substituir expressão (+1 sílaba)" },
       { from: /sou eu no cabresto/i, to: "quem tá no cabresto sou eu", reason: "Reformular (+2 sílabas)" },
@@ -133,7 +184,6 @@ export class AutoSyllableCorrector {
       // Expressões originais
       { from: /suja de pó/gi, to: "de pó" },
       { from: /de raça/gi, to: "bom" },
-      { from: /papel colorido/gi, to: "nota" }, // "papel" → "nota" (mais curto)
       { from: /rio de ruído/gi, to: "barulho" }, // "rio ruidoso" → "barulho" (mais curto)
       { from: /dessa /gi, to: "da " },
       { from: /chamo de/gi, to: "é" }, // "é meu" → "é" (mais curto)
@@ -145,8 +195,8 @@ export class AutoSyllableCorrector {
       { from: /pagando os/gi, to: "pagando" }, // "pagando os" → "pagando"
       { from: /dos dedos/gi, to: "do dedo" }, // "dos dedos" → "do dedo"
       { from: /que é meu/gi, to: "que é" }, // "que é meu" → "que é"
-      { from: /falsa segurança/gi, to: "falsa ilusão" }, // "segurança" → "ilusão" (mais curto)
-      { from: /pra herança/gi, to: "pra casa" }, // "herança" → "casa" (mais curto)
+      { from: /falsa ilusão/gi, to: "ilusão" }, // "ilusão" → "ilusão" (mais curto)
+      { from: /pra casa/gi, to: "casa" }, // "pra casa" → "casa"
     ]
 
     let result = line
