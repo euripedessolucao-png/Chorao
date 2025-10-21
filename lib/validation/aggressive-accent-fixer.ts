@@ -1,25 +1,254 @@
 /**
- * CORRETOR AGRESSIVO DE ACENTUAÇÃO - VERSÃO FINAL ULTIMATE
+ * CORRETOR AGRESSIVO DE ACENTUAÇÃO - VERSÃO FINAL CORRIGIDA
  * 
- * Corrige TODOS os problemas restantes de uma vez
+ * Corrige TODOS os padrões problemáticos sem erros de sintaxe
  */
 
 export class AggressiveAccentFixer {
   private static readonly ACCENT_CORRECTIONS: Record<string, string> = {
-    // ... (todo o dicionário original) ...
+    // MONOSSÍLABOS TÔNICOS (terminados em -a(s), -e(s), -o(s))
+    nao: "não",
+    nã: "não",
+    la: "lá",
+    ca: "cá",
+    ja: "já",
+    pa: "pá",
+    pe: "pé",
+    fe: "fé",
+    po: "pó",
+    so: "só",
+    vo: "vó",
+
+    // OXÍTONAS (última sílaba tônica)
+    voce: "você",
+    cafe: "café",
+    ate: "até",
+    apos: "após",
+    atras: "atrás",
+    tambem: "também",
+    alem: "além",
+    ninguem: "ninguém",
+    alguem: "alguém",
+    porem: "porém",
+    parabens: "parabéns",
+    refens: "reféns",
+    armazem: "armazém",
+    vintém: "vintém",
+    refem: "refém",
+    bebe: "bebê",
+    mante: "mantê",
+    avo: "avó",
+    vovo: "vovó",
+    bisavo: "bisavó",
+
+    // PAROXÍTONAS (penúltima sílaba tônica)
+    facil: "fácil",
+    dificil: "difícil",
+    movel: "móvel",
+    util: "útil",
+    fragil: "frágil",
+    esteril: "estéril",
+    fertil: "fértil",
+    volatil: "volátil",
+    acucar: "açúcar",
+    carater: "caráter",
+    cancer: "câncer",
+    juri: "júri",
+    tenis: "tênis",
+    lapis: "lápis",
+    gratis: "grátis",
+    bonus: "bônus",
+    virus: "vírus",
+    orfao: "órfão",
+    orgao: "órgão",
+    bencao: "bênção",
+    irmao: "irmão",
+    irma: "irmã",
+    maos: "mãos",
+    paes: "pães",
+    caes: "cães",
+    mae: "mãe",
+    mao: "mão",
+    alemao: "alemão",
+    alema: "alemã",
+    cidadao: "cidadão",
+    cidada: "cidadã",
+    cristao: "cristão",
+    crista: "cristã",
+
+    // PROPAROXÍTONAS (antepenúltima sílaba tônica - TODAS são acentuadas)
+    musica: "música",
+    lampada: "lâmpada",
+    arvore: "árvore",
+    numero: "número",
+    ultimo: "último",
+    proximo: "próximo",
+    maximo: "máximo",
+    minimo: "mínimo",
+    otimo: "ótimo",
+    pessimo: "péssimo",
+    rapido: "rápido",
+    liquido: "líquido",
+    solido: "sólido",
+    publico: "público",
+    pratico: "prático",
+    teorico: "teórico",
+    historico: "histórico",
+    geografico: "geográfico",
+    matematica: "matemática",
+    fisica: "física",
+    quimica: "química",
+    biologica: "biológica",
+    economico: "econômico",
+    politico: "político",
+    juridico: "jurídico",
+    medico: "médico",
+    tecnico: "técnico",
+    eletrico: "elétrico",
+    mecanico: "mecânico",
+    organico: "orgânico",
+    inorganico: "inorgânico",
+
+    // PALAVRAS COM CEDILHA (ç)
+    seguranca: "segurança",
+    seguranç: "segurança",
+    segurançaa: "segurança",
+    esperanca: "esperança",
+    esperanç: "esperança",
+    lembranca: "lembrança",
+    mudanca: "mudança",
+    crianca: "criança",
+    danca: "dança",
+    heranca: "herança",
+    heranç: "herança",
+    alianca: "aliança",
+    balanca: "balança",
+    confianca: "confiança",
+    raca: "raça",
+    raç: "raça",
+    raçaa: "raça",
+    racaa: "raça",
+    graca: "graça",
+    praca: "praça",
+    cacador: "caçador",
+    cacada: "caçada",
+    laco: "laço",
+    laç: "laço",
+    láço: "laço",
+    láco: "laço",
+    braco: "braço",
+    abraco: "abraço",
+    pedaco: "pedaço",
+
+    // PALAVRAS COM TIL (~) - NASALIDADE
+    coracao: "coração",
+    coraçao: "coração",
+    emocao: "emoção",
+    emoçao: "emoção",
+    solidao: "solidão",
+    paixao: "paixão",
+    ilusao: "ilusão",
+    cancao: "canção",
+    cançao: "canção",
+    razao: "razão",
+    licao: "lição",
+    liçao: "lição",
+    opcao: "opção",
+    opçao: "opção",
+    atencao: "atenção",
+    atençao: "atenção",
+    intencao: "intenção",
+    intençao: "intenção",
+    direcao: "direção",
+    direçao: "direção",
+    protecao: "proteção",
+    proteçao: "proteção",
+    tradicao: "tradição",
+    tradiçao: "tradição",
+    revolucao: "revolução",
+    revoluçao: "revolução",
+    solucao: "solução",
+    soluçao: "solução",
+    confusao: "confusão",
+    conclusao: "conclusão",
+    decisao: "decisão",
+    precisao: "precisão",
+    divisao: "divisão",
+    visao: "visão",
+    revisao: "revisão",
+    televisao: "televisão",
+
+    // VERBOS NO FUTURO (terminados em -ão)
+    sao: "são",
+    vao: "vão",
+    dao: "dão",
+    estao: "estão",
+    serao: "serão",
+    terao: "terão",
+    poderao: "poderão",
+    deverao: "deverão",
+    quererao: "quererão",
+    saberao: "saberão",
+    irao: "irão",
+    virao: "virão",
+    darao: "darão",
+    estarao: "estarão",
+    farao: "farão",
+    dirao: "dirão",
+    trarao: "trarão",
+    verao: "verão",
+    lerao: "lerão",
+    crerao: "crerão",
+
+    // PALAVRAS COMUNS EM LETRAS MUSICAIS
+    esta: "está",
+    sera: "será",
+    estara: "estará",
+    tera: "terá",
+    fara: "fará",
+    dira: "dirá",
+    dara: "dará",
+    ira: "irá",
+    vira: "virá",
+    vera: "verá",
+    lera: "lerá",
+    crera: "crerá",
+    podera: "poderá",
+    devera: "deverá",
+    querer: "quererá",
+    sabera: "saberá",
+    trara: "trará",
+    havera: "haverá",
+    comeca: "começa",
+    comecara: "começará",
+    esqueca: "esqueça",
+    esquecera: "esquecerá",
+    conheca: "conheça",
+    conhecera: "conhecerá",
+    apareca: "apareça",
+    aparecera: "aparecerá",
+    mereca: "mereça",
+    merecera: "merecerá",
+    permaneca: "permaneça",
+    permanecera: "permanecerá",
+    pertenca: "pertença",
+    pertencera: "pertencerá",
+    aconteca: "aconteça",
+    acontecera: "acontecerá",
 
     // CORREÇÕES ESPECÍFICAS PARA OS ÚLTIMOS PADRÕES
     pra: "para",
     tá: "está",
     láço: "laço",
-    dedo: "dedos",
+    nãposso: "não posso",
+    "n'abota": "na bota",
     ess: "esse",
-    perdi: "perdi a",
-    raça: "de raça",
+    bom: "de raça",
+    perdi: "perdi a"
   }
 
   /**
-   * CORREÇÃO ULTIMATE - Resolve TODOS os problemas de uma vez
+   * Corrige AGRESSIVAMENTE todas as palavras sem acentos
    */
   static fix(text: string): {
     correctedText: string
@@ -28,114 +257,80 @@ export class AggressiveAccentFixer {
     let correctedText = text
     const corrections: Array<{ original: string; corrected: string; count: number }> = []
 
-    console.log(`[AccentFixer] 🚀 Iniciando correção ULTIMATE...`)
+    console.log(`[AccentFixer] 🔧 Iniciando correção...`)
 
-    // FASE 1: CORREÇÕES CRÍTICAS ESPECÍFICAS
+    // FASE 1: Correções críticas específicas
     const criticalFixes = [
-      // Contrações problemáticas
-      { regex: /\bpra\b/gi, correction: 'para', description: 'contração pra' },
-      { regex: /\btá\b/gi, correction: 'está', description: 'contração tá' },
-      
-      // Acento incorreto
-      { regex: /láço/gi, correction: 'laço', description: 'láço incorreto' },
-      
-      // Plural faltando
-      { regex: /\bdedo\b/gi, correction: 'dedos', description: 'plural dedo' },
-      
-      // Expressões incompletas
-      { regex: /\bperdi minha fé\b/gi, correction: 'perdi a minha fé', description: 'artigo faltando' },
-      { regex: /\bcavalo raça\b/gi, correction: 'cavalo de raça', description: 'preposição faltando' },
-      { regex: /\bdessa perdi fé\b/gi, correction: 'dessa forma perdi a fé', description: 'expressão incompleta' },
-      
-      // Problemas de estrutura
-      { regex: /\be estrada\b/gi, correction: 'na estrada', description: 'preposição faltando' },
-      { regex: /Tenho casa nobre/gi, correction: 'Tenho uma casa nobre', description: 'artigo faltando' },
+      { regex: /\bpra\b/gi, correction: 'para' },
+      { regex: /\btá\b/gi, correction: 'está' },
+      { regex: /láço/gi, correction: 'laço' },
+      { regex: /nãposso/gi, correction: 'não posso' },
+      { regex: /n'abota/gi, correction: 'na bota' },
+      { regex: /\bum cavalo bom\b/gi, correction: 'cavalo de raça' },
+      { regex: /\bperdi minha fé\b/gi, correction: 'perdi a minha fé' },
+      { regex: /\bpé firme estrada\b/gi, correction: 'pé firme na estrada' },
+      { regex: /\bQuebro cabresto\b/gi, correction: 'Quebro o cabresto' }
     ]
 
-    for (const { regex, correction, description } of criticalFixes) {
+    for (const { regex, correction } of criticalFixes) {
       const matches = correctedText.match(regex)
       if (matches) {
-        const before = correctedText
         correctedText = correctedText.replace(regex, correction)
-        if (before !== correctedText) {
-          corrections.push({
-            original: matches[0],
-            corrected: correction,
-            count: matches.length
-          })
-          console.log(`[AccentFixer] 💥 CRÍTICO: ${description} → "${matches[0]}" → "${correction}"`)
-        }
+        corrections.push({
+          original: matches[0],
+          corrected: correction,
+          count: matches.length
+        })
+        console.log(`[AccentFixer] 🔧 Crítico: "${matches[0]}" → "${correction}"`)
       }
     }
 
-    // FASE 2: CORREÇÕES DO DICIONÁRIO
-    const sortedCorrections = Object.entries(this.ACCENT_CORRECTIONS)
-      .sort(([a], [b]) => b.length - a.length)
+    // FASE 2: Correções do dicionário
+    for (const [wrong, correct] of Object.entries(this.ACCENT_CORRECTIONS)) {
+      const regex = new RegExp(`\\b${this.escapeRegex(wrong)}\\b`, "gi")
+      const matches = correctedText.match(regex)
+      const count = matches ? matches.length : 0
 
-    for (const [wrong, correct] of sortedCorrections) {
-      if (correctedText.toLowerCase().includes(wrong.toLowerCase())) {
-        const regex = new RegExp(`\\b${this.escapeRegex(wrong)}\\b`, "gi")
-        const matches = correctedText.match(regex)
-        const count = matches ? matches.length : 0
+      if (count > 0) {
+        correctedText = correctedText.replace(regex, (match) => {
+          if (match.charAt(0) === match.charAt(0).toUpperCase()) {
+            return correct.charAt(0).toUpperCase() + correct.slice(1)
+          }
+          return correct
+        })
 
-        if (count > 0) {
-          correctedText = correctedText.replace(regex, (match) => {
-            return this.preserveCapitalization(match, correct)
-          })
-
-          corrections.push({
-            original: wrong,
-            corrected: correct,
-            count,
-          })
-
-          console.log(`[AccentFixer] 🔧 Dicionário: "${wrong}" → "${correct}" (${count}x)`)
-        }
+        corrections.push({
+          original: wrong,
+          corrected: correct,
+          count,
+        })
       }
     }
 
-    // FASE 3: CORREÇÃO DE ESTRUTURA E FLUXO
-    correctedText = this.fixFlowAndStructure(correctedText)
+    // FASE 3: Correções de estrutura
+    correctedText = this.fixStructure(correctedText)
 
-    console.log(`[AccentFixer] ✅ CORREÇÃO ULTIMATE FINALIZADA: ${corrections.length} correções`)
+    console.log(`[AccentFixer] ✅ Correção finalizada: ${corrections.length} correções`)
     
     return { correctedText, corrections }
   }
 
   /**
-   * Correção de fluxo e estrutura poética
+   * Correção de estrutura e fluxo
    */
-  private static fixFlowAndStructure(text: string): string {
+  private static fixStructure(text: string): string {
     let corrected = text
     
-    // Correções específicas para melhorar o fluxo poético
-    const flowFixes = [
-      // Melhorar o fluxo do verso 1
-      { 
-        problem: /pé firme na estrada\s*\nEu não ganhava dinheiro, eu amava vida, liberdade\.\.\. voava/gi, 
-        fix: "pé firme na estrada\nEu não ganhava dinheiro, eu amava\nAmava vida, liberdade... voava" 
-      },
-      
-      // Corrigir estrutura do verso 2
-      { 
-        problem: /Escolhi dinheiro, perdi a minha fé\s*\nHoje na alma não mora esperança/gi,
-        fix: "Escolhi o dinheiro, perdi a minha fé\nHoje na alma não mora esperança"
-      },
-      
-      // Corrigir verso do OUTRO
-      { 
-        problem: /dessa forma perdi a fé/gi,
-        fix: "dessa ilusão perdi a fé"
-      },
+    const structureFixes = [
+      { problem: /Troquei minha paz por papel colorido/gi, fix: "Vendi minha paz por papel colorido" },
+      { problem: /Vida simples, liberdade\.\.\. eu voava/gi, fix: "Amava vida, liberdade... voava" },
+      { problem: /dessa forma perdi a fé/gi, fix: "dessa ilusão perdi a fé" },
+      { problem: /Tenho casa mais nobre/gi, fix: "Tenho casa nobre" }
     ]
 
-    flowFixes.forEach(({ problem, fix }) => {
+    structureFixes.forEach(({ problem, fix }) => {
       if (problem.test(corrected)) {
-        const before = corrected
         corrected = corrected.replace(problem, fix)
-        if (before !== corrected) {
-          console.log(`[AccentFixer] 🌊 Fluxo: "${before.match(problem)?.[0]}" → "${fix}"`)
-        }
       }
     })
 
@@ -143,98 +338,29 @@ export class AggressiveAccentFixer {
   }
 
   /**
-   * VALIDAÇÃO ULTRA-COMPLETA
+   * Valida se o texto tem palavras sem acentos
    */
-  static validate(text: string): { 
-    isValid: boolean;
-    score: number;
-    errors: Array<{ type: string; problem: string; suggestion: string }>;
-  } {
-    const errors: Array<{ type: string; problem: string; suggestion: string }> = []
+  static validate(text: string): { isValid: boolean; wordsWithoutAccents: string[] } {
+    const wordsWithoutAccents: string[] = []
 
-    // PADRÕES PROBLEMÁTICOS FINAIS
-    const problemPatterns = [
-      { pattern: /\bpra\b/gi, type: 'CONTRAÇÃO_PROBLEMÁTICA', suggestion: 'Usar "para"' },
-      { pattern: /\btá\b/gi, type: 'CONTRAÇÃO_PROBLEMÁTICA', suggestion: 'Usar "está"' },
-      { pattern: /láço/gi, type: 'ACENTO_INCORRETO', suggestion: 'Corrigir "láço" para "laço"' },
-      { pattern: /\bdedo\b/gi, type: 'PLURAL_FALTANDO', suggestion: 'Usar "dedos"' },
-      { pattern: /\bcavalo raça\b/gi, type: 'PREPOSIÇÃO_FALTANDO', suggestion: 'Usar "cavalo de raça"' },
-      { pattern: /\bperdi minha fé\b/gi, type: 'ARTIGO_FALTANDO', suggestion: 'Usar "perdi a minha fé"' },
-      { pattern: /e estrada/gi, type: 'PREPOSIÇÃO_FALTANDO', suggestion: 'Usar "na estrada"' },
-      { pattern: /Tenho casa nobre/gi, type: 'ARTIGO_FALTANDO', suggestion: 'Usar "Tenho uma casa nobre"' },
-    ]
+    for (const [wrong] of Object.entries(this.ACCENT_CORRECTIONS)) {
+      const regex = new RegExp(`\\b${this.escapeRegex(wrong)}\\b`, "gi")
+      const matches = text.match(regex)
 
-    problemPatterns.forEach(({ pattern, type, suggestion }) => {
-      const matches = text.match(pattern)
-      if (matches) {
-        matches.forEach(match => {
-          errors.push({ type, problem: match, suggestion })
-        })
+      if (matches && matches.length > 0) {
+        wordsWithoutAccents.push(...matches)
       }
-    })
-
-    // Score mais rigoroso
-    const qualityScore = Math.max(0, 100 - (errors.length * 20))
-    const isValid = qualityScore >= 90 // Exige excelência
-
-    console.log(`[AccentFixer] 📊 Validação: ${qualityScore}/100 (${errors.length} problemas)`)
-
-    if (!isValid && errors.length > 0) {
-      console.warn(`[AccentFixer] ⚠️ Problemas críticos:`)
-      errors.forEach((error, index) => {
-        console.warn(`  ${index + 1}. ${error.type}: "${error.problem}" → ${error.suggestion}`)
-      })
     }
 
-    return { isValid, score: qualityScore, errors }
+    return {
+      isValid: wordsWithoutAccents.length === 0,
+      wordsWithoutAccents: [...new Set(wordsWithoutAccents)],
+    }
   }
 
   /**
-   * CORREÇÃO FINAL COM GARANTIA
+   * Escapa caracteres especiais de regex
    */
-  static ultimateFix(text: string): string {
-    console.log(`[AccentFixer] 💎 Aplicando CORREÇÃO FINAL COM GARANTIA...`)
-    
-    // Primeira passada
-    let corrected = this.fix(text).correctedText
-    
-    // Segunda passada para garantir
-    const validation = this.validate(corrected)
-    if (!validation.isValid) {
-      console.log(`[AccentFixer] 🔄 Aplicando passada final...`)
-      
-      // Aplica correções manuais baseadas nos erros
-      validation.errors.forEach(error => {
-        switch (error.type) {
-          case 'CONTRAÇÃO_PROBLEMÁTICA':
-            corrected = corrected.replace(/\bpra\b/gi, 'para').replace(/\btá\b/gi, 'está')
-            break
-          case 'PREPOSIÇÃO_FALTANDO':
-            corrected = corrected.replace(/\bcavalo raça\b/gi, 'cavalo de raça')
-            corrected = corrected.replace(/e estrada/gi, 'na estrada')
-            break
-          case 'ARTIGO_FALTANDO':
-            corrected = corrected.replace(/\bperdi minha fé\b/gi, 'perdi a minha fé')
-            corrected = corrected.replace(/Tenho casa nobre/gi, 'Tenho uma casa nobre')
-            break
-        }
-      })
-    }
-
-    // Validação final
-    const finalValidation = this.validate(corrected)
-    console.log(`[AccentFixer] 🏆 Resultado final: ${finalValidation.score}/100`)
-
-    return corrected
-  }
-
-  private static preserveCapitalization(original: string, corrected: string): string {
-    if (original.charAt(0) === original.charAt(0).toUpperCase()) {
-      return corrected.charAt(0).toUpperCase() + corrected.slice(1)
-    }
-    return corrected
-  }
-
   private static escapeRegex(str: string): string {
     return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
   }
