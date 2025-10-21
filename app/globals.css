@@ -7,20 +7,6 @@
     /* Cores roxas/lilás para corresponder às imagens */
     --background: 0 0% 100%;
     --foreground: 222 47% 11%;
-    --card: 0 0%stilo CSS para que as sugestões não sejam copiadas quando o usuário copiar a letra:
-
-<CodeProject id="chorao-compositor" taskNameActive="Adicionando estilo para sugestões não copiáveis" taskNameComplete="Estilo adicionado">
-
-```css file="app/globals.css"
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-@layer base {
-  :root {
-    /* Cores roxas/lilás para corresponder às imagens */
-    --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
@@ -81,10 +67,10 @@
     -moz-user-select: none;
     -ms-user-select: none;
   }
-  
+
   /* Quando o usuário copia a letra, as sugestões não são incluídas */
   [data-no-copy]::before,
   [data-no-copy]::after {
-    content: '';
+    content: "";
   }
 }
