@@ -248,8 +248,12 @@ export class AggressiveAccentFixer {
 
     // Para cada palavra no dicionário, substitui TODAS as ocorrências
     for (const [wrong, correct] of Object.entries(this.ACCENT_CORRECTIONS)) {
-      // Cria regex que encontra a palavra errada como palavra completa (não parte de outra palavra)
-      const regex = new RegExp(`\\b${this.escapeRegex(wrong)}\\b`, "gi")
+      // Cria regex que encontra a palavra errada com limites de palavra que funcionam com português
+      // Usa negative lookahead/lookbehind para garantir que não está no meio de outra palavra
+      const regex = new RegExp(
+        `(?<![a-záàâãéêíóôõúüçA-ZÁÀÂÃÉÊÍÓÔÕÚÜÇ])${this.escapeRegex(wrong)}(?![a-záàâãéêíóôõúüçA-ZÁÀÂÃÉÊÍÓÔÕÚÜÇ])`,
+        "g",
+      )
 
       // Conta quantas vezes a palavra aparece
       const matches = correctedText.match(regex)
@@ -284,7 +288,10 @@ export class AggressiveAccentFixer {
     const wordsWithoutAccents: string[] = []
 
     for (const [wrong] of Object.entries(this.ACCENT_CORRECTIONS)) {
-      const regex = new RegExp(`\\b${this.escapeRegex(wrong)}\\b`, "gi")
+      const regex = new RegExp(
+        `(?<![a-záàâãéêíóôõúüçA-ZÁÀÂÃÉÊÍÓÔÕÚÜÇ])${this.escapeRegex(wrong)}(?![a-záàâãéêíóôõúüçA-ZÁÀÂÃÉÊÍÓÔÕÚÜÇ])`,
+        "g",
+      )
       const matches = text.match(regex)
 
       if (matches && matches.length > 0) {
