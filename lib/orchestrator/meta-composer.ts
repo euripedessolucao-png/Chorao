@@ -383,18 +383,35 @@ TEMA: ${request.theme}
 MOOD: ${request.mood}
 
 ═══════════════════════════════════════════════════════════════
+⚠️ REGRA CRÍTICA DE ACENTUAÇÃO (NÃO NEGOCIÁVEL)
+═══════════════════════════════════════════════════════════════
+
+NUNCA escreva palavras sem acentos corretos!
+
+❌ ERRADO: "nã", "seguranç", "heranç", "raç", "laç", "esperanç"
+✅ CORRETO: "não", "segurança", "herança", "raça", "laço", "esperança"
+
+Se precisar reduzir sílabas, use OUTRAS técnicas:
+- Remova artigos: "o", "a", "um", "uma"
+- Use contrações: "pra", "tô", "cê", "tá"
+- Simplifique frases: "que eu tenho" → "que tenho"
+
+MAS NUNCA remova acentos ou corte palavras!
+
+═══════════════════════════════════════════════════════════════
 🎯 HIERARQUIA DE PRIORIDADES (MEGA HITS BRASILEIROS)
 ═══════════════════════════════════════════════════════════════
 
 **PRIORIDADE MÁXIMA (Não negociável):**
-1. Emoção autêntica e história envolvente
-2. Chorus memorável que gruda na cabeça
-3. Linguagem coloquial brasileira (cê, tô, pra)
-4. Frases completas e coerentes
+1. Palavras COMPLETAS com acentuação CORRETA
+2. Emoção autêntica e história envolvente
+3. Chorus memorável que gruda na cabeça
+4. Linguagem coloquial brasileira (cê, tô, pra)
+5. Frases completas e coerentes
 
 **PRIORIDADE IMPORTANTE (Guia, não bloqueio):**
-5. Limite de 11 sílabas (flexível para emoção)
-6. Rimas ricas 50% (objetivo, não obrigatório)
+6. Limite de 11 sílabas (flexível para emoção)
+7. Rimas ricas 50% (objetivo, não obrigatório)
 
 **REGRA DE OURO:**
 Técnica SERVE à emoção, não o contrário!
@@ -438,16 +455,18 @@ Técnica SERVE à emoção, não o contrário!
 ✅ "por entre os dedos" → "entre os dedos"
 ✅ "Comprando remédio" → "Compro remédio"
 ✅ "entre os dedos meus" → "entre meus dedos"
+✅ "o meu riacho" → "meu riacho"
+✅ "a minha paz" → "minha paz"
 
 ═══════════════════════════════════════════════════════════════
 ⚠️ IMPORTANTE
 ═══════════════════════════════════════════════════════════════
 
 Se precisar escolher entre:
-- Verso com 10-12 sílabas MAS emocionalmente perfeito
-- Verso com 11 sílabas MAS sem emoção
+- Verso com 10-12 sílabas MAS emocionalmente perfeito E com acentuação correta
+- Verso com 11 sílabas MAS sem emoção OU com palavras cortadas
 
-ESCOLHA O PRIMEIRO! A emoção é mais importante.
+ESCOLHA O PRIMEIRO! A emoção e integridade das palavras são mais importantes.
 
 (Mas tente sempre atingir 11 sílabas usando as técnicas acima)
 
@@ -531,18 +550,35 @@ MOOD: ${request.mood}
 ${request.rhythm ? `RITMO: ${request.rhythm}` : ""}
 
 ═══════════════════════════════════════════════════════════════
+⚠️ REGRA CRÍTICA DE ACENTUAÇÃO (NÃO NEGOCIÁVEL)
+═══════════════════════════════════════════════════════════════
+
+NUNCA escreva palavras sem acentos corretos!
+
+❌ ERRADO: "nã", "seguranç", "heranç", "raç", "laç", "esperanç"
+✅ CORRETO: "não", "segurança", "herança", "raça", "laço", "esperança"
+
+Se precisar reduzir sílabas, use OUTRAS técnicas:
+- Remova artigos: "o", "a", "um", "uma"
+- Use contrações: "pra", "tô", "cê", "tá"
+- Simplifique frases: "que eu tenho" → "que tenho"
+
+MAS NUNCA remova acentos ou corte palavras!
+
+═══════════════════════════════════════════════════════════════
 🎯 HIERARQUIA DE PRIORIDADES (MEGA HITS BRASILEIROS)
 ═══════════════════════════════════════════════════════════════
 
 **PRIORIDADE MÁXIMA (Não negociável):**
-1. Emoção autêntica e história envolvente
-2. Chorus memorável que gruda na cabeça
-3. Linguagem coloquial brasileira (cê, tô, pra)
-4. Frases completas e coerentes
+1. Palavras COMPLETAS com acentuação CORRETA
+2. Emoção autêntica e história envolvente
+3. Chorus memorável que gruda na cabeça
+4. Linguagem coloquial brasileira (cê, tô, pra)
+5. Frases completas e coerentes
 
 **PRIORIDADE IMPORTANTE (Guia, não bloqueio):**
-5. Limite de 11 sílabas (flexível para emoção)
-6. Rimas ricas 50% (objetivo, não obrigatório)
+6. Limite de 11 sílabas (flexível para emoção)
+7. Rimas ricas 50% (objetivo, não obrigatório)
 
 **REGRA DE OURO:**
 Técnica SERVE à emoção, não o contrário!
@@ -586,16 +622,18 @@ Técnica SERVE à emoção, não o contrário!
 ✅ "por entre os dedos" → "entre os dedos"
 ✅ "Comprando remédio" → "Compro remédio"
 ✅ "entre os dedos meus" → "entre meus dedos"
+✅ "o meu riacho" → "meu riacho"
+✅ "a minha paz" → "minha paz"
 
 ═══════════════════════════════════════════════════════════════
 ⚠️ IMPORTANTE
 ═══════════════════════════════════════════════════════════════
 
 Se precisar escolher entre:
-- Verso com 10-12 sílabas MAS emocionalmente perfeito
-- Verso com 11 sílabas MAS sem emoção
+- Verso com 10-12 sílabas MAS emocionalmente perfeito E com acentuação correta
+- Verso com 11 sílabas MAS sem emoção OU com palavras cortadas
 
-ESCOLHA O PRIMEIRO! A emoção é mais importante.
+ESCOLHA O PRIMEIRO! A emoção e integridade das palavras são mais importantes.
 
 (Mas tente sempre atingir 11 sílabas usando as técnicas acima)
 

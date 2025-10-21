@@ -1,4 +1,5 @@
 import { WordIntegrityValidator } from "@/lib/validation/word-integrity-validator"
+import { AggressiveAccentFixer } from "@/lib/validation/aggressive-accent-fixer"
 
 export interface GenerationVariation {
   lyrics: string
@@ -43,9 +44,21 @@ export class MultiGenerationEngine {
         console.log(`[MultiGeneration] 📄 Letra gerada (primeiras 200 chars):`)
         console.log(lyrics.substring(0, 200))
 
+        // PRIMEIRA CORREÇÃO: Acentuação agressiva
+        const accentFixResult = AggressiveAccentFixer.fix(lyrics)
+        if (accentFixResult.corrections.length > 0) {
+          console.log(
+            `[MultiGeneration] 🔧 CORREÇÃO AGRESSIVA: ${accentFixResult.corrections.length} palavras sem acentos corrigidas:`,
+          )
+          accentFixResult.corrections.forEach((correction) => {
+            console.log(`  - "${correction.original}" → "${correction.corrected}" (${correction.count}x)`)
+          })
+          lyrics = accentFixResult.correctedText
+        }
+
         const fixResult = WordIntegrityValidator.fix(lyrics)
         if (fixResult.corrections > 0) {
-          console.log(`[MultiGeneration] 🔧 Aplicadas ${fixResult.corrections} correções automáticas:`)
+          console.log(`[MultiGeneration] 🔧 Aplicadas ${fixResult.corrections} correções de integridade:`)
           fixResult.details.forEach((detail) => {
             console.log(`  - "${detail.original}" → "${detail.corrected}"`)
           })
