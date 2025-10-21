@@ -4,6 +4,7 @@
  */
 
 import { countPoeticSyllables } from "./syllable-counter"
+import { applyErrorSolutionDictionary } from "./error-solution-dictionary"
 
 export interface CorrectionResult {
   original: string
@@ -482,8 +483,29 @@ export class AutoSyllableCorrector {
 
     let current = line
 
+    const dictionaryResult = applyErrorSolutionDictionary(current, this.MAX_SYLLABLES)
+    if (dictionaryResult.syllablesAfter === this.MAX_SYLLABLES) {
+      console.log(`[AutoCorrector] ✅ Dicionário aplicado: ${dictionaryResult.applied}`)
+      return {
+        original,
+        corrected: dictionaryResult.corrected,
+        syllablesBefore,
+        syllablesAfter: dictionaryResult.syllablesAfter,
+        techniquesApplied: [`Dicionário: ${dictionaryResult.applied}`],
+      }
+    }
+
+    // Se o dicionário não resolveu completamente, continua com as técnicas tradicionais
+    if (
+      dictionaryResult.applied !== "Nenhuma (já correto)" &&
+      dictionaryResult.applied !== "Nenhuma solução encontrada"
+    ) {
+      current = dictionaryResult.corrected
+      techniquesApplied.push(`Dicionário parcial: ${dictionaryResult.applied}`)
+    }
+
     const techniques = [
-      { name: "Substituições testadas", fn: this.applyTestedSubstitutions.bind(this) }, // ← NOVO: PRIORIDADE MÁXIMA
+      { name: "Substituições testadas", fn: this.applyTestedSubstitutions.bind(this) },
       { name: "Remover artigos", fn: this.removeUnnecessaryArticles.bind(this) },
       { name: "Remover possessivos", fn: this.removePossessives.bind(this) },
       { name: "Remover pronomes", fn: this.removeUnnecessaryPronouns.bind(this) },
