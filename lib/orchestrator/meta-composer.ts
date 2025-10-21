@@ -95,29 +95,22 @@ export class MetaComposer {
   }
 
   /**
-   * COMPOSIÇÃO TURBO COM SISTEMA DE MÚLTIPLES GERAÇÕES
-   *
-   * Replica a lógica do gerador de refrão:
-   * - Gera 3-5 versões de cada elemento
-   * - Escolhe a MELHOR de cada
-   * - NUNCA entrega letra com erros!
+   * COMPOSIÇÃO TURBO COM SISTEMA DE MÚLTIPLAS GERAÇÕES
    */
   static async compose(request: CompositionRequest): Promise<CompositionResult> {
     console.log("[MetaComposer-TURBO] 🚀 Iniciando composição com MÚLTIPLAS GERAÇÕES...")
     console.log("[MetaComposer-TURBO] 🎯 Gera 3 versões completas e escolhe a melhor")
-    console.log("[MetaComposer-TURBO] 🚨 NUNCA ENTREGA COM ERROS!")
+    console.log("[MetaComposer-TURBO] 🔮 TERCEIRA VIA SEMPRE ATIVA")
 
     const multiGenResult = await MultiGenerationEngine.generateMultipleVariations(
       async () => {
-        // Gera uma versão completa da letra
         return await this.generateSingleVersion(request)
       },
       (lyrics) => {
-        // Calcula score da letra
         const auditResult = LyricsAuditor.audit(lyrics, request.genre, request.theme)
         return auditResult.score
       },
-      3, // Gera 3 versões
+      3,
     )
 
     const bestLyrics = multiGenResult.variations[multiGenResult.bestVariationIndex].lyrics
@@ -151,7 +144,6 @@ export class MetaComposer {
 
   /**
    * GERA UMA VERSÃO COMPLETA DA LETRA
-   * Método auxiliar usado pelo sistema de múltiplas gerações
    */
   private static async generateSingleVersion(request: CompositionRequest): Promise<string> {
     console.log("[MetaComposer] 📝 Gerando versão única...")
@@ -161,7 +153,7 @@ export class MetaComposer {
     const hasPreservedChoruses = preservedChoruses.length > 0
     const isRewrite = !!request.originalLyrics
     const performanceMode = request.performanceMode || "standard"
-    const useTerceiraVia = request.useTerceiraVia ?? true // ✅ AGORA É AUTOMÁTICA
+    const useTerceiraVia = request.useTerceiraVia ?? true // ✅ TERCEIRA VIA SEMPRE ATIVA
 
     const syllableEnforcement = request.syllableTarget || this.getGenreSyllableConfig(request.genre)
     syllableEnforcement.max = Math.min(syllableEnforcement.max, this.ABSOLUTE_MAX_SYLLABLES)
@@ -179,7 +171,9 @@ export class MetaComposer {
       rawLyrics = await this.generateDirectLyrics(request, syllableEnforcement)
     }
 
-    // ✅ APLICA VALIDAÇÃO RÍGIDA DE SÍLABAS - REGRA ABSOLUTA
+    console.log(`[MetaComposer] 🔮 Terceira Via: ${useTerceiraVia ? 'HABILITADA' : 'DESABILITADA'}`)
+
+    // ✅ VALIDAÇÃO RÍGIDA DE SÍLABAS - REGRA ABSOLUTA
     const absoluteValidationBefore = AbsoluteSyllableEnforcer.validate(rawLyrics)
     if (!absoluteValidationBefore.isValid) {
       console.error("[MetaComposer] ❌ LETRA GERADA COM MAIS DE 11 SÍLABAS!")
@@ -209,24 +203,32 @@ export class MetaComposer {
       console.warn("[MetaComposer] ⚠️ Usando letra com correções parciais")
     }
 
-    // ✅ TERCEIRA VIA AGORA É AUTOMÁTICA
-    const terceiraViaAnalysis = analisarTerceiraVia(rawLyrics, request.genre, request.theme)
-
-    if (terceiraViaAnalysis && terceiraViaAnalysis.score_geral < 95) {
-      rawLyrics = await this.applyTerceiraViaCorrections(rawLyrics, request, terceiraViaAnalysis, genreConfig)
-
-      const absoluteValidationAfterTerceiraVia = AbsoluteSyllableEnforcer.validate(rawLyrics)
-      if (!absoluteValidationAfterTerceiraVia.isValid) {
-        console.warn("[MetaComposer] ⚠️ TERCEIRA VIA GEROU VERSOS COM MAIS DE 11 SÍLABAS!")
-        console.warn(absoluteValidationAfterTerceiraVia.message)
-
-        const fixResult = AbsoluteSyllableEnforcer.validateAndFix(rawLyrics)
-        if (fixResult.isValid) {
-          rawLyrics = fixResult.correctedLyrics
-        } else {
-          console.warn("[MetaComposer] ⚠️ Usando letra da Terceira Via com correções parciais")
-          rawLyrics = fixResult.correctedLyrics
+    // ✅ TERCEIRA VIA SEMPRE ATIVA COM TRY/CATCH
+    if (useTerceiraVia) {
+      try {
+        console.log("[MetaComposer] 🔮 Iniciando Terceira Via...")
+        const terceiraViaAnalysis = analisarTerceiraVia(rawLyrics, request.genre, request.theme)
+        
+        console.log(`[TerceiraVia] 📊 Score inicial: ${terceiraViaAnalysis?.score_geral || 'N/A'}`)
+        
+        if (terceiraViaAnalysis && terceiraViaAnalysis.pontos_fracos) {
+          console.log(`[TerceiraVia] ⚠️ Pontos fracos:`, terceiraViaAnalysis.pontos_fracos)
         }
+
+        // ✅ CORREÇÃO: LIMITE MAIS BAIXO PARA GARANTIR CORREÇÕES
+        if (terceiraViaAnalysis && terceiraViaAnalysis.score_geral < 95) {
+          console.log(`[TerceiraVia] 🔧 Aplicando correções automáticas...`)
+          rawLyrics = await this.applyTerceiraViaCorrections(rawLyrics, request, terceiraViaAnalysis, genreConfig)
+          
+          // ✅ VERIFICA RESULTADO
+          const analiseFinal = analisarTerceiraVia(rawLyrics, request.genre, request.theme)
+          console.log(`[TerceiraVia] ✅ Score final: ${analiseFinal.score_geral} (melhoria: +${analiseFinal.score_geral - terceiraViaAnalysis.score_geral})`)
+        } else {
+          console.log(`[TerceiraVia] ✅ Letra já otimizada (score: ${terceiraViaAnalysis?.score_geral})`)
+        }
+      } catch (error) {
+        console.error(`[TerceiraVia] ❌ Erro durante execução:`, error)
+        console.log(`[TerceiraVia] ⚠️ Continuando sem correções...`)
       }
     }
 
@@ -316,7 +318,17 @@ export class MetaComposer {
       if (this.needsTerceiraViaCorrection(line, analysis)) {
         try {
           const context = this.buildLineContext(lines, i, "")
-          const correctedLine = await applyTerceiraViaToLine(line, i, context, false, "", request.genre)
+          
+          // ✅ CORREÇÃO CRÍTICA: PASSA TODOS OS PARÂMETROS NECESSÁRIOS
+          const correctedLine = await applyTerceiraViaToLine(
+            line, 
+            i, 
+            context, 
+            false, 
+            "", 
+            request.genre,
+            genreConfig  // ← PARÂMETRO QUE ESTAVA FALTANDO!
+          )
 
           if (correctedLine !== line) {
             correctionsApplied++
@@ -402,7 +414,7 @@ export class MetaComposer {
   }
 
   /**
-   * GERA REESCRITA DE LETRA EXISTENTE - CONSTRUINDO VERSOS CORRETOS DESDE O INÍCIO
+   * GERA REESCRITA DE LETRA EXISTENTE
    */
   private static async generateRewrite(request: CompositionRequest): Promise<string> {
     console.log("[MetaComposer] Gerando reescrita construindo versos corretos desde o início...")
@@ -469,7 +481,7 @@ Verso perfeito = Até 11 sílabas + Emoção + Palavras íntegras
 **CHORUS MEMORÁVEL:**
 - Frases curtas (máximo 8-9 sílabas)
 - Extremamente repetitivo
-- Gruda na cabeça imediatamente
+- Gruda na cabeça imediamente
 - Fácil de cantar junto (karaoke-friendly)
 
 **LINGUAGEM COLOQUIAL:**
@@ -667,8 +679,9 @@ Retorne APENAS a letra (sem explicações):`
     }
   }
 
-  // ... (métodos auxiliares mantidos da versão original)
-
+  /**
+   * EXTRAI TÍTULO DA LETRA
+   */
   private static extractTitle(lyrics: string, request: CompositionRequest): string {
     const lines = lyrics.split("\n")
 
@@ -690,6 +703,9 @@ Retorne APENAS a letra (sem explicações):`
     return `${request.theme} - ${request.genre}`
   }
 
+  /**
+   * VERIFICA SE LINHA PRECISA DE CORREÇÃO TERCEIRA VIA
+   */
   private static needsTerceiraViaCorrection(line: string, analysis: TerceiraViaAnalysis): boolean {
     // Não corrige tags, instruções ou linhas vazias
     if (!line.trim() || line.startsWith("[") || line.startsWith("(") || line.includes("Instruments:")) {
@@ -709,6 +725,9 @@ Retorne APENAS a letra (sem explicações):`
     return false
   }
 
+  /**
+   * CONSTRÓI CONTEXTO PARA CORREÇÃO DE LINHA
+   */
   private static buildLineContext(lines: string[], lineIndex: number, theme: string): string {
     const contextLines: string[] = []
 
@@ -730,11 +749,17 @@ Retorne APENAS a letra (sem explicações):`
     return contextLines.join("\n")
   }
 
+  /**
+   * APLICA MELHORIAS DE RIMA
+   */
   private static async applyRhymeEnhancement(lyrics: string, genre: string, theme: string): Promise<string> {
     console.log("[MetaComposer] Aplicando melhorias de rima...")
     return lyrics
   }
 
+  /**
+   * APLICA FORMATAÇÃO PERFORMÁTICA
+   */
   private static applyPerformanceFormatting(lyrics: string, genre: string): string {
     console.log("[MetaComposer] Aplicando formatação performática...")
     let formatted = lyrics
