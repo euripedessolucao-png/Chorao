@@ -66,20 +66,12 @@ export class MultiGenerationEngine {
         }
 
         console.log(`[MultiGeneration] 🎯 Aplicando correção ULTRA AGRESSIVA de sílabas...`)
-        const syllableFixResult = UltraAggressiveSyllableReducer.fixAllVerses(lyrics)
+        const syllableFixResult = new UltraAggressiveSyllableReducer().correctFullLyrics(lyrics)
 
-        if (syllableFixResult.totalCorrections > 0) {
+        if (syllableFixResult.report.correctedVerses > 0) {
           console.log(
-            `[MultiGeneration] 🔧 CORREÇÃO ULTRA AGRESSIVA DE SÍLABAS: ${syllableFixResult.totalCorrections} versos corrigidos`,
+            `[MultiGeneration] 🔧 CORREÇÃO ULTRA AGRESSIVA DE SÍLABAS: ${syllableFixResult.report.correctedVerses}/${syllableFixResult.report.totalVerses} versos corrigidos (${syllableFixResult.report.successRate.toFixed(1)}% sucesso)`,
           )
-          syllableFixResult.corrections.forEach((correction) => {
-            console.log(
-              `  - Linha ${correction.lineNumber}: ${correction.originalSyllables} → ${correction.correctedSyllables} sílabas`,
-            )
-            console.log(`    Original: "${correction.original}"`)
-            console.log(`    Corrigido: "${correction.corrected}"`)
-            console.log(`    Técnicas: ${correction.techniquesApplied.join(", ")}`)
-          })
           lyrics = syllableFixResult.correctedLyrics
         } else {
           console.log(`[MultiGeneration] ✅ Todos os versos já têm 11 sílabas`)
@@ -109,16 +101,14 @@ export class MultiGenerationEngine {
           continue
         }
 
-        const finalSyllableCheck = UltraAggressiveSyllableReducer.validateAllVerses(lyrics)
-        if (!finalSyllableCheck.isValid) {
-          console.warn(`[MultiGeneration] ⚠️ Tentativa ${attempts} AINDA tem versos com sílabas incorretas:`)
-          finalSyllableCheck.errors.forEach((error) => {
-            console.warn(`  - Linha ${error.lineNumber}: ${error.syllables} sílabas (esperado: 11)`)
-            console.warn(`    "${error.line}"`)
-          })
+        const finalSyllableCheck = new UltraAggressiveSyllableReducer().correctFullLyrics(lyrics)
+        if (finalSyllableCheck.report.failedVerses > 0) {
+          console.warn(
+            `[MultiGeneration] ⚠️ Tentativa ${attempts} AINDA tem ${finalSyllableCheck.report.failedVerses} versos com sílabas incorretas`,
+          )
           rejectedVariations.push({
             lyrics,
-            reason: `Versos com sílabas incorretas: ${finalSyllableCheck.errors.map((e) => `linha ${e.lineNumber} (${e.syllables} sílabas)`).join(", ")}`,
+            reason: `${finalSyllableCheck.report.failedVerses} versos com sílabas incorretas (${finalSyllableCheck.report.successRate.toFixed(1)}% sucesso)`,
           })
           continue
         }
