@@ -1,13 +1,19 @@
 /**
  * Contador de Sílabas Poéticas em Português Brasileiro
+ *
+ * REGRAS DA ESCANSÃO POÉTICA BRASILEIRA:
+ * 1. Conta-se até a última sílaba tônica (descarta átonas finais)
+ * 2. Sinalefa/Elisão: vogais adjacentes se juntam em uma sílaba
+ * 3. Enjambement: versos com vírgula podem continuar no próximo
  */
 
 const VOWELS = "aeiouáàâãéèêíìîóòôõúùû"
 const VOWEL_REGEX = /[aeiouáàâãéèêíìîóòôõúùû]/i
 
-const TONIC_PATTERNS = [/á|é|í|ó|ú/i, /ão|ões|ãe/i]
+const TONIC_MARKERS = /[áéíóúâêôãõ]/i
 
 export function countPoeticSyllables(line: string): number {
+  // Remove tags e instruções
   const cleanLine = line
     .replace(/\[.*?\]/g, "")
     .replace(/$$.*?$$/g, "")
@@ -26,14 +32,17 @@ export function countPoeticSyllables(line: string): number {
 
     let wordSyllables = countGrammaticalSyllables(word)
 
+    // Sinalefa: junta vogais adjacentes entre palavras
     if (nextWord && endsWithVowel(word) && startsWithVowel(nextWord)) {
-      wordSyllables -= 0.5
+      wordSyllables -= 0.5 // Reduz meia sílaba para compensar junção
     }
 
     totalSyllables += wordSyllables
   }
 
   const lastTonicPosition = findLastTonicSyllable(cleanLine)
+
+  // Retorna o menor valor entre total gramatical e posição da última tônica
   return Math.round(Math.min(totalSyllables, lastTonicPosition))
 }
 
@@ -53,6 +62,8 @@ function countGrammaticalSyllables(word: string): number {
         count++
         inVowelGroup = true
       }
+      // Ditongos crescentes (ia, ie, io, ua, ue, uo) contam como 1 sílaba
+      // Já está coberto pelo inVowelGroup
     } else {
       inVowelGroup = false
     }
@@ -71,6 +82,7 @@ function startsWithVowel(word: string): boolean {
   const clean = word.replace(/[^\wáàâãéèêíìîóòôõúùûç]/gi, "")
   if (!clean) return false
 
+  // H inicial não tem som em português
   if (clean[0].toLowerCase() === "h" && clean.length > 1) {
     return VOWEL_REGEX.test(clean[1])
   }
@@ -86,9 +98,12 @@ function findLastTonicSyllable(line: string): number {
   for (const word of words) {
     const wordSyllables = countGrammaticalSyllables(word)
 
-    if (/[áàâãéèêíìîóòôõúùû]/i.test(word)) {
+    // Se a palavra tem acento gráfico, a tônica está marcada
+    if (TONIC_MARKERS.test(word)) {
       lastTonicPosition = syllableCount + wordSyllables
     } else {
+      // Regra padrão: palavras paroxítonas (maioria em português)
+      // A tônica é a penúltima sílaba
       lastTonicPosition = syllableCount + Math.max(1, wordSyllables - 1)
     }
 
@@ -99,6 +114,11 @@ function findLastTonicSyllable(line: string): number {
 }
 
 export function validateSyllableLimit(line: string, maxSyllables = 11): boolean {
+  // Ignora validação se linha termina com vírgula (enjambement)
+  if (line.trim().endsWith(",")) {
+    return true // Enjambement é válido - verso continua no próximo
+  }
+
   const count = countPoeticSyllables(line)
   return count <= maxSyllables
 }
@@ -121,6 +141,10 @@ export function validateLyricsSyllables(
       !line.startsWith("Title:") &&
       !line.startsWith("Instrumentos:")
     ) {
+      if (line.trim().endsWith(",")) {
+        return // Enjambement é válido
+      }
+
       const syllables = countPoeticSyllables(line)
       if (syllables > maxSyllables) {
         violations.push({
