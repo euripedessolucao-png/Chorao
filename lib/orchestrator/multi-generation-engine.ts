@@ -38,27 +38,33 @@ export class MultiGenerationEngine {
       )
 
       try {
-        const lyrics = await generateFn()
+        let lyrics = await generateFn()
 
         console.log(`[MultiGeneration] 📄 Letra gerada (primeiras 200 chars):`)
         console.log(lyrics.substring(0, 200))
 
+        const fixResult = WordIntegrityValidator.fix(lyrics)
+        if (fixResult.corrections > 0) {
+          console.log(`[MultiGeneration] 🔧 Aplicadas ${fixResult.corrections} correções automáticas:`)
+          fixResult.details.forEach((detail) => {
+            console.log(`  - "${detail.original}" → "${detail.corrected}"`)
+          })
+          lyrics = fixResult.correctedLyrics
+        }
+
         const integrityCheck = WordIntegrityValidator.validate(lyrics)
         if (!integrityCheck.isValid) {
-          console.warn(`[MultiGeneration] ⚠️ Tentativa ${attempts} tem problemas de integridade:`)
+          console.warn(`[MultiGeneration] ⚠️ Tentativa ${attempts} AINDA tem problemas após correção:`)
           integrityCheck.errors.forEach((error) => {
-            console.warn(`  - Linha ${error.lineNumber}: "${error.word}"`)
+            console.warn(
+              `  - Linha ${error.lineNumber}: "${error.word}"${error.suggestion ? ` → sugestão: "${error.suggestion}"` : ""}`,
+            )
           })
           rejectedVariations.push({
             lyrics,
-            reason: `Palavras cortadas: ${integrityCheck.errors.map((e) => e.word).join(", ")}`,
+            reason: `Palavras cortadas não corrigíveis: ${integrityCheck.errors.map((e) => e.word).join(", ")}`,
           })
-
-          if (attempts >= maxAttempts - 1 && variations.length === 0) {
-            console.warn(`[MultiGeneration] ⚠️ Aceitando versão com problemas (última tentativa)`)
-          } else {
-            continue // Pula para próxima tentativa
-          }
+          continue
         }
 
         const score = scoreFn(lyrics)
