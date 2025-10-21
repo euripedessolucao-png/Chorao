@@ -161,7 +161,7 @@ export class MetaComposer {
     const hasPreservedChoruses = preservedChoruses.length > 0
     const isRewrite = !!request.originalLyrics
     const performanceMode = request.performanceMode || "standard"
-    const useTerceiraVia = request.useTerceiraVia ?? false // ✅ AGORA É AUTOMÁTICA
+    const useTerceiraVia = request.useTerceiraVia ?? true // ✅ AGORA É AUTOMÁTICA
 
     const syllableEnforcement = request.syllableTarget || this.getGenreSyllableConfig(request.genre)
     syllableEnforcement.max = Math.min(syllableEnforcement.max, this.ABSOLUTE_MAX_SYLLABLES)
