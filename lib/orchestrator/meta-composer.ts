@@ -127,7 +127,7 @@ export class MetaComposer {
 
       let iterations = 0
       let currentLyrics = ""
-      let terceiraViaAnalysis: TerceiraViaAnalysis | null = null
+      let terceiraViaAnalysis: TerceiraViaAnalysis | undefined = undefined
       let melodicAnalysis: any = null
 
       const syllableEnforcement = request.syllableTarget || this.getGenreSyllableConfig(request.genre)
