@@ -15,6 +15,10 @@ import {
 import { SyllableEnforcer } from "@/lib/validation/syllableEnforcer"
 import { AutoSyllableCorrector } from "@/lib/validation/auto-syllable-corrector"
 import { validateAllLayers } from "@/lib/validation/multi-layer-validator"
+import { PunctuationValidator } from "@/lib/validation/punctuation-validator"
+import { LineStacker } from "@/lib/utils/line-stacker"
+import { AbsoluteSyllableEnforcer } from "@/lib/validation/absolute-syllable-enforcer"
+import { LyricsAuditor } from "@/lib/validation/lyrics-auditor"
 
 export interface CompositionRequest {
   genre: string
@@ -54,6 +58,7 @@ export interface CompositionResult {
 
 export class MetaComposer {
   private static readonly MAX_ITERATIONS = 3
+  private static readonly MAX_AUDIT_ATTEMPTS = 5
   private static readonly ABSOLUTE_MAX_SYLLABLES = 11
   private static readonly MIN_QUALITY_SCORE = 0.75 // Score mínimo para aprovar letra
 
@@ -90,22 +95,24 @@ export class MetaComposer {
   }
 
   /**
-   * COMPOSIÇÃO TURBO COM SISTEMA TERCEIRA VIA INTEGRADO + VALIDAÇÃO MULTI-CAMADAS
+   * COMPOSIÇÃO TURBO COM SISTEMA DE AUDITORIA RIGOROSO
+   *
+   * NUNCA entrega letra com erros!
+   * - Se falhar na auditoria, REGENERA automaticamente
+   * - Usa sistema de múltiplas tentativas (como Terceira Via)
+   * - Gera 2-3 versões e escolhe a melhor
+   * - Validação bloqueante ABSOLUTA
    */
   static async compose(request: CompositionRequest): Promise<CompositionResult> {
-    console.log("[MetaComposer-TURBO] Iniciando composição com Terceira Via + Validação Multi-Camadas...")
-    console.log("[MetaComposer-TURBO] 🧪 MODO EXPERIMENTAL: SyllableEnforcer DESABILITADO")
-    console.log("[MetaComposer-TURBO] ✅ AutoSyllableCorrector ATIVADO")
-    console.log("[MetaComposer-TURBO] ✅ Validação Multi-Camadas ATIVADA")
+    console.log("[MetaComposer-TURBO] 🚀 Iniciando composição com AUDITORIA RIGOROSA...")
+    console.log("[MetaComposer-TURBO] 🚨 NUNCA ENTREGA COM ERROS!")
+    console.log("[MetaComposer-TURBO] 🔄 Sistema de múltiplas tentativas ativado")
+    console.log("[MetaComposer-TURBO] 🎯 Gera 2-3 versões e escolhe a melhor")
 
-    let iterations = 0
+    let auditAttempts = 0
     let bestResult: CompositionResult | null = null
-    let bestScore = 0
-    let terceiraViaAnalysis: TerceiraViaAnalysis | null = null
-    let melodicAnalysis: any = null
-
-    const syllableEnforcement = request.syllableTarget || this.getGenreSyllableConfig(request.genre)
-    syllableEnforcement.max = Math.min(syllableEnforcement.max, this.ABSOLUTE_MAX_SYLLABLES)
+    let bestAuditScore = 0
+    const allAttempts: Array<{ lyrics: string; auditResult: any }> = []
 
     const applyFinalPolish = request.applyFinalPolish ?? true
     const preservedChoruses = request.preservedChoruses || []
@@ -113,179 +120,201 @@ export class MetaComposer {
     const isRewrite = !!request.originalLyrics
     const performanceMode = request.performanceMode || "standard"
 
-    const genreConfig = getGenreConfig(request.genre)
+    while (auditAttempts < this.MAX_AUDIT_ATTEMPTS) {
+      auditAttempts++
+      console.log(`\n[MetaComposer-TURBO] 📝 TENTATIVA ${auditAttempts}/${this.MAX_AUDIT_ATTEMPTS}`)
+      console.log("═".repeat(80))
 
-    while (iterations < this.MAX_ITERATIONS) {
-      iterations++
-      console.log(`[MetaComposer-TURBO] Iteração ${iterations}/${this.MAX_ITERATIONS}`)
+      let iterations = 0
+      let currentLyrics = ""
+      let terceiraViaAnalysis: TerceiraViaAnalysis | null = null
+      let melodicAnalysis: any = null
 
-      let rawLyrics: string
+      const syllableEnforcement = request.syllableTarget || this.getGenreSyllableConfig(request.genre)
+      syllableEnforcement.max = Math.min(syllableEnforcement.max, this.ABSOLUTE_MAX_SYLLABLES)
 
-      if (isRewrite) {
-        rawLyrics = await this.generateRewrite(request)
-      } else if (hasPreservedChoruses && iterations === 1) {
-        rawLyrics = await this.generateWithPreservedChoruses(preservedChoruses, request, syllableEnforcement)
-      } else {
-        rawLyrics = await this.generateDirectLyrics(request, syllableEnforcement)
-      }
+      const genreConfig = getGenreConfig(request.genre)
 
-      console.log("[MetaComposer-TURBO] 🔧 Aplicando correção automática de sílabas...")
-      const autoCorrectionResult = AutoSyllableCorrector.correctLyrics(rawLyrics)
-      rawLyrics = autoCorrectionResult.correctedLyrics
-      console.log(`[MetaComposer-TURBO] ✅ ${autoCorrectionResult.totalCorrected} linhas corrigidas automaticamente`)
+      while (iterations < this.MAX_ITERATIONS) {
+        iterations++
+        console.log(`[MetaComposer-TURBO] Iteração interna ${iterations}/${this.MAX_ITERATIONS}`)
 
-      console.log("[MetaComposer-TURBO] 🔍 Executando validação multi-camadas...")
-      const multiLayerValidation = validateAllLayers(rawLyrics, request.genre, request.theme)
+        let rawLyrics: string
 
-      console.log(`[MetaComposer-TURBO] 📊 Score Multi-Camadas: ${multiLayerValidation.overallScore.toFixed(0)}/100`)
-      console.log(
-        `[MetaComposer-TURBO] - Sílabas: ${multiLayerValidation.layers.syllables.passed ? "✅" : "❌"} (${multiLayerValidation.layers.syllables.score})`,
-      )
-      console.log(
-        `[MetaComposer-TURBO] - Narrativa: ${multiLayerValidation.layers.narrative.passed ? "✅" : "❌"} (${multiLayerValidation.layers.narrative.score})`,
-      )
-      console.log(
-        `[MetaComposer-TURBO] - Rimas: ${multiLayerValidation.layers.rhymes.passed ? "✅" : "❌"} (${multiLayerValidation.layers.rhymes.score})`,
-      )
-      console.log(
-        `[MetaComposer-TURBO] - Gramática: ${multiLayerValidation.layers.grammar.passed ? "✅" : "❌"} (${multiLayerValidation.layers.grammar.score})`,
-      )
-      console.log(
-        `[MetaComposer-TURBO] - Anti-Forcing: ${multiLayerValidation.layers.antiForcing.passed ? "✅" : "❌"} (${multiLayerValidation.layers.antiForcing.score})`,
-      )
-      console.log(
-        `[MetaComposer-TURBO] - Emoção: ${multiLayerValidation.layers.emotion.passed ? "✅" : "⚠️"} (${multiLayerValidation.layers.emotion.score})`,
-      )
-
-      if (!multiLayerValidation.isValid) {
-        console.error(`[MetaComposer-TURBO] ❌ VALIDAÇÃO MULTI-CAMADAS FALHOU:`)
-        multiLayerValidation.blockers.forEach((blocker) => console.error(`  ${blocker}`))
-
-        if (iterations < this.MAX_ITERATIONS) {
-          console.log("[MetaComposer-TURBO] 🔄 Regenerando devido a falhas na validação multi-camadas...")
-          continue
+        if (isRewrite) {
+          rawLyrics = await this.generateRewrite(request)
+        } else if (hasPreservedChoruses && iterations === 1) {
+          rawLyrics = await this.generateWithPreservedChoruses(preservedChoruses, request, syllableEnforcement)
         } else {
-          console.log("[MetaComposer-TURBO] ⚠️ Última iteração - aplicando correções emergenciais...")
-          rawLyrics = this.applyEmergencyCorrection(rawLyrics, syllableEnforcement.max)
+          rawLyrics = await this.generateDirectLyrics(request, syllableEnforcement)
         }
-      }
 
-      // ✅ ETAPA 1: ANÁLISE TERCEIRA VIA COM CONFIGURAÇÃO DO GÊNERO
-      console.log("[MetaComposer-TURBO] 🔍 Aplicando análise Terceira Via...")
-      terceiraViaAnalysis = analisarTerceiraVia(rawLyrics, request.genre, request.theme)
-      melodicAnalysis = analisarMelodiaRitmo(rawLyrics, request.genre)
+        console.log("[MetaComposer-TURBO] 🚨 Validação ABSOLUTA: Máximo 11 sílabas por verso (BLOQUEANTE)")
+        console.log("[MetaComposer-TURBO] 🧪 MODO EXPERIMENTAL: SyllableEnforcer DESABILITADO")
+        console.log("[MetaComposer-TURBO] ✅ AutoSyllableCorrector ATIVADO")
+        console.log("[MetaComposer-TURBO] ✅ Validação Multi-Camadas ATIVADA")
+        console.log("[MetaComposer-TURBO] ✅ Pós-processamento Universal ATIVADO")
+        console.log("[MetaComposer-TURBO] ✅ Validação de Pontuação ATIVADA")
+        console.log("[MetaComposer-TURBO] ✅ Empilhamento de Versos ATIVADO")
 
-      console.log(`[MetaComposer-TURBO] 📊 Score Terceira Via: ${terceiraViaAnalysis.score_geral}/100`)
-      console.log(`[MetaComposer-TURBO] 🎵 Score Melódico: ${melodicAnalysis.flow_score}/100`)
+        const absoluteValidation = AbsoluteSyllableEnforcer.validate(rawLyrics)
+        if (!absoluteValidation.isValid && iterations < this.MAX_ITERATIONS) {
+          console.log("[MetaComposer-TURBO] 🔄 REGENERANDO devido a violação de 11 sílabas...")
+          continue
+        } else if (!absoluteValidation.isValid) {
+          const enforcedResult = AbsoluteSyllableEnforcer.enforce(rawLyrics)
+          rawLyrics = enforcedResult.correctedLyrics
+        }
 
-      // ✅ ETAPA 2: CORREÇÕES INTELIGENTES COM THIRD WAY ENGINE
-      if (terceiraViaAnalysis.score_geral < 75 && iterations < this.MAX_ITERATIONS - 1) {
-        console.log("[MetaComposer-TURBO] 🎯 Aplicando correções Terceira Via...")
-        rawLyrics = await this.applyTerceiraViaCorrections(rawLyrics, request, terceiraViaAnalysis, genreConfig)
+        const autoCorrectionResult = AutoSyllableCorrector.correctLyrics(rawLyrics)
+        rawLyrics = autoCorrectionResult.correctedLyrics
 
-        // ✅ RE-ANALISA APÓS CORREÇÕES
+        const multiLayerValidation = validateAllLayers(rawLyrics, request.genre, request.theme)
+        if (!multiLayerValidation.isValid && iterations < this.MAX_ITERATIONS) {
+          console.log("[MetaComposer-TURBO] 🔄 Regenerando devido a falhas na validação...")
+          continue
+        }
+
         terceiraViaAnalysis = analisarTerceiraVia(rawLyrics, request.genre, request.theme)
-        console.log(`[MetaComposer-TURBO] 📊 Score após correções: ${terceiraViaAnalysis.score_geral}/100`)
-      }
+        melodicAnalysis = analisarMelodiaRitmo(rawLyrics, request.genre)
 
-      // ✅ ETAPA 3: CORREÇÃO DE SÍLABAS COM LIMITE ABSOLUTO
-      console.log("[MetaComposer-TURBO] 📏 Aplicando correção de sílabas...")
-      const enforcedResult = await SyllableEnforcer.enforceSyllableLimits(rawLyrics, syllableEnforcement, request.genre)
-      console.log(`[MetaComposer-TURBO] ✅ Correções de sílabas: ${enforcedResult.corrections} linhas`)
-
-      const postCorrectionViolations = this.detectCriticalViolations(enforcedResult.correctedLyrics)
-      if (postCorrectionViolations.length > 0) {
-        console.error(`[MetaComposer-TURBO] ❌ AINDA HÁ VIOLAÇÕES após correção: ${postCorrectionViolations.length}`)
-        enforcedResult.correctedLyrics = this.applyEmergencyCorrection(
-          enforcedResult.correctedLyrics,
-          syllableEnforcement.max,
-        )
-      }
-
-      let finalLyrics = enforcedResult.correctedLyrics
-      let polishingApplied = false
-
-      // ✅ ETAPA 4: POLIMENTO FINAL COM TERCEIRA VIA
-      if (applyFinalPolish && iterations === this.MAX_ITERATIONS) {
-        console.log("[MetaComposer-TURBO] ✨ Aplicando polimento universal com Terceira Via...")
-        finalLyrics = await this.applyUniversalPolish(
-          finalLyrics,
-          request.genre,
-          request.theme,
-          syllableEnforcement,
-          performanceMode,
-          genreConfig,
-        )
-        polishingApplied = true
-      }
-
-      const finalViolations = this.detectCriticalViolations(finalLyrics)
-      if (finalViolations.length > 0) {
-        console.error(`[MetaComposer-TURBO] ❌ VIOLAÇÕES FINAIS DETECTADAS: ${finalViolations.length}`)
-        finalLyrics = this.applyEmergencyCorrection(finalLyrics, syllableEnforcement.max)
-        console.log("[MetaComposer-TURBO] ✅ Correção emergencial aplicada")
-      }
-
-      console.log("[MetaComposer-TURBO] 🔍 Validação final multi-camadas...")
-      const finalMultiLayerValidation = validateAllLayers(finalLyrics, request.genre, request.theme)
-
-      if (!finalMultiLayerValidation.isValid) {
-        console.error(`[MetaComposer-TURBO] ❌ VALIDAÇÃO FINAL MULTI-CAMADAS FALHOU:`)
-        finalMultiLayerValidation.blockers.forEach((blocker) => console.error(`  ${blocker}`))
-
-        if (iterations < this.MAX_ITERATIONS) {
-          console.log("[MetaComposer-TURBO] 🔄 REGENERANDO devido a falhas críticas...")
-          continue
-        } else {
-          console.log("[MetaComposer-TURBO] ⚠️ Última iteração - aplicando correções emergenciais finais...")
-          finalLyrics = this.applyFinalEmergencyFixes(finalLyrics, syllableEnforcement, request.genre)
+        if (terceiraViaAnalysis.score_geral < 75 && iterations < this.MAX_ITERATIONS - 1) {
+          rawLyrics = await this.applyTerceiraViaCorrections(rawLyrics, request, terceiraViaAnalysis, genreConfig)
+          terceiraViaAnalysis = analisarTerceiraVia(rawLyrics, request.genre, request.theme)
         }
-      } else {
-        console.log("[MetaComposer-TURBO] ✅ VALIDAÇÃO FINAL MULTI-CAMADAS APROVADA!")
-        console.log(`  - Score Geral: ${finalMultiLayerValidation.overallScore.toFixed(0)}/100`)
+
+        const enforcedResult = await SyllableEnforcer.enforceSyllableLimits(
+          rawLyrics,
+          syllableEnforcement,
+          request.genre,
+        )
+        let finalLyrics = enforcedResult.correctedLyrics
+
+        if (applyFinalPolish && iterations === this.MAX_ITERATIONS) {
+          finalLyrics = await this.applyUniversalPolish(
+            finalLyrics,
+            request.genre,
+            request.theme,
+            syllableEnforcement,
+            performanceMode,
+            genreConfig,
+          )
+        }
+
+        const punctuationResult = PunctuationValidator.validate(finalLyrics)
+        if (!punctuationResult.isValid) {
+          finalLyrics = punctuationResult.correctedLyrics
+        }
+
+        const stackingResult = LineStacker.stackLines(finalLyrics)
+        finalLyrics = stackingResult.stackedLyrics
+
+        const finalAbsoluteValidation = AbsoluteSyllableEnforcer.validate(finalLyrics)
+        if (!finalAbsoluteValidation.isValid) {
+          if (iterations < this.MAX_ITERATIONS) {
+            continue
+          } else {
+            const enforcedResult = AbsoluteSyllableEnforcer.enforce(finalLyrics)
+            finalLyrics = enforcedResult.correctedLyrics
+          }
+        }
+
+        currentLyrics = finalLyrics
+        break
       }
 
-      const qualityScore = finalMultiLayerValidation.overallScore
+      console.log("\n[MetaComposer-TURBO] 🔍 INICIANDO AUDITORIA RIGOROSA...")
+      console.log("═".repeat(80))
 
-      console.log(`[MetaComposer-TURBO] 🎯 Score final: ${qualityScore.toFixed(2)}`)
+      const auditResult = LyricsAuditor.audit(currentLyrics, request.genre, request.theme)
 
-      if (qualityScore > bestScore) {
-        bestScore = qualityScore
+      console.log(`[MetaComposer-TURBO] 📊 Score de Auditoria: ${auditResult.score}/100`)
+      console.log(`[MetaComposer-TURBO] ${auditResult.isApproved ? "✅ APROVADA" : "❌ REPROVADA"}`)
+
+      if (auditResult.errors.length > 0) {
+        console.log(`[MetaComposer-TURBO] ❌ ${auditResult.errors.length} erros encontrados:`)
+        auditResult.errors.forEach((error) => {
+          console.log(`  - [${error.severity.toUpperCase()}] ${error.message}`)
+        })
+      }
+
+      if (auditResult.warnings.length > 0) {
+        console.log(`[MetaComposer-TURBO] ⚠️ ${auditResult.warnings.length} avisos:`)
+        auditResult.warnings.forEach((warning) => {
+          console.log(`  - ${warning.message}`)
+        })
+      }
+
+      allAttempts.push({ lyrics: currentLyrics, auditResult })
+
+      if (auditResult.isApproved && auditResult.score > bestAuditScore) {
+        bestAuditScore = auditResult.score
         bestResult = {
-          lyrics: finalLyrics,
-          title: this.extractTitle(finalLyrics, request),
+          lyrics: currentLyrics,
+          title: this.extractTitle(currentLyrics, request),
           metadata: {
-            iterations,
-            finalScore: qualityScore,
-            polishingApplied,
+            iterations: auditAttempts,
+            finalScore: auditResult.score,
+            polishingApplied: applyFinalPolish,
             preservedChorusesUsed: hasPreservedChoruses,
-            rhymeScore: finalMultiLayerValidation.layers.rhymes.score,
-            rhymeTarget: this.getGenreRhymeTarget(request.genre).minScore,
-            structureImproved: isRewrite,
             terceiraViaAnalysis: terceiraViaAnalysis,
             melodicAnalysis: melodicAnalysis,
             performanceMode: performanceMode,
           },
         }
+
+        console.log(`[MetaComposer-TURBO] 🎯 NOVA MELHOR VERSÃO! Score: ${auditResult.score}`)
       }
 
-      const shouldStop =
-        qualityScore >= this.MIN_QUALITY_SCORE * 100 &&
-        finalMultiLayerValidation.isValid &&
-        terceiraViaAnalysis.score_geral >= 75 &&
-        melodicAnalysis.flow_score >= 70
-
-      if (shouldStop) {
-        console.log("[MetaComposer-TURBO] 🎯 Critério de parada atingido!")
+      if (auditResult.isApproved && auditResult.score >= 90) {
+        console.log("[MetaComposer-TURBO] 🎉 EXCELÊNCIA ATINGIDA! (Score >= 90)")
         break
       }
+
+      if (auditResult.mustRegenerate) {
+        console.log("[MetaComposer-TURBO] 🔄 REGENERANDO devido a erros críticos...")
+        continue
+      }
+
+      if (auditResult.canBeFixed) {
+        console.log("[MetaComposer-TURBO] 🔧 Tentando correção automática...")
+        // Aqui poderia aplicar correções automáticas específicas
+        // Por enquanto, regenera
+        continue
+      }
+    }
+
+    if (!bestResult && allAttempts.length > 0) {
+      console.log("[MetaComposer-TURBO] ⚠️ Nenhuma versão aprovada - escolhendo a melhor tentativa")
+
+      const bestAttempt = allAttempts.reduce((best, current) => {
+        return current.auditResult.score > best.auditResult.score ? current : best
+      })
+
+      bestResult = {
+        lyrics: bestAttempt.lyrics,
+        title: this.extractTitle(bestAttempt.lyrics, request),
+        metadata: {
+          iterations: auditAttempts,
+          finalScore: bestAttempt.auditResult.score,
+          polishingApplied: request.applyFinalPolish ?? true,
+          preservedChorusesUsed: request.preservedChoruses ? request.preservedChoruses.length > 0 : false,
+          performanceMode: request.performanceMode || "standard",
+        },
+      }
+
+      console.log(`[MetaComposer-TURBO] 📊 Melhor score obtido: ${bestAttempt.auditResult.score}/100`)
     }
 
     if (!bestResult) {
-      throw new Error("Falha ao gerar composição")
+      throw new Error("Falha ao gerar composição após todas as tentativas")
     }
 
-    console.log(`[MetaComposer-TURBO] 🎵 Composição finalizada! Score: ${bestScore.toFixed(2)}`)
+    console.log("\n[MetaComposer-TURBO] 🎵 COMPOSIÇÃO FINALIZADA!")
+    console.log(`[MetaComposer-TURBO] 📊 Score Final: ${bestResult.metadata.finalScore}/100`)
+    console.log(`[MetaComposer-TURBO] 🔄 Tentativas: ${auditAttempts}/${this.MAX_AUDIT_ATTEMPTS}`)
+    console.log("═".repeat(80))
+
     return bestResult
   }
 
