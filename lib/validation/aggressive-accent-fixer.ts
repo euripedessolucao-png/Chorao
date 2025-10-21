@@ -1,8 +1,9 @@
 /**
  * CORRETOR AGRESSIVO DE ACENTUAÇÃO - ALFABETO BRASILEIRO COMPLETO
- *
+ * 
  * Corrige TODAS as palavras sem acentos corretos ANTES de qualquer validação.
  * Baseado nas regras oficiais de acentuação do português brasileiro.
+ * VERSÃO OTIMIZADA - Evita falsos positivos e preserva integridade do texto
  */
 
 export class AggressiveAccentFixer {
@@ -240,6 +241,7 @@ export class AggressiveAccentFixer {
 
   /**
    * Corrige AGRESSIVAMENTE todas as palavras sem acentos
+   * com proteção contra falsos positivos e preservação de integridade
    */
   static fix(text: string): {
     correctedText: string
@@ -248,22 +250,19 @@ export class AggressiveAccentFixer {
     let correctedText = text
     const corrections: Array<{ original: string; corrected: string; count: number }> = []
 
-    // Isso evita remoção de espaços e funciona melhor com caracteres acentuados
-    for (const [wrong, correct] of Object.entries(this.ACCENT_CORRECTIONS)) {
-      // Cria regex que encontra a palavra errada com limites de palavra
-      const regex = new RegExp(`\\b${this.escapeRegex(wrong)}\\b`, "gi")
+    // Ordena por tamanho (maiores primeiro) para evitar substituições parciais
+    const sortedCorrections = Object.entries(this.ACCENT_CORRECTIONS)
+      .sort(([a], [b]) => b.length - a.length)
 
-      // Conta quantas vezes a palavra aparece
+    for (const [wrong, correct] of sortedCorrections) {
+      const regex = this.createSafeRegex(wrong)
       const matches = correctedText.match(regex)
       const count = matches ? matches.length : 0
 
       if (count > 0) {
         correctedText = correctedText.replace(regex, (match) => {
-          // Preserva capitalização (primeira letra maiúscula)
-          if (match.charAt(0) === match.charAt(0).toUpperCase()) {
-            return correct.charAt(0).toUpperCase() + correct.slice(1)
-          }
-          return correct
+          // Preserva capitalização inteligente
+          return this.preserveCapitalization(match, correct)
         })
 
         corrections.push({
@@ -271,10 +270,51 @@ export class AggressiveAccentFixer {
           corrected: correct,
           count,
         })
+
+        console.log(`[AccentFixer] 🔧 Corrigido: "${wrong}" → "${correct}" (${count}x)`)
       }
     }
 
     return { correctedText, corrections }
+  }
+
+  /**
+   * Cria regex seguro com proteção contra falsos positivos
+   */
+  private static createSafeRegex(word: string): RegExp {
+    const escapedWord = this.escapeRegex(word)
+    
+    // Para palavras muito curtas (2 caracteres ou menos), usa contexto mais restrito
+    if (word.length <= 2) {
+      return new RegExp(`(^|\\s)${escapedWord}(?=\\s|$|[.,!?;])`, "gi")
+    }
+    
+    // Para palavras normais, usa limites de palavra
+    return new RegExp(`\\b${escapedWord}\\b`, "gi")
+  }
+
+  /**
+   * Preserva capitalização de forma inteligente
+   */
+  private static preserveCapitalization(original: string, corrected: string): string {
+    if (original.charAt(0) === original.charAt(0).toUpperCase()) {
+      // Primeira letra maiúscula
+      return corrected.charAt(0).toUpperCase() + corrected.slice(1)
+    }
+    
+    if (original === original.toUpperCase()) {
+      // TODAS MAIÚSCULAS
+      return corrected.toUpperCase()
+    }
+    
+    if (original.charAt(0) === original.charAt(0).toLowerCase() && 
+        original.slice(1) === original.slice(1).toUpperCase()) {
+      // Estilo Título (só primeira minúscula? raro, mas trata)
+      return corrected.charAt(0).toLowerCase() + corrected.slice(1).toUpperCase()
+    }
+    
+    // Mantém original (minúsculas)
+    return corrected
   }
 
   /**
@@ -291,7 +331,7 @@ export class AggressiveAccentFixer {
     const wordsWithoutAccents: string[] = []
 
     for (const [wrong] of Object.entries(this.ACCENT_CORRECTIONS)) {
-      const regex = new RegExp(`\\b${this.escapeRegex(wrong)}\\b`, "gi")
+      const regex = this.createSafeRegex(wrong)
       const matches = text.match(regex)
 
       if (matches && matches.length > 0) {
@@ -299,9 +339,52 @@ export class AggressiveAccentFixer {
       }
     }
 
+    const isValid = wordsWithoutAccents.length === 0
+    
+    if (!isValid) {
+      console.warn(`[AccentFixer] ⚠️ Palavras sem acento detectadas:`, wordsWithoutAccents)
+    }
+
     return {
-      isValid: wordsWithoutAccents.length === 0,
+      isValid,
       wordsWithoutAccents: [...new Set(wordsWithoutAccents)], // Remove duplicatas
     }
   }
+
+  /**
+   * Teste unitário interno para verificar funcionamento
+   */
+  static test(): void {
+    const testCases = [
+      { input: "nãmora", expected: "nãmora" }, // Não corrige (palavra incompleta)
+      { input: "nã posso", expected: "não posso" }, // Corrige "nã" isolado
+      { input: "voce nao sabe", expected: "você não sabe" }, // Corrige múltiplas
+      { input: "cafe com acucar", expected: "café com açúcar" }, // Corrige cedilha
+      { input: "Voce Nao Sabe", expected: "Você Não Sabe" }, // Preserva maiúsculas
+      { input: "VOCE NAO SABE", expected: "VOCÊ NÃO SABE" }, // Preserva todas maiúsculas
+      { input: "o voo", expected: "o voo" }, // Não corrige "vo" dentro de "voo"
+    ]
+
+    console.log(`[AccentFixer] 🧪 Executando testes...`)
+    
+    let passed = 0
+    testCases.forEach((testCase, index) => {
+      const result = this.fix(testCase.input)
+      const success = result.correctedText === testCase.expected
+      
+      if (success) {
+        passed++
+        console.log(`[AccentFixer] ✅ Teste ${index + 1}: "${testCase.input}" → "${result.correctedText}"`)
+      } else {
+        console.log(`[AccentFixer] ❌ Teste ${index + 1}: "${testCase.input}" → "${result.correctedText}" (esperado: "${testCase.expected}")`)
+      }
+    })
+
+    console.log(`[AccentFixer] 📊 Resultado: ${passed}/${testCases.length} testes aprovados`)
+  }
+}
+
+// Executa teste automático ao carregar (apenas em desenvolvimento)
+if (process.env.NODE_ENV === 'development') {
+  AggressiveAccentFixer.test()
 }
