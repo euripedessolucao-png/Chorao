@@ -212,7 +212,7 @@ export class MetaComposer {
     // ✅ TERCEIRA VIA AGORA É AUTOMÁTICA
     const terceiraViaAnalysis = analisarTerceiraVia(rawLyrics, request.genre, request.theme)
 
-    if (terceiraViaAnalysis && terceiraViaAnalysis.score_geral < 75) {
+    if (terceiraViaAnalysis && terceiraViaAnalysis.score_geral < 95) {
       rawLyrics = await this.applyTerceiraViaCorrections(rawLyrics, request, terceiraViaAnalysis, genreConfig)
 
       const absoluteValidationAfterTerceiraVia = AbsoluteSyllableEnforcer.validate(rawLyrics)
