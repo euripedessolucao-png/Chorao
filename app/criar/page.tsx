@@ -26,7 +26,7 @@ import {
 import { EMOTIONS } from "@/lib/genres"
 import { GenreSelect } from "@/components/genre-select"
 import { HookGenerator } from "@/components/hook-generator"
-import { SyllableValidator } from "@/components/syllable-validator"
+import { SyllableValidatorWithSuggestions } from "@/components/syllable-validator-with-suggestions"
 import { InspirationManager } from "@/components/inspiration-manager"
 
 const BRAZILIAN_GENRE_METRICS = {
@@ -764,29 +764,17 @@ export default function CriarPage() {
                     className="font-mono text-xs"
                   />
 
-                  {/* ✅ VALIDADOR DE SÍLABAS - CORRIGIDO (sem minSyllables) */}
-                  <SyllableValidator
-                    lyrics={lyrics}
-                    maxSyllables={currentSyllableConfig?.max || 12}
-                    onValidate={(result) => {
-                      if (!result.valid) {
-                        console.log(`⚠️ ${result.linesWithIssues} versos com problemas:`)
-                        result.violations.forEach((v) => {
-                          console.log(`  Linha ${v.line}: "${v.text}" → ${v.syllables} sílabas`)
-                        })
-
-                        const minSyllables = currentSyllableConfig?.min || 7
-                        const maxSyllables = currentSyllableConfig?.max || 12
-
-                        toast.warning(`${result.linesWithIssues} versos fora do padrão ${genre}`, {
-                          description: `Use ${minSyllables}-${maxSyllables} sílabas`,
-                          duration: 5000,
-                        })
-                      } else if (result.totalLines > 0) {
-                        toast.success(`✓ Letra validada: ${result.totalLines} versos dentro do padrão ${genre}`)
-                      }
-                    }}
-                  />
+                  {lyrics && currentSyllableConfig && (
+                    <SyllableValidatorWithSuggestions
+                      lyrics={lyrics}
+                      maxSyllables={currentSyllableConfig.ideal}
+                      onApplySuggestion={(lineNumber, newText) => {
+                        const lines = lyrics.split("\n")
+                        lines[lineNumber - 1] = newText // lineNumber é 1-based
+                        setLyrics(lines.join("\n"))
+                      }}
+                    />
+                  )}
                 </div>
 
                 <div className="flex gap-2">

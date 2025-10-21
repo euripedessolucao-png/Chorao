@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { RefreshCw, Sparkles, Trash2, Search, Save, Copy } from "lucide-react"
 import { toast } from "sonner"
-import { SyllableValidator } from "@/components/syllable-validator"
+import { SyllableValidatorWithSuggestions } from "@/components/syllable-validator-with-suggestions"
 import { InspirationManager } from "@/components/inspiration-manager"
 
 const GENRES = ["Pop", "Sertanejo Moderno", "MPB"]
@@ -368,17 +368,6 @@ export default function EditarPage() {
               </div>
 
               <div className="border rounded-lg p-3 space-y-2">
-                <Label className="text-xs font-semibold">Texto Selecionado</Label>
-                <p className="text-xs text-muted-foreground">Selecione texto para ativar estas opções</p>
-                <Button size="sm" variant="secondary" className="w-full" disabled>
-                  Salvar Trecho
-                </Button>
-                <Button size="sm" variant="secondary" className="w-full" disabled>
-                  Reescrever Seleção
-                </Button>
-              </div>
-
-              <div className="border rounded-lg p-3 space-y-2">
                 <Label className="text-xs font-semibold">
                   Trechos Salvos {savedInspirations.length > 0 && `(${savedInspirations.length})`}
                 </Label>
@@ -447,16 +436,14 @@ export default function EditarPage() {
                   />
 
                   {lyrics.trim() && (
-                    <SyllableValidator
+                    <SyllableValidatorWithSuggestions
                       lyrics={lyrics}
                       maxSyllables={11}
-                      onValidate={(result) => {
-                        if (!result.valid) {
-                          toast.warning(`${result.linesWithIssues} versos com problemas`, {
-                            description: "Verifique os versos destacados",
-                            duration: 5000,
-                          })
-                        }
+                      onApplySuggestion={(lineNumber, newText) => {
+                        const lines = lyrics.split("\n")
+                        lines[lineNumber - 1] = newText
+                        setLyrics(lines.join("\n"))
+                        toast.success("Sugestão aplicada com sucesso!")
                       }}
                     />
                   )}

@@ -387,10 +387,10 @@ export class MetaComposer {
   }
 
   /**
-   * GERA REESCRITA DE LETRA EXISTENTE
+   * GERA REESCRITA DE LETRA EXISTENTE - PRIORIDADE: NARRATIVA PRIMEIRO
    */
   private static async generateRewrite(request: CompositionRequest): Promise<string> {
-    console.log("[MetaComposer] Gerando reescrita de letra existente...")
+    console.log("[MetaComposer] Gerando reescrita com NARRATIVA em primeiro lugar...")
 
     if (!request.originalLyrics) {
       throw new Error("Original lyrics required for rewrite")
@@ -400,7 +400,7 @@ export class MetaComposer {
     const genreConfig = getGenreConfig(request.genre)
 
     try {
-      const rewritePrompt = `Você é um compositor profissional de ${request.genre}. Reescreva esta letra mantendo a estrutura mas melhorando a qualidade.
+      const rewritePrompt = `Você é um compositor profissional de ${request.genre}, inspirado pelos mestres da música brasileira como Chico Buarque e Caetano Veloso.
 
 LETRA ORIGINAL:
 ${request.originalLyrics}
@@ -409,132 +409,118 @@ TEMA: ${request.theme}
 MOOD: ${request.mood}
 
 ═══════════════════════════════════════════════════════════════
-REGRAS ABSOLUTAS (NÃO PODEM SER QUEBRADAS - PRIORIDADE MÁXIMA)
+🎯 HIERARQUIA DE PRIORIDADES (DO MAIS IMPORTANTE PARA O MENOS)
 ═══════════════════════════════════════════════════════════════
 
-1. LIMITE DE 11 SÍLABAS POÉTICAS (ABSOLUTO E INEGOCIÁVEL)
-   - Cada verso DEVE ter no máximo 11 sílabas poéticas
-   - Ideal: ${syllableTarget.ideal} sílabas
-   - Mínimo: ${syllableTarget.min} sílabas
-   
-   COMO CONTAR SÍLABAS POÉTICAS:
-   - Conte até a última sílaba tônica
-   - Exemplo: "Eu vou seguir meu caminho sem olhar" = "Eu-vou-se-guir-meu-ca-mi-nho-sem-o-LHAR" = 11 sílabas ✓
-   
-   ESTRATÉGIAS PARA MANTER 11 SÍLABAS (PENSE EM ALTERNATIVAS):
-   
-   a) CONTRAÇÕES (primeira opção):
-      você→cê, está→tá, para→pra, estava→tava
-   
-   b) ALTERNATIVAS DE EXPRESSÃO (mantenha o contexto):
-      ❌ "Eu me libertei de tudo que você fazia" (condensar = perder contexto)
-      ✓ "Me soltei do que cê fez pra me prender" (alternativa = mantém contexto)
-      
-      ❌ "Hoje eu sou dona de mim e da minha vida" (condensar = "sou dona")
-      ✓ "Hoje comando minha vida e meu destino" (alternativa = mantém força)
-   
-   c) REFORMULAÇÃO CRIATIVA (não apenas cortar palavras):
-      ❌ "Pago tudo do meu jeito, sem ninguém pra dar conselho" (15 sílabas)
-      ❌ "Pago tudo do meu jeito, sem conselho" (cortar = perde sentido)
-      ✓ "Pago tudo sozinha, sem pedir conselho" (reformular = mantém sentido)
-      
-      ❌ "Achava lindo o decote da vizinha do lado" (14 sílabas)
-      ❌ "Achava lindo o decote da vizinha" (cortar = ok mas genérico)
-      ✓ "Elogiava o decote que a vizinha usava" (reformular = mais específico)
-   
-   d) SINÔNIMOS MAIS CURTOS (mantendo o impacto):
-      "libertei" → "soltei" (mesma força, menos sílabas)
-      "caminho" → "rumo" (mesmo sentido, mais curto)
-      "tentava" → "quis" (ação similar, mais direto)
-   
-   IMPORTANTE: NÃO apenas CONDENSE ou RESUMA. PENSE em ALTERNATIVAS que:
-   - Mantêm o CONTEXTO completo
-   - Preservam a FORÇA emocional
-   - Contam a MESMA história de forma diferente
-   - Usam SINÔNIMOS e REFORMULAÇÕES criativas
-
-2. GRAMÁTICA PERFEITA (FRASES COMPLETAS E CORRETAS)
-   - Cada verso = frase completa com sujeito + verbo + complemento
-   - NUNCA versos incompletos ou quebrados
-   
-   ERROS COMUNS A EVITAR:
-   ❌ "Vou não podia aceitar" (dois verbos sem conectivo)
-   ✓ "Vou seguir sem aceitar"
-   
-   ❌ "Saí tentava me esconder" (dois verbos sem conectivo)
-   ✓ "Saí da sombra que tentava me esconder"
-   
-   ❌ "Cortei deixei pra trás" (falta objeto)
-   ✓ "Cortei o laço e deixei pra trás"
-
-3. NARRATIVA FLUÍDA (HISTÓRIA COM COMEÇO-MEIO-FIM)
-   - Começo: Apresenta a situação/problema
-   - Meio: Desenvolve a transformação/conflito
-   - Fim: Resolução com empoderamento
+**1. NARRATIVA ENVOLVENTE (PRIORIDADE MÁXIMA)**
+   - Conte uma HISTÓRIA completa com começo, meio e fim
    - Cada verso deve CONECTAR com o anterior
-   - SEM mudanças abruptas de assunto
+   - A história deve FLUIR naturalmente, sem cortes abruptos
+   - Mantenha COERÊNCIA emocional do início ao fim
+   
+   ❌ ERRADO: Versos desconectados forçados para rimar
+   "Cortei o laço, tratei do cabelo" (ok)
+   "Pago tudo do meu jeito, sem ninguém pra dar conselho" (desconectado!)
+   
+   ✓ CERTO: História fluída e conectada
+   "Cortei o laço que me prendia"
+   "Agora sigo livre, sem pedir permissão"
+
+**2. EMOÇÃO AUTÊNTICA**
+   - Transmita SENTIMENTOS reais e profundos
+   - Use IMAGENS concretas (não abstrações)
+   - Conecte com a EXPERIÊNCIA do ouvinte
+   
+   ❌ ERRADO: Clichês vazios
+   "Meu coração está partido"
+   
+   ✓ CERTO: Emoção concreta
+   "Ainda guardo tuas fotos no celular"
+
+**3. CONEXÃO COM OUVINTE**
+   - Use linguagem COLOQUIAL brasileira (tô, cê, pra)
+   - Vocabulário ATUAL (PIX, story, biquíni, boteco)
+   - Situações RECONHECÍVEIS do dia a dia
+
+**4. MÉTRICA E RIMAS (FLEXÍVEIS PARA SERVIR À NARRATIVA)**
+   - Ideal: ${syllableTarget.ideal} sílabas por verso
+   - Máximo: 11 sílabas (mas NUNCA sacrifique a narrativa)
+   - Rimas: Importantes, mas NÃO force versos só para rimar
+   
+   IMPORTANTE: Se precisar escolher entre:
+   - Um verso perfeito em sílabas mas que quebra a narrativa
+   - Um verso com 12 sílabas mas que mantém a história fluindo
+   
+   ESCOLHA O SEGUNDO. A narrativa é mais importante.
 
 ═══════════════════════════════════════════════════════════════
-PROCESSO DE CRIAÇÃO (SIGA ESTA ORDEM)
+📚 APRENDA COM OS MESTRES BRASILEIROS
 ═══════════════════════════════════════════════════════════════
 
-PASSO 1: PENSE ANTES DE ESCREVER
-- Qual é a história que quero contar?
-- Como posso contar em versos curtos (11 sílabas)?
-- Quais ALTERNATIVAS posso usar ao invés de apenas condensar?
-- Que SINÔNIMOS mais curtos mantêm o impacto?
+**Chico Buarque - Mestre da Narrativa:**
+"Ela fez questão de esquecer o meu nome
+E todos os planos que a gente sonhou"
+→ Narrativa clara: ela esqueceu, nós sonhamos juntos
 
-PASSO 2: ESCREVA CADA VERSO
-- Escreva o verso
-- CONTE as sílabas poéticas
-- Se passar de 11, PENSE EM ALTERNATIVAS (não apenas corte palavras)
-- Verifique se a gramática está correta
-- Confirme que o CONTEXTO foi mantido
+**Caetano Veloso - Mestre das Imagens:**
+"Você não sente nem vê
+Mas eu não posso deixar de dizer, meu amigo"
+→ Contraste emocional: você não vê, mas eu preciso falar
 
-PASSO 3: REVISE ANTES DE FINALIZAR
-✓ Todos os versos têm 11 sílabas ou menos?
-✓ Todas as frases estão completas e corretas?
-✓ A história flui do começo ao fim?
-✓ O CONTEXTO foi mantido em cada verso?
-✓ Usei ALTERNATIVAS criativas ao invés de apenas condensar?
+**Marília Mendonça - Mestre do Cotidiano:**
+"Eu tô bebendo, tô chorando
+Tô ligando pra você"
+→ Ações concretas que contam a história
 
 ═══════════════════════════════════════════════════════════════
-SEU OBJETIVO FINAL (LEIA COM ATENÇÃO)
+✍️ PROCESSO DE CRIAÇÃO (NARRATIVA PRIMEIRO)
 ═══════════════════════════════════════════════════════════════
 
-Você DEVE entregar uma letra que tenha SIMULTANEAMENTE:
-✓ GRAMÁTICA PERFEITA (frases completas e corretas)
-✓ NARRATIVA FLUÍDA (história com começo-meio-fim)
-✓ MÁXIMO 11 SÍLABAS POR VERSO (ABSOLUTO, NÃO NEGOCIÁVEL)
-✓ CONTEXTO MANTIDO (não apenas condensar, mas reformular criativamente)
+**PASSO 1: PLANEJE A HISTÓRIA**
+- Qual é a situação inicial? (ex: relacionamento tóxico)
+- O que acontece no meio? (ex: libertação)
+- Como termina? (ex: empoderamento)
+- Como cada parte CONECTA com a próxima?
 
-NÃO ABRIMOS MÃO DE NENHUM DESSES DETALHES.
+**PASSO 2: ESCREVA PENSANDO NA HISTÓRIA**
+- Escreva cada verso CONECTADO ao anterior
+- Mantenha a COERÊNCIA emocional
+- Use IMAGENS concretas
+- NÃO force rimas que quebram a narrativa
 
-IMPORTANTE:
-- Se um verso ficar com mais de 11 sílabas, PENSE EM ALTERNATIVAS
-- NÃO apenas CORTE palavras - isso perde contexto
-- REFORMULE criativamente mantendo o sentido completo
-- Use SINÔNIMOS mais curtos que mantêm o impacto
-- É MELHOR uma reformulação criativa do que uma condensação que perde sentido
+**PASSO 3: AJUSTE A MÉTRICA (SEM DESTRUIR A NARRATIVA)**
+- Se um verso ficou longo, use ALTERNATIVAS:
+  a) Contrações: você→cê, está→tá
+  b) Sinônimos curtos: libertei→soltei
+  c) Reformulação mantendo sentido
+- NUNCA corte palavras que quebram a história
 
-EXEMPLO DO QUE FAZER:
-❌ "Pago tudo do meu jeito, sem ninguém pra dar conselho" (15 sílabas)
-❌ "Pago tudo do meu jeito, sem conselho" (apenas cortou - perde sentido)
-✓ "Pago tudo sozinha, sem pedir conselho" (reformulou - mantém sentido completo)
+**PASSO 4: REVISE A COERÊNCIA**
+✓ A história flui do início ao fim?
+✓ Cada verso conecta com o anterior?
+✓ As emoções são autênticas?
+✓ O ouvinte consegue acompanhar a narrativa?
+✓ As sílabas estão próximas do ideal (sem sacrificar história)?
 
-❌ "Vou usar aquele biquíni que você não sabia apreciar" (16 sílabas)
-❌ "Vou usar meu biquíni" (apenas cortou - perde o conflito)
-✓ "Vou usar o biquíni que cê criticava" (reformulou - mantém o conflito)
+═══════════════════════════════════════════════════════════════
+🎵 SEU OBJETIVO FINAL
+═══════════════════════════════════════════════════════════════
 
-NÃO ENVIE a letra até que TODOS os versos tenham 11 sílabas ou menos E mantenham o contexto completo.
-Revise CADA verso antes de finalizar.
+Entregue uma letra que seja, NESTA ORDEM:
+1. Uma HISTÓRIA envolvente e coerente
+2. Com EMOÇÕES autênticas e profundas
+3. Que CONECTE com o ouvinte brasileiro
+4. Com métrica e rimas que SERVEM à narrativa (não dominam)
+
+LEMBRE-SE: Uma música é uma HISTÓRIA em forma de canção.
+A técnica (sílabas, rimas) existe para SERVIR a história, não para dominá-la.
 
 Retorne APENAS a letra reescrita:`
 
       const response = await generateText({
         model: "openai/gpt-4o",
         prompt: rewritePrompt,
-        temperature: 0.7,
+        temperature: 0.8, // Aumentado para mais criatividade narrativa
       })
 
       return response.text || request.originalLyrics
@@ -589,96 +575,95 @@ Retorne a letra completa com os refrões preservados:`
   }
 
   /**
-   * GERA LETRA DIRETAMENTE SEM RESTRIÇÕES DE REFRÃO
+   * GERA LETRA DIRETAMENTE - NARRATIVA PRIMEIRO
    */
   private static async generateDirectLyrics(
     request: CompositionRequest,
     syllableEnforcement: { min: number; max: number; ideal: number },
   ): Promise<string> {
-    console.log("[MetaComposer] Gerando letra diretamente...")
+    console.log("[MetaComposer] Gerando letra com NARRATIVA em primeiro lugar...")
 
     const genreConfig = getGenreConfig(request.genre)
 
     try {
-      const directPrompt = `Você é um compositor profissional de ${request.genre}. Crie uma letra original sobre: ${request.theme}
+      const directPrompt = `Você é um compositor profissional de ${request.genre}, inspirado pelos mestres brasileiros.
 
+TEMA: ${request.theme}
 MOOD: ${request.mood}
 ${request.rhythm ? `RITMO: ${request.rhythm}` : ""}
 
 ═══════════════════════════════════════════════════════════════
-REGRAS ABSOLUTAS (NÃO PODEM SER QUEBRADAS)
+🎯 PRIORIDADE #1: CONTE UMA HISTÓRIA
 ═══════════════════════════════════════════════════════════════
 
-1. LIMITE DE 11 SÍLABAS POÉTICAS (ABSOLUTO)
-   - Máximo: 11 sílabas por verso
-   - Ideal: ${syllableEnforcement.ideal} sílabas
-   
-   ESTRATÉGIAS PARA MANTER 11 SÍLABAS:
-   a) Contrações: você→cê, está→tá, para→pra
-   b) Seja direto: "Eu vou seguir" → "Vou seguir"
-   c) Remova palavras extras: "muito", "bem", "tão"
-   
-   EXEMPLOS:
-   ❌ "Eu me libertei de tudo aquilo que me prendia" (14 sílabas)
-   ✓ "Me libertei do que me prendia" (10 sílabas)
+Sua missão é contar uma HISTÓRIA envolvente sobre: ${request.theme}
 
-2. GRAMÁTICA PERFEITA
-   - Cada verso = frase completa (sujeito + verbo + complemento)
-   - NUNCA: "Vou não podia" ❌
-   - SEMPRE: "Vou seguir sem você" ✓
+**Estrutura Narrativa:**
+- COMEÇO: Apresente a situação (onde estamos?)
+- MEIO: Desenvolva o conflito/transformação (o que acontece?)
+- FIM: Resolução com impacto emocional (onde chegamos?)
 
-3. NARRATIVA FLUÍDA
-   - Começo: Apresenta situação
-   - Meio: Desenvolve transformação
-   - Fim: Resolução com empoderamento
+**Cada verso deve:**
+- CONECTAR com o verso anterior
+- AVANÇAR a história
+- Manter COERÊNCIA emocional
+
+❌ NÃO faça: Versos soltos só para rimar
+✓ FAÇA: História fluída que emociona
 
 ═══════════════════════════════════════════════════════════════
-PROCESSO (SIGA ESTA ORDEM)
+🎯 PRIORIDADE #2: EMOÇÃO AUTÊNTICA
 ═══════════════════════════════════════════════════════════════
 
-PASSO 1: PLANEJE A HISTÓRIA
-- Qual é a situação inicial?
-- O que acontece no meio?
-- Como termina?
+Use IMAGENS CONCRETAS do cotidiano brasileiro:
+- "Bloqueei teu número" (não "te esqueci")
+- "Apaguei tuas fotos" (não "superei")
+- "Paguei a conta sozinha" (não "sou independente")
 
-PASSO 2: ESCREVA VERSO POR VERSO
-- Escreva o verso
-- CONTE as sílabas
-- Se > 11, REESCREVA usando contrações e simplificações
-- Verifique gramática
+═══════════════════════════════════════════════════════════════
+🎯 PRIORIDADE #3: MÉTRICA (FLEXÍVEL)
+═══════════════════════════════════════════════════════════════
 
-PASSO 3: REVISE TUDO
-✓ Todos os versos ≤ 11 sílabas?
-✓ Gramática perfeita?
-✓ História fluída?
+- Ideal: ${syllableEnforcement.ideal} sílabas
+- Máximo: 11 sílabas
+- MAS: Se precisar de 12 sílabas para manter a narrativa fluindo, USE
+
+IMPORTANTE: Narrativa > Métrica perfeita
+
+═══════════════════════════════════════════════════════════════
+✍️ PROCESSO
+═══════════════════════════════════════════════════════════════
+
+1. PENSE na história completa
+2. ESCREVA conectando cada verso
+3. AJUSTE sílabas SEM quebrar a narrativa
+4. REVISE a coerência emocional
 
 ESTRUTURA:
 [PART A - Verse 1]
-4 linhas (11 sílabas cada)
+4 linhas contando o COMEÇO da história
 
 [PART B - Chorus]
-4 linhas chiclete (11 sílabas cada)
+4 linhas com a MENSAGEM principal (chiclete)
 
 [PART A2 - Verse 2]
-4 linhas (11 sílabas cada)
+4 linhas desenvolvendo o MEIO
 
 [PART B - Chorus]
-Repete
+Repete a mensagem
 
 [PART C - Bridge]
-2 linhas de clímax (11 sílabas cada)
+2 linhas de CLÍMAX emocional
 
 [PART B - Final Chorus]
-Refrão final
-
-NÃO ENVIE até que TODOS os versos tenham ≤ 11 sílabas.
+Refrão final com impacto
 
 Retorne APENAS a letra:`
 
       const response = await generateText({
         model: "openai/gpt-4o",
         prompt: directPrompt,
-        temperature: 0.7,
+        temperature: 0.8, // Aumentado para mais criatividade narrativa
       })
 
       return response.text || ""

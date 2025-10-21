@@ -15,7 +15,7 @@ import { RefreshCw, Save, Copy, Search, Loader2, Star, Trophy, Trash2, Zap, Wand
 import { toast } from "sonner"
 import { EMOTIONS } from "@/lib/genres"
 import { GenreSelect } from "@/components/genre-select"
-import { EditableSyllableValidator } from "@/components/syllable-validator-editable"
+import { SyllableValidatorWithSuggestions } from "@/components/syllable-validator-with-suggestions"
 import { InspirationManager } from "@/components/inspiration-manager"
 import {
   Dialog,
@@ -767,22 +767,18 @@ export default function ReescreverPage() {
                     className="font-mono text-xs"
                   />
 
-                  <EditableSyllableValidator
-                    lyrics={lyrics}
-                    maxSyllables={11}
-                    onValidate={(result) => {
-                      if (!result.valid) {
-                        toast.warning(`${result.linesWithIssues} versos com problemas`, {
-                          description: "Use o validador editável para corrigir",
-                          duration: 5000,
-                        })
-                      } else if (result.totalLines > 0) {
-                        toast.success(`✓ Letra validada: ${result.totalLines} versos perfeitos`)
-                      }
-                    }}
-                    onLyricsChange={handleLyricsChange}
-                    showEditControls={true}
-                  />
+                  {lyrics.trim() && (
+                    <SyllableValidatorWithSuggestions
+                      lyrics={lyrics}
+                      maxSyllables={11}
+                      onApplySuggestion={(lineNumber, newText) => {
+                        const lines = lyrics.split("\n")
+                        lines[lineNumber - 1] = newText
+                        setLyrics(lines.join("\n"))
+                        toast.success("Sugestão aplicada com sucesso!")
+                      }}
+                    />
+                  )}
                 </div>
 
                 <div className="flex gap-2">
