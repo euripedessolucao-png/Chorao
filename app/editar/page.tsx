@@ -173,6 +173,16 @@ export default function EditarPage() {
     }
   }
 
+  const handleInsertInspiration = (text: string) => {
+    setLyrics((prev) => {
+      if (prev.trim()) {
+        return prev + "\n\n" + text
+      }
+      return text
+    })
+    toast.success("Inspiração inserida na letra!")
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -369,8 +379,27 @@ export default function EditarPage() {
               </div>
 
               <div className="border rounded-lg p-3 space-y-2">
-                <Label className="text-xs font-semibold">Trechos Salvos</Label>
-                <p className="text-xs text-muted-foreground text-center">Nenhum trecho salvo encontrado</p>
+                <Label className="text-xs font-semibold">
+                  Trechos Salvos {savedInspirations.length > 0 && `(${savedInspirations.length})`}
+                </Label>
+                {savedInspirations.length > 0 ? (
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {savedInspirations.map((inspiration) => (
+                      <div
+                        key={inspiration.id}
+                        className="bg-muted/50 rounded p-2 text-xs cursor-pointer hover:bg-muted transition-colors"
+                        onClick={() => handleInsertInspiration(inspiration.text)}
+                      >
+                        <p className="line-clamp-2">{inspiration.text}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {new Date(inspiration.date).toLocaleDateString("pt-BR")} - Clique para inserir
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground text-center">Nenhum trecho salvo encontrado</p>
+                )}
               </div>
             </CardContent>
           </Card>

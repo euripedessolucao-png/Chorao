@@ -331,6 +331,40 @@ export default function CriarPage() {
   // ✅ EXIBIR CONFIGURAÇÃO ATUAL DO GÊNERO
   const currentSyllableConfig = genre ? getSyllableConfig(genre) : null
 
+  const handleSearchLiteraryInspiration = async () => {
+    if (!literaryGenre) {
+      toast.error("Digite um gênero para buscar inspiração")
+      return
+    }
+
+    toast.info("Buscando inspiração literária...", {
+      description: `Gênero: ${literaryGenre}${literaryEmotion ? `, Emoção: ${literaryEmotion}` : ""}`,
+    })
+
+    // Adiciona ao campo de inspiração
+    const inspirationText = `Inspiração Literária: ${literaryGenre}${literaryEmotion ? ` - ${literaryEmotion}` : ""}`
+    setInspirationText((prev) => (prev ? `${prev}\n\n${inspirationText}` : inspirationText))
+
+    toast.success("Inspiração literária adicionada!")
+  }
+
+  const handleSearchMetaphors = async () => {
+    if (!metaphorSearch) {
+      toast.error("Digite um tema para buscar metáforas")
+      return
+    }
+
+    toast.info("Buscando metáforas...", {
+      description: `Tema: ${metaphorSearch}`,
+    })
+
+    // Adiciona ao campo de inspiração
+    const metaphorText = `Metáforas sobre: ${metaphorSearch}`
+    setInspirationText((prev) => (prev ? `${prev}\n\n${metaphorText}` : metaphorText))
+
+    toast.success("Metáforas adicionadas ao contexto!")
+  }
+
   return (
     <div className="bg-background">
       <Navigation />
@@ -587,7 +621,7 @@ export default function CriarPage() {
                     onChange={(e) => setLiteraryEmotion(e.target.value)}
                     className="h-8 text-xs"
                   />
-                  <Button size="sm" className="h-8">
+                  <Button size="sm" className="h-8" onClick={handleSearchLiteraryInspiration}>
                     Buscar
                   </Button>
                 </div>
@@ -605,7 +639,7 @@ export default function CriarPage() {
                     onChange={(e) => setMetaphorSearch(e.target.value)}
                     className="h-8 text-xs"
                   />
-                  <Button size="sm" variant="secondary" className="h-8">
+                  <Button size="sm" variant="secondary" className="h-8" onClick={handleSearchMetaphors}>
                     <Search className="h-3 w-3" />
                   </Button>
                 </div>
