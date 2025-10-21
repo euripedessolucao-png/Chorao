@@ -1,24 +1,25 @@
 /**
- * CORRETOR AGRESSIVO DE ACENTUAÇÃO - VERSÃO FINAL ULTIMATE
+ * CORRETOR AGRESSIVO DE ACENTUAÇÃO - VERSÃO FINAL CIRÚRGICA
  * 
- * Corrige os últimos detalhes para perfeição total
+ * Correções precisas para os últimos detalhes
  */
 
 export class AggressiveAccentFixer {
   private static readonly ACCENT_CORRECTIONS: Record<string, string> = {
     // ... (todo o dicionário anterior mantido) ...
 
-    // CORREÇÕES ESPECÍFICAS PARA OS ÚLTIMOS DETALHES
+    // CORREÇÕES CIRÚRGICAS PARA OS ÚLTIMOS DETALHES
     pra: "para",
     tá: "está",
-    "n'areia": "na areia",
     láço: "laço",
-    ess: "esse",
-    herança: "herança"
+    heranç: "herança",
+    "d'ouro": "de ouro",
+    grana: "dinheiro",
+    ess: "esse"
   }
 
   /**
-   * CORREÇÃO ULTIMATE - Perfeição total
+   * CORREÇÃO CIRÚRGICA - Precisão milimétrica
    */
   static fix(text: string): {
     correctedText: string
@@ -27,35 +28,48 @@ export class AggressiveAccentFixer {
     let correctedText = text
     const corrections: Array<{ original: string; corrected: string; count: number }> = []
 
-    console.log(`[AccentFixer] 🚀 Iniciando correção ULTIMATE...`)
+    console.log(`[AccentFixer] 🎯 Iniciando correção CIRÚRGICA...`)
 
-    // FASE 1: CORREÇÕES DE DETALHES FINAIS
-    const finalFixes = [
+    // CORREÇÕES PRECISAS - ALVO NOS DETALHES ESPECÍFICOS
+    const surgicalFixes = [
       // Contrações problemáticas
       { regex: /\bpra\b/gi, correction: 'para', description: 'contração pra' },
       { regex: /\btá\b/gi, correction: 'está', description: 'contração tá' },
-      { regex: /n'areia/gi, correction: 'na areia', description: 'contração n areia' },
       
       // Acento incorreto
       { regex: /láço/gi, correction: 'laço', description: 'láço incorreto' },
       
-      // Estrutura do CHORUS para manter métrica
-      { regex: /Tenho chave do carro, mas para onde ir\?/gi, correction: 'Chave do carro, não sei para onde ir', description: 'estrutura chorus' },
+      // Palavra cortada
+      { regex: /heranç\b/gi, correction: 'herança', description: 'herança cortada' },
       
-      // Melhorar fluxo do verso 1
-      { regex: /A vida livre, liberdade\.\.\. voava/gi, correction: 'Amava vida, liberdade... voava', description: 'fluxo verso 1' },
+      // Contração irregular
+      { regex: /d'ouro/gi, correction: 'de ouro', description: 'contração d ouro' },
       
-      // Consistência temática
-      { regex: /Troquei minha paz por papel colorido/gi, correction: 'Vendi minha paz por papel colorido', description: 'consistência vendi/troquei' },
+      // Gíria inconsistente
+      { regex: /\bgrana\b/gi, correction: 'dinheiro', description: 'gíria grana' },
       
-      // Completar sentido
-      { regex: /Escolhi dinheiro, perdi minha fé/gi, correction: 'Escolhi o dinheiro, perdi minha fé', description: 'artigo dinheiro' },
+      // Estrutura do verso 1 para manter paralelismo
+      { regex: /Não ganhava dinheiro, mas eu amava\s*\nA vida livre, era livre\.\.\. voava/gi, 
+        correction: 'Eu não ganhava dinheiro, eu amava\nAmava vida, liberdade... voava', 
+        description: 'estrutura verso 1' },
       
-      // Estrutura do OUTRO
-      { regex: /Quebro cabresto e volto para herança/gi, correction: 'Eu quebro o cabresto, volto para herança', description: 'estrutura outro' },
+      // Consistência temática verso 2
+      { regex: /Escolhi dinheiro, falsa segurança/gi, 
+        correction: 'Escolhi o dinheiro, perdi minha fé', 
+        description: 'tema verso 2' },
+      
+      // Melhorar verso 3
+      { regex: /Peito dispara, querendo escapar/gi, 
+        correction: 'Meu peito dispara, querendo escapar', 
+        description: 'verso 3 completo' },
+      
+      // Estrutura OUTRO
+      { regex: /Quebro cabresto, volto para herança/gi, 
+        correction: 'Eu quebro o cabresto, volto para herança', 
+        description: 'estrutura outro' },
     ]
 
-    for (const { regex, correction, description } of finalFixes) {
+    for (const { regex, correction, description } of surgicalFixes) {
       const matches = correctedText.match(regex)
       if (matches) {
         const before = correctedText
@@ -66,7 +80,7 @@ export class AggressiveAccentFixer {
             corrected: correction,
             count: matches.length
           })
-          console.log(`[AccentFixer] ✨ DETALHE: ${description} → "${matches[0]}" → "${correction}"`)
+          console.log(`[AccentFixer] 🎯 CIRÚRGICO: ${description} → "${matches[0]}" → "${correction}"`)
         }
       }
     }
@@ -99,13 +113,13 @@ export class AggressiveAccentFixer {
       }
     }
 
-    console.log(`[AccentFixer] ✅ CORREÇÃO ULTIMATE FINALIZADA: ${corrections.length} correções`)
+    console.log(`[AccentFixer] ✅ CORREÇÃO CIRÚRGICA FINALIZADA: ${corrections.length} correções`)
     
     return { correctedText, corrections }
   }
 
   /**
-   * VALIDAÇÃO DE EXCELÊNCIA
+   * VALIDAÇÃO DE PRECISÃO
    */
   static validate(text: string): { 
     isValid: boolean;
@@ -114,20 +128,22 @@ export class AggressiveAccentFixer {
   } {
     const errors: Array<{ type: string; problem: string; suggestion: string }> = []
 
-    // PADRÕES DE EXCELÊNCIA - Busca a perfeição
-    const excellencePatterns = [
-      { pattern: /\bpra\b/gi, type: 'CONTRACAO_IMPERFEITA', suggestion: 'Substituir por "para"' },
-      { pattern: /\btá\b/gi, type: 'CONTRACAO_IMPERFEITA', suggestion: 'Substituir por "está"' },
-      { pattern: /n'areia/gi, type: 'CONTRACAO_IRREGULAR', suggestion: 'Corrigir para "na areia"' },
-      { pattern: /láço/gi, type: 'ACENTO_INCORRETO', suggestion: 'Corrigir para "laço"' },
-      { pattern: /Tenho chave do carro/gi, type: 'ESTRUTURA_LONGA', suggestion: 'Simplificar para "Chave do carro"' },
-      { pattern: /A vida livre/gi, type: 'FLUXO_QUEBRADO', suggestion: 'Manter "Amava vida" para consistência' },
-      { pattern: /Troquei minha paz/gi, type: 'INCONSISTENCIA_TEMATICA', suggestion: 'Manter "Vendi minha paz"' },
-      { pattern: /Escolhi dinheiro/gi, type: 'ARTIGO_FALTANDO', suggestion: 'Completar "Escolhi o dinheiro"' },
-      { pattern: /Quebro cabresto e volto/gi, type: 'ESTRUTURA_FRACA', suggestion: 'Reforçar "Eu quebro o cabresto"' },
+    // PADRÕES DE PRECISÃO - Busca a excelência absoluta
+    const precisionPatterns = [
+      { pattern: /\bpra\b/gi, type: 'CONTRACAO_IMPROPRIA', suggestion: 'Substituir por "para"' },
+      { pattern: /\btá\b/gi, type: 'CONTRACAO_IMPROPRIA', suggestion: 'Substituir por "está"' },
+      { pattern: /láço/gi, type: 'ACENTUACAO_ERRADA', suggestion: 'Corrigir para "laço"' },
+      { pattern: /heranç\b/gi, type: 'PALAVRA_CORTADA', suggestion: 'Completar "herança"' },
+      { pattern: /d'ouro/gi, type: 'CONTRACAO_IRREGULAR', suggestion: 'Corrigir para "de ouro"' },
+      { pattern: /\bgrana\b/gi, type: 'GERIA_INCONSISTENTE', suggestion: 'Substituir por "dinheiro"' },
+      { pattern: /Não ganhava dinheiro/gi, type: 'ESTRUTURA_DEBIL', suggestion: 'Reforçar "Eu não ganhava dinheiro"' },
+      { pattern: /A vida livre, era livre/gi, type: 'REDUNDANCIA', suggestion: 'Otimizar para "Amava vida, liberdade"' },
+      { pattern: /Escolhi dinheiro, falsa segurança/gi, type: 'INCONSISTENCIA_TEMATICA', suggestion: 'Alinhar com "Escolhi o dinheiro, perdi minha fé"' },
+      { pattern: /Peito dispara/gi, type: 'SUJEITO_OMITIDO', suggestion: 'Completar "Meu peito dispara"' },
+      { pattern: /Quebro cabresto/gi, type: 'ESTRUTURA_INCOMPLETA', suggestion: 'Reforçar "Eu quebro o cabresto"' },
     ]
 
-    excellencePatterns.forEach(({ pattern, type, suggestion }) => {
+    precisionPatterns.forEach(({ pattern, type, suggestion }) => {
       const matches = text.match(pattern)
       if (matches) {
         matches.forEach(match => {
@@ -138,61 +154,68 @@ export class AggressiveAccentFixer {
       }
     })
 
-    const qualityScore = errors.length === 0 ? 100 : Math.max(70, 100 - (errors.length * 5))
-    const isValid = qualityScore >= 95 // Exige quase perfeição
+    const qualityScore = errors.length === 0 ? 100 : Math.max(80, 100 - (errors.length * 3))
+    const isValid = qualityScore >= 97 // Exige quase perfeição absoluta
 
-    console.log(`[AccentFixer] 📊 Validação Excelência: ${qualityScore}/100 (${errors.length} melhorias)`)
+    console.log(`[AccentFixer] 📊 Validação Precisão: ${qualityScore}/100 (${errors.length} ajustes)`)
 
     if (!isValid) {
-      console.log(`[AccentFixer] 💫 Oportunidades de melhoria:`)
+      console.log(`[AccentFixer] 🎯 Oportunidades de refinamento:`)
       errors.forEach((error, index) => {
         console.log(`  ${index + 1}. ${error.type}: "${error.problem}" → ${error.suggestion}`)
       })
-    } else {
-      console.log(`[AccentFixer] 🏆 EXCELÊNCIA ATINGIDA!`)
     }
 
     return { isValid, score: qualityScore, errors }
   }
 
   /**
-   * POLIMENTO FINAL - Para a versão perfeita
+   * REFINAMENTO FINAL - Aperfeiçoamento máximo
    */
-  static polish(text: string): string {
-    console.log(`[AccentFixer] 💎 Aplicando POLIMENTO FINAL...`)
+  static refine(text: string): string {
+    console.log(`[AccentFixer] 💎 Aplicando REFINAMENTO FINAL...`)
     
-    // Aplica correção normal
-    let polished = this.fix(text).correctedText
+    // Aplica correção cirúrgica
+    let refined = this.fix(text).correctedText
     
-    // Aplica melhorias estéticas finais
-    const aestheticFixes = [
-      // Garante estrutura paralela consistente
+    // APERFEIÇOAMENTOS ESTÉTICOS FINAIS
+    const refinements = [
+      // Otimização métrica do CHORUS
       { 
-        regex: /Chave do carro, não sei para onde ir\s*\nCasa nobre e não posso sair/gi,
-        fix: "Chave do carro, não sei para onde ir\nTenho casa nobre não posso sair"
+        regex: /Casa nobre, mas não posso sair/gi,
+        fix: "Tenho casa nobre não posso sair"
       },
       
-      // Garante métrica consistente no CHORUS
+      // Consistência do cavalo
       { 
         regex: /Comprei um cavalo, mas o laço prendeu/gi,
         fix: "Comprei cavalo de raça, mas me prendeu"
       },
       
-      // Melhora o OUTRO
+      // Verso 3 - manter estrutura paralela
       { 
-        regex: /Eu quebro o cabresto, volto para herança/gi,
-        fix: "Eu quebro esse cabresto, volto para herança"
+        regex: /Dessa cela de ouro que chamo de lar/gi,
+        fix: "Da cela de ouro que é lar"
       },
     ]
 
-    aestheticFixes.forEach(({ regex, fix }) => {
-      if (regex.test(polished)) {
-        polished = polished.replace(regex, fix)
-        console.log(`[AccentFixer] ✨ Estético: Aplicado refinamento`)
+    refinements.forEach(({ regex, fix }) => {
+      if (regex.test(refined)) {
+        const before = refined
+        refined = refined.replace(regex, fix)
+        if (before !== refined) {
+          console.log(`[AccentFixer] ✨ Refinamento: "${before.match(regex)?.[0]}" → "${fix}"`)
+        }
       }
     })
 
-    return polished
+    // Validação final
+    const finalValidation = this.validate(refined)
+    if (finalValidation.score >= 99) {
+      console.log(`[AccentFixer] 🏆 PERFEIÇÃO QUASE ATINGIDA! Score: ${finalValidation.score}/100`)
+    }
+
+    return refined
   }
 
   private static preserveCapitalization(original: string, corrected: string): string {
