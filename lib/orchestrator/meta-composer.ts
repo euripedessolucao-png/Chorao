@@ -18,6 +18,8 @@ import { AbsoluteSyllableEnforcer } from "@/lib/validation/absolute-syllable-enf
 import { LyricsAuditor } from "@/lib/validation/lyrics-auditor"
 import { MultiGenerationEngine } from "./multi-generation-engine"
 import { WordIntegrityValidator } from "@/lib/validation/word-integrity-validator"
+import { AggressiveAccentFixer } from "@/lib/validation/aggressive-accent-fixer"
+import { RepetitionValidator } from "@/lib/validation/repetition-validator"
 
 export interface CompositionRequest {
   genre: string
@@ -53,6 +55,8 @@ export interface CompositionResult {
     terceiraViaAnalysis?: TerceiraViaAnalysis
     melodicAnalysis?: any
     performanceMode?: string
+    accentCorrections?: number
+    syllableCorrections?: number
   }
 }
 
@@ -60,360 +64,314 @@ export class MetaComposer {
   private static readonly MAX_ITERATIONS = 3
   private static readonly MAX_AUDIT_ATTEMPTS = 5
   private static readonly ABSOLUTE_MAX_SYLLABLES = 11
-  private static readonly MIN_QUALITY_SCORE = 0.75 // Score mínimo para aprovar letra
+  private static readonly MIN_QUALITY_SCORE = 0.75
 
   /**
-   * Obtém a configuração de sílabas para um gênero específico
-   */
-  private static getGenreSyllableConfig(genre: string): { min: number; max: number; ideal: number } {
-    const genreConfig = getGenreConfig(genre)
-    const syllableRules = genreConfig.prosody_rules?.syllable_count
-
-    // Handle different syllable count structures across genres
-    if (syllableRules && "absolute_max" in syllableRules) {
-      // Sertanejo Moderno structure
-      return {
-        min: 7,
-        max: syllableRules.absolute_max,
-        ideal: 10,
-      }
-    } else if (syllableRules && "without_comma" in syllableRules) {
-      // Other genres structure
-      return {
-        min: syllableRules.without_comma.min,
-        max: syllableRules.without_comma.acceptable_up_to,
-        ideal: Math.floor((syllableRules.without_comma.min + syllableRules.without_comma.max) / 2),
-      }
-    }
-
-    // Default fallback
-    return {
-      min: 7,
-      max: 11,
-      ideal: 10,
-    }
-  }
-
-  /**
-   * COMPOSIÇÃO TURBO COM SISTEMA DE MÚLTIPLES GERAÇÕES
-   *
-   * Replica a lógica do gerador de refrão:
-   * - Gera 3-5 versões de cada elemento
-   * - Escolhe a MELHOR de cada
-   * - NUNCA entrega letra com erros!
+   * COMPOSIÇÃO TURBO COM SISTEMA DE MÚLTIPLAS GERAÇÕES E CORREÇÃO AGREGADA
    */
   static async compose(request: CompositionRequest): Promise<CompositionResult> {
     console.log("[MetaComposer-TURBO] 🚀 Iniciando composição com MÚLTIPLAS GERAÇÕES...")
     console.log("[MetaComposer-TURBO] 🎯 Gera 3 versões completas e escolhe a melhor")
-    console.log("[MetaComposer-TURBO] 🚨 NUNCA ENTREGA COM ERROS!")
+    console.log("[MetaComposer-TURBO] 🔧 Aplica correção AGGRESSIVA de acentos e sílabas")
 
     const multiGenResult = await MultiGenerationEngine.generateMultipleVariations(
       async () => {
-        // Gera uma versão completa da letra
         return await this.generateSingleVersion(request)
       },
       (lyrics) => {
-        // Calcula score da letra
         const auditResult = LyricsAuditor.audit(lyrics, request.genre, request.theme)
         return auditResult.score
       },
-      3, // Gera 3 versões
+      3,
     )
 
-    const bestLyrics = multiGenResult.variations[multiGenResult.bestVariationIndex].lyrics
+    const bestVariation = multiGenResult.variations[multiGenResult.bestVariationIndex]
+    const bestLyrics = bestVariation.lyrics
     const bestScore = multiGenResult.bestScore
 
     console.log(`[MetaComposer-TURBO] 🏆 Melhor versão escolhida! Score: ${bestScore}/100`)
-    console.log(`[MetaComposer-TURBO] 💪 Pontos fortes:`)
-    multiGenResult.variations[multiGenResult.bestVariationIndex].strengths.forEach((s) => {
-      console.log(`  - ${s}`)
-    })
-
-    if (multiGenResult.variations[multiGenResult.bestVariationIndex].weaknesses.length > 0) {
-      console.log(`[MetaComposer-TURBO] ⚠️ Pontos fracos:`)
-      multiGenResult.variations[multiGenResult.bestVariationIndex].weaknesses.forEach((w) => {
-        console.log(`  - ${w}`)
-      })
+    console.log(`[MetaComposer-TURBO] 💪 Pontos fortes:`, bestVariation.strengths)
+    
+    if (bestVariation.weaknesses.length > 0) {
+      console.log(`[MetaComposer-TURBO] ⚠️ Pontos fracos:`, bestVariation.weaknesses)
     }
 
+    // APLICA CORREÇÃO FINAL AGGRESSIVA
+    console.log(`[MetaComposer-TURBO] 🔧 Aplicando correção final ULTRA-AGGRESSIVA...`)
+    const finalLyrics = await this.applyUltraAggressiveFinalFix(bestLyrics, request)
+
     return {
-      lyrics: bestLyrics,
-      title: this.extractTitle(bestLyrics, request),
+      lyrics: finalLyrics,
+      title: this.extractTitle(finalLyrics, request),
       metadata: {
         iterations: 3,
         finalScore: bestScore,
         polishingApplied: request.applyFinalPolish ?? true,
         preservedChorusesUsed: request.preservedChoruses ? request.preservedChoruses.length > 0 : false,
         performanceMode: request.performanceMode || "standard",
+        accentCorrections: this.countAccentCorrections(bestLyrics, finalLyrics),
+        syllableCorrections: this.countSyllableCorrections(bestLyrics, finalLyrics),
       },
     }
   }
 
   /**
+   * CORREÇÃO FINAL ULTRA-AGGRESSIVA
+   */
+  private static async applyUltraAggressiveFinalFix(lyrics: string, request: CompositionRequest): Promise<string> {
+    let correctedLyrics = lyrics
+    
+    console.log(`[MetaComposer-FINAL] 🔧 Etapa 1: Correção agressiva de acentos...`)
+    const accentResult = AggressiveAccentFixer.ultimateFix(correctedLyrics)
+    correctedLyrics = accentResult
+
+    console.log(`[MetaComposer-FINAL] 🔧 Etapa 2: Correção de repetições...`)
+    const repetitionResult = RepetitionValidator.fix(correctedLyrics)
+    if (repetitionResult.corrections > 0) {
+      correctedLyrics = repetitionResult.correctedLyrics
+    }
+
+    console.log(`[MetaComposer-FINAL] 🔧 Etapa 3: Correção absoluta de sílabas...`)
+    const syllableResult = AbsoluteSyllableEnforcer.validateAndFix(correctedLyrics)
+    if (!syllableResult.isValid) {
+      correctedLyrics = syllableResult.correctedLyrics
+    }
+
+    console.log(`[MetaComposer-FINAL] 🔧 Etapa 4: Validação de integridade...`)
+    const integrityResult = WordIntegrityValidator.fix(correctedLyrics)
+    if (integrityResult.corrections > 0) {
+      correctedLyrics = integrityResult.correctedLyrics
+    }
+
+    // Aplica formatação de performance se necessário
+    if (shouldUsePerformanceFormat(request.genre, request.performanceMode || "standard")) {
+      console.log(`[MetaComposer-FINAL] 🎭 Aplicando formatação de performance...`)
+      correctedLyrics = formatSertanejoPerformance(correctedLyrics)
+    }
+
+    return correctedLyrics
+  }
+
+  /**
+   * CONTA CORREÇÕES DE ACENTOS APLICADAS
+   */
+  private static countAccentCorrections(original: string, corrected: string): number {
+    if (original === corrected) return 0
+    
+    const originalWords = original.split(/\s+/).filter(word => word.length > 2)
+    const correctedWords = corrected.split(/\s+/).filter(word => word.length > 2)
+    
+    let corrections = 0
+    for (let i = 0; i < Math.min(originalWords.length, correctedWords.length); i++) {
+      if (originalWords[i] !== correctedWords[i]) {
+        corrections++
+      }
+    }
+    
+    return corrections
+  }
+
+  /**
+   * CONTA CORREÇÕES DE SÍLABAS APLICADAS
+   */
+  private static countSyllableCorrections(original: string, corrected: string): number {
+    const originalLines = original.split('\n').filter(line => 
+      line.trim() && !line.startsWith('[') && !line.startsWith('(')
+    )
+    const correctedLines = corrected.split('\n').filter(line => 
+      line.trim() && !line.startsWith('[') && !line.startsWith('(')
+    )
+    
+    let corrections = 0
+    for (let i = 0; i < Math.min(originalLines.length, correctedLines.length); i++) {
+      const originalSyllables = countPoeticSyllables(originalLines[i])
+      const correctedSyllables = countPoeticSyllables(correctedLines[i])
+      
+      if (originalSyllables !== correctedSyllables) {
+        corrections++
+      }
+    }
+    
+    return corrections
+  }
+
+  /**
    * GERA UMA VERSÃO COMPLETA DA LETRA
-   * Método auxiliar usado pelo sistema de múltiplas gerações
    */
   private static async generateSingleVersion(request: CompositionRequest): Promise<string> {
     console.log("[MetaComposer] 📝 Gerando versão única...")
 
-    const applyFinalPolish = request.applyFinalPolish ?? true
-    const preservedChoruses = request.preservedChoruses || []
-    const hasPreservedChoruses = preservedChoruses.length > 0
-    const isRewrite = !!request.originalLyrics
-    const performanceMode = request.performanceMode || "standard"
-    const useTerceiraVia = request.useTerceiraVia ?? false
-
     const syllableEnforcement = request.syllableTarget || this.getGenreSyllableConfig(request.genre)
     syllableEnforcement.max = Math.min(syllableEnforcement.max, this.ABSOLUTE_MAX_SYLLABLES)
-
-    const genreConfig = getGenreConfig(request.genre)
 
     // Gera letra base
     let rawLyrics: string
 
-    if (isRewrite) {
+    if (request.originalLyrics) {
       rawLyrics = await this.generateRewrite(request)
-    } else if (hasPreservedChoruses) {
-      rawLyrics = await this.generateWithPreservedChoruses(preservedChoruses, request, syllableEnforcement)
+    } else if (request.preservedChoruses && request.preservedChoruses.length > 0) {
+      rawLyrics = await this.generateWithPreservedChoruses(request.preservedChoruses, request, syllableEnforcement)
     } else {
       rawLyrics = await this.generateDirectLyrics(request, syllableEnforcement)
     }
 
-    const absoluteValidationBefore = AbsoluteSyllableEnforcer.validate(rawLyrics)
-    if (!absoluteValidationBefore.isValid) {
-      console.error("[MetaComposer] ❌ LETRA GERADA COM MAIS DE 11 SÍLABAS!")
-      console.error(absoluteValidationBefore.message)
-
-      // Tenta correção automática inteligente
-      console.log("[MetaComposer] 🔧 Aplicando correção automática inteligente...")
-      const fixResult = AbsoluteSyllableEnforcer.validateAndFix(rawLyrics)
-
-      if (fixResult.isValid) {
-        console.log(`[MetaComposer] ✅ Correção bem-sucedida! ${fixResult.corrections} verso(s) corrigido(s)`)
-        rawLyrics = fixResult.correctedLyrics
-      } else {
-        console.warn("[MetaComposer] ⚠️ Correção parcial aplicada - usando letra com melhorias")
-        rawLyrics = fixResult.correctedLyrics
-      }
+    // APLICA CORREÇÃO EM TEMPO REAL DURANTE A GERAÇÃO
+    console.log("[MetaComposer] 🔧 Aplicando correções em tempo real...")
+    
+    // 1. Correção agressiva de acentos
+    const accentFixResult = AggressiveAccentFixer.fix(rawLyrics)
+    if (accentFixResult.corrections.length > 0) {
+      rawLyrics = accentFixResult.correctedText
+      console.log(`[MetaComposer] ✅ ${accentFixResult.corrections.length} correções de acento aplicadas`)
     }
 
-    // Correção automática de sílabas
+    // 2. Correção de repetições
+    const repetitionResult = RepetitionValidator.fix(rawLyrics)
+    if (repetitionResult.corrections > 0) {
+      rawLyrics = repetitionResult.correctedLyrics
+      console.log(`[MetaComposer] ✅ ${repetitionResult.corrections} repetições removidas`)
+    }
+
+    // 3. Correção automática de sílabas
     const autoCorrectionResult = AutoSyllableCorrector.correctLyrics(rawLyrics)
     rawLyrics = autoCorrectionResult.correctedLyrics
 
-    const absoluteValidationAfterCorrection = AbsoluteSyllableEnforcer.validate(rawLyrics)
-    if (!absoluteValidationAfterCorrection.isValid) {
-      console.warn("[MetaComposer] ⚠️ CORREÇÃO AUTOMÁTICA NÃO RESOLVEU TODOS OS PROBLEMAS")
-      console.warn(absoluteValidationAfterCorrection.message)
-      console.warn("[MetaComposer] ⚠️ Usando letra com correções parciais")
+    // 4. Validação absoluta de sílabas
+    const absoluteValidation = AbsoluteSyllableEnforcer.validate(rawLyrics)
+    if (!absoluteValidation.isValid) {
+      console.log("[MetaComposer] 🔧 Aplicando correção absoluta de sílabas...")
+      const fixResult = AbsoluteSyllableEnforcer.validateAndFix(rawLyrics)
+      rawLyrics = fixResult.correctedLyrics
     }
 
-    // Análise Terceira Via
-    const terceiraViaAnalysis = useTerceiraVia ? analisarTerceiraVia(rawLyrics, request.genre, request.theme) : null
-
-    if (useTerceiraVia && terceiraViaAnalysis && terceiraViaAnalysis.score_geral < 75) {
-      rawLyrics = await this.applyTerceiraViaCorrections(rawLyrics, request, terceiraViaAnalysis, genreConfig)
-
-      const absoluteValidationAfterTerceiraVia = AbsoluteSyllableEnforcer.validate(rawLyrics)
-      if (!absoluteValidationAfterTerceiraVia.isValid) {
-        console.warn("[MetaComposer] ⚠️ TERCEIRA VIA GEROU VERSOS COM MAIS DE 11 SÍLABAS!")
-        console.warn(absoluteValidationAfterTerceiraVia.message)
-
-        const fixResult = AbsoluteSyllableEnforcer.validateAndFix(rawLyrics)
-        if (fixResult.isValid) {
-          rawLyrics = fixResult.correctedLyrics
-        } else {
-          console.warn("[MetaComposer] ⚠️ Usando letra da Terceira Via com correções parciais")
-          rawLyrics = fixResult.correctedLyrics
-        }
+    // 5. Terceira Via se habilitada
+    if (request.useTerceiraVia) {
+      const terceiraViaAnalysis = analisarTerceiraVia(rawLyrics, request.genre, request.theme)
+      if (terceiraViaAnalysis && terceiraViaAnalysis.score_geral < 75) {
+        rawLyrics = await this.applyTerceiraViaCorrections(rawLyrics, request, terceiraViaAnalysis, getGenreConfig(request.genre))
       }
     }
 
-    // Polimento final
-    let finalLyrics = rawLyrics
-
-    if (applyFinalPolish) {
-      finalLyrics = await this.applyUniversalPolish(
-        finalLyrics,
-        request.genre,
-        request.theme,
-        syllableEnforcement,
-        performanceMode,
-        genreConfig,
-      )
-
-      const absoluteValidationAfterPolish = AbsoluteSyllableEnforcer.validate(finalLyrics)
-      if (!absoluteValidationAfterPolish.isValid) {
-        console.warn("[MetaComposer] ⚠️ POLIMENTO GEROU VERSOS COM MAIS DE 11 SÍLABAS!")
-        console.warn(absoluteValidationAfterPolish.message)
-
-        const fixResult = AbsoluteSyllableEnforcer.validateAndFix(finalLyrics)
-        if (fixResult.isValid) {
-          finalLyrics = fixResult.correctedLyrics
-        } else {
-          console.warn("[MetaComposer] ⚠️ Usando letra polida com correções parciais")
-          finalLyrics = fixResult.correctedLyrics
-        }
-      }
-    }
-
-    // Validação de pontuação
-    const punctuationResult = PunctuationValidator.validate(finalLyrics)
-    if (!punctuationResult.isValid) {
-      finalLyrics = punctuationResult.correctedLyrics
-    }
-
-    // Empilhamento de versos
-    const stackingResult = LineStacker.stackLines(finalLyrics)
-    finalLyrics = stackingResult.stackedLyrics
-
-    const finalAbsoluteValidation = AbsoluteSyllableEnforcer.validate(finalLyrics)
-    if (!finalAbsoluteValidation.isValid) {
-      console.warn("[MetaComposer] ⚠️ VALIDAÇÃO FINAL - LETRA AINDA TEM VERSOS COM MAIS DE 11 SÍLABAS")
-      console.warn(finalAbsoluteValidation.message)
-      console.warn("[MetaComposer] ⚠️ Retornando letra com melhorias aplicadas")
-    } else {
-      console.log("[MetaComposer] ✅ LETRA APROVADA - TODOS OS VERSOS TÊM NO MÁXIMO 11 SÍLABAS!")
-    }
-
-    // Validação de integridade de palavras
-    const integrityCheck = WordIntegrityValidator.validate(finalLyrics)
+    // 6. Validação de integridade
+    const integrityCheck = WordIntegrityValidator.validate(rawLyrics)
     if (!integrityCheck.isValid) {
-      console.warn("[MetaComposer] ⚠️ Versão com problemas de integridade detectados:")
-      integrityCheck.errors.forEach((error) => {
-        if (error.suggestion) {
-          console.warn(`  - Linha ${error.lineNumber}: "${error.word}" → sugestão: "${error.suggestion}"`)
-        } else {
-          console.warn(`  - Linha ${error.lineNumber}: "${error.word}" parece incompleta`)
-        }
-      })
-      console.warn("[MetaComposer] ⚠️ Retornando letra com avisos de integridade")
-    } else {
-      console.log("[MetaComposer] ✅ Versão aprovada - Integridade de palavras OK")
+      console.log("[MetaComposer] 🔧 Aplicando correção de integridade...")
+      const fixResult = WordIntegrityValidator.fix(rawLyrics)
+      rawLyrics = fixResult.correctedLyrics
     }
 
-    return finalLyrics
+    return rawLyrics
   }
 
   /**
-   * APLICA CORREÇÕES BASEADAS NA ANÁLISE TERCEIRA VIA
+   * GERA LETRA DIRETAMENTE - CONSTRUINDO VERSOS CORRETOS DESDE O INÍCIO
    */
-  private static async applyTerceiraViaCorrections(
-    lyrics: string,
+  private static async generateDirectLyrics(
     request: CompositionRequest,
-    analysis: TerceiraViaAnalysis,
-    genreConfig: any, // ✅ RECEBE CONFIGURAÇÃO
+    syllableEnforcement: { min: number; max: number; ideal: number },
   ): Promise<string> {
-    const lines = lyrics.split("\n")
-    const correctedLines: string[] = []
-    let correctionsApplied = 0
+    console.log("[MetaComposer] Gerando letra construindo versos corretos desde o início...")
 
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i]
+    const directPrompt = `Você é um compositor profissional de ${request.genre} que cria MEGA HITS BRASILEIROS.
 
-      // ✅ SÓ CORRIGE LINHAS QUE PRECISAM
-      if (this.needsTerceiraViaCorrection(line, analysis)) {
-        try {
-          const context = this.buildLineContext(lines, i, "")
-          const correctedLine = await applyTerceiraViaToLine(line, i, context, false, "", request.genre)
+TEMA: ${request.theme}
+MOOD: ${request.mood}
+${request.rhythm ? `RITMO: ${request.rhythm}` : ""}
 
-          if (correctedLine !== line) {
-            correctionsApplied++
-            console.log(`[TerceiraVia] 🔄 Linha ${i} corrigida: "${line}" → "${correctedLine}"`)
-          }
+═══════════════════════════════════════════════════════════════
+⚠️ REGRAS CRÍTICAS DE QUALIDADE (NÃO NEGOCIÁVEIS)
+═══════════════════════════════════════════════════════════════
 
-          correctedLines.push(correctedLine)
-        } catch (error) {
-          console.warn(`[TerceiraVia] ❌ Erro na linha ${i}, mantendo original`)
-          correctedLines.push(line)
-        }
-      } else {
-        correctedLines.push(line)
-      }
+**1. ACENTUAÇÃO PERFEITA:**
+❌ NUNCA escreva: "nã", "seguranç", "heranç", "raç", "laç", "esperanç", "nãoo", "nãganhava"
+✅ SEMPRE use: "não", "segurança", "herança", "raça", "laço", "esperança"
+
+**2. PALAVRAS COMPLETAS:**
+❌ NUNCA corte palavras: "dedo" (quando deveria ser "dedos"), "fé" (sem artigo)
+✅ SEMPRE complete: "dedos", "a fé", "minha fé", "perdi a minha fé"
+
+**3. ESTRUTURA CORRETA:**
+❌ NUNCA: "firmeestrada", "n'areia", "láço"
+✅ SEMPRE: "firme na estrada", "na areia", "laço"
+
+**4. EXPRESSÕES COMPLETAS:**
+❌ NUNCA: "cavalo raça", "perdi fé", "não sei ir"  
+✅ SEMPRE: "cavalo de raça", "perdi a fé", "não sei para onde ir"
+
+═══════════════════════════════════════════════════════════════
+🎯 TÉCNICAS PARA REDUZIR SÍLABAS (SEM CORTAR PALAVRAS)
+═══════════════════════════════════════════════════════════════
+
+**QUANDO FALTA 1 SÍLABA:**
+✅ "mas amava" → "mas eu amava"
+✅ "Comprei cavalo" → "Comprei um cavalo"
+✅ "Coração dispara" → "Meu coração dispara"
+
+**QUANDO SOBRA 1 SÍLABA:**
+✅ "por entre os dedos" → "entre os dedos"
+✅ "Comprando remédio" → "Compro remédio"
+✅ "o meu riacho" → "meu riacho"
+
+**CONTRACÕES PERMITIDAS:**
+✅ "pra" (para), "tá" (está), "tô" (estou), "cê" (você)
+
+═══════════════════════════════════════════════════════════════
+🎵 ESTRUTURA DE MEGA HIT
+═══════════════════════════════════════════════════════════════
+
+**VERSOS (8-11 sílabas):**
+- História clara e emocional
+- Linguagem coloquial brasileira
+- Frases completas e coerentes
+
+**CHORUS (8-9 sílabas):**
+- Extremamente repetitivo
+- Fácil de cantar junto
+- Gruda na cabeça
+
+**PONTE (opcional):**
+- Desenvolve a história
+- Prepara para o final
+
+═══════════════════════════════════════════════════════════════
+⚠️ REGRA DE OURO
+═══════════════════════════════════════════════════════════════
+
+Se precisar escolher entre:
+- Verso com 10-12 sílabas MAS emocionalmente perfeito
+- Verso com 11 sílabas MAS sem emoção ou com palavras cortadas
+
+ESCOLHA O PRIMEIRO! A emoção e integridade vêm primeiro.
+
+═══════════════════════════════════════════════════════════════
+
+Retorne APENAS a letra (sem explicações):`
+
+    try {
+      const response = await generateText({
+        model: "openai/gpt-4o",
+        prompt: directPrompt,
+        temperature: 0.5,
+      })
+
+      return response.text || ""
+    } catch (error) {
+      console.error("[MetaComposer] Erro ao gerar letra direta:", error)
+      throw error
     }
-
-    console.log(`[MetaComposer-TURBO] ✅ ${correctionsApplied} correções Terceira Via aplicadas`)
-    return correctedLines.join("\n")
   }
 
   /**
-   * POLIMENTO UNIVERSAL COM TERCEIRA VIA
-   */
-  private static async applyUniversalPolish(
-    lyrics: string,
-    genre: string,
-    theme: string,
-    syllableTarget: { min: number; max: number; ideal: number },
-    performanceMode = "standard",
-    genreConfig: any,
-  ): Promise<string> {
-    console.log(`[MetaComposer-TURBO] ✨ Polimento universal para: ${genre} (${performanceMode})`)
-
-    let polishedLyrics = lyrics
-
-    // ✅ ETAPA 1: CORREÇÃO DE RIMAS COM TERCEIRA VIA
-    polishedLyrics = await this.applyRhymeEnhancement(polishedLyrics, genre, theme)
-
-    // ✅ ETAPA 2: CORREÇÃO DE SÍLABAS INTELIGENTE
-    const lines = polishedLyrics.split("\n")
-    const finalLines: string[] = []
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i]
-
-      if (line.startsWith("[") || line.startsWith("(") || line.includes("Instruments:") || !line.trim()) {
-        finalLines.push(line)
-        continue
-      }
-
-      const currentSyllables = countPoeticSyllables(line)
-      const needsCorrection = currentSyllables < syllableTarget.min || currentSyllables > syllableTarget.max
-
-      if (needsCorrection) {
-        try {
-          const polishedLine = await ThirdWayEngine.generateThirdWayLine(
-            line,
-            genre,
-            genreConfig,
-            `Polimento final para ${genre}`,
-            performanceMode === "performance",
-            `Ajuste para ${syllableTarget.ideal} sílabas poéticas`,
-          )
-          finalLines.push(polishedLine)
-        } catch (error) {
-          finalLines.push(line)
-        }
-      } else {
-        finalLines.push(line)
-      }
-    }
-
-    polishedLyrics = finalLines.join("\n")
-
-    if (shouldUsePerformanceFormat(genre, performanceMode)) {
-      console.log("[MetaComposer] 🎭 Aplicando formato de performance para sertanejo moderno...")
-      polishedLyrics = formatSertanejoPerformance(polishedLyrics)
-    } else if (performanceMode === "performance") {
-      polishedLyrics = this.applyPerformanceFormatting(polishedLyrics, genre)
-    }
-
-    return polishedLyrics
-  }
-
-  /**
-   * GERA REESCRITA DE LETRA EXISTENTE - CONSTRUINDO VERSOS CORRETOS DESDE O INÍCIO
+   * GERA REESCRITA DE LETRA EXISTENTE
    */
   private static async generateRewrite(request: CompositionRequest): Promise<string> {
-    console.log("[MetaComposer] Gerando reescrita construindo versos corretos desde o início...")
+    console.log("[MetaComposer] Gerando reescrita...")
 
     if (!request.originalLyrics) {
       throw new Error("Original lyrics required for rewrite")
     }
 
-    const syllableTarget = request.syllableTarget || this.getGenreSyllableConfig(request.genre)
-    const genreConfig = getGenreConfig(request.genre)
-
-    const rewritePrompt = `Você é um compositor profissional de ${request.genre} que cria MEGA HITS BRASILEIROS.
+    const rewritePrompt = `Você é um compositor profissional de ${request.genre}. Reescreva esta letra:
 
 LETRA ORIGINAL:
 ${request.originalLyrics}
@@ -422,92 +380,23 @@ TEMA: ${request.theme}
 MOOD: ${request.mood}
 
 ═══════════════════════════════════════════════════════════════
-⚠️ REGRA CRÍTICA DE ACENTUAÇÃO (NÃO NEGOCIÁVEL)
+⚠️ CORRIJA ESTES ERROS COMUNS:
 ═══════════════════════════════════════════════════════════════
 
-NUNCA escreva palavras sem acentos corretos!
+**ERROS CRÍTICOS A EVITAR:**
+❌ "nã", "nãoo", "nãganhava", "nãmora" → ✅ "não", "não ganhava", "não mora"
+❌ "seguranç", "heranç", "esperanç" → ✅ "segurança", "herança", "esperança"  
+❌ "raç", "laç", "braç" → ✅ "raça", "laço", "braço"
+❌ "cavalo raça" → ✅ "cavalo de raça"
+❌ "perdi fé" → ✅ "perdi a fé", "perdi minha fé"
+❌ "firmeestrada" → ✅ "firme na estrada"
+❌ "n'areia" → ✅ "na areia"
 
-❌ ERRADO: "nã", "seguranç", "heranç", "raç", "laç", "esperanç"
-✅ CORRETO: "não", "segurança", "herança", "raça", "laço", "esperança"
-
-Se precisar reduzir sílabas, use OUTRAS técnicas:
-- Remova artigos: "o", "a", "um", "uma"
-- Use contrações: "pra", "tô", "cê", "tá"
-- Simplifique frases: "que eu tenho" → "que tenho"
-
-MAS NUNCA remova acentos ou corte palavras!
-
-═══════════════════════════════════════════════════════════════
-🎯 HIERARQUIA DE PRIORIDADES (MEGA HITS BRASILEIROS)
-═══════════════════════════════════════════════════════════════
-
-**PRIORIDADE MÁXIMA (Não negociável):**
-1. Palavras COMPLETAS com acentuação CORRETA
-2. Emoção autêntica e história envolvente
-3. Chorus memorável que gruda na cabeça
-4. Linguagem coloquial brasileira (cê, tô, pra)
-5. Frases completas e coerentes
-
-**PRIORIDADE IMPORTANTE (Guia, não bloqueio):**
-6. Limite de 11 sílabas (flexível para emoção)
-7. Rimas ricas 50% (objetivo, não obrigatório)
-
-**REGRA DE OURO:**
-Técnica SERVE à emoção, não o contrário!
-
-═══════════════════════════════════════════════════════════════
-🎵 CARACTERÍSTICAS DOS MEGA HITS
-═══════════════════════════════════════════════════════════════
-
-**CHORUS MEMORÁVEL:**
-- Frases curtas (máximo 8-9 sílabas)
-- Extremamente repetitivo
-- Gruda na cabeça imediatamente
-- Fácil de cantar junto (karaoke-friendly)
-
-**LINGUAGEM COLOQUIAL:**
-- "cê" ao invés de "você"
-- "tô" ao invés de "estou"
-- "pra" ao invés de "para"
-- "tá" ao invés de "está"
-
-**NARRATIVA ENVOLVENTE:**
-- Começo-meio-fim claro
-- História que emociona
-- Autenticidade (não forçado)
-
-═══════════════════════════════════════════════════════════════
-✅ BANCO DE SUBSTITUIÇÕES TESTADAS E APROVADAS
-═══════════════════════════════════════════════════════════════
-
-**QUANDO FALTA 1 SÍLABA:**
-✅ "mas amava" → "mas eu amava"
-✅ "Comprei cavalo" → "Comprei um cavalo"
-✅ "Coração dispara" → "Meu coração dispara"
-✅ "nota falsa" → "notas falsas"
-✅ "a andar" → "na estrada"
-
-**QUANDO FALTA 2 SÍLABAS:**
-✅ "sou eu no cabresto" → "quem tá no cabresto sou eu"
-
-**QUANDO SOBRA 1 SÍLABA:**
-✅ "por entre os dedos" → "entre os dedos"
-✅ "Comprando remédio" → "Compro remédio"
-✅ "entre os dedos meus" → "entre meus dedos"
-✅ "o meu riacho" → "meu riacho"
-✅ "a minha paz" → "minha paz"
-
-═══════════════════════════════════════════════════════════════
-⚠️ IMPORTANTE
-═══════════════════════════════════════════════════════════════
-
-Se precisar escolher entre:
-- Verso com 10-12 sílabas MAS emocionalmente perfeito E com acentuação correta
-- Verso com 11 sílabas MAS sem emoção OU com palavras cortadas
-
-ESCOLHA O PRIMEIRO! A emoção e integridade das palavras são mais importantes.
-
-(Mas tente sempre atingir 11 sílabas usando as técnicas acima)
+**MELHORIAS OBRIGATÓRIAS:**
+✅ Palavras COMPLETAS com acentos CORRETOS
+✅ Frases coerentes e com sentido completo
+✅ Linguagem coloquial natural ("pra", "tá", "cê")
+✅ Emoção autêntica e história envolvente
 
 ═══════════════════════════════════════════════════════════════
 
@@ -537,11 +426,7 @@ Retorne APENAS a letra reescrita (sem explicações):`
   ): Promise<string> {
     console.log("[MetaComposer] Gerando letra com refrões preservados...")
 
-    const syllableTarget = request.syllableTarget || this.getGenreSyllableConfig(request.genre)
-    const genreConfig = getGenreConfig(request.genre)
-
-    try {
-      const chorusPrompt = `Você é um compositor profissional de ${request.genre}. Crie uma letra usando EXATAMENTE estes refrões:
+    const chorusPrompt = `Você é um compositor profissional de ${request.genre}. Crie uma letra usando EXATAMENTE estes refrões:
 
 ${preservedChoruses.join("\n\n")}
 
@@ -550,14 +435,20 @@ MOOD: ${request.mood}
 
 REGRAS ABSOLUTAS:
 
-1. SÍLABAS: Máximo 11 por verso (conte antes de finalizar)
-2. GRAMÁTICA: Frases completas em português correto
-3. VOCABULÁRIO: Use biquíni, PIX, story, boteco (evite clichês dramáticos)
-4. LINGUAGEM: Coloquial brasileira (tô, cê, pra)
-5. NARRATIVA: História fluída com começo-meio-fim
+1. ACENTUAÇÃO: Palavras COMPLETAS com acentos corretos
+2. SÍLABAS: Máximo 11 por verso  
+3. GRAMÁTICA: Frases completas em português correto
+4. INTEGRIDADE: NUNCA corte palavras ou remova acentos
+
+ERROS CRÍTICOS A EVITAR:
+- "nã", "nãoo", "seguranç", "heranç", "raç", "laç"
+- "cavalo raça" (use "cavalo de raça")
+- "perdi fé" (use "perdi a fé")
+- Palavras cortadas ou incompletas
 
 Retorne a letra completa com os refrões preservados:`
 
+    try {
       const response = await generateText({
         model: "openai/gpt-4o",
         prompt: chorusPrompt,
@@ -571,143 +462,42 @@ Retorne a letra completa com os refrões preservados:`
     }
   }
 
-  /**
-   * GERA LETRA DIRETAMENTE - CONSTRUINDO VERSOS CORRETOS DESDE O INÍCIO
-   */
-  private static async generateDirectLyrics(
-    request: CompositionRequest,
-    syllableEnforcement: { min: number; max: number; ideal: number },
-  ): Promise<string> {
-    console.log("[MetaComposer] Gerando letra construindo versos corretos desde o início...")
+  // ... (métodos auxiliares mantidos do código anterior)
 
-    const genreConfig = getGenreConfig(request.genre)
+  private static getGenreSyllableConfig(genre: string): { min: number; max: number; ideal: number } {
+    const genreConfig = getGenreConfig(genre)
+    const syllableRules = genreConfig.prosody_rules?.syllable_count
 
-    const directPrompt = `Você é um compositor profissional de ${request.genre} que cria MEGA HITS BRASILEIROS.
+    if (syllableRules && "absolute_max" in syllableRules) {
+      return {
+        min: 7,
+        max: syllableRules.absolute_max,
+        ideal: 10,
+      }
+    } else if (syllableRules && "without_comma" in syllableRules) {
+      return {
+        min: syllableRules.without_comma.min,
+        max: syllableRules.without_comma.acceptable_up_to,
+        ideal: Math.floor((syllableRules.without_comma.min + syllableRules.without_comma.max) / 2),
+      }
+    }
 
-TEMA: ${request.theme}
-MOOD: ${request.mood}
-${request.rhythm ? `RITMO: ${request.rhythm}` : ""}
-
-═══════════════════════════════════════════════════════════════
-⚠️ REGRA CRÍTICA DE ACENTUAÇÃO (NÃO NEGOCIÁVEL)
-═══════════════════════════════════════════════════════════════
-
-NUNCA escreva palavras sem acentos corretos!
-
-❌ ERRADO: "nã", "seguranç", "heranç", "raç", "laç", "esperanç"
-✅ CORRETO: "não", "segurança", "herança", "raça", "laço", "esperança"
-
-Se precisar reduzir sílabas, use OUTRAS técnicas:
-- Remova artigos: "o", "a", "um", "uma"
-- Use contrações: "pra", "tô", "cê", "tá"
-- Simplifique frases: "que eu tenho" → "que tenho"
-
-MAS NUNCA remova acentos ou corte palavras!
-
-═══════════════════════════════════════════════════════════════
-🎯 HIERARQUIA DE PRIORIDADES (MEGA HITS BRASILEIROS)
-═══════════════════════════════════════════════════════════════
-
-**PRIORIDADE MÁXIMA (Não negociável):**
-1. Palavras COMPLETAS com acentuação CORRETA
-2. Emoção autêntica e história envolvente
-3. Chorus memorável que gruda na cabeça
-4. Linguagem coloquial brasileira (cê, tô, pra)
-5. Frases completas e coerentes
-
-**PRIORIDADE IMPORTANTE (Guia, não bloqueio):**
-6. Limite de 11 sílabas (flexível para emoção)
-7. Rimas ricas 50% (objetivo, não obrigatório)
-
-**REGRA DE OURO:**
-Técnica SERVE à emoção, não o contrário!
-
-═══════════════════════════════════════════════════════════════
-🎵 CARACTERÍSTICAS DOS MEGA HITS
-═══════════════════════════════════════════════════════════════
-
-**CHORUS MEMORÁVEL:**
-- Frases curtas (máximo 8-9 sílabas)
-- Extremamente repetitivo
-- Gruda na cabeça imediatamente
-- Fácil de cantar junto (karaoke-friendly)
-
-**LINGUAGEM COLOQUIAL:**
-- "cê" ao invés de "você"
-- "tô" ao invés de "estou"
-- "pra" ao invés de "para"
-- "tá" ao invés de "está"
-
-**NARRATIVA ENVOLVENTE:**
-- Começo-meio-fim claro
-- História que emociona
-- Autenticidade (não forçado)
-
-═══════════════════════════════════════════════════════════════
-✅ BANCO DE SUBSTITUIÇÕES TESTADAS E APROVADAS
-═══════════════════════════════════════════════════════════════
-
-**QUANDO FALTA 1 SÍLABA:**
-✅ "mas amava" → "mas eu amava"
-✅ "Comprei cavalo" → "Comprei um cavalo"
-✅ "Coração dispara" → "Meu coração dispara"
-✅ "nota falsa" → "notas falsas"
-✅ "a andar" → "na estrada"
-
-**QUANDO FALTA 2 SÍLABAS:**
-✅ "sou eu no cabresto" → "quem tá no cabresto sou eu"
-
-**QUANDO SOBRA 1 SÍLABA:**
-✅ "por entre os dedos" → "entre os dedos"
-✅ "Comprando remédio" → "Compro remédio"
-✅ "entre os dedos meus" → "entre meus dedos"
-✅ "o meu riacho" → "meu riacho"
-✅ "a minha paz" → "minha paz"
-
-═══════════════════════════════════════════════════════════════
-⚠️ IMPORTANTE
-═══════════════════════════════════════════════════════════════
-
-Se precisar escolher entre:
-- Verso com 10-12 sílabas MAS emocionalmente perfeito E com acentuação correta
-- Verso com 11 sílabas MAS sem emoção OU com palavras cortadas
-
-ESCOLHA O PRIMEIRO! A emoção e integridade das palavras são mais importantes.
-
-(Mas tente sempre atingir 11 sílabas usando as técnicas acima)
-
-═══════════════════════════════════════════════════════════════
-
-Retorne APENAS a letra (sem explicações):`
-
-    try {
-      const response = await generateText({
-        model: "openai/gpt-4o",
-        prompt: directPrompt,
-        temperature: 0.5,
-      })
-
-      return response.text || ""
-    } catch (error) {
-      console.error("[MetaComposer] Erro ao gerar letra direta:", error)
-      throw error
+    return {
+      min: 7,
+      max: 11,
+      ideal: 10,
     }
   }
 
-  /**
-   * EXTRAI TÍTULO DA LETRA
-   */
   private static extractTitle(lyrics: string, request: CompositionRequest): string {
     const lines = lyrics.split("\n")
 
-    // Procura por linha de título explícita
     for (const line of lines) {
       if (line.toLowerCase().includes("título:") || line.toLowerCase().includes("title:")) {
         return line.split(":")[1]?.trim() || "Sem Título"
       }
     }
 
-    // Usa primeira linha significativa como título
     for (const line of lines) {
       const cleaned = line.trim()
       if (cleaned && !cleaned.startsWith("[") && !cleaned.startsWith("(") && cleaned.length > 3) {
@@ -718,201 +508,15 @@ Retorne APENAS a letra (sem explicações):`
     return `${request.theme} - ${request.genre}`
   }
 
-  /**
-   * ANALISA QUALIDADE DAS RIMAS
-   */
-  private static analyzeRhymes(
+  private static async applyTerceiraViaCorrections(
     lyrics: string,
-    genre: string,
-  ): { score: number; richRhymes: number; totalRhymes: number } {
-    const lines = lyrics.split("\n").filter((l) => l.trim() && !l.startsWith("[") && !l.startsWith("("))
-
-    let richRhymes = 0
-    let totalRhymes = 0
-
-    // Análise simplificada de rimas
-    for (let i = 0; i < lines.length - 1; i++) {
-      const line1 = lines[i].trim()
-      const line2 = lines[i + 1].trim()
-
-      if (line1 && line2) {
-        const lastWord1 = line1.split(" ").pop()?.toLowerCase() || ""
-        const lastWord2 = line2.split(" ").pop()?.toLowerCase() || ""
-
-        if (lastWord1.length > 2 && lastWord2.length > 2) {
-          const suffix1 = lastWord1.slice(-3)
-          const suffix2 = lastWord2.slice(-3)
-
-          if (suffix1 === suffix2) {
-            totalRhymes++
-            // Rima rica: mais de 3 caracteres iguais
-            if (lastWord1.slice(-4) === lastWord2.slice(-4)) {
-              richRhymes++
-            }
-          }
-        }
-      }
-    }
-
-    const score = totalRhymes > 0 ? (richRhymes / totalRhymes) * 100 : 0
-    return { score, richRhymes, totalRhymes }
-  }
-
-  /**
-   * OBTÉM TARGET DE RIMAS PARA O GÊNERO
-   */
-  private static getGenreRhymeTarget(genre: string): { minScore: number; richRhymePercentage: number } {
-    // Targets padrão baseados no gênero
-    const targets: Record<string, { minScore: number; richRhymePercentage: number }> = {
-      "sertanejo-moderno": { minScore: 70, richRhymePercentage: 60 },
-      "sertanejo-universitario": { minScore: 70, richRhymePercentage: 60 },
-      piseiro: { minScore: 65, richRhymePercentage: 55 },
-      forro: { minScore: 65, richRhymePercentage: 55 },
-      funk: { minScore: 60, richRhymePercentage: 50 },
-      trap: { minScore: 60, richRhymePercentage: 50 },
-      default: { minScore: 65, richRhymePercentage: 55 },
-    }
-
-    return targets[genre] || targets["default"]
-  }
-
-  /**
-   * VERIFICA SE LINHA PRECISA DE CORREÇÃO TERCEIRA VIA
-   */
-  private static needsTerceiraViaCorrection(line: string, analysis: TerceiraViaAnalysis): boolean {
-    // Não corrige tags, instruções ou linhas vazias
-    if (!line.trim() || line.startsWith("[") || line.startsWith("(") || line.includes("Instruments:")) {
-      return false
-    }
-
-    // Corrige se score geral está baixo
-    if (analysis.score_geral < 70) {
-      return true
-    }
-
-    // Corrige se há pontos fracos identificados
-    if (analysis.pontos_fracos && analysis.pontos_fracos.length > 0) {
-      return true
-    }
-
-    return false
-  }
-
-  /**
-   * CONSTRÓI CONTEXTO PARA CORREÇÃO DE LINHA
-   */
-  private static buildLineContext(lines: string[], lineIndex: number, theme: string): string {
-    const contextLines: string[] = []
-
-    // Adiciona linha anterior se existir
-    if (lineIndex > 0) {
-      contextLines.push(`Linha anterior: ${lines[lineIndex - 1]}`)
-    }
-
-    // Adiciona linha atual
-    contextLines.push(`Linha atual: ${lines[lineIndex]}`)
-
-    // Adiciona próxima linha se existir
-    if (lineIndex < lines.length - 1) {
-      contextLines.push(`Próxima linha: ${lines[lineIndex + 1]}`)
-    }
-
-    contextLines.push(`Tema: ${theme}`)
-
-    return contextLines.join("\n")
-  }
-
-  /**
-   * APLICA MELHORIAS DE RIMA
-   */
-  private static async applyRhymeEnhancement(lyrics: string, genre: string, theme: string): Promise<string> {
-    console.log("[MetaComposer] Aplicando melhorias de rima...")
-
-    // Implementação simplificada - retorna lyrics original
-    // Em produção, isso usaria o rhyme-enhancer
-    return lyrics
-  }
-
-  /**
-   * APLICA FORMATAÇÃO PERFORMÁTICA
-   */
-  private static applyPerformanceFormatting(lyrics: string, genre: string): string {
-    console.log("[MetaComposer] Aplicando formatação performática...")
-
-    // Garante que tags estão em inglês e versos em português
-    let formatted = lyrics
-
-    // Converte tags comuns para inglês
-    formatted = formatted.replace(/\[Intro\]/gi, "[Intro]")
-    formatted = formatted.replace(/\[Verso\s*(\d*)\]/gi, "[Verse$1]")
-    formatted = formatted.replace(/\[Refrão\]/gi, "[Chorus]")
-    formatted = formatted.replace(/\[Ponte\]/gi, "[Bridge]")
-    formatted = formatted.replace(/\[Final\]/gi, "[Outro]")
-
-    return formatted
-  }
-
-  private static detectCriticalViolations(
-    lyrics: string,
-  ): Array<{ line: string; syllables: number; lineNumber: number }> {
-    const lines = lyrics.split("\n")
-    const violations: Array<{ line: string; syllables: number; lineNumber: number }> = []
-
-    lines.forEach((line, index) => {
-      const trimmed = line.trim()
-
-      // Ignora tags, instruções e linhas vazias
-      if (!trimmed || trimmed.startsWith("[") || trimmed.startsWith("(") || trimmed.includes("Instruments:")) {
-        return
-      }
-
-      const syllables = countPoeticSyllables(trimmed)
-      if (syllables > this.ABSOLUTE_MAX_SYLLABLES) {
-        violations.push({
-          line: trimmed,
-          syllables,
-          lineNumber: index + 1,
-        })
-      }
-    })
-
-    return violations
-  }
-
-  private static applyEmergencyCorrection(lyrics: string, maxSyllables: number): string {
-    console.log(`[MetaComposer] ⚠️ Correção de emergência DESABILITADA`)
-    console.log(`[MetaComposer] ℹ️ Retornando lyrics original - IA deve regenerar`)
-
-    // NÃO remove palavras - isso quebra a gramática
-    // A IA deve regenerar a letra inteira se necessário
-    return lyrics
-  }
-
-  /**
-   * CORREÇÕES EMERGENCIAIS FINAIS
-   * Aplica correções drásticas se necessário para garantir que a letra seja válida
-   */
-  private static applyFinalEmergencyFixes(
-    lyrics: string,
-    syllableTarget: { min: number; max: number; ideal: number },
-    genre: string,
-  ): string {
-    console.log("[MetaComposer] ⚠️ Correções emergenciais finais DESABILITADAS")
-    console.log("[MetaComposer] ℹ️ Retornando lyrics original - sistema deve regenerar")
-
-    // NÃO aplica correções que quebram frases
-    // Se chegou aqui com erros, o sistema deve REGENERAR a letra inteira
-    return lyrics
-  }
-
-  private static async applyTerceiraVia(lyrics: string, analysis: TerceiraViaAnalysis, genre: string): Promise<string> {
-    console.log("[MetaComposer] Aplicando Terceira Via...")
-
-    const correctedLyrics = lyrics
-    let correctionsApplied = 0
-
+    request: CompositionRequest,
+    analysis: TerceiraViaAnalysis,
+    genreConfig: any,
+  ): Promise<string> {
     const lines = lyrics.split("\n")
     const correctedLines: string[] = []
+    let correctionsApplied = 0
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]
@@ -920,7 +524,7 @@ Retorne APENAS a letra (sem explicações):`
       if (this.needsTerceiraViaCorrection(line, analysis)) {
         try {
           const context = this.buildLineContext(lines, i, "")
-          const correctedLine = await applyTerceiraViaToLine(line, i, context, false, "", genre)
+          const correctedLine = await applyTerceiraViaToLine(line, i, context, false, "", request.genre)
 
           if (correctedLine !== line) {
             correctionsApplied++
@@ -939,5 +543,39 @@ Retorne APENAS a letra (sem explicações):`
 
     console.log(`[MetaComposer] ✅ ${correctionsApplied} correções Terceira Via aplicadas`)
     return correctedLines.join("\n")
+  }
+
+  private static needsTerceiraViaCorrection(line: string, analysis: TerceiraViaAnalysis): boolean {
+    if (!line.trim() || line.startsWith("[") || line.startsWith("(") || line.includes("Instruments:")) {
+      return false
+    }
+
+    if (analysis.score_geral < 70) {
+      return true
+    }
+
+    if (analysis.pontos_fracos && analysis.pontos_fracos.length > 0) {
+      return true
+    }
+
+    return false
+  }
+
+  private static buildLineContext(lines: string[], lineIndex: number, theme: string): string {
+    const contextLines: string[] = []
+
+    if (lineIndex > 0) {
+      contextLines.push(`Linha anterior: ${lines[lineIndex - 1]}`)
+    }
+
+    contextLines.push(`Linha atual: ${lines[lineIndex]}`)
+
+    if (lineIndex < lines.length - 1) {
+      contextLines.push(`Próxima linha: ${lines[lineIndex + 1]}`)
+    }
+
+    contextLines.push(`Tema: ${theme}`)
+
+    return contextLines.join("\n")
   }
 }
