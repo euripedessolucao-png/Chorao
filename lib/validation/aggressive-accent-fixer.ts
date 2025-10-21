@@ -1,5 +1,5 @@
 /**
- * CORRETOR AGRESSIVO DE ACENTUAÇÃO - VERSÃO FINAL CORRIGIDA
+ * CORRETOR AGRESSIVO DE ACENTUAÇÃO - VERSÃO FINAL SEM ERROS
  * 
  * Corrige TODOS os padrões problemáticos sem erros de sintaxe
  */
@@ -134,8 +134,6 @@ export class AggressiveAccentFixer {
     cacada: "caçada",
     laco: "laço",
     laç: "laço",
-    láço: "laço",
-    láco: "laço",
     braco: "braço",
     abraco: "abraço",
     pedaco: "pedaço",
@@ -236,15 +234,12 @@ export class AggressiveAccentFixer {
     aconteca: "aconteça",
     acontecera: "acontecerá",
 
-    // CORREÇÕES ESPECÍFICAS PARA OS ÚLTIMOS PADRÕES
+    // CORREÇÕES ESPECÍFICAS PARA OS ÚLTIMOS PADRÕES (SEM DUPLICAÇÕES)
     pra: "para",
     tá: "está",
-    láço: "laço",
     nãposso: "não posso",
     "n'abota": "na bota",
-    ess: "esse",
-    bom: "de raça",
-    perdi: "perdi a"
+    ess: "esse"
   }
 
   /**
@@ -259,7 +254,7 @@ export class AggressiveAccentFixer {
 
     console.log(`[AccentFixer] 🔧 Iniciando correção...`)
 
-    // FASE 1: Correções críticas específicas
+    // FASE 1: Correções críticas específicas (incluindo as que foram removidas do dicionário)
     const criticalFixes = [
       { regex: /\bpra\b/gi, correction: 'para' },
       { regex: /\btá\b/gi, correction: 'está' },
@@ -269,7 +264,9 @@ export class AggressiveAccentFixer {
       { regex: /\bum cavalo bom\b/gi, correction: 'cavalo de raça' },
       { regex: /\bperdi minha fé\b/gi, correction: 'perdi a minha fé' },
       { regex: /\bpé firme estrada\b/gi, correction: 'pé firme na estrada' },
-      { regex: /\bQuebro cabresto\b/gi, correction: 'Quebro o cabresto' }
+      { regex: /\bQuebro cabresto\b/gi, correction: 'Quebro o cabresto' },
+      { regex: /láco/gi, correction: 'laço' }, // Adicionado para cobrir variação
+      { regex: /láço/gi, correction: 'laço' }  // Adicionado para cobrir variação
     ]
 
     for (const { regex, correction } of criticalFixes) {
@@ -325,12 +322,14 @@ export class AggressiveAccentFixer {
       { problem: /Troquei minha paz por papel colorido/gi, fix: "Vendi minha paz por papel colorido" },
       { problem: /Vida simples, liberdade\.\.\. eu voava/gi, fix: "Amava vida, liberdade... voava" },
       { problem: /dessa forma perdi a fé/gi, fix: "dessa ilusão perdi a fé" },
-      { problem: /Tenho casa mais nobre/gi, fix: "Tenho casa nobre" }
+      { problem: /Tenho casa mais nobre/gi, fix: "Tenho casa nobre" },
+      { problem: /Escolhi dinheiro/gi, fix: "Escolhi o dinheiro" }
     ]
 
     structureFixes.forEach(({ problem, fix }) => {
       if (problem.test(corrected)) {
         corrected = corrected.replace(problem, fix)
+        console.log(`[AccentFixer] 🏗️  Estrutural: "${problem}" → "${fix}"`)
       }
     })
 
@@ -351,6 +350,24 @@ export class AggressiveAccentFixer {
         wordsWithoutAccents.push(...matches)
       }
     }
+
+    // Também verifica os padrões críticos
+    const criticalPatterns = [
+      /\bpra\b/gi,
+      /\btá\b/gi,
+      /láço/gi,
+      /nãposso/gi,
+      /n'abota/gi,
+      /\bum cavalo bom\b/gi,
+      /\bperdi minha fé\b/gi
+    ]
+
+    criticalPatterns.forEach(pattern => {
+      const matches = text.match(pattern)
+      if (matches) {
+        wordsWithoutAccents.push(...matches)
+      }
+    })
 
     return {
       isValid: wordsWithoutAccents.length === 0,
