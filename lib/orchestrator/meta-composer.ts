@@ -605,133 +605,85 @@ PROCESSO PARA CADA VERSO:
 1️⃣ PENSE na ideia do verso
 2️⃣ ESCREVA uma primeira versão MENTALMENTE
 3️⃣ CONTE as sílabas MENTALMENTE
-4️⃣ Se > 11, SIMPLIFIQUE antes de escrever
+4️⃣ Se ≠ 11, AJUSTE antes de escrever
 5️⃣ SÓ ENTÃO escreva o verso final
 
 ═══════════════════════════════════════════════════════════════
-📝 EXEMPLO DO PROCESSO CORRETO
+✅ EXEMPLOS REAIS DE CORREÇÕES TESTADAS
 ═══════════════════════════════════════════════════════════════
 
-**IDEIA:** Quero falar sobre ter a chave do carro mas não saber para onde ir
+**EXEMPLO 1: Falta 1 sílaba - Adicionar pronome**
+❌ "Não tinha dinheiro, mas amava" (10 sílabas)
+✅ "Não tinha dinheiro, mas eu amava" (11 sílabas)
+TÉCNICA: Adicionar "eu"
 
-**PRIMEIRA VERSÃO (mental):**
-"Tenho a chave do carro, mas sem rumo"
+**EXEMPLO 2: Falta 1 sílaba - Adicionar artigo**
+❌ "Comprei cavalo, mas fiquei preso" (10 sílabas)
+✅ "Comprei um cavalo, mas fiquei preso" (11 sílabas)
+TÉCNICA: Adicionar "um"
 
-**CONTAGEM (mental):**
-Te-nho-a-cha-ve-do-car-ro-mas-sem-ru-mo = 12 sílabas ❌
+**EXEMPLO 3: Falta 1 sílaba - Adicionar possessivo**
+❌ "Coração dispara, quer escapar" (10 sílabas)
+✅ "Meu coração dispara, quer escapar" (11 sílabas)
+TÉCNICA: Adicionar "Meu"
 
-**SIMPLIFICAÇÃO (mental):**
-Remover "a" antes de "chave"
-"Tenho chave do carro mas sem rumo"
-Te-nho-cha-ve-do-car-ro-mas-sem-ru-mo = 11 sílabas ✅
+**EXEMPLO 4: Falta 1 sílaba - Mudar singular para plural**
+❌ "Troquei minha paz por nota falsa" (10 sílabas)
+✅ "Troquei minha paz por notas falsas" (11 sílabas)
+TÉCNICA: "nota" → "notas"
 
-**VERSO FINAL (escrito):**
-Tenho chave do carro mas sem rumo
+**EXEMPLO 5: Falta 1 sílaba - Substituir expressão**
+❌ "Bota de pó, pé firme a andar" (10 sílabas)
+✅ "Bota de pó, pé firme na estrada" (11 sílabas)
+TÉCNICA: "a andar" → "na estrada"
+
+**EXEMPLO 6: Falta 1 sílaba - Adicionar possessivo no meio**
+❌ "Hoje na alma não mora mais fé" (10 sílabas)
+✅ "Hoje na minha alma não mora fé" (11 sílabas)
+TÉCNICA: Adicionar "minha" e remover "mais"
+
+**EXEMPLO 7: Falta 2 sílabas - Reformular completamente**
+❌ "Ai-ai-ai, sou eu no cabresto" (9 sílabas)
+✅ "Ai-ai-ai, quem tá no cabresto sou eu" (11 sílabas)
+TÉCNICA: Inverter ordem e adicionar "quem tá"
+
+**EXEMPLO 8: Sobra 1 sílaba - Remover preposição**
+❌ "Dinheiro escorre por entre os dedos" (12 sílabas)
+✅ "Dinheiro escorre entre os dedos" (11 sílabas)
+TÉCNICA: Remover "por"
+
+**EXEMPLO 9: Sobra 1 sílaba - Mudar gerúndio para presente**
+❌ "Comprando remédio, pagando medo" (12 sílabas)
+✅ "Compro remédio, pagando o medo" (11 sílabas)
+TÉCNICA: "Comprando" → "Compro"
 
 ═══════════════════════════════════════════════════════════════
-🔧 TÉCNICAS DE SIMPLIFICAÇÃO (USE ANTES DE ESCREVER)
+🔧 BANCO DE TÉCNICAS TESTADAS
 ═══════════════════════════════════════════════════════════════
 
-**1. Remova artigos:**
-"a chave" → "chave"
-"o carro" → "carro"
-"a casa" → "casa"
+**QUANDO FALTA 1 SÍLABA:**
+1. Adicionar pronome: "mas amava" → "mas eu amava"
+2. Adicionar artigo: "Comprei cavalo" → "Comprei um cavalo"
+3. Adicionar possessivo: "Coração" → "Meu coração"
+4. Mudar singular → plural: "nota" → "notas"
+5. Substituir expressão: "a andar" → "na estrada"
 
-**2. Simplifique expressões:**
-"papel colorido" → "nota falsa"
-"rio de ruído" → "barulho"
-"falsa segurança" → "falsa ilusão"
+**QUANDO FALTA 2 SÍLABAS:**
+1. Reformular completamente invertendo ordem
+2. Adicionar "quem tá" ou "que é"
 
-**3. Use sinônimos curtos:**
-"segurança" → "ilusão"
-"esperança" → "fé"
-"herança" → "chão"
-
-**4. Contrações naturais:**
-"você estava" → "cê tava"
-"para o" → "pro"
-"está" → "tá"
-
-**5. Plural → Singular:**
-"remédios" → "remédio"
-"medos" → "medo"
-
-═══════════════════════════════════════════════════════════════
-✅ EXEMPLOS DE VERSOS CONSTRUÍDOS CORRETAMENTE
-═══════════════════════════════════════════════════════════════
-
-**VERSO 1:** (11 sílabas)
-Lembrança da terra, o cheiro no ar
-Lem-bran-ça-da-ter-ra-o-chei-ro-no-ar = 11 ✅
-
-**VERSO 2:** (11 sílabas)
-Bota de pó, pé firme a andar
-Bo-ta-de-pó-pé-fir-me-a-an-dar = 11 ✅
-
-**VERSO 3:** (11 sílabas)
-Vendi minha paz por nota falsa
-Ven-di-mi-nha-paz-por-no-ta-fal-sa = 11 ✅
-
-**VERSO 4:** (11 sílabas)
-Deixei meu riacho pelo barulho
-Dei-xei-meu-ri-a-cho-pe-lo-ba-ru-lho = 11 ✅
-
-**VERSO 5:** (11 sílabas)
-Escolhi dinheiro, falsa ilusão
-Es-co-lhi-di-nhei-ro-fal-sa-i-lu-são = 11 ✅
-
-**VERSO 6:** (11 sílabas)
-Hoje na alma não mora a fé
-Ho-je-na-al-ma-não-mo-ra-a-fé = 11 ✅
-
-**VERSO 7:** (11 sílabas)
-Tenho chave do carro mas sem rumo
-Te-nho-cha-ve-do-car-ro-mas-sem-ru-mo = 11 ✅
-
-**VERSO 8:** (11 sílabas)
-Tenho casa nobre, preso no mundo
-Te-nho-ca-sa-no-bre-pre-so-no-mun-do = 11 ✅
-
-**VERSO 9:** (11 sílabas)
-Comprei cavalo bom, mas sou preso
-Com-prei-ca-va-lo-bom-mas-sou-pre-so = 11 ✅
-
-**VERSO 10:** (11 sílabas)
-Ai-ai-ai, quem tá no cabresto sou eu
-Ai-ai-ai-quem-tá-no-ca-bres-to-sou-eu = 11 ✅
-
-**VERSO 11:** (11 sílabas)
-Dinheiro escorre entre os dedos
-Di-nhei-ro-es-cor-re-en-tre-os-de-dos = 11 ✅
-
-**VERSO 12:** (11 sílabas)
-Comprando remédio, pagando medo
-Com-pran-do-re-mé-di-o-pa-gan-do-me-do = 11 ✅
-
-**VERSO 13:** (11 sílabas)
-Meu peito dispara, quer escapar
-Meu-pei-to-dis-pa-ra-quer-es-ca-par = 11 ✅
-
-**VERSO 14:** (11 sílabas)
-Da cela de ouro que é meu lar
-Da-ce-la-de-ou-ro-que-é-meu-lar = 11 ✅
-
-**VERSO 15:** (11 sílabas)
-Cansei dessa cela, falsa ilusão
-Can-sei-des-sa-ce-la-fal-sa-i-lu-são = 11 ✅
-
-**VERSO 16:** (11 sílabas)
-Quebro cabresto, volto ao meu chão
-Que-bro-ca-bres-to-vol-to-ao-meu-chão = 11 ✅
+**QUANDO SOBRA 1 SÍLABA:**
+1. Remover preposição: "por entre" → "entre"
+2. Gerúndio → Presente: "Comprando" → "Compro"
+3. Remover advérbio: "não mora mais" → "não mora"
 
 ═══════════════════════════════════════════════════════════════
 ⚠️ REGRA ABSOLUTA
 ═══════════════════════════════════════════════════════════════
 
-CADA VERSO DEVE TER EXATAMENTE 11 SÍLABAS OU MENOS.
+CADA VERSO DEVE TER EXATAMENTE 11 SÍLABAS.
 
-Você DEVE construir cada verso JÁ CORRETO.
-NÃO escreva versos longos para corrigir depois.
+Use as técnicas testadas acima para ajustar ANTES de escrever.
 
 ═══════════════════════════════════════════════════════════════
 
