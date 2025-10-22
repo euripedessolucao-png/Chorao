@@ -1,99 +1,37 @@
-// app/api/validation/syllable-counter.ts - VERSÃO API PURA CORRIGIDA
+// Adicione esta função ao lib/validation/syllable-counter.ts se não existir
 
-import { NextResponse } from "next/server"
-import { countPoeticSyllables } from "@/lib/validation/syllable-counter"
+export function validateLyricsSyllables(
+  lyrics: string,
+  maxSyllables: number = 11,
+): {
+  valid: boolean
+  violations: Array<{ line: string; syllables: number; lineNumber: number; suggestions: string[] }>
+} {
+  const lines = lyrics.split("\n")
+  const violations: Array<{ line: string; syllables: number; lineNumber: number; suggestions: string[] }> = []
 
-export async function POST(request: Request) {
-  try {
-    const { lyrics, maxSyllables = 11 } = await request.json()
-
-    if (!lyrics) {
-      return NextResponse.json({ error: "Lyrics are required" }, { status: 400 })
-    }
-
-    const lines = lyrics.split('\n')
-    const validations = []
-
-    for (const [index, line] of lines.entries()) {
-      if (line.trim() && !line.startsWith('[') && !line.startsWith('(') && !line.includes('Instruments:')) {
-        // Contagem direta de sílabas
-        const syllables = countPoeticSyllables(line)
-        
-        if (syllables > maxSyllables) {
-          // Gerar sugestões básicas
-          const suggestions = generateBasicSuggestions(line, maxSyllables)
-          
-          validations.push({
-            line: line.trim(),
-            syllables: syllables,
-            lineNumber: index + 1,
-            suggestions: suggestions
-          })
-        }
+  lines.forEach((line, index) => {
+    if (
+      line.trim() &&
+      !line.startsWith("[") &&
+      !line.startsWith("(") &&
+      !line.startsWith("Title:") &&
+      !line.startsWith("Instrumentos:")
+    ) {
+      const validation = validateSyllableLimit(line, maxSyllables)
+      if (!validation.isValid) {
+        violations.push({
+          line: line.trim(),
+          syllables: validation.currentSyllables,
+          lineNumber: index + 1,
+          suggestions: validation.suggestions
+        })
       }
-    }
-
-    return NextResponse.json({
-      valid: validations.length === 0,
-      violations: validations,
-      summary: {
-        totalLines: lines.length,
-        problematicLines: validations.length,
-        maxSyllables
-      }
-    })
-
-  } catch (error) {
-    console.error("Syllable validation error:", error)
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    )
-  }
-}
-
-// Função local para gerar sugestões básicas
-function generateBasicSuggestions(line: string, maxSyllables: number): string[] {
-  const suggestions: string[] = []
-  const words = line.split(/\s+/)
-  
-  // Sugestão 1: Contrações comuns
-  const contractions: [string, string][] = [
-    [' para ', ' pra '],
-    [' você ', ' cê '],
-    [' está ', ' tá '],
-    [' estou ', ' tô '],
-    [' de ', ' d' ],
-    [' que ', ' q' ],
-  ]
-  
-  for (const [from, to] of contractions) {
-    if (line.includes(from)) {
-      const suggestion = line.replace(new RegExp(from, 'g'), to)
-      const syllables = countPoeticSyllables(suggestion)
-      if (syllables <= maxSyllables) {
-        suggestions.push(suggestion)
-      }
-    }
-  }
-  
-  // Sugestão 2: Remover última palavra se possível
-  if (words.length > 2) {
-    const withoutLast = words.slice(0, -1).join(' ')
-    const syllables = countPoeticSyllables(withoutLast)
-    if (syllables <= maxSyllables && syllables > 0) {
-      suggestions.push(withoutLast)
-    }
-  }
-  
-  return suggestions.slice(0, 3)
-}
-
-export async function GET(request: Request) {
-  return NextResponse.json({ 
-    message: "Syllable validation API is running",
-    endpoints: {
-      POST: "/api/validation/syllable-counter - Validate lyrics syllables"
     }
   })
+
+  return {
+    valid: violations.length === 0,
+    violations,
+  }
 }
