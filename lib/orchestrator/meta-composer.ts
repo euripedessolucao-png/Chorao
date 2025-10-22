@@ -217,6 +217,9 @@ Acredite nisso`
    * Método auxiliar usado pelo sistema de múltiplas gerações
    */
   private static async generateSingleVersion(request: CompositionRequest): Promise<string> {
+    console.log("[v0] ═══════════════════════════════════════════════════════")
+    console.log("[v0] 📝 generateSingleVersion - INÍCIO")
+    console.log("[v0] ═══════════════════════════════════════════════════════")
     console.log("[MetaComposer] 📝 Gerando versão única...")
 
     const applyFinalPolish = request.applyFinalPolish ?? true
@@ -224,7 +227,7 @@ Acredite nisso`
     const hasPreservedChoruses = preservedChoruses.length > 0
     const isRewrite = !!request.originalLyrics
     const performanceMode = request.performanceMode || "standard"
-    const useTerceiraVia = request.useTerceiraVia ?? true // ✅ AGORA É AUTOMÁTICA
+    const useTerceiraVia = request.useTerceiraVia ?? true
 
     const syllableEnforcement = request.syllableTarget || this.getGenreSyllableConfig(request.genre)
     syllableEnforcement.max = Math.min(syllableEnforcement.max, this.ABSOLUTE_MAX_SYLLABLES)
@@ -243,32 +246,34 @@ Acredite nisso`
     // Gera letra base
     let rawLyrics: string
 
-    console.log("[MetaComposer] 🔧 PRÉ-GERAÇÃO: Aplicando UltimateFixer preventivo...")
-    if (isRewrite && request.originalLyrics) {
-      try {
-        request.originalLyrics = UltimateFixer.fixFullLyrics(request.originalLyrics)
-        console.log("[MetaComposer] ✅ Letra original corrigida antes da reescrita")
-      } catch (error) {
-        console.error("[MetaComposer] ❌ Erro ao corrigir letra original:", error)
-        console.log("[MetaComposer] ⚠️ Usando letra original sem correção")
-      }
-    }
+    console.log("[v0] 📝 Gerando letra base...")
 
-    if (isRewrite) {
-      rawLyrics = await this.generateRewrite(request)
-    } else if (hasPreservedChoruses) {
-      rawLyrics = await this.generateWithPreservedChoruses(preservedChoruses, request, syllableEnforcement)
-    } else {
-      rawLyrics = await this.generateDirectLyrics(request, syllableEnforcement)
-    }
-
-    console.log("[MetaComposer] 🔧 PÓS-GERAÇÃO: Aplicando UltimateFixer...")
     try {
-      rawLyrics = UltimateFixer.fixFullLyrics(rawLyrics)
-      console.log("[MetaComposer] ✅ Letra corrigida após geração")
+      if (isRewrite) {
+        console.log("[v0] 🔄 Modo: REESCRITA")
+        rawLyrics = await this.generateRewrite(request)
+      } else if (hasPreservedChoruses) {
+        console.log("[v0] 🎵 Modo: COM REFRÕES PRESERVADOS")
+        rawLyrics = await this.generateWithPreservedChoruses(preservedChoruses, request, syllableEnforcement)
+      } else {
+        console.log("[v0] ✨ Modo: GERAÇÃO DIRETA")
+        rawLyrics = await this.generateDirectLyrics(request, syllableEnforcement)
+      }
+      console.log("[v0] ✅ Letra base gerada - Length:", rawLyrics.length)
     } catch (error) {
-      console.error("[MetaComposer] ❌ Erro ao corrigir letra após geração:", error)
-      console.log("[MetaComposer] ⚠️ Usando letra sem correção pós-geração")
+      console.error("[v0] ❌ Erro ao gerar letra base:", error)
+      throw error
+    }
+
+    console.log("[v0] 🔧 Aplicando UltimateFixer...")
+    try {
+      const fixedLyrics = UltimateFixer.fixFullLyrics(rawLyrics)
+      rawLyrics = fixedLyrics
+      console.log("[v0] ✅ UltimateFixer aplicado com sucesso")
+    } catch (error) {
+      console.error("[v0] ❌ UltimateFixer falhou:", error)
+      console.log("[v0] ⚠️ Continuando com letra sem correção do UltimateFixer")
+      // Continua com rawLyrics sem correção
     }
 
     console.log("[MetaComposer] 🔍 VALIDAÇÃO IMEDIATA: Verificando regra universal de 11 sílabas...")
@@ -295,28 +300,34 @@ Acredite nisso`
     const terceiraViaAnalysis = analisarTerceiraVia(rawLyrics, request.genre, request.theme)
 
     if (terceiraViaAnalysis && terceiraViaAnalysis.score_geral < 75) {
-      rawLyrics = await this.applyTerceiraViaCorrections(rawLyrics, request, terceiraViaAnalysis, genreConfig)
-
-      console.log("[MetaComposer] 🔧 Aplicando UltimateFixer após Terceira Via...")
       try {
-        rawLyrics = UltimateFixer.fixFullLyrics(rawLyrics)
-        console.log("[MetaComposer] ✅ UltimateFixer pós-Terceira Via aplicado")
-      } catch (error) {
-        console.error("[MetaComposer] ❌ Erro ao aplicar UltimateFixer pós-Terceira Via:", error)
-      }
+        rawLyrics = await this.applyTerceiraViaCorrections(rawLyrics, request, terceiraViaAnalysis, genreConfig)
 
-      const absoluteValidationAfterTerceiraVia = AbsoluteSyllableEnforcer.validate(rawLyrics)
-      if (!absoluteValidationAfterTerceiraVia.isValid) {
-        console.warn("[MetaComposer] ⚠️ TERCEIRA VIA GEROU VERSOS COM MAIS DE 11 SÍLABAS!")
-        console.warn(absoluteValidationAfterTerceiraVia.message)
-
-        const fixResult = AbsoluteSyllableEnforcer.validateAndFix(rawLyrics)
-        if (fixResult.isValid) {
-          rawLyrics = fixResult.correctedLyrics
-        } else {
-          console.warn("[MetaComposer] ⚠️ Usando letra da Terceira Via com correções parciais")
-          rawLyrics = fixResult.correctedLyrics
+        console.log("[v0] 🔧 Aplicando UltimateFixer após Terceira Via...")
+        try {
+          rawLyrics = UltimateFixer.fixFullLyrics(rawLyrics)
+          console.log("[v0] ✅ UltimateFixer pós-Terceira Via aplicado")
+        } catch (error) {
+          console.error("[v0] ❌ UltimateFixer pós-Terceira Via falhou:", error)
+          console.log("[v0] ⚠️ Continuando sem correção pós-Terceira Via")
         }
+
+        const absoluteValidationAfterTerceiraVia = AbsoluteSyllableEnforcer.validate(rawLyrics)
+        if (!absoluteValidationAfterTerceiraVia.isValid) {
+          console.warn("[MetaComposer] ⚠️ TERCEIRA VIA GEROU VERSOS COM MAIS DE 11 SÍLABAS!")
+          console.warn(absoluteValidationAfterTerceiraVia.message)
+
+          const fixResult = AbsoluteSyllableEnforcer.validateAndFix(rawLyrics)
+          if (fixResult.isValid) {
+            rawLyrics = fixResult.correctedLyrics
+          } else {
+            console.warn("[MetaComposer] ⚠️ Usando letra da Terceira Via com correções parciais")
+            rawLyrics = fixResult.correctedLyrics
+          }
+        }
+      } catch (error) {
+        console.error("[v0] ❌ Erro ao aplicar Terceira Via:", error)
+        console.log("[v0] ⚠️ Continuando sem Terceira Via")
       }
     }
 
@@ -324,71 +335,62 @@ Acredite nisso`
     let finalLyrics = rawLyrics
 
     if (applyFinalPolish) {
-      finalLyrics = await this.applyUniversalPolish(
-        finalLyrics,
-        request.genre,
-        request.theme,
-        syllableEnforcement,
-        performanceMode,
-        genreConfig,
-      )
-
-      console.log("[MetaComposer] 🔧 Aplicando UltimateFixer após polimento...")
       try {
-        finalLyrics = UltimateFixer.fixFullLyrics(finalLyrics)
-        console.log("[MetaComposer] ✅ UltimateFixer pós-polimento aplicado")
-      } catch (error) {
-        console.error("[MetaComposer] ❌ Erro ao aplicar UltimateFixer pós-polimento:", error)
-      }
+        finalLyrics = await this.applyUniversalPolish(
+          finalLyrics,
+          request.genre,
+          request.theme,
+          syllableEnforcement,
+          performanceMode,
+          genreConfig,
+        )
 
-      const absoluteValidationAfterPolish = AbsoluteSyllableEnforcer.validate(finalLyrics)
-      if (!absoluteValidationAfterPolish.isValid) {
-        console.warn("[MetaComposer] ⚠️ POLIMENTO GEROU VERSOS COM MAIS DE 11 SÍLABAS!")
-        console.warn(absoluteValidationAfterPolish.message)
-
-        const fixResult = AbsoluteSyllableEnforcer.validateAndFix(finalLyrics)
-        if (fixResult.isValid) {
-          finalLyrics = fixResult.correctedLyrics
-        } else {
-          console.warn("[MetaComposer] ⚠️ Usando letra polida com correções parciais")
-          finalLyrics = fixResult.correctedLyrics
+        console.log("[v0] 🔧 Aplicando UltimateFixer após polimento...")
+        try {
+          finalLyrics = UltimateFixer.fixFullLyrics(finalLyrics)
+          console.log("[v0] ✅ UltimateFixer pós-polimento aplicado")
+        } catch (error) {
+          console.error("[v0] ❌ UltimateFixer pós-polimento falhou:", error)
+          console.log("[v0] ⚠️ Continuando sem correção pós-polimento")
         }
+
+        const absoluteValidationAfterPolish = AbsoluteSyllableEnforcer.validate(finalLyrics)
+        if (!absoluteValidationAfterPolish.isValid) {
+          console.warn("[MetaComposer] ⚠️ POLIMENTO GEROU VERSOS COM MAIS DE 11 SÍLABAS!")
+          console.warn(absoluteValidationAfterPolish.message)
+
+          const fixResult = AbsoluteSyllableEnforcer.validateAndFix(finalLyrics)
+          if (fixResult.isValid) {
+            finalLyrics = fixResult.correctedLyrics
+          } else {
+            console.warn("[MetaComposer] ⚠️ Usando letra polida com correções parciais")
+            finalLyrics = fixResult.correctedLyrics
+          }
+        }
+      } catch (error) {
+        console.error("[v0] ❌ Erro ao aplicar polimento:", error)
+        console.log("[v0] ⚠️ Continuando sem polimento")
+        finalLyrics = rawLyrics
       }
     }
 
     // Validação de pontuação
-    const punctuationResult = PunctuationValidator.validate(finalLyrics)
-    if (!punctuationResult.isValid) {
-      finalLyrics = punctuationResult.correctedLyrics
+    try {
+      const punctuationResult = PunctuationValidator.validate(finalLyrics)
+      if (!punctuationResult.isValid) {
+        finalLyrics = punctuationResult.correctedLyrics
+      }
+    } catch (error) {
+      console.error("[v0] ❌ Erro na validação de pontuação:", error)
     }
 
-    console.log("[MetaComposer] 🔧 CORREÇÃO FINAL: Aplicando UltimateFixer final...")
+    console.log("[v0] 🔧 Aplicando UltimateFixer final...")
     try {
       finalLyrics = UltimateFixer.fixFullLyrics(finalLyrics)
-      console.log("[MetaComposer] ✅ Correção final aplicada")
+      console.log("[v0] ✅ UltimateFixer final aplicado")
     } catch (error) {
-      console.error("[MetaComposer] ❌ Erro na correção final:", error)
-      console.log("[MetaComposer] ⚠️ Usando letra sem correção final")
-    }
-
-    console.log("[MetaComposer] 🔍 VALIDAÇÃO FINAL ABSOLUTA: Verificando regra universal de 11 sílabas...")
-    const finalAbsoluteValidation = AbsoluteSyllableEnforcer.validate(finalLyrics)
-    if (!finalAbsoluteValidation.isValid) {
-      console.error("[MetaComposer] ❌ VALIDAÇÃO FINAL FALHOU - LETRA VIOLA REGRA UNIVERSAL!")
-      console.error(finalAbsoluteValidation.message)
-
-      console.log("[MetaComposer] 🚨 APLICANDO CORREÇÃO DE EMERGÊNCIA...")
-      const emergencyFix = AbsoluteSyllableEnforcer.validateAndFix(finalLyrics)
-      finalLyrics = emergencyFix.correctedLyrics
-
-      if (!emergencyFix.isValid) {
-        console.error("[MetaComposer] ❌ CORREÇÃO DE EMERGÊNCIA FALHOU!")
-        console.error("[MetaComposer] ⚠️ RETORNANDO LETRA COM AVISOS CRÍTICOS")
-      } else {
-        console.log("[MetaComposer] ✅ CORREÇÃO DE EMERGÊNCIA BEM-SUCEDIDA!")
-      }
-    } else {
-      console.log("[MetaComposer] ✅ LETRA APROVADA - TODOS OS VERSOS TÊM NO MÁXIMO 11 SÍLABAS!")
+      console.error("[v0] ❌ UltimateFixer final falhou:", error)
+      console.log("[v0] ⚠️ Continuando sem correção final")
     }
 
     // Validação de integridade de palavras
