@@ -18,20 +18,7 @@ export const ADVANCED_BRAZILIAN_METRICS = {
 
 export type GenreName = keyof typeof ADVANCED_BRAZILIAN_METRICS
 
-/**
- * ============================================================================
- * TERCEIRA VIA ATUALIZADA - SISTEMA DE COMPOSIÇÃO POR RESTRIÇÕES
- * ============================================================================
- *
- * ATUALIZAÇÃO: Agora usa SÍLABAS POÉTICAS (com elisão/sinalefa)
- * ============================================================================
- */
 export class ThirdWayEngine {
-  /**
-   * ----------------------------------------------------------------------------
-   * FUNÇÃO PRINCIPAL: Gera uma linha usando o sistema de Terceira Via
-   * ----------------------------------------------------------------------------
-   */
   static async generateThirdWayLine(
     originalLine: string,
     genre: string,
@@ -44,7 +31,6 @@ export class ThirdWayEngine {
     const metrics = ADVANCED_BRAZILIAN_METRICS[normalizedGenre as GenreName] || ADVANCED_BRAZILIAN_METRICS.default
 
     try {
-      // VARIAÇÃO A: Métrica perfeita (restrição rígida de sílabas POÉTICAS)
       const variationA = await this.forceMetricVariation(
         originalLine,
         genre,
@@ -54,7 +40,6 @@ export class ThirdWayEngine {
         additionalRequirements,
       )
 
-      // VARIAÇÃO B: Criatividade (restrição rígida de linguagem)
       const variationB = await this.forceCreativeVariation(
         originalLine,
         genre,
@@ -64,7 +49,6 @@ export class ThirdWayEngine {
         additionalRequirements,
       )
 
-      // SÍNTESE: Combinar sob todas as restrições
       const finalLine = await this.forceFinalSynthesis(
         originalLine,
         variationA,
@@ -204,7 +188,6 @@ RETORNE APENAS A LINHA REESCRITA (sem explicações, sem aspas, sem comentários
     context: string,
     additionalRequirements?: string,
   ): Promise<string> {
-    // ✅ AGORA USA countPoeticSyllables (sistema novo)
     const syllablesA = countPoeticSyllables(variationA)
     const syllablesB = countPoeticSyllables(variationB)
 
@@ -254,9 +237,8 @@ RETORNE APENAS A LINHA FINAL (sem explicações, sem aspas, sem comentários).`
     })
 
     const finalLine = text.trim().replace(/^["']|["']$/g, "")
-
-    // ✅ AGORA USA countPoeticSyllables (sistema novo)
     const finalSyllables = countPoeticSyllables(finalLine)
+
     if (finalSyllables > metrics.maxSyllables) {
       return this.safeCompress(finalLine, metrics.maxSyllables)
     }
@@ -280,7 +262,6 @@ RETORNE APENAS A LINHA FINAL (sem explicações, sem aspas, sem comentários).`
       { from: /\bem a\b/gi, to: "na" },
       { from: /\bque está\b/gi, to: "que tá" },
       { from: /\bque estão\b/gi, to: "que tão" },
-      // ✅ ADICIONADAS ELISÕES POÉTICAS
       { from: /\bde amor\b/gi, to: "d'amor" },
       { from: /\bque eu\b/gi, to: "qu'eu" },
       { from: /\bse eu\b/gi, to: "s'eu" },
@@ -289,7 +270,6 @@ RETORNE APENAS A LINHA FINAL (sem explicações, sem aspas, sem comentários).`
 
     for (const { from, to } of contractions) {
       const test = compressed.replace(from, to)
-      // ✅ AGORA USA countPoeticSyllables (sistema novo)
       if (countPoeticSyllables(test) <= maxSyllables) {
         compressed = test
         return compressed
@@ -300,58 +280,6 @@ RETORNE APENAS A LINHA FINAL (sem explicações, sem aspas, sem comentários).`
   }
 }
 
-// ✅ Função atualizada para usar o novo sistema
 export function countPortugueseSyllables(text: string): number {
   return countPoeticSyllables(text)
-}
-Terceira via: // ✅ APLICAÇÃO DA TERCEIRA VIA COM THIRD WAY ENGINE (ATUALIZADA)
-import { ThirdWayEngine } from "./third-way-converter"
-
-export async function applyTerceiraViaToLine(
-  line: string,
-  index: number,
-  context: string,
-  isPerformanceMode: boolean,
-  additionalRequirements?: string,
-  genre?: string,
-  genreConfig?: any, // ✅ NOVO PARÂMETRO OPCIONAL
-): Promise<string> {
-  if (!line.trim() || line.startsWith("[") || line.startsWith("(") || line.includes("Instruments:")) {
-    return line
-  }
-
-  try {
-    console.log(`[TerceiraVia] 🔧 Processando linha ${index}: "${line.substring(0, 40)}..."`)
-
-    // ✅ USA THIRD WAY ENGINE PARA CORREÇÕES AVANÇADAS
-    if (genre && genreConfig) {
-      const improvedLine = await ThirdWayEngine.generateThirdWayLine(
-        line,
-        genre,
-        genreConfig, // ✅ USA A CONFIGURAÇÃO PASSADA
-        context,
-        isPerformanceMode,
-        additionalRequirements,
-      )
-
-      console.log(`[TerceiraVia] ✅ Linha ${index} melhorada com Third Way: "${improvedLine}"`)
-      return improvedLine
-    }
-
-    // ✅ FALLBACK PARA SISTEMA ORIGINAL (se não tiver genreConfig)
-    return await applyLegacyTerceiraVia(line, index, context, additionalRequirements)
-  } catch (error) {
-    console.error(`[TerceiraVia] ❌ Erro na linha ${index}:`, error)
-    return line
-  }
-}
-
-async function applyLegacyTerceiraVia(
-  line: string,
-  index: number,
-  context: string,
-  additionalRequirements?: string,
-): Promise<string> {
-  // Placeholder for legacy implementation
-  return line
 }
