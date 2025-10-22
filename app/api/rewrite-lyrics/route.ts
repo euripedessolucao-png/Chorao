@@ -20,38 +20,30 @@ export async function POST(request: Request) {
 
     const { text } = await generateText({
       model: "openai/gpt-4o-mini",
-      prompt: `Reescreva esta letra de ${genre} mantendo a mesma estrutura e tema, mas melhorando a métrica e rimas.
+      prompt: `REGRA MAIS IMPORTANTE: MÁXIMO 11 SÍLABAS POR VERSO (conte até a última tônica)
 
-LETRA ORIGINAL:
+Reescreva esta letra mantendo estrutura e tema:
+
 ${lyrics}
 
-REGRAS OBRIGATÓRIAS (ORDEM DE PRIORIDADE):
-1. MÁXIMO 11 SÍLABAS POR VERSO (regra de ouro - NUNCA viole isso)
-2. Mantenha EXATAMENTE a mesma estrutura (mesmo número de versos e refrões)
-3. Mantenha o tema e história da letra original
-4. Mantenha palavras-chave importantes
-5. Use rimas naturais (não force rimas)
-6. Evite clichês genéricos de IA
+COMO CONTAR (exemplos corretos):
+"Lem-bro do chei-ro da chu-va na ter-ra" = 11 ✅
+"Da poe-i-ra na bo-ta, fir-me-za que im-pe-ra" = 11 ✅
+"Não ti-nha gra-na, mas eu so-nha-va" = 10 ✅
 
-INSTRUÇÕES PARA TERCEIRA VIA (originalidade):
-- Evite frases como "tudo vai dar certo", "vai ficar tudo bem", "acredite nisso"
-- Use metáforas originais e específicas ao tema
-- Prefira linguagem brasileira autêntica
+REGRAS:
+1. MÁXIMO 11 SÍLABAS (NUNCA mais que isso)
+2. Mesma estrutura (mesmo número de versos/refrões)
+3. Mesmo tema e história
+4. Rimas naturais
+5. Evite clichês ("tudo vai dar certo", "vai ficar tudo bem")
 
-COMO CONTAR SÍLABAS POÉTICAS:
-- Conte até a última sílaba tônica
-- "Lembro do cheiro da chuva na terra" = 11 sílabas ✅
-- "Da poeira na bota, firmeza que impera" = 11 sílabas ✅
+IMPORTANTE: Conte as sílabas de cada verso ANTES de escrever. Se passar de 11, reescreva mais curto.
 
-Retorne apenas a letra reescrita no formato:
+Retorne apenas a letra no formato:
 [VERSE 1]
 verso 1
 verso 2
-...
-
-[CHORUS]
-refrão 1
-refrão 2
 ...`,
       temperature: 0.7,
     })
