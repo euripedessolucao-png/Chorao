@@ -41,7 +41,6 @@ refrão 1
 refrão 2
 ...`,
       temperature: 0.7,
-      maxTokens: 2000,
     })
 
     console.log("[v0] ✅ OpenAI respondeu - Primeiros 200 chars:", text.substring(0, 200))
