@@ -3,7 +3,7 @@ import { generateText } from "ai"
 import { getGenreConfig, detectSubGenre, getGenreRhythm } from "@/lib/genre-config"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 import { countPoeticSyllables } from "@/lib/validation/syllable-counter"
-import { SyllableEnforcer } from "@/lib/validation/syllableEnforcer"
+import { UltimateFixer } from "@/lib/validation/ultimate-fixer"
 import { MetaComposer } from "@/lib/orchestrator/meta-composer"
 
 export async function POST(request: Request) {
@@ -113,10 +113,6 @@ export async function POST(request: Request) {
     const structureAnalysis = analyzeSongStructure(finalLyrics)
     console.log("[Rewrite-Lyrics] 📊 Análise estrutural:", structureAnalysis)
 
-    // ✅ VALIDAÇÃO INICIAL COM SYLLABLE ENFORCER
-    const initialValidation = SyllableEnforcer.validateLyrics(finalLyrics, syllableConfig)
-    console.log("[Rewrite-Lyrics] ⚖️ Validação inicial:", initialValidation)
-
     // ✅ PREPARAÇÃO DOS REFRÕES PRESERVADOS
     const preservedChoruses = selectedChoruses.map((chorus: string) => {
       const chorusValidation = validateLyricsSyllables(chorus)
@@ -180,15 +176,14 @@ export async function POST(request: Request) {
       )
     }
 
-    // ✅ APLICA SYLLABLE ENFORCER NO RESULTADO FINAL
-    console.log("[v0] 🔧 Aplicando SyllableEnforcer...")
-    const enforcedResult = await SyllableEnforcer.enforceSyllableLimits(result.lyrics, syllableConfig, finalGenero)
-
-    console.log(`[v0] ✅ SyllableEnforcer concluído -`, enforcedResult.corrections, "correções")
+    // ✅ APLICA ULTIMATEFIXER NO RESULTADO FINAL
+    console.log("[v0] 🔧 Aplicando UltimateFixer...")
+    const fixedResult = UltimateFixer.fixFullLyrics(result.lyrics)
+    console.log("[v0] ✅ Resultado final corrigido")
 
     // ✅ APLICA FORMATAÇÃO PERFORMÁTICA
     console.log("[Rewrite-Lyrics] 🎭 Aplicando formatação performática...")
-    let finalLyricsFormatted = enforcedResult.correctedLyrics
+    let finalLyricsFormatted = fixedResult
 
     if (performanceMode === "performance") {
       finalLyricsFormatted = applyPerformanceFormatting(finalLyricsFormatted, finalGenero, finalRhythm)
@@ -216,8 +211,6 @@ export async function POST(request: Request) {
         rhymeTarget: result.metadata.rhymeTarget || 0,
         performanceMode: performanceMode,
         validation: finalValidation,
-        syllableCorrections: enforcedResult.corrections,
-        syllableViolations: enforcedResult.violations,
       },
     })
   } catch (error) {
