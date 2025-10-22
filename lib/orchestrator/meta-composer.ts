@@ -316,7 +316,15 @@ export class MetaComposer {
       if (this.needsTerceiraViaCorrection(line, analysis)) {
         try {
           const context = this.buildLineContext(lines, i, "")
-          const correctedLine = await applyTerceiraViaToLine(line, i, context, false, "", request.genre)
+          const correctedLine = await applyTerceiraViaToLine(
+            line,
+            i,
+            context,
+            false,
+            "",
+            request.genre,
+            genreConfig, // ← PARÂMETRO QUE ESTAVA FALTANDO!
+          )
 
           if (correctedLine !== line) {
             correctionsApplied++
@@ -587,7 +595,7 @@ NUNCA escreva palavras sem acentos corretos!
 
 Se precisar reduzir sílabas, use OUTRAS técnicas:
 - Remova artigos: "o", "a", "um", "uma"
-- Use contrações: "pra", "tô", "cê", "tá"
+- Use contrações: "pra", "tá", "tô", "cê"
 - Simplifique frases: "que eu tenho" → "que tenho"
 
 MAS NUNCA remova acentos ou corte palavras!
