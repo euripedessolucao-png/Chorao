@@ -15,6 +15,7 @@ interface LineValidation {
   line: string
   syllables: number
   lineNumber: number
+  isValid: boolean
   suggestions: string[]
 }
 
@@ -37,17 +38,65 @@ export function SyllableValidatorEditable({
 
   lines.forEach((line, index) => {
     if (line.trim() && !line.startsWith('[') && !line.startsWith('(') && !line.includes('Instruments:')) {
-      const validation = validateSyllableLimit(line, maxSyllables)
-      if (!validation.isValid) {
+      const syllables = countPoeticSyllables(line)
+      const isValid = validateSyllableLimit(line, maxSyllables)
+      
+      if (!isValid) {
+        // Gerar sugestões simples baseadas na contagem de sílabas
+        const suggestions = generateSuggestions(line, maxSyllables)
+        
         validations.push({
           line: line.trim(),
-          syllables: validation.currentSyllables,
+          syllables: syllables,
           lineNumber: index + 1,
-          suggestions: validation.suggestions
+          isValid: isValid,
+          suggestions: suggestions
         })
       }
     }
   })
+
+  // Função para gerar sugestões básicas
+  const generateSuggestions = (line: string, maxSyllables: number): string[] => {
+    const suggestions: string[] = []
+    const words = line.split(' ')
+    
+    // Sugestão 1: Remover última palavra se tiver mais de maxSyllables + 2
+    if (words.length > 1) {
+      const withoutLastWord = words.slice(0, -1).join(' ')
+      const syllablesWithoutLast = countPoeticSyllables(withoutLastWord)
+      if (syllablesWithoutLast <= maxSyllables && syllablesWithoutLast > 0) {
+        suggestions.push(withoutLastWord)
+      }
+    }
+    
+    // Sugestão 2: Contrações comuns
+    const contractions: [string, string][] = [
+      [' para ', ' pra '],
+      [' você ', ' cê '],
+      [' está ', ' tá '],
+      [' estou ', ' tô '],
+      [' com ', ' c/ '],
+      [' de ', ' d' ],
+      [' que ', ' q' ],
+      [' não ', ' num '],
+      [' uma ', ' ' ],
+      [' um ', ' ' ],
+    ]
+    
+    let contractedLine = line
+    contractions.forEach(([from, to]) => {
+      if (contractedLine.includes(from)) {
+        const newLine = contractedLine.replace(new RegExp(from, 'g'), to)
+        const syllables = countPoeticSyllables(newLine)
+        if (syllables <= maxSyllables && syllables > 0) {
+          suggestions.push(newLine.trim())
+        }
+      }
+    })
+    
+    return suggestions.slice(0, 3) // Limitar a 3 sugestões
+  }
 
   const toggleEdit = (lineNumber: number) => {
     const newEditingLines = new Set(editingLines)
@@ -148,7 +197,9 @@ export function SyllableValidatorEditable({
                             const input = document.querySelector<HTMLInputElement>(
                               `input[defaultValue="${validation.line}"]`
                             )
-                            saveEdit(validation.lineNumber, input?.value || validation.line)
+                            if (input) {
+                              saveEdit(validation.lineNumber, input.value)
+                            }
                           }}
                           className="h-7"
                         >
@@ -184,7 +235,7 @@ export function SyllableValidatorEditable({
                 </div>
               </div>
 
-              {/* SUGESTÕES SEGURAS */}
+              {/* SUGESTÕES */}
               {validation.suggestions.length > 0 && !editingLines.has(validation.lineNumber) && (
                 <div className="mt-3 pt-3 border-t border-amber-100">
                   <span className="text-xs font-medium text-gray-600 mb-2 block">
@@ -246,5 +297,4 @@ export function SyllableValidatorEditable({
   )
 }
 
-// ✅ EXPORT DEFAULT PARA GARANTIR
 export default SyllableValidatorEditable
