@@ -528,7 +528,11 @@ Acredite nisso`
    * GERA REESCRITA DE LETRA EXISTENTE - MANTENDO ESTRUTURA E TEMA ORIGINAL
    */
   private static async generateRewrite(request: CompositionRequest): Promise<string> {
+    console.log("[v0] ═══════════════════════════════════════════════════════")
     console.log("[v0] 📝 generateRewrite - INÍCIO")
+    console.log("[v0] ═══════════════════════════════════════════════════════")
+    console.log("[v0] 📊 Request completo:", JSON.stringify(request, null, 2))
+    console.log("[v0] 📊 Original lyrics:", request.originalLyrics?.substring(0, 200) + "...")
     console.log("[v0] 📊 Original lyrics length:", request.originalLyrics?.length || 0)
 
     if (!request.originalLyrics) {

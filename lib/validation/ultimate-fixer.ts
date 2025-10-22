@@ -267,7 +267,12 @@ export class UltimateFixer {
    * Corrige letra completa aplicando fixLine em cada verso
    */
   static fixFullLyrics(lyrics: string): string {
-    console.log("[v0] 🔧 UltimateFixer: Corrigindo letra completa")
+    console.log("[v0] ═══════════════════════════════════════════════════════")
+    console.log("[v0] 🔧 UltimateFixer.fixFullLyrics - INÍCIO")
+    console.log("[v0] ═══════════════════════════════════════════════════════")
+    console.log("[v0] 📊 Lyrics length:", lyrics.length)
+    console.log("[v0] 📊 Primeiros 200 caracteres:", lyrics.substring(0, 200))
+    console.log("[v0] 📊 Número de linhas:", lyrics.split("\n").length)
 
     const lines = lyrics.split("\n")
     const fixedLines = lines.map((line, index) => {

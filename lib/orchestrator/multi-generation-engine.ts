@@ -28,8 +28,15 @@ export class MultiGenerationEngine {
     theme?: string,
     genreConfig?: any,
   ): Promise<MultiGenerationResult> {
-    console.log("[v0] 🎯 MultiGenerationEngine - INÍCIO")
-    console.log("[v0] 📊 Gerando", count, "variações")
+    console.log("[v0] ═══════════════════════════════════════════════════════")
+    console.log("[v0] 🎯 MultiGenerationEngine.generateMultipleVariations - INÍCIO")
+    console.log("[v0] ═══════════════════════════════════════════════════════")
+    console.log("[v0] 📊 Parâmetros:")
+    console.log("[v0]   - count:", count)
+    console.log("[v0]   - genre:", genre)
+    console.log("[v0]   - theme:", theme)
+    console.log("[v0]   - generateFn type:", typeof generateFn)
+    console.log("[v0]   - scoreFn type:", typeof scoreFn)
 
     const variations: GenerationVariation[] = []
     const rejectedVariations: Array<{ lyrics: string; reason: string; score: number }> = []
