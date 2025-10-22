@@ -56,7 +56,7 @@ refrão 2
     console.log("[v0] 🔧 Aplicando UltimateFixer...")
     let fixedLyrics = text
     try {
-      fixedLyrics = UltimateFixer.fixFullLyrics(text, genre)
+      fixedLyrics = UltimateFixer.fixFullLyrics(text)
       console.log("[v0] ✅ UltimateFixer aplicado - Primeiros 200 chars:", fixedLyrics.substring(0, 200))
     } catch (error) {
       console.error("[v0] ⚠️ UltimateFixer falhou, usando letra sem correção:", error)
