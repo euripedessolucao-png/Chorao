@@ -1,8 +1,6 @@
 import { WordIntegrityValidator } from "@/lib/validation/word-integrity-validator"
-import { AggressiveAccentFixer } from "@/lib/validation/aggressive-accent-fixer"
-import { RepetitionValidator } from "@/lib/validation/repetition-validator"
-import { UltraAggressiveSyllableReducer } from "@/lib/validation/ultra-aggressive-syllable-reducer"
 import { SpaceNormalizer } from "@/lib/validation/space-normalizer"
+import { UltimateFixer } from "@/lib/validation/ultimate-fixer"
 
 export interface GenerationVariation {
   lyrics: string
@@ -48,126 +46,9 @@ export class MultiGenerationEngine {
         let lyrics = await generateFn()
         console.log("[v0] ✅ generateFn retornou letra - Length:", lyrics.length)
 
-        // FASE 1: Correção de repetições
-        console.log("[v0] 🔧 FASE 1 - Correção de repetições...")
-        const repetitionFixResult = RepetitionValidator.fix(lyrics)
-        if (repetitionFixResult.corrections > 0) {
-          console.log("[v0] ✅ FASE 1 -", repetitionFixResult.corrections, "repetições removidas")
-          lyrics = repetitionFixResult.correctedLyrics
-        } else {
-          console.log("[v0] ✅ FASE 1 - Nenhuma repetição encontrada")
-        }
-
-        // FASE 2: Correção agressiva de acentos
-        console.log("[v0] 🔧 FASE 2 - Correção de acentos...")
-        const accentFixResult = AggressiveAccentFixer.fix(lyrics)
-        if (accentFixResult.corrections.length > 0) {
-          console.log("[v0] ✅ FASE 2 -", accentFixResult.corrections.length, "palavras corrigidas")
-          lyrics = accentFixResult.correctedText
-        } else {
-          console.log("[v0] ✅ FASE 2 - Nenhuma correção de acento necessária")
-        }
-
-        // FASE 2.5: Normalização de espaços
-        console.log("[v0] 🔧 FASE 2.5 - Normalização de espaços...")
-        const spaceReport = SpaceNormalizer.getNormalizationReport(lyrics, SpaceNormalizer.normalizeLyrics(lyrics))
-        if (spaceReport.hadIssues) {
-          console.log("[v0] ✅ FASE 2.5 -", spaceReport.spacesRemoved, "espaços duplicados removidos")
-          lyrics = SpaceNormalizer.normalizeLyrics(lyrics)
-        } else {
-          console.log("[v0] ✅ FASE 2.5 - Nenhum espaço duplicado encontrado")
-        }
-
-        // FASE 3: Correção ultra agressiva de sílabas
-        console.log("[v0] 🔧 FASE 3 - Correção ultra agressiva de sílabas...")
-        const syllableFixResult = new UltraAggressiveSyllableReducer().correctFullLyrics(lyrics)
-        console.log("[v0] 📊 FASE 3 - Resultado:", {
-          correctedVerses: syllableFixResult.report.correctedVerses,
-          totalVerses: syllableFixResult.report.totalVerses,
-          failedVerses: syllableFixResult.report.failedVerses,
-          successRate: syllableFixResult.report.successRate.toFixed(1) + "%",
-        })
-
-        if (syllableFixResult.report.correctedVerses > 0) {
-          lyrics = syllableFixResult.correctedLyrics
-        } else {
-          console.log(`[MultiGeneration] ✅ FASE 3 - Todos os versos já têm 11 sílabas`)
-        }
-
-        if (genre && theme && genreConfig) {
-          console.log("[v0] 🔧 FASE 3.5 - Terceira Via (análise e correção)...")
-          const { analisarTerceiraVia, applyTerceiraViaToLine } = await import("@/lib/terceira-via")
-
-          const terceiraViaAnalysis = analisarTerceiraVia(lyrics, genre, theme)
-
-          if (terceiraViaAnalysis && terceiraViaAnalysis.score_geral < 75) {
-            console.log("[v0] ⚠️ FASE 3.5 - Score Terceira Via baixo:", terceiraViaAnalysis.score_geral)
-            console.log("[v0] 🔧 FASE 3.5 - Aplicando correções Terceira Via...")
-
-            const lines = lyrics.split("\n")
-            const correctedLines: string[] = []
-            let correctionsApplied = 0
-
-            for (let i = 0; i < lines.length; i++) {
-              const line = lines[i]
-
-              // Só corrige linhas que precisam
-              if (line.trim() && !line.startsWith("[") && !line.startsWith("(") && !line.includes("Instruments:")) {
-                try {
-                  const context = lines.slice(Math.max(0, i - 1), Math.min(lines.length, i + 2)).join("\n")
-                  const correctedLine = await applyTerceiraViaToLine(line, i, context, false, "", genre, genreConfig)
-
-                  if (correctedLine !== line) {
-                    correctionsApplied++
-                    console.log("[v0] 🔄 FASE 3.5 - Linha", i, "corrigida")
-                  }
-
-                  correctedLines.push(correctedLine)
-                } catch (error) {
-                  console.warn("[v0] ⚠️ FASE 3.5 - Erro na linha", i, ", mantendo original")
-                  correctedLines.push(line)
-                }
-              } else {
-                correctedLines.push(line)
-              }
-            }
-
-            lyrics = correctedLines.join("\n")
-            console.log("[v0] ✅ FASE 3.5 -", correctionsApplied, "correções Terceira Via aplicadas")
-
-            // Aplicar AggressiveAccentFixer após Terceira Via
-            console.log("[v0] 🔧 FASE 3.5 - Correção de acentos pós-Terceira Via...")
-            const postTerceiraViaAccentFix = AggressiveAccentFixer.fix(lyrics)
-            if (postTerceiraViaAccentFix.corrections.length > 0) {
-              console.log("[v0] ✅ FASE 3.5 -", postTerceiraViaAccentFix.corrections.length, "palavras corrigidas")
-              lyrics = postTerceiraViaAccentFix.correctedText
-            }
-          } else {
-            console.log("[v0] ✅ FASE 3.5 - Score Terceira Via OK:", terceiraViaAnalysis?.score_geral || "N/A")
-          }
-        } else {
-          console.log("[v0] ⚠️ FASE 3.5 - Terceira Via PULADA (faltam parâmetros genre/theme/genreConfig)")
-        }
-
-        // FASE 4: Correção de integridade de palavras
-        console.log("[v0] 🔧 FASE 4 - Correção de integridade de palavras...")
-        const fixResult = WordIntegrityValidator.fix(lyrics)
-        if (fixResult.corrections > 0) {
-          console.log("[v0] ✅ FASE 4 -", fixResult.corrections, "correções aplicadas")
-          lyrics = fixResult.correctedLyrics
-        } else {
-          console.log("[v0] ✅ FASE 4 - Nenhuma correção de integridade necessária")
-        }
-
-        // FASE 5: Normalização final de espaços
-        console.log("[v0] 🔧 FASE 5 - Normalização final de espaços...")
-        const finalSpaceReport = SpaceNormalizer.getNormalizationReport(lyrics, SpaceNormalizer.normalizeLyrics(lyrics))
-        if (finalSpaceReport.hadIssues) {
-          console.log("[v0] ✅ FASE 5 -", finalSpaceReport.spacesRemoved, "espaços duplicados removidos")
-          lyrics = SpaceNormalizer.normalizeLyrics(lyrics)
-        } else {
-          console.log("[v0] ✅ FASE 5 - Nenhum espaço duplicado encontrado")
-        }
+        console.log("[v0] 🔧 APLICANDO ULTIMATEFIXER - Correção completa em uma única etapa...")
+        lyrics = UltimateFixer.fixFullLyrics(lyrics)
+        console.log("[v0] ✅ ULTIMATEFIXER concluído")
 
         // VALIDAÇÃO 1: Integridade de palavras
         console.log("[v0] ✅ VALIDAÇÃO 1 - Integridade de palavras...")
@@ -183,26 +64,12 @@ export class MultiGenerationEngine {
         }
         console.log("[v0] ✅ VALIDAÇÃO 1 PASSOU")
 
-        // VALIDAÇÃO 2: Sílabas
-        console.log("[v0] ✅ VALIDAÇÃO 2 - Sílabas...")
-        const finalSyllableCheck = new UltraAggressiveSyllableReducer().correctFullLyrics(lyrics)
-        if (finalSyllableCheck.report.failedVerses > 0) {
-          console.warn("[v0] ⚠️ VALIDAÇÃO 2 FALHOU -", finalSyllableCheck.report.failedVerses, "versos incorretos")
-          rejectedVariations.push({
-            lyrics,
-            reason: `${finalSyllableCheck.report.failedVerses} versos incorretos`,
-            score: scoreFn(lyrics),
-          })
-          continue
-        }
-        console.log("[v0] ✅ VALIDAÇÃO 2 PASSOU")
-
-        // VALIDAÇÃO 3: Espaços duplicados
-        console.log("[v0] ✅ VALIDAÇÃO 3 - Espaços duplicados...")
+        // VALIDAÇÃO 2: Espaços duplicados
+        console.log("[v0] ✅ VALIDAÇÃO 2 - Espaços duplicados...")
         const lines = lyrics.split("\n")
         const linesWithMultipleSpaces = lines.filter((line) => SpaceNormalizer.hasMultipleSpaces(line))
         if (linesWithMultipleSpaces.length > 0) {
-          console.warn("[v0] ⚠️ VALIDAÇÃO 3 FALHOU -", linesWithMultipleSpaces.length, "linhas com espaços duplicados")
+          console.warn("[v0] ⚠️ VALIDAÇÃO 2 FALHOU -", linesWithMultipleSpaces.length, "linhas com espaços duplicados")
           rejectedVariations.push({
             lyrics,
             reason: `${linesWithMultipleSpaces.length} linhas com espaços duplicados`,
@@ -210,7 +77,7 @@ export class MultiGenerationEngine {
           })
           continue
         }
-        console.log("[v0] ✅ VALIDAÇÃO 3 PASSOU")
+        console.log("[v0] ✅ VALIDAÇÃO 2 PASSOU")
 
         // Calculando score final
         console.log("[v0] 📊 Calculando score final...")

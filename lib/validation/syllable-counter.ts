@@ -1,19 +1,4 @@
-/**
- * Contador de Sílabas Poéticas em Português Brasileiro - REFORMULADO
- *
- * REGRAS DA ESCANSÃO POÉTICA BRASILEIRA:
- * 1. Conta-se até a última sílaba tônica (descarta átonas finais)
- * 2. Sinalefa/Elisão: vogais adjacentes se juntam em uma sílaba
- * 3. Enjambement: versos com vírgula podem continuar no próximo
- *
- * REFORMULAÇÃO COMPLETA:
- * - Contagem precisa de sílabas gramaticais
- * - Identificação correta da última tônica
- * - Tratamento de ditongos e hiatos
- * - Validação rigorosa para letras musicais
- */
-
-import { AggressiveAccentFixer } from "./aggressive-accent-fixer"
+import { UltimateFixer } from "./ultimate-fixer"
 
 const VOWELS = "aeiouáàâãéèêíìîóòôõúùû"
 const VOWEL_REGEX = /[aeiouáàâãéèêíìîóòôõúùû]/i
@@ -74,11 +59,12 @@ const PROPAROXITONAS = new Set([
 export function countPoeticSyllables(line: string): number {
   console.log(`[v0] 🔢 countPoeticSyllables - Entrada: "${line}"`)
 
-  const fixResult = AggressiveAccentFixer.fix(line)
-  const correctedLine = fixResult.correctedText
+  const correctedLine = UltimateFixer.fixLine(line)
 
-  if (fixResult.corrections.length > 0) {
-    console.log(`[v0] ✅ Correções aplicadas antes de contar sílabas:`, fixResult.corrections)
+  if (correctedLine !== line) {
+    console.log(`[v0] ✅ UltimateFixer aplicou correções antes de contar sílabas`)
+    console.log(`[v0] Original: "${line}"`)
+    console.log(`[v0] Corrigido: "${correctedLine}"`)
   }
 
   // Remove tags e instruções

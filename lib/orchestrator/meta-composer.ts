@@ -19,6 +19,7 @@ import { MultiGenerationEngine } from "./multi-generation-engine"
 import { WordIntegrityValidator } from "@/lib/validation/word-integrity-validator"
 import { AggressiveAccentFixer } from "@/lib/validation/aggressive-accent-fixer"
 import { UltraAggressiveSyllableReducer } from "@/lib/validation/ultra-aggressive-syllable-reducer"
+import { UltimateFixer } from "@/lib/validation/ultimate-fixer"
 
 export interface CompositionRequest {
   genre: string
@@ -245,13 +246,10 @@ Acredite nisso`
     // Gera letra base
     let rawLyrics: string
 
-    console.log("[MetaComposer] 🔧 PRÉ-GERAÇÃO: Aplicando correção de acentuação preventiva...")
+    console.log("[MetaComposer] 🔧 PRÉ-GERAÇÃO: Aplicando UltimateFixer preventivo...")
     if (isRewrite && request.originalLyrics) {
-      const preFixResult = AggressiveAccentFixer.fix(request.originalLyrics)
-      if (preFixResult.corrections.length > 0) {
-        console.log(`[MetaComposer] ✅ Pré-correção: ${preFixResult.corrections.length} palavras corrigidas`)
-        request.originalLyrics = preFixResult.correctedText
-      }
+      request.originalLyrics = UltimateFixer.fixFullLyrics(request.originalLyrics)
+      console.log("[MetaComposer] ✅ Letra original corrigida antes da reescrita")
     }
 
     if (isRewrite) {
@@ -262,12 +260,9 @@ Acredite nisso`
       rawLyrics = await this.generateDirectLyrics(request, syllableEnforcement)
     }
 
-    console.log("[MetaComposer] 🔧 PÓS-GERAÇÃO: Aplicando correção de acentuação...")
-    const postGenFixResult = AggressiveAccentFixer.fix(rawLyrics)
-    if (postGenFixResult.corrections.length > 0) {
-      console.log(`[MetaComposer] ✅ Pós-geração: ${postGenFixResult.corrections.length} palavras corrigidas`)
-      rawLyrics = postGenFixResult.correctedText
-    }
+    console.log("[MetaComposer] 🔧 PÓS-GERAÇÃO: Aplicando UltimateFixer...")
+    rawLyrics = UltimateFixer.fixFullLyrics(rawLyrics)
+    console.log("[MetaComposer] ✅ Letra corrigida após geração")
 
     console.log("[MetaComposer] 🔍 VALIDAÇÃO IMEDIATA: Verificando regra universal de 11 sílabas...")
     const immediateValidation = AbsoluteSyllableEnforcer.validate(rawLyrics)
@@ -328,7 +323,7 @@ Acredite nisso`
       }
     }
 
-    // ✅ TERCEIRA VIA AGORA É AUTOMÁTICA
+    // TERCEIRA VIA AGORA É AUTOMÁTICA
     const terceiraViaAnalysis = analisarTerceiraVia(rawLyrics, request.genre, request.theme)
 
     if (terceiraViaAnalysis && terceiraViaAnalysis.score_geral < 75) {
@@ -445,6 +440,10 @@ Acredite nisso`
     } else {
       console.log("[MetaComposer] ✅ Versão aprovada - Integridade de palavras OK")
     }
+
+    console.log("[MetaComposer] 🔧 CORREÇÃO FINAL: Aplicando UltimateFixer final...")
+    finalLyrics = UltimateFixer.fixFullLyrics(finalLyrics)
+    console.log("[MetaComposer] ✅ Correção final aplicada")
 
     console.log("[v0] 🎉 MetaComposer.compose - SUCESSO")
     return finalLyrics
