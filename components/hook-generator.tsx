@@ -10,6 +10,31 @@ import { Progress } from "@/components/ui/progress"
 import { Loader2, Sparkles, TrendingUp, Zap, Check } from "lucide-react"
 import { toast } from "sonner"
 
+// components/hook-generator.tsx - ADICIONAR PROP
+
+interface HookGeneratorProps {
+  onSelectHook: (hook: string) => void
+  showSelectionMode?: boolean
+  initialLyrics?: string
+  initialGenre?: string
+  initialTheme?: string // ✅ ADICIONAR ESTA PROP
+}
+
+export function HookGenerator({
+  onSelectHook,
+  showSelectionMode = false,
+  initialLyrics = "",
+  initialGenre = "",
+  initialTheme = "" // ✅ ADICIONAR AQUI TAMBÉM
+}: HookGeneratorProps) {
+  // ... resto do código do componente
+  
+  // Use initialTheme onde for necessário no componente
+  console.log("Tema inicial:", initialTheme)
+  
+  // ... resto do código
+}
+
 interface HookResult {
   hook: string
   hookVariations: string[]
