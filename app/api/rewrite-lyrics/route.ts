@@ -64,18 +64,29 @@ refrão 2
 
     console.log("[v0] 🎯 Aplicando Terceira Via...")
     const lines = fixedLyrics.split("\n")
-    const finalLines = lines.map((line) => {
-      if (line.trim().startsWith("[") || line.trim() === "") {
-        return line
-      }
-      try {
-        const result = applyTerceiraViaToLine(line, { genre })
-        return result.finalLine || line
-      } catch (error) {
-        console.error("[v0] ⚠️ Terceira Via falhou para linha:", line, error)
-        return line
-      }
-    })
+    const finalLines = await Promise.all(
+      lines.map(async (line, index) => {
+        if (line.trim().startsWith("[") || line.trim() === "") {
+          return line
+        }
+        try {
+          // applyTerceiraViaToLine espera: line, index, context, isPerformanceMode, additionalRequirements?, genre?, genreConfig?
+          const result = await applyTerceiraViaToLine(
+            line,
+            index,
+            fixedLyrics, // contexto completo da letra
+            false, // isPerformanceMode = false para melhor qualidade
+            undefined, // additionalRequirements
+            genre, // gênero
+            undefined, // genreConfig
+          )
+          return result // a função retorna string diretamente, não objeto
+        } catch (error) {
+          console.error("[v0] ⚠️ Terceira Via falhou para linha:", line, error)
+          return line
+        }
+      }),
+    )
     const finalLyrics = finalLines.join("\n")
 
     console.log("[v0] ✅ Letra final - Primeiros 200 chars:", finalLyrics.substring(0, 200))
