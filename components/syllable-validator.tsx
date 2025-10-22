@@ -1,4 +1,4 @@
-// components/syllable-validator-editable.tsx - VERSÃO TOTALMENTE CORRIGIDA
+// components/syllable-validator-editable.tsx - VERSÃO COMPLETAMENTE NOVA
 
 "use client"
 
@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { CheckCircle, AlertTriangle, XCircle, Edit2, Check, X } from "lucide-react"
-import { countPoeticSyllables, validateSyllableLimit } from "@/lib/validation/syllable-counter"
+import { countPoeticSyllables } from "@/lib/validation/syllable-counter"
 import { toast } from "sonner"
 
 interface LineValidation {
@@ -39,7 +39,7 @@ export function SyllableValidatorEditable({
   lines.forEach((line, index) => {
     if (line.trim() && !line.startsWith('[') && !line.startsWith('(') && !line.includes('Instruments:')) {
       const syllables = countPoeticSyllables(line)
-      const isValid = validateSyllableLimit(line, maxSyllables)
+      const isValid = syllables <= maxSyllables
       
       if (!isValid) {
         // Gerar sugestões simples baseadas na contagem de sílabas
@@ -84,10 +84,9 @@ export function SyllableValidatorEditable({
       [' um ', ' ' ],
     ]
     
-    let contractedLine = line
     contractions.forEach(([from, to]) => {
-      if (contractedLine.includes(from)) {
-        const newLine = contractedLine.replace(new RegExp(from, 'g'), to)
+      if (line.includes(from)) {
+        const newLine = line.replace(new RegExp(from, 'g'), to)
         const syllables = countPoeticSyllables(newLine)
         if (syllables <= maxSyllables && syllables > 0) {
           suggestions.push(newLine.trim())
