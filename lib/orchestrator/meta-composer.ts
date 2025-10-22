@@ -18,6 +18,8 @@ import { AbsoluteSyllableEnforcer } from "@/lib/validation/absolute-syllable-enf
 import { LyricsAuditor } from "@/lib/validation/lyrics-auditor"
 import { MultiGenerationEngine } from "./multi-generation-engine"
 import { WordIntegrityValidator } from "@/lib/validation/word-integrity-validator"
+import { AggressiveAccentFixer } from "@/lib/validation/aggressive-accent-fixer"
+import { UltraAggressiveSyllableReducer } from "@/lib/validation/ultra-aggressive-syllable-reducer"
 
 export interface CompositionRequest {
   genre: string
@@ -179,6 +181,26 @@ export class MetaComposer {
       rawLyrics = await this.generateDirectLyrics(request, syllableEnforcement)
     }
 
+    console.log("[MetaComposer] 🔧 FASE 1: Aplicando correção de acentuação...")
+    const accentFixResult = AggressiveAccentFixer.fix(rawLyrics)
+    if (accentFixResult.corrections.length > 0) {
+      console.log(`[MetaComposer] ✅ Correção de acentuação: ${accentFixResult.corrections.length} palavras corrigidas`)
+      accentFixResult.corrections.forEach((correction) => {
+        console.log(`  - "${correction.original}" → "${correction.corrected}" (${correction.count}x)`)
+      })
+      rawLyrics = accentFixResult.correctedText
+    }
+
+    console.log("[MetaComposer] 🔧 FASE 2: Aplicando correção ultra agressiva de sílabas...")
+    const syllableReducer = new UltraAggressiveSyllableReducer()
+    const syllableFixResult = syllableReducer.correctFullLyrics(rawLyrics)
+    if (syllableFixResult.report.correctedVerses > 0) {
+      console.log(
+        `[MetaComposer] ✅ Correção de sílabas: ${syllableFixResult.report.correctedVerses}/${syllableFixResult.report.totalVerses} versos (${syllableFixResult.report.successRate.toFixed(1)}% sucesso)`,
+      )
+      rawLyrics = syllableFixResult.correctedLyrics
+    }
+
     // ✅ APLICA VALIDAÇÃO RÍGIDA DE SÍLABAS - REGRA ABSOLUTA
     const absoluteValidationBefore = AbsoluteSyllableEnforcer.validate(rawLyrics)
     if (!absoluteValidationBefore.isValid) {
@@ -215,6 +237,14 @@ export class MetaComposer {
     if (terceiraViaAnalysis && terceiraViaAnalysis.score_geral < 75) {
       rawLyrics = await this.applyTerceiraViaCorrections(rawLyrics, request, terceiraViaAnalysis, genreConfig)
 
+      const accentFixAfterTerceiraVia = AggressiveAccentFixer.fix(rawLyrics)
+      if (accentFixAfterTerceiraVia.corrections.length > 0) {
+        console.log(
+          `[MetaComposer] ✅ Correção de acentuação pós-Terceira Via: ${accentFixAfterTerceiraVia.corrections.length} palavras`,
+        )
+        rawLyrics = accentFixAfterTerceiraVia.correctedText
+      }
+
       const absoluteValidationAfterTerceiraVia = AbsoluteSyllableEnforcer.validate(rawLyrics)
       if (!absoluteValidationAfterTerceiraVia.isValid) {
         console.warn("[MetaComposer] ⚠️ TERCEIRA VIA GEROU VERSOS COM MAIS DE 11 SÍLABAS!")
@@ -243,6 +273,14 @@ export class MetaComposer {
         genreConfig,
       )
 
+      const accentFixAfterPolish = AggressiveAccentFixer.fix(finalLyrics)
+      if (accentFixAfterPolish.corrections.length > 0) {
+        console.log(
+          `[MetaComposer] ✅ Correção de acentuação pós-polimento: ${accentFixAfterPolish.corrections.length} palavras`,
+        )
+        finalLyrics = accentFixAfterPolish.correctedText
+      }
+
       const absoluteValidationAfterPolish = AbsoluteSyllableEnforcer.validate(finalLyrics)
       if (!absoluteValidationAfterPolish.isValid) {
         console.warn("[MetaComposer] ⚠️ POLIMENTO GEROU VERSOS COM MAIS DE 11 SÍLABAS!")
@@ -267,6 +305,13 @@ export class MetaComposer {
     // Empilhamento de versos
     const stackingResult = LineStacker.stackLines(finalLyrics)
     finalLyrics = stackingResult.stackedLyrics
+
+    console.log("[MetaComposer] 🔧 CORREÇÃO FINAL: Aplicando última camada de correção de acentuação...")
+    const finalAccentFix = AggressiveAccentFixer.ultimateFix(finalLyrics)
+    if (finalAccentFix !== finalLyrics) {
+      console.log("[MetaComposer] ✅ Correção final de acentuação aplicada")
+      finalLyrics = finalAccentFix
+    }
 
     const finalAbsoluteValidation = AbsoluteSyllableEnforcer.validate(finalLyrics)
     if (!finalAbsoluteValidation.isValid) {
@@ -312,7 +357,7 @@ export class MetaComposer {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]
 
-      // ✅ SÓ CORRIGE LINHAS QUE PRECISAM
+      // SÓ CORRIGE LINHAS QUE PRECISAM
       if (this.needsTerceiraViaCorrection(line, analysis)) {
         try {
           const context = this.buildLineContext(lines, i, "")
@@ -360,10 +405,10 @@ export class MetaComposer {
 
     let polishedLyrics = lyrics
 
-    // ✅ ETAPA 1: CORREÇÃO DE RIMAS COM TERCEIRA VIA
+    // ETAPA 1: CORREÇÃO DE RIMAS COM TERCEIRA VIA
     polishedLyrics = await this.applyRhymeEnhancement(polishedLyrics, genre, theme)
 
-    // ✅ ETAPA 2: CORREÇÃO DE SÍLABAS INTELIGENTE
+    // ETAPA 2: CORREÇÃO DE SÍLABAS INTELIGENTE
     const lines = polishedLyrics.split("\n")
     const finalLines: string[] = []
 
