@@ -2,6 +2,7 @@ import { WordIntegrityValidator } from "@/lib/validation/word-integrity-validato
 import { AggressiveAccentFixer } from "@/lib/validation/aggressive-accent-fixer"
 import { RepetitionValidator } from "@/lib/validation/repetition-validator"
 import { UltraAggressiveSyllableReducer } from "@/lib/validation/ultra-aggressive-syllable-reducer"
+import { SpaceNormalizer } from "@/lib/validation/space-normalizer"
 
 export interface GenerationVariation {
   lyrics: string
@@ -46,18 +47,20 @@ export class MultiGenerationEngine {
         console.log(`[MultiGeneration] 📄 Letra gerada (primeiras 200 chars):`)
         console.log(lyrics.substring(0, 200))
 
+        // FASE 1: Correção de repetições
         const repetitionFixResult = RepetitionValidator.fix(lyrics)
         if (repetitionFixResult.corrections > 0) {
           console.log(
-            `[MultiGeneration] 🔧 CORREÇÃO DE REPETIÇÕES: ${repetitionFixResult.corrections} repetições removidas`,
+            `[MultiGeneration] 🔧 FASE 1 - REPETIÇÕES: ${repetitionFixResult.corrections} repetições removidas`,
           )
           lyrics = repetitionFixResult.correctedLyrics
         }
 
+        // FASE 2: Correção agressiva de acentos
         const accentFixResult = AggressiveAccentFixer.fix(lyrics)
         if (accentFixResult.corrections.length > 0) {
           console.log(
-            `[MultiGeneration] 🔧 CORREÇÃO AGRESSIVA DE ACENTOS: ${accentFixResult.corrections.length} palavras corrigidas:`,
+            `[MultiGeneration] 🔧 FASE 2 - ACENTOS: ${accentFixResult.corrections.length} palavras corrigidas:`,
           )
           accentFixResult.corrections.forEach((correction) => {
             console.log(`  - "${correction.original}" → "${correction.corrected}" (${correction.count}x)`)
@@ -65,27 +68,46 @@ export class MultiGenerationEngine {
           lyrics = accentFixResult.correctedText
         }
 
-        console.log(`[MultiGeneration] 🎯 Aplicando correção ULTRA AGRESSIVA de sílabas...`)
+        const spaceReport = SpaceNormalizer.getNormalizationReport(lyrics, SpaceNormalizer.normalizeLyrics(lyrics))
+        if (spaceReport.hadIssues) {
+          console.log(
+            `[MultiGeneration] 🔧 FASE 2.5 - ESPAÇOS: ${spaceReport.spacesRemoved} espaços duplicados removidos em ${spaceReport.linesAffected} linhas`,
+          )
+          lyrics = SpaceNormalizer.normalizeLyrics(lyrics)
+        }
+
+        // FASE 3: Correção ultra agressiva de sílabas
+        console.log(`[MultiGeneration] 🎯 FASE 3 - Aplicando correção ULTRA AGRESSIVA de sílabas...`)
         const syllableFixResult = new UltraAggressiveSyllableReducer().correctFullLyrics(lyrics)
 
         if (syllableFixResult.report.correctedVerses > 0) {
           console.log(
-            `[MultiGeneration] 🔧 CORREÇÃO ULTRA AGRESSIVA DE SÍLABAS: ${syllableFixResult.report.correctedVerses}/${syllableFixResult.report.totalVerses} versos corrigidos (${syllableFixResult.report.successRate.toFixed(1)}% sucesso)`,
+            `[MultiGeneration] 🔧 FASE 3 - SÍLABAS: ${syllableFixResult.report.correctedVerses}/${syllableFixResult.report.totalVerses} versos corrigidos (${syllableFixResult.report.successRate.toFixed(1)}% sucesso)`,
           )
           lyrics = syllableFixResult.correctedLyrics
         } else {
-          console.log(`[MultiGeneration] ✅ Todos os versos já têm 11 sílabas`)
+          console.log(`[MultiGeneration] ✅ FASE 3 - Todos os versos já têm 11 sílabas`)
         }
 
+        // FASE 4: Correção de integridade de palavras
         const fixResult = WordIntegrityValidator.fix(lyrics)
         if (fixResult.corrections > 0) {
-          console.log(`[MultiGeneration] 🔧 Aplicadas ${fixResult.corrections} correções de integridade:`)
+          console.log(`[MultiGeneration] 🔧 FASE 4 - INTEGRIDADE: ${fixResult.corrections} correções aplicadas:`)
           fixResult.details.forEach((detail) => {
             console.log(`  - "${detail.original}" → "${detail.corrected}"`)
           })
           lyrics = fixResult.correctedLyrics
         }
 
+        const finalSpaceReport = SpaceNormalizer.getNormalizationReport(lyrics, SpaceNormalizer.normalizeLyrics(lyrics))
+        if (finalSpaceReport.hadIssues) {
+          console.log(
+            `[MultiGeneration] 🔧 FASE 5 - ESPAÇOS FINAIS: ${finalSpaceReport.spacesRemoved} espaços duplicados removidos`,
+          )
+          lyrics = SpaceNormalizer.normalizeLyrics(lyrics)
+        }
+
+        // VALIDAÇÃO 1: Integridade de palavras
         const integrityCheck = WordIntegrityValidator.validate(lyrics)
         if (!integrityCheck.isValid) {
           console.warn(`[MultiGeneration] ⚠️ Tentativa ${attempts} AINDA tem problemas após correção:`)
@@ -101,6 +123,7 @@ export class MultiGenerationEngine {
           continue
         }
 
+        // VALIDAÇÃO 2: Sílabas
         const finalSyllableCheck = new UltraAggressiveSyllableReducer().correctFullLyrics(lyrics)
         if (finalSyllableCheck.report.failedVerses > 0) {
           console.warn(
@@ -109,6 +132,22 @@ export class MultiGenerationEngine {
           rejectedVariations.push({
             lyrics,
             reason: `${finalSyllableCheck.report.failedVerses} versos com sílabas incorretas (${finalSyllableCheck.report.successRate.toFixed(1)}% sucesso)`,
+          })
+          continue
+        }
+
+        const lines = lyrics.split("\n")
+        const linesWithMultipleSpaces = lines.filter((line) => SpaceNormalizer.hasMultipleSpaces(line))
+        if (linesWithMultipleSpaces.length > 0) {
+          console.warn(
+            `[MultiGeneration] ⚠️ Tentativa ${attempts} AINDA tem ${linesWithMultipleSpaces.length} linhas com espaços duplicados:`,
+          )
+          linesWithMultipleSpaces.forEach((line, index) => {
+            console.warn(`  ${index + 1}. "${line}"`)
+          })
+          rejectedVariations.push({
+            lyrics,
+            reason: `${linesWithMultipleSpaces.length} linhas com espaços duplicados`,
           })
           continue
         }
