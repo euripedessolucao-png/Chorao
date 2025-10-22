@@ -11,7 +11,6 @@ import {
   formatSertanejoPerformance,
   shouldUsePerformanceFormat,
 } from "@/lib/formatters/sertanejo-performance-formatter"
-import { AutoSyllableCorrector } from "@/lib/validation/auto-syllable-corrector"
 import { PunctuationValidator } from "@/lib/validation/punctuation-validator"
 import { LineStacker } from "@/lib/utils/line-stacker"
 import { AbsoluteSyllableEnforcer } from "@/lib/validation/absolute-syllable-enforcer"
@@ -168,6 +167,15 @@ export class MetaComposer {
     const syllableEnforcement = request.syllableTarget || this.getGenreSyllableConfig(request.genre)
     syllableEnforcement.max = Math.min(syllableEnforcement.max, this.ABSOLUTE_MAX_SYLLABLES)
 
+    if (syllableEnforcement.max > this.ABSOLUTE_MAX_SYLLABLES) {
+      console.warn(`[MetaComposer] ⚠️ TENTATIVA DE BURLAR REGRA UNIVERSAL! Forçando max=${this.ABSOLUTE_MAX_SYLLABLES}`)
+      syllableEnforcement.max = this.ABSOLUTE_MAX_SYLLABLES
+    }
+    if (syllableEnforcement.ideal > this.ABSOLUTE_MAX_SYLLABLES) {
+      console.warn(`[MetaComposer] ⚠️ IDEAL ACIMA DO LIMITE! Ajustando ideal=${this.ABSOLUTE_MAX_SYLLABLES}`)
+      syllableEnforcement.ideal = this.ABSOLUTE_MAX_SYLLABLES
+    }
+
     const genreConfig = getGenreConfig(request.genre)
 
     // Gera letra base
@@ -181,13 +189,27 @@ export class MetaComposer {
       rawLyrics = await this.generateDirectLyrics(request, syllableEnforcement)
     }
 
+    console.log("[MetaComposer] 🔍 VALIDAÇÃO IMEDIATA: Verificando regra universal de 11 sílabas...")
+    const immediateValidation = AbsoluteSyllableEnforcer.validate(rawLyrics)
+    if (!immediateValidation.isValid) {
+      console.error("[MetaComposer] ❌ LETRA GERADA VIOLOU REGRA UNIVERSAL DE 11 SÍLABAS!")
+      console.error(immediateValidation.message)
+
+      const forceFixResult = AbsoluteSyllableEnforcer.validateAndFix(rawLyrics)
+      rawLyrics = forceFixResult.correctedLyrics
+
+      if (!forceFixResult.isValid) {
+        console.error("[MetaComposer] ❌ CORREÇÃO FORÇADA FALHOU! Aplicando UltraAggressiveSyllableReducer...")
+        const ultraReducer = new UltraAggressiveSyllableReducer()
+        const ultraResult = ultraReducer.correctFullLyrics(rawLyrics)
+        rawLyrics = ultraResult.correctedLyrics
+      }
+    }
+
     console.log("[MetaComposer] 🔧 FASE 1: Aplicando correção de acentuação...")
     const accentFixResult = AggressiveAccentFixer.fix(rawLyrics)
     if (accentFixResult.corrections.length > 0) {
       console.log(`[MetaComposer] ✅ Correção de acentuação: ${accentFixResult.corrections.length} palavras corrigidas`)
-      accentFixResult.corrections.forEach((correction) => {
-        console.log(`  - "${correction.original}" → "${correction.corrected}" (${correction.count}x)`)
-      })
       rawLyrics = accentFixResult.correctedText
     }
 
@@ -196,39 +218,34 @@ export class MetaComposer {
     const syllableFixResult = syllableReducer.correctFullLyrics(rawLyrics)
     if (syllableFixResult.report.correctedVerses > 0) {
       console.log(
-        `[MetaComposer] ✅ Correção de sílabas: ${syllableFixResult.report.correctedVerses}/${syllableFixResult.report.totalVerses} versos (${syllableFixResult.report.successRate.toFixed(1)}% sucesso)`,
+        `[MetaComposer] ✅ Correção de sílabas: ${syllableFixResult.report.correctedVerses}/${syllableFixResult.report.totalVerses} versos`,
       )
       rawLyrics = syllableFixResult.correctedLyrics
     }
 
-    // ✅ APLICA VALIDAÇÃO RÍGIDA DE SÍLABAS - REGRA ABSOLUTA
-    const absoluteValidationBefore = AbsoluteSyllableEnforcer.validate(rawLyrics)
-    if (!absoluteValidationBefore.isValid) {
-      console.error("[MetaComposer] ❌ LETRA GERADA COM MAIS DE 11 SÍLABAS!")
-      console.error(absoluteValidationBefore.message)
+    const postSyllableValidation = AbsoluteSyllableEnforcer.validate(rawLyrics)
+    if (!postSyllableValidation.isValid) {
+      console.error("[MetaComposer] ❌ AINDA HÁ VERSOS COM MAIS DE 11 SÍLABAS APÓS CORREÇÃO!")
+      console.error(postSyllableValidation.message)
 
-      // Tenta correção automática inteligente
-      console.log("[MetaComposer] 🔧 Aplicando correção automática inteligente...")
-      const fixResult = AbsoluteSyllableEnforcer.validateAndFix(rawLyrics)
+      let attempts = 0
+      const maxAttempts = 3
+      while (!postSyllableValidation.isValid && attempts < maxAttempts) {
+        attempts++
+        console.log(`[MetaComposer] 🔄 Tentativa ${attempts}/${maxAttempts} de correção forçada...`)
+        const fixResult = AbsoluteSyllableEnforcer.validateAndFix(rawLyrics)
+        rawLyrics = fixResult.correctedLyrics
 
-      if (fixResult.isValid) {
-        console.log(`[MetaComposer] ✅ Correção bem-sucedida! ${fixResult.corrections} verso(s) corrigido(s)`)
-        rawLyrics = fixResult.correctedLyrics
-      } else {
-        console.warn("[MetaComposer] ⚠️ Correção parcial aplicada - usando letra com melhorias")
-        rawLyrics = fixResult.correctedLyrics
+        if (fixResult.isValid) {
+          console.log(`[MetaComposer] ✅ Correção bem-sucedida na tentativa ${attempts}!`)
+          break
+        }
       }
-    }
 
-    // Correção automática de sílabas
-    const autoCorrectionResult = AutoSyllableCorrector.correctLyrics(rawLyrics)
-    rawLyrics = autoCorrectionResult.correctedLyrics
-
-    const absoluteValidationAfterCorrection = AbsoluteSyllableEnforcer.validate(rawLyrics)
-    if (!absoluteValidationAfterCorrection.isValid) {
-      console.warn("[MetaComposer] ⚠️ CORREÇÃO AUTOMÁTICA NÃO RESOLVEU TODOS OS PROBLEMAS")
-      console.warn(absoluteValidationAfterCorrection.message)
-      console.warn("[MetaComposer] ⚠️ Usando letra com correções parciais")
+      if (attempts === maxAttempts && !postSyllableValidation.isValid) {
+        console.error("[MetaComposer] ❌ FALHA CRÍTICA: Não foi possível corrigir todos os versos!")
+        console.error("[MetaComposer] ⚠️ Usando letra com correções parciais")
+      }
     }
 
     // ✅ TERCEIRA VIA AGORA É AUTOMÁTICA
@@ -313,11 +330,22 @@ export class MetaComposer {
       finalLyrics = finalAccentFix
     }
 
+    console.log("[MetaComposer] 🔍 VALIDAÇÃO FINAL ABSOLUTA: Verificando regra universal de 11 sílabas...")
     const finalAbsoluteValidation = AbsoluteSyllableEnforcer.validate(finalLyrics)
     if (!finalAbsoluteValidation.isValid) {
-      console.warn("[MetaComposer] ⚠️ VALIDAÇÃO FINAL - LETRA AINDA TEM VERSOS COM MAIS DE 11 SÍLABAS")
-      console.warn(finalAbsoluteValidation.message)
-      console.warn("[MetaComposer] ⚠️ Retornando letra com melhorias aplicadas")
+      console.error("[MetaComposer] ❌ VALIDAÇÃO FINAL FALHOU - LETRA VIOLA REGRA UNIVERSAL!")
+      console.error(finalAbsoluteValidation.message)
+
+      console.log("[MetaComposer] 🚨 APLICANDO CORREÇÃO DE EMERGÊNCIA...")
+      const emergencyFix = AbsoluteSyllableEnforcer.validateAndFix(finalLyrics)
+      finalLyrics = emergencyFix.correctedLyrics
+
+      if (!emergencyFix.isValid) {
+        console.error("[MetaComposer] ❌ CORREÇÃO DE EMERGÊNCIA FALHOU!")
+        console.error("[MetaComposer] ⚠️ RETORNANDO LETRA COM AVISOS CRÍTICOS")
+      } else {
+        console.log("[MetaComposer] ✅ CORREÇÃO DE EMERGÊNCIA BEM-SUCEDIDA!")
+      }
     } else {
       console.log("[MetaComposer] ✅ LETRA APROVADA - TODOS OS VERSOS TÊM NO MÁXIMO 11 SÍLABAS!")
     }
