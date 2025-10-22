@@ -525,7 +525,7 @@ Acredite nisso`
   }
 
   /**
-   * GERA REESCRITA DE LETRA EXISTENTE - CONSTRUINDO VERSOS CORRETOS DESDE O INÍCIO
+   * GERA REESCRITA DE LETRA EXISTENTE - MANTENDO ESTRUTURA E TEMA ORIGINAL
    */
   private static async generateRewrite(request: CompositionRequest): Promise<string> {
     console.log("[v0] 📝 generateRewrite - INÍCIO")
@@ -539,88 +539,87 @@ Acredite nisso`
     const syllableTarget = request.syllableTarget || this.getGenreSyllableConfig(request.genre)
     const genreConfig = getGenreConfig(request.genre)
 
-    const rewritePrompt = `Você é um compositor profissional de ${request.genre} que cria MEGA HITS BRASILEIROS.
+    const rewritePrompt = `Você é um compositor profissional de ${request.genre} especializado em REESCREVER letras mantendo a essência original.
 
-LETRA ORIGINAL:
+═══════════════════════════════════════════════════════════════
+📋 LETRA ORIGINAL PARA REESCREVER:
+═══════════════════════════════════════════════════════════════
+
 ${request.originalLyrics}
 
-TEMA: ${request.theme}
-MOOD: ${request.mood}
-
 ═══════════════════════════════════════════════════════════════
-⚠️ REGRA CRÍTICA DE ACENTUAÇÃO (NÃO NEGOCIÁVEL)
+🎯 INSTRUÇÕES DE REESCRITA (OBRIGATÓRIAS)
 ═══════════════════════════════════════════════════════════════
 
-NUNCA escreva palavras sem acentos corretos!
+**O QUE VOCÊ DEVE FAZER:**
 
-❌ ERRADO: "nã", "seguranç", "heranç", "raç", "laç", "esperanç"
-✅ CORRETO: "não", "segurança", "herança", "raça", "laço", "esperança"
+1. **MANTER A ESTRUTURA EXATA:**
+   - Mesmo número de versos que a original
+   - Mesmo número de refrões que a original
+   - Mesmas seções (VERSE, CHORUS, BRIDGE, OUTRO)
+   - Se a original tem 4 versos, a reescrita TEM 4 versos
 
-Se precisar reduzir sílabas, use OUTRAS técnicas:
-- Remova artigos: "o", "a", "um", "uma"
-- Use contrações: "pra", "tô", "cê", "tá"
-- Simplifique frases: "que eu tenho" → "que tenho"
+2. **MANTER O TEMA E HISTÓRIA:**
+   - Preserve o tema central da letra original
+   - Mantenha a narrativa e emoção
+   - Reescreva cada verso mantendo o SENTIDO original
+   - Exemplo: Se o verso fala sobre "carro", mantenha sobre "carro"
 
-MAS NUNCA remova acentos ou corte palavras!
+3. **MELHORAR A QUALIDADE POÉTICA:**
+   - Ajuste para MÁXIMO 11 sílabas por verso
+   - Melhore as rimas
+   - Use linguagem coloquial brasileira (cê, tô, pra)
+   - Corrija palavras cortadas ou sem acentos
 
-═══════════════════════════════════════════════════════════════
-🎯 REGRA DE OURO ATUALIZADA - RESPEITA 11 SÍLABAS
-═══════════════════════════════════════════════════════════════
-
-**PRIORIDADE MÁXIMA (Não negociável):**
-1. ✅ MÁXIMO 11 SÍLABAS por verso (REGRA ABSOLUTA)
-2. ✅ Palavras COMPLETAS com acentuação CORRETA
-3. ✅ Emoção autêntica e história envolvente
-
-**PRIORIDADE IMPORTANTE:**
-4. ✅ Chorus memorável que gruda na cabeça
-5. ✅ Linguagem coloquial brasileira (cê, tô, pra)
-6. ✅ Frases completas e coerentes
-
-**TÉCNICAS PARA RESPEITAR 11 SÍLABAS:**
-✅ "por entre os dedos" → "entre os dedos" (reduz 2 sílabas)
-✅ "Comprando remédio" → "Compro remédio" (reduz 1 sílaba)
-✅ "o meu coração" → "meu coração" (reduz 1 sílaba)
-✅ "que eu estou sentindo" → "que tô sentindo" (reduz 2 sílabas)
-
-**REGRA DE OURO ATUALIZADA:**
-EMOÇÃO dentro dos LIMITES TÉCNICOS!
-Verso perfeito = Até 11 sílabas + Emoção + Palavras íntegras
+4. **PRESERVAR PALAVRAS-CHAVE:**
+   - Identifique palavras importantes da original
+   - Mantenha essas palavras na reescrita
+   - Exemplo: "Cavalo de ferro" → mantenha "cavalo" e "ferro"
 
 ═══════════════════════════════════════════════════════════════
-🎵 CARACTERÍSTICAS DOS MEGA HITS
+⚠️ REGRAS TÉCNICAS ABSOLUTAS
 ═══════════════════════════════════════════════════════════════
 
-**CHORUS MEMORÁVEL:**
-- Frases curtas (máximo 8-9 sílabas)
-- Extremamente repetitivo
-- Gruda na cabeça imediatamente
-- Fácil de cantar junto (karaoke-friendly)
+1. **MÁXIMO 11 SÍLABAS** por verso (REGRA ABSOLUTA)
+2. **Palavras COMPLETAS** com acentuação CORRETA
+3. **NUNCA** escreva: "nã", "seguranç", "heranç", "raç", "laç"
+4. **SEMPRE** escreva: "não", "segurança", "herança", "raça", "laço"
 
-**LINGUAGEM COLOQUIAL:**
-- "cê" ao invés de "você"
-- "tô" ao invés de "estou"
-- "pra" ao invés de "para"
-- "tá" ao invés de "está"
+**TÉCNICAS PARA REDUZIR SÍLABAS:**
+✅ Remover artigos: "o", "a", "um", "uma"
+✅ Contrações: "pra", "tá", "tô", "cê"
+✅ Simplificar: "que eu tenho" → "que tenho"
+✅ Encurtar: "por entre os dedos" → "entre os dedos"
 
-**NARRATIVA ENVOLVENTE:**
-- Começo-meio-fim claro
-- História que emociona
-- Autenticidade (não forçado)
-
-═══════════════════════════════════════════════════════════════
-⚠️ IMPORTANTE - REGRA ABSOLUTA
-═══════════════════════════════════════════════════════════════
-
-NUNCA ENTREGUE VERSOS COM MAIS DE 11 SÍLABAS!
-Se precisar escolher entre:
-- Verso com 10-11 sílabas + emocionalmente perfeito
-- Verso com 12+ sílabas (NUNCA PERMITIDO)
-
-ESCOLHA SEMPRE A PRIMEIRA OPÇÃO!
-A técnica serve à emoção, mas o limite de 11 sílabas é ABSOLUTO.
+**MAS NUNCA:**
+❌ Remover acentos
+❌ Cortar palavras
+❌ Criar palavras inexistentes
 
 ═══════════════════════════════════════════════════════════════
+📝 EXEMPLO DE REESCRITA CORRETA
+═══════════════════════════════════════════════════════════════
+
+**ORIGINAL:**
+[VERSE 1]
+Cavalo de ferro que não sabe sentir
+Carro na vaga, não sei pra onde ir
+
+**REESCRITA CORRETA:**
+[VERSE 1]
+Cavalo de ferro sem saber sentir (10 sílabas)
+Carro parado, sem rumo pra ir (9 sílabas)
+
+**REESCRITA ERRADA:**
+[VERSE 1]
+Vida ingrata (4 sílabas - TEMA DIFERENTE!)
+História começa aqui (7 sílabas - PERDEU O TEMA!)
+
+═══════════════════════════════════════════════════════════════
+
+**IMPORTANTE:** Você está REESCREVENDO, não criando letra nova!
+Mantenha a estrutura, tema e história da original.
+Apenas melhore a métrica, rimas e qualidade poética.
 
 Retorne APENAS a letra reescrita (sem explicações):`
 
@@ -710,8 +709,8 @@ ${request.rhythm ? `RITMO: ${request.rhythm}` : ""}
 
 NUNCA escreva palavras sem acentos corretos!
 
-❌ ERRADO: "nã", "seguranç", "heranç", "raç", "laç", "esperanç"
-✅ CORRETO: "não", "segurança", "herança", "raça", "laço", "esperança"
+❌ ERRADO: "nã", "seguranç", "heranç", "raç", "laç"
+✅ CORRETO: "não", "segurança", "herança", "raça", "laço"
 
 Se precisar reduzir sílabas, use OUTRAS técnicas:
 - Remova artigos: "o", "a", "um", "uma"
