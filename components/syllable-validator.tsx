@@ -1,4 +1,4 @@
-// components/syllable-validator-editable.tsx - VERSÃO COMPLETAMENTE NOVA
+// components/syllable-validator-editable.tsx - SUBSTITUIR TODO O CONTEÚDO
 
 "use client"
 
@@ -15,7 +15,6 @@ interface LineValidation {
   line: string
   syllables: number
   lineNumber: number
-  isValid: boolean
   suggestions: string[]
 }
 
@@ -39,9 +38,8 @@ export function SyllableValidatorEditable({
   lines.forEach((line, index) => {
     if (line.trim() && !line.startsWith('[') && !line.startsWith('(') && !line.includes('Instruments:')) {
       const syllables = countPoeticSyllables(line)
-      const isValid = syllables <= maxSyllables
       
-      if (!isValid) {
+      if (syllables > maxSyllables) {
         // Gerar sugestões simples baseadas na contagem de sílabas
         const suggestions = generateSuggestions(line, maxSyllables)
         
@@ -49,7 +47,6 @@ export function SyllableValidatorEditable({
           line: line.trim(),
           syllables: syllables,
           lineNumber: index + 1,
-          isValid: isValid,
           suggestions: suggestions
         })
       }
