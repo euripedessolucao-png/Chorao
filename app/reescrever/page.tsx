@@ -15,7 +15,7 @@ import { RefreshCw, Save, Copy, Search, Loader2, Star, Trophy, Trash2, Zap, Wand
 import { toast } from "sonner"
 import { EMOTIONS } from "@/lib/genres"
 import { GenreSelect } from "@/components/genre-select"
-import { SyllableValidatorEditable } from "@/components/syllable-validator-editable" // ✅ IMPORT CORRETA
+import { SyllableValidatorEditable } from "@/components/syllable-validator-editable"
 import { InspirationManager } from "@/components/inspiration-manager"
 import {
   Dialog,
@@ -768,15 +768,10 @@ export default function ReescreverPage() {
                   />
 
                   {lyrics.trim() && (
-                    <SyllableValidatorWithSuggestions
+                    <SyllableValidatorEditable
                       lyrics={lyrics}
                       maxSyllables={11}
-                      onApplySuggestion={(lineNumber, newText) => {
-                        const lines = lyrics.split("\n")
-                        lines[lineNumber - 1] = newText
-                        setLyrics(lines.join("\n"))
-                        toast.success("Sugestão aplicada com sucesso!")
-                      }}
+                      onLyricsChange={handleLyricsChange}
                     />
                   )}
                 </div>
