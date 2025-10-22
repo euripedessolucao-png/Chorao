@@ -245,12 +245,28 @@ Acredite nisso`
     // Gera letra base
     let rawLyrics: string
 
+    console.log("[MetaComposer] 🔧 PRÉ-GERAÇÃO: Aplicando correção de acentuação preventiva...")
+    if (isRewrite && request.originalLyrics) {
+      const preFixResult = AggressiveAccentFixer.fix(request.originalLyrics)
+      if (preFixResult.corrections.length > 0) {
+        console.log(`[MetaComposer] ✅ Pré-correção: ${preFixResult.corrections.length} palavras corrigidas`)
+        request.originalLyrics = preFixResult.correctedText
+      }
+    }
+
     if (isRewrite) {
       rawLyrics = await this.generateRewrite(request)
     } else if (hasPreservedChoruses) {
       rawLyrics = await this.generateWithPreservedChoruses(preservedChoruses, request, syllableEnforcement)
     } else {
       rawLyrics = await this.generateDirectLyrics(request, syllableEnforcement)
+    }
+
+    console.log("[MetaComposer] 🔧 PÓS-GERAÇÃO: Aplicando correção de acentuação...")
+    const postGenFixResult = AggressiveAccentFixer.fix(rawLyrics)
+    if (postGenFixResult.corrections.length > 0) {
+      console.log(`[MetaComposer] ✅ Pós-geração: ${postGenFixResult.corrections.length} palavras corrigidas`)
+      rawLyrics = postGenFixResult.correctedText
     }
 
     console.log("[MetaComposer] 🔍 VALIDAÇÃO IMEDIATA: Verificando regra universal de 11 sílabas...")

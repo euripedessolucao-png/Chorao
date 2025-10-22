@@ -13,6 +13,8 @@
  * - Validação rigorosa para letras musicais
  */
 
+import { AggressiveAccentFixer } from "./aggressive-accent-fixer"
+
 const VOWELS = "aeiouáàâãéèêíìîóòôõúùû"
 const VOWEL_REGEX = /[aeiouáàâãéèêíìîóòôõúùû]/i
 
@@ -70,8 +72,17 @@ const PROPAROXITONAS = new Set([
  * Conta sílabas poéticas (até a última tônica)
  */
 export function countPoeticSyllables(line: string): number {
+  console.log(`[v0] 🔢 countPoeticSyllables - Entrada: "${line}"`)
+
+  const fixResult = AggressiveAccentFixer.fix(line)
+  const correctedLine = fixResult.correctedText
+
+  if (fixResult.corrections.length > 0) {
+    console.log(`[v0] ✅ Correções aplicadas antes de contar sílabas:`, fixResult.corrections)
+  }
+
   // Remove tags e instruções
-  const cleanLine = line
+  const cleanLine = correctedLine
     .replace(/\[.*?\]/g, "")
     .replace(/$$.*?$$/g, "")
     .trim()

@@ -27,6 +27,9 @@ export class MultiGenerationEngine {
     generateFn: () => Promise<string>,
     scoreFn: (lyrics: string) => number,
     count = 3,
+    genre?: string,
+    theme?: string,
+    genreConfig?: any,
   ): Promise<MultiGenerationResult> {
     console.log("[v0] 🎯 MultiGenerationEngine - INÍCIO")
     console.log("[v0] 📊 Gerando", count, "variações")
@@ -89,6 +92,61 @@ export class MultiGenerationEngine {
           lyrics = syllableFixResult.correctedLyrics
         } else {
           console.log(`[MultiGeneration] ✅ FASE 3 - Todos os versos já têm 11 sílabas`)
+        }
+
+        if (genre && theme && genreConfig) {
+          console.log("[v0] 🔧 FASE 3.5 - Terceira Via (análise e correção)...")
+          const { analisarTerceiraVia, applyTerceiraViaToLine } = await import("@/lib/terceira-via")
+
+          const terceiraViaAnalysis = analisarTerceiraVia(lyrics, genre, theme)
+
+          if (terceiraViaAnalysis && terceiraViaAnalysis.score_geral < 75) {
+            console.log("[v0] ⚠️ FASE 3.5 - Score Terceira Via baixo:", terceiraViaAnalysis.score_geral)
+            console.log("[v0] 🔧 FASE 3.5 - Aplicando correções Terceira Via...")
+
+            const lines = lyrics.split("\n")
+            const correctedLines: string[] = []
+            let correctionsApplied = 0
+
+            for (let i = 0; i < lines.length; i++) {
+              const line = lines[i]
+
+              // Só corrige linhas que precisam
+              if (line.trim() && !line.startsWith("[") && !line.startsWith("(") && !line.includes("Instruments:")) {
+                try {
+                  const context = lines.slice(Math.max(0, i - 1), Math.min(lines.length, i + 2)).join("\n")
+                  const correctedLine = await applyTerceiraViaToLine(line, i, context, false, "", genre, genreConfig)
+
+                  if (correctedLine !== line) {
+                    correctionsApplied++
+                    console.log("[v0] 🔄 FASE 3.5 - Linha", i, "corrigida")
+                  }
+
+                  correctedLines.push(correctedLine)
+                } catch (error) {
+                  console.warn("[v0] ⚠️ FASE 3.5 - Erro na linha", i, ", mantendo original")
+                  correctedLines.push(line)
+                }
+              } else {
+                correctedLines.push(line)
+              }
+            }
+
+            lyrics = correctedLines.join("\n")
+            console.log("[v0] ✅ FASE 3.5 -", correctionsApplied, "correções Terceira Via aplicadas")
+
+            // Aplicar AggressiveAccentFixer após Terceira Via
+            console.log("[v0] 🔧 FASE 3.5 - Correção de acentos pós-Terceira Via...")
+            const postTerceiraViaAccentFix = AggressiveAccentFixer.fix(lyrics)
+            if (postTerceiraViaAccentFix.corrections.length > 0) {
+              console.log("[v0] ✅ FASE 3.5 -", postTerceiraViaAccentFix.corrections.length, "palavras corrigidas")
+              lyrics = postTerceiraViaAccentFix.correctedText
+            }
+          } else {
+            console.log("[v0] ✅ FASE 3.5 - Score Terceira Via OK:", terceiraViaAnalysis?.score_geral || "N/A")
+          }
+        } else {
+          console.log("[v0] ⚠️ FASE 3.5 - Terceira Via PULADA (faltam parâmetros genre/theme/genreConfig)")
         }
 
         // FASE 4: Correção de integridade de palavras

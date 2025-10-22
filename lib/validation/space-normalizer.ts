@@ -10,22 +10,33 @@ export class SpaceNormalizer {
    * Normaliza espaços em uma linha de texto
    */
   static normalizeLine(line: string): string {
-    return line
+    console.log(`[SpaceNormalizer] 🔍 Normalizando linha: "${line.substring(0, 50)}..."`)
+
+    const normalized = line
       .replace(/\s+/g, " ") // Remove espaços duplicados/triplicados
       .replace(/\s+([.,!?;:…])/g, "$1") // Remove espaço antes de pontuação
       .replace(/([.,!?;:…])\s*([.,!?;:…])/g, "$1$2") // Remove espaço entre pontuações
       .replace(/\s+$/g, "") // Remove espaços no final
       .replace(/^\s+/g, "") // Remove espaços no início
       .trim()
+
+    if (line !== normalized) {
+      console.log(`[SpaceNormalizer] ✅ Linha normalizada: "${normalized.substring(0, 50)}..."`)
+    }
+
+    return normalized
   }
 
   /**
    * Normaliza espaços em uma letra completa
    */
   static normalizeLyrics(lyrics: string): string {
+    console.log(`[SpaceNormalizer] 🚀 Normalizando letra completa...`)
     const lines = lyrics.split("\n")
     const normalizedLines = lines.map((line) => this.normalizeLine(line))
-    return normalizedLines.join("\n")
+    const result = normalizedLines.join("\n")
+    console.log(`[SpaceNormalizer] ✅ Letra normalizada`)
+    return result
   }
 
   /**
