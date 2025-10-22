@@ -18,7 +18,7 @@ import { toast } from "sonner"
 import { EMOTIONS } from "@/lib/genres"
 import { GenreSelect } from "@/components/genre-select"
 import { HookGenerator } from "@/components/hook-generator"
-import { SyllableValidatorEditable } from "@/components/syllable-validator-editable"
+import { SyllableValidatorEditable } from "@/components/syllable-validator-editable" // ✅ IMPORT CORRETA
 import { InspirationManager } from "@/components/inspiration-manager"
 import {
   Dialog,
