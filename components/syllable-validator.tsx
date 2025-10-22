@@ -1,4 +1,4 @@
-// components/syllable-validator-editable.tsx - COMPLETO E CORRETO
+// components/syllable-validator-editable.tsx - VERSÃO CORRIGIDA
 
 "use client"
 
@@ -245,3 +245,6 @@ export function SyllableValidatorEditable({
     </Card>
   )
 }
+
+// ✅ EXPORT DEFAULT PARA GARANTIR
+export default SyllableValidatorEditable
