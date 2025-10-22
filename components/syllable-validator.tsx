@@ -1,4 +1,4 @@
-// components/syllable-validator-editable.tsx - VERSÃO CORRIGIDA
+// components/syllable-validator-editable.tsx - VERSÃO TOTALMENTE CORRIGIDA
 
 "use client"
 
