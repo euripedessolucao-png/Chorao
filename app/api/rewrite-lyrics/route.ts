@@ -7,7 +7,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json()
-    console.log("[v0] 📦 Body recebido:", Object.keys(body))
+    console.log("[v0] 📦 Body recebido completo:", JSON.stringify(body, null, 2))
 
     const lyrics = body.lyrics || body.letra || ""
     const genre = body.genero || body.genre || "Sertanejo"
@@ -15,13 +15,16 @@ export async function POST(request: Request) {
     const mood = body.humor || body.mood || "Adaptado"
     const additionalRequirements = body.additionalRequirements || ""
 
-    console.log("[v0] 📝 Parâmetros:", { lyrics: lyrics.length, genre, theme, mood })
+    console.log("[v0] 📝 Letra recebida (primeiros 100 chars):", lyrics.substring(0, 100))
+    console.log("[v0] 📝 Tamanho da letra:", lyrics.length)
+    console.log("[v0] 📝 Parâmetros:", { genre, theme, mood })
 
     if (!lyrics || lyrics.trim().length < 10) {
+      console.log("[v0] ❌ ERRO: Letra muito curta ou vazia")
       return NextResponse.json({ error: "Letra não encontrada ou muito curta" }, { status: 400 })
     }
 
-    console.log("[v0] 🎼 Gerando reescrita com MetaComposer...")
+    console.log("[v0] ✅ Validação passou - iniciando MetaComposer...")
 
     const result = await MetaComposer.compose({
       genre,
@@ -33,10 +36,13 @@ export async function POST(request: Request) {
       useTerceiraVia: true,
     })
 
-    console.log("[v0] ✅ Reescrita concluída - Score:", result.metadata.finalScore)
+    console.log("[v0] ✅ MetaComposer concluído - Score:", result.metadata.finalScore)
+    console.log("[v0] 📝 Letra gerada (primeiros 200 chars):", result.lyrics.substring(0, 200))
 
     let rewrittenLyrics = result.lyrics
     rewrittenLyrics = capitalizeLines(rewrittenLyrics)
+
+    console.log("[v0] ✅ Retornando resultado final")
 
     return NextResponse.json({
       letra: rewrittenLyrics,
@@ -44,7 +50,8 @@ export async function POST(request: Request) {
       metadata: result.metadata,
     })
   } catch (error) {
-    console.error("[v0] ❌ ERRO:", error)
+    console.error("[v0] ❌ ERRO CRÍTICO:", error)
+    console.error("[v0] ❌ Stack trace:", error instanceof Error ? error.stack : "Sem stack trace")
     return NextResponse.json(
       {
         error: "Erro na reescrita",
