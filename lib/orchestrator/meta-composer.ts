@@ -17,8 +17,6 @@ import { AbsoluteSyllableEnforcer } from "@/lib/validation/absolute-syllable-enf
 import { LyricsAuditor } from "@/lib/validation/lyrics-auditor"
 import { MultiGenerationEngine } from "./multi-generation-engine"
 import { WordIntegrityValidator } from "@/lib/validation/word-integrity-validator"
-import { AggressiveAccentFixer } from "@/lib/validation/aggressive-accent-fixer"
-import { UltraAggressiveSyllableReducer } from "@/lib/validation/ultra-aggressive-syllable-reducer"
 import { UltimateFixer } from "@/lib/validation/ultimate-fixer"
 
 export interface CompositionRequest {
@@ -284,52 +282,13 @@ Acredite nisso`
       rawLyrics = forceFixResult.correctedLyrics
 
       if (!forceFixResult.isValid) {
-        console.error("[MetaComposer] ❌ CORREÇÃO FORÇADA FALHOU! Aplicando UltraAggressiveSyllableReducer...")
-        const ultraReducer = new UltraAggressiveSyllableReducer()
-        const ultraResult = ultraReducer.correctFullLyrics(rawLyrics)
-        rawLyrics = ultraResult.correctedLyrics
-      }
-    }
-
-    console.log("[MetaComposer] 🔧 FASE 1: Aplicando correção de acentuação...")
-    const accentFixResult = AggressiveAccentFixer.fix(rawLyrics)
-    if (accentFixResult.corrections.length > 0) {
-      console.log(`[MetaComposer] ✅ Correção de acentuação: ${accentFixResult.corrections.length} palavras corrigidas`)
-      rawLyrics = accentFixResult.correctedText
-    }
-
-    console.log("[MetaComposer] 🔧 FASE 2: Aplicando correção ultra agressiva de sílabas...")
-    const syllableReducer = new UltraAggressiveSyllableReducer()
-    const syllableFixResult = syllableReducer.correctFullLyrics(rawLyrics)
-    if (syllableFixResult.report.correctedVerses > 0) {
-      console.log(
-        `[MetaComposer] ✅ Correção de sílabas: ${syllableFixResult.report.correctedVerses}/${syllableFixResult.report.totalVerses} versos`,
-      )
-      rawLyrics = syllableFixResult.correctedLyrics
-    }
-
-    const postSyllableValidation = AbsoluteSyllableEnforcer.validate(rawLyrics)
-    if (!postSyllableValidation.isValid) {
-      console.error("[MetaComposer] ❌ AINDA HÁ VERSOS COM MAIS DE 11 SÍLABAS APÓS CORREÇÃO!")
-      console.error(postSyllableValidation.message)
-
-      let attempts = 0
-      const maxAttempts = 3
-      while (!postSyllableValidation.isValid && attempts < maxAttempts) {
-        attempts++
-        console.log(`[MetaComposer] 🔄 Tentativa ${attempts}/${maxAttempts} de correção forçada...`)
-        const fixResult = AbsoluteSyllableEnforcer.validateAndFix(rawLyrics)
-        rawLyrics = fixResult.correctedLyrics
-
-        if (fixResult.isValid) {
-          console.log(`[MetaComposer] ✅ Correção bem-sucedida na tentativa ${attempts}!`)
-          break
+        console.error("[MetaComposer] ❌ CORREÇÃO FORÇADA FALHOU! Aplicando UltimateFixer novamente...")
+        try {
+          rawLyrics = UltimateFixer.fixFullLyrics(rawLyrics)
+          console.log("[MetaComposer] ✅ UltimateFixer aplicado com sucesso")
+        } catch (error) {
+          console.error("[MetaComposer] ❌ UltimateFixer falhou:", error)
         }
-      }
-
-      if (attempts === maxAttempts && !postSyllableValidation.isValid) {
-        console.error("[MetaComposer] ❌ FALHA CRÍTICA: Não foi possível corrigir todos os versos!")
-        console.error("[MetaComposer] ⚠️ Usando letra com correções parciais")
       }
     }
 
@@ -339,12 +298,12 @@ Acredite nisso`
     if (terceiraViaAnalysis && terceiraViaAnalysis.score_geral < 75) {
       rawLyrics = await this.applyTerceiraViaCorrections(rawLyrics, request, terceiraViaAnalysis, genreConfig)
 
-      const accentFixAfterTerceiraVia = AggressiveAccentFixer.fix(rawLyrics)
-      if (accentFixAfterTerceiraVia.corrections.length > 0) {
-        console.log(
-          `[MetaComposer] ✅ Correção de acentuação pós-Terceira Via: ${accentFixAfterTerceiraVia.corrections.length} palavras`,
-        )
-        rawLyrics = accentFixAfterTerceiraVia.correctedText
+      console.log("[MetaComposer] 🔧 Aplicando UltimateFixer após Terceira Via...")
+      try {
+        rawLyrics = UltimateFixer.fixFullLyrics(rawLyrics)
+        console.log("[MetaComposer] ✅ UltimateFixer pós-Terceira Via aplicado")
+      } catch (error) {
+        console.error("[MetaComposer] ❌ Erro ao aplicar UltimateFixer pós-Terceira Via:", error)
       }
 
       const absoluteValidationAfterTerceiraVia = AbsoluteSyllableEnforcer.validate(rawLyrics)
@@ -375,12 +334,12 @@ Acredite nisso`
         genreConfig,
       )
 
-      const accentFixAfterPolish = AggressiveAccentFixer.fix(finalLyrics)
-      if (accentFixAfterPolish.corrections.length > 0) {
-        console.log(
-          `[MetaComposer] ✅ Correção de acentuação pós-polimento: ${accentFixAfterPolish.corrections.length} palavras`,
-        )
-        finalLyrics = accentFixAfterPolish.correctedText
+      console.log("[MetaComposer] 🔧 Aplicando UltimateFixer após polimento...")
+      try {
+        finalLyrics = UltimateFixer.fixFullLyrics(finalLyrics)
+        console.log("[MetaComposer] ✅ UltimateFixer pós-polimento aplicado")
+      } catch (error) {
+        console.error("[MetaComposer] ❌ Erro ao aplicar UltimateFixer pós-polimento:", error)
       }
 
       const absoluteValidationAfterPolish = AbsoluteSyllableEnforcer.validate(finalLyrics)
@@ -408,11 +367,13 @@ Acredite nisso`
     const stackingResult = LineStacker.stackLines(finalLyrics)
     finalLyrics = stackingResult.stackedLyrics
 
-    console.log("[MetaComposer] 🔧 CORREÇÃO FINAL: Aplicando última camada de correção de acentuação...")
-    const finalAccentFix = AggressiveAccentFixer.ultimateFix(finalLyrics)
-    if (finalAccentFix !== finalLyrics) {
-      console.log("[MetaComposer] ✅ Correção final de acentuação aplicada")
-      finalLyrics = finalAccentFix
+    console.log("[MetaComposer] 🔧 CORREÇÃO FINAL: Aplicando UltimateFixer final...")
+    try {
+      finalLyrics = UltimateFixer.fixFullLyrics(finalLyrics)
+      console.log("[MetaComposer] ✅ Correção final aplicada")
+    } catch (error) {
+      console.error("[MetaComposer] ❌ Erro na correção final:", error)
+      console.log("[MetaComposer] ⚠️ Usando letra sem correção final")
     }
 
     console.log("[MetaComposer] 🔍 VALIDAÇÃO FINAL ABSOLUTA: Verificando regra universal de 11 sílabas...")
@@ -449,15 +410,6 @@ Acredite nisso`
       console.warn("[MetaComposer] ⚠️ Retornando letra com avisos de integridade")
     } else {
       console.log("[MetaComposer] ✅ Versão aprovada - Integridade de palavras OK")
-    }
-
-    console.log("[MetaComposer] 🔧 CORREÇÃO FINAL: Aplicando UltimateFixer final...")
-    try {
-      finalLyrics = UltimateFixer.fixFullLyrics(finalLyrics)
-      console.log("[MetaComposer] ✅ Correção final aplicada")
-    } catch (error) {
-      console.error("[MetaComposer] ❌ Erro na correção final:", error)
-      console.log("[MetaComposer] ⚠️ Usando letra sem correção final")
     }
 
     console.log("[v0] 🎉 MetaComposer.compose - SUCESSO")

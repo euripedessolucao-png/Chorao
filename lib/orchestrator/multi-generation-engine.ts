@@ -1,5 +1,4 @@
 import { WordIntegrityValidator } from "@/lib/validation/word-integrity-validator"
-import { SpaceNormalizer } from "@/lib/validation/space-normalizer"
 import { UltimateFixer } from "@/lib/validation/ultimate-fixer"
 
 export interface GenerationVariation {
@@ -67,7 +66,7 @@ export class MultiGenerationEngine {
         // VALIDAÇÃO 2: Espaços duplicados
         console.log("[v0] ✅ VALIDAÇÃO 2 - Espaços duplicados...")
         const lines = lyrics.split("\n")
-        const linesWithMultipleSpaces = lines.filter((line) => SpaceNormalizer.hasMultipleSpaces(line))
+        const linesWithMultipleSpaces = lines.filter((line) => /\s{2,}/.test(line))
         if (linesWithMultipleSpaces.length > 0) {
           console.warn("[v0] ⚠️ VALIDAÇÃO 2 FALHOU -", linesWithMultipleSpaces.length, "linhas com espaços duplicados")
           rejectedVariations.push({
