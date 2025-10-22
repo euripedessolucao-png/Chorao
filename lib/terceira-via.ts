@@ -2,7 +2,7 @@
 import { ThirdWayEngine } from "./terceira-via/third-way-converter"
 
 export { ThirdWayEngine } from "./terceira-via/third-way-converter"
-export { analisarTerceiraVia } from "./terceira-via/analysis"
+export { analisarTerceiraVia, type TerceiraViaAnalysis } from "./terceira-via/analysis"
 
 export async function applyTerceiraViaToLine(
   line: string,
