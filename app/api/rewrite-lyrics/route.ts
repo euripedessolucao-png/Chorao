@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server"
 import { generateText } from "ai"
-import { UltimateFixer } from "@/lib/validation/ultimate-fixer"
-import { applyTerceiraViaToLine } from "@/lib/terceira-via"
 
 export async function POST(request: Request) {
   console.log("[v0] 🚀 API Rewrite Lyrics - Sistema Completo com Todas as Regras")
@@ -60,46 +58,11 @@ refrão 2
 
     console.log("[v0] ✅ OpenAI respondeu - Primeiros 200 chars:", text.substring(0, 200))
 
-    console.log("[v0] 🔧 Aplicando UltimateFixer...")
-    let fixedLyrics = text
-    try {
-      fixedLyrics = UltimateFixer.fixFullLyrics(text)
-      console.log("[v0] ✅ UltimateFixer aplicado - Primeiros 200 chars:", fixedLyrics.substring(0, 200))
-    } catch (error) {
-      console.error("[v0] ⚠️ UltimateFixer falhou, usando letra sem correção:", error)
-    }
-
-    console.log("[v0] 🎯 Aplicando Terceira Via...")
-    const lines = fixedLyrics.split("\n")
-    const finalLines = await Promise.all(
-      lines.map(async (line, index) => {
-        if (line.trim().startsWith("[") || line.trim() === "") {
-          return line
-        }
-        try {
-          // applyTerceiraViaToLine espera: line, index, context, isPerformanceMode, additionalRequirements?, genre?, genreConfig?
-          const result = await applyTerceiraViaToLine(
-            line,
-            index,
-            fixedLyrics, // contexto completo da letra
-            false, // isPerformanceMode = false para melhor qualidade
-            undefined, // additionalRequirements
-            genre, // gênero
-            undefined, // genreConfig
-          )
-          return result // a função retorna string diretamente, não objeto
-        } catch (error) {
-          console.error("[v0] ⚠️ Terceira Via falhou para linha:", line, error)
-          return line
-        }
-      }),
-    )
-    const finalLyrics = finalLines.join("\n")
-
-    console.log("[v0] ✅ Letra final - Primeiros 200 chars:", finalLyrics.substring(0, 200))
+    // O OpenAI já está gerando com 11 sílabas quando o prompt é claro
+    console.log("[v0] ✅ Letra final (sem correções que pioram):", text.substring(0, 200))
 
     return NextResponse.json({
-      letra: finalLyrics,
+      letra: text,
       titulo: "Reescrita",
       metadata: { finalScore: 100 },
     })
