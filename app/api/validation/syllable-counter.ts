@@ -1,7 +1,7 @@
-// app/api/validation/syllable-counter.ts - VERSÃO COMPLETA CORRIGIDA
+// app/api/validation/syllable-counter.ts - VERSÃO DEFINITIVA
 
 import { NextResponse } from "next/server"
-import { validateSyllableLimit } from "@/lib/validation/syllable-counter"
+import { countPoeticSyllables, getIntelligentSuggestions } from "@/lib/validation/syllable-counter"
 
 export async function POST(request: Request) {
   try {
@@ -16,15 +16,18 @@ export async function POST(request: Request) {
 
     for (const [index, line] of lines.entries()) {
       if (line.trim() && !line.startsWith('[') && !line.startsWith('(') && !line.includes('Instruments:')) {
-        // ✅ CORREÇÃO: Usando validateSyllableLimit corretamente
-        const validation = validateSyllableLimit(line, maxSyllables)
+        // ✅ SOLUÇÃO DEFINITIVA: Contagem direta sem dependência de validateSyllableLimit
+        const syllables = countPoeticSyllables(line)
+        const isValid = syllables <= maxSyllables
         
-        if (!validation.isValid) {
+        if (!isValid) {
+          const suggestions = getIntelligentSuggestions(line, maxSyllables)
+          
           validations.push({
             line: line.trim(),
-            syllables: validation.currentSyllables,
+            syllables: syllables,
             lineNumber: index + 1,
-            suggestions: validation.suggestions
+            suggestions: suggestions
           })
         }
       }
@@ -49,7 +52,6 @@ export async function POST(request: Request) {
   }
 }
 
-// ✅ Adicionando suporte para método GET (opcional)
 export async function GET(request: Request) {
   return NextResponse.json({ 
     message: "Syllable validation API is running",
