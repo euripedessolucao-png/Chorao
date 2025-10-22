@@ -7,10 +7,11 @@ import { SyllableEnforcer } from "@/lib/validation/syllableEnforcer"
 import { MetaComposer } from "@/lib/orchestrator/meta-composer"
 
 export async function POST(request: Request) {
+  console.log("[v0] 🚀 INÍCIO - API Rewrite Lyrics chamada")
+
   try {
     const body = await request.json()
-
-    console.log("🔍 [Rewrite-Lyrics] Body completo:", JSON.stringify(body, null, 2))
+    console.log("[v0] 📦 Body recebido:", Object.keys(body))
 
     // ✅ PROCURA A LETRA E PARÂMETROS
     let finalLyrics = ""
@@ -151,17 +152,22 @@ export async function POST(request: Request) {
 
     // ✅ TIMEOUT
     const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error("Timeout na reescrita")), 45000),
+      setTimeout(() => {
+        console.log("[v0] ⏰ TIMEOUT - 45 segundos excedidos")
+        reject(new Error("Timeout na reescrita"))
+      }, 45000),
     )
 
     let result
     try {
       // ✅ TENTA USAR META COMPOSER PRIMEIRO
+      console.log("[v0] 🎼 Chamando MetaComposer.compose...")
       const compositionPromise = MetaComposer.compose(compositionRequest)
       result = await Promise.race([compositionPromise, timeoutPromise])
-      console.log(`[Rewrite-Lyrics] ✅ MetaComposer concluído! Score: ${result.metadata.finalScore}`)
+      console.log("[v0] ✅ MetaComposer retornou resultado - Score:", result.metadata.finalScore)
     } catch (metaError) {
-      console.log("[Rewrite-Lyrics] ⚠️ MetaComposer falhou, usando fallback:", metaError)
+      console.log("[v0] ❌ MetaComposer FALHOU:", metaError)
+      console.log("[v0] 🔄 Usando fallback...")
       // ✅ FALLBACK PARA SISTEMA SIMPLIFICADO
       result = await fallbackRewriteWithStructure(
         finalLyrics,
@@ -175,10 +181,10 @@ export async function POST(request: Request) {
     }
 
     // ✅ APLICA SYLLABLE ENFORCER NO RESULTADO FINAL
-    console.log("[Rewrite-Lyrics] 🔧 Aplicando SyllableEnforcer no resultado final...")
+    console.log("[v0] 🔧 Aplicando SyllableEnforcer...")
     const enforcedResult = await SyllableEnforcer.enforceSyllableLimits(result.lyrics, syllableConfig, finalGenero)
 
-    console.log(`[Rewrite-Lyrics] ✅ SyllableEnforcer: ${enforcedResult.corrections} correções aplicadas`)
+    console.log(`[v0] ✅ SyllableEnforcer concluído -`, enforcedResult.corrections, "correções")
 
     // ✅ APLICA FORMATAÇÃO PERFORMÁTICA
     console.log("[Rewrite-Lyrics] 🎭 Aplicando formatação performática...")
@@ -196,6 +202,7 @@ export async function POST(request: Request) {
     const finalValidation = validateLyricsSyllables(finalLyricsFormatted)
     console.log("[Rewrite-Lyrics] ✅ Validação final:", finalValidation)
 
+    console.log("[v0] 🎉 SUCESSO - Retornando letra reescrita")
     return NextResponse.json({
       letra: finalLyricsFormatted,
       titulo: result.title || extractTitle(finalLyricsFormatted, finalTema),
@@ -214,7 +221,8 @@ export async function POST(request: Request) {
       },
     })
   } catch (error) {
-    console.error("[Rewrite-Lyrics] Erro:", error)
+    console.error("[v0] 💥 ERRO FATAL na API:", error)
+    console.error("[v0] 📍 Stack trace:", error instanceof Error ? error.stack : "N/A")
 
     return NextResponse.json(
       {
@@ -348,7 +356,9 @@ function applyStandardFormatting(lyrics: string, genre: string): string {
   formatted = formatted
     .replace(/\[INTRO\]/gi, "[INTRO]")
     .replace(/\[VERSO\]/gi, "[VERSE]")
+    .replace(/\[VERSO\s+\d+\]/gi, "[VERSE]")
     .replace(/\[REFRÃO\]/gi, "[CHORUS]")
+    .replace(/\[PRÉ-REFRÃO\]/gi, "[PRE-CHORUS]")
     .replace(/\[PONTE\]/gi, "[BRIDGE]")
     .replace(/\[SOLO\]/gi, "[SOLO]")
     .replace(/\[FINAL\]/gi, "[OUTRO]")

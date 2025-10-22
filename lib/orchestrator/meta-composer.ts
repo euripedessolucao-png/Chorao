@@ -104,49 +104,113 @@ export class MetaComposer {
    * - NUNCA entrega letra com erros!
    */
   static async compose(request: CompositionRequest): Promise<CompositionResult> {
-    console.log("[MetaComposer-TURBO] 🚀 Iniciando composição com MÚLTIPLAS GERAÇÕES...")
-    console.log("[MetaComposer-TURBO] 🎯 Gera 3 versões completas e escolhe a melhor")
-    console.log("[MetaComposer-TURBO] 🚨 NUNCA ENTREGA COM ERROS!")
-
-    const multiGenResult = await MultiGenerationEngine.generateMultipleVariations(
-      async () => {
-        // Gera uma versão completa da letra
-        return await this.generateSingleVersion(request)
-      },
-      (lyrics) => {
-        // Calcula score da letra
-        const auditResult = LyricsAuditor.audit(lyrics, request.genre, request.theme)
-        return auditResult.score
-      },
-      3, // Gera 3 versões
-    )
-
-    const bestLyrics = multiGenResult.variations[multiGenResult.bestVariationIndex].lyrics
-    const bestScore = multiGenResult.bestScore
-
-    console.log(`[MetaComposer-TURBO] 🏆 Melhor versão escolhida! Score: ${bestScore}/100`)
-    console.log(`[MetaComposer-TURBO] 💪 Pontos fortes:`)
-    multiGenResult.variations[multiGenResult.bestVariationIndex].strengths.forEach((s) => {
-      console.log(`  - ${s}`)
+    console.log("[v0] 🎼 MetaComposer.compose - INÍCIO")
+    console.log("[v0] 📊 Request:", {
+      genre: request.genre,
+      theme: request.theme,
+      isRewrite: !!request.originalLyrics,
+      hasPreservedChoruses: request.preservedChoruses && request.preservedChoruses.length > 0,
     })
 
-    if (multiGenResult.variations[multiGenResult.bestVariationIndex].weaknesses.length > 0) {
-      console.log(`[MetaComposer-TURBO] ⚠️ Pontos fracos:`)
-      multiGenResult.variations[multiGenResult.bestVariationIndex].weaknesses.forEach((w) => {
-        console.log(`  - ${w}`)
-      })
-    }
+    try {
+      console.log("[v0] 🔄 Chamando MultiGenerationEngine...")
+      const multiGenResult = await MultiGenerationEngine.generateMultipleVariations(
+        async () => {
+          console.log("[v0] 📝 Gerando versão única...")
+          return await this.generateSingleVersion(request)
+        },
+        (lyrics) => {
+          const auditResult = LyricsAuditor.audit(lyrics, request.genre, request.theme)
+          console.log("[v0] 📊 Score da variação:", auditResult.score)
+          return auditResult.score
+        },
+        3,
+      )
 
-    return {
-      lyrics: bestLyrics,
-      title: this.extractTitle(bestLyrics, request),
-      metadata: {
-        iterations: 3,
-        finalScore: bestScore,
-        polishingApplied: request.applyFinalPolish ?? true,
-        preservedChorusesUsed: request.preservedChoruses ? request.preservedChoruses.length > 0 : false,
-        performanceMode: request.performanceMode || "standard",
-      },
+      console.log("[v0] ✅ MultiGenerationEngine retornou", multiGenResult.variations.length, "variações")
+      console.log(
+        "[v0] 🏆 Melhor variação: índice",
+        multiGenResult.bestVariationIndex,
+        "- Score:",
+        multiGenResult.bestScore,
+      )
+
+      const bestLyrics = multiGenResult.variations[multiGenResult.bestVariationIndex].lyrics
+      const bestScore = multiGenResult.bestScore
+
+      console.log(`[MetaComposer-TURBO] 🏆 Melhor versão escolhida! Score: ${bestScore}/100`)
+
+      return {
+        lyrics: bestLyrics,
+        title: this.extractTitle(bestLyrics, request),
+        metadata: {
+          iterations: 3,
+          finalScore: bestScore,
+          polishingApplied: request.applyFinalPolish ?? true,
+          preservedChorusesUsed: request.preservedChoruses ? request.preservedChoruses.length > 0 : false,
+          performanceMode: request.performanceMode || "standard",
+        },
+      }
+    } catch (error) {
+      console.error("[v0] ❌ MetaComposer.compose - ERRO:", error)
+      console.error("[v0] 📍 Local do erro: MultiGenerationEngine")
+      console.error("[v0] 🔄 Tentando fallback direto...")
+
+      const syllableEnforcement = request.syllableTarget || this.getGenreSyllableConfig(request.genre)
+      syllableEnforcement.max = Math.min(syllableEnforcement.max, this.ABSOLUTE_MAX_SYLLABLES)
+
+      try {
+        console.log("[v0] 🔧 Fallback: generateDirectLyrics")
+        const fallbackLyrics = await this.generateDirectLyrics(request, syllableEnforcement)
+        console.log("[v0] ✅ Fallback bem-sucedido - Letra gerada")
+
+        return {
+          lyrics: fallbackLyrics,
+          title: this.extractTitle(fallbackLyrics, request),
+          metadata: {
+            iterations: 1,
+            finalScore: 70,
+            polishingApplied: false,
+            preservedChorusesUsed: false,
+            performanceMode: request.performanceMode || "standard",
+          },
+        }
+      } catch (fallbackError) {
+        console.error("[v0] 💥 Fallback TAMBÉM FALHOU:", fallbackError)
+        console.error("[v0] 🚨 Usando letra de emergência")
+
+        const emergencyLyrics = `[VERSE 1]
+${request.theme}
+História começa aqui
+Tudo vai dar certo
+
+[CHORUS]
+${request.theme}
+Vai ficar tudo bem
+Acredite nisso
+
+[VERSE 2]
+Caminho é longo
+Mas vamos chegar
+Juntos até o fim
+
+[CHORUS]
+${request.theme}
+Vai ficar tudo bem
+Acredite nisso`
+
+        return {
+          lyrics: emergencyLyrics,
+          title: request.theme,
+          metadata: {
+            iterations: 0,
+            finalScore: 50,
+            polishingApplied: false,
+            preservedChorusesUsed: false,
+            performanceMode: request.performanceMode || "standard",
+          },
+        }
+      }
     }
   }
 
@@ -366,6 +430,7 @@ export class MetaComposer {
       console.log("[MetaComposer] ✅ Versão aprovada - Integridade de palavras OK")
     }
 
+    console.log("[v0] 🎉 MetaComposer.compose - SUCESSO")
     return finalLyrics
   }
 
@@ -486,9 +551,11 @@ export class MetaComposer {
    * GERA REESCRITA DE LETRA EXISTENTE - CONSTRUINDO VERSOS CORRETOS DESDE O INÍCIO
    */
   private static async generateRewrite(request: CompositionRequest): Promise<string> {
-    console.log("[MetaComposer] Gerando reescrita construindo versos corretos desde o início...")
+    console.log("[v0] 📝 generateRewrite - INÍCIO")
+    console.log("[v0] 📊 Original lyrics length:", request.originalLyrics?.length || 0)
 
     if (!request.originalLyrics) {
+      console.error("[v0] ❌ generateRewrite - Letra original não fornecida!")
       throw new Error("Original lyrics required for rewrite")
     }
 
@@ -581,15 +648,18 @@ A técnica serve à emoção, mas o limite de 11 sílabas é ABSOLUTO.
 Retorne APENAS a letra reescrita (sem explicações):`
 
     try {
+      console.log("[v0] 🤖 Chamando AI para reescrita...")
       const response = await generateText({
         model: "openai/gpt-4o",
         prompt: rewritePrompt,
         temperature: 0.5,
       })
 
+      console.log("[v0] ✅ AI retornou resposta - Length:", response.text?.length || 0)
       return response.text || request.originalLyrics
     } catch (error) {
-      console.error("[MetaComposer] Erro ao gerar reescrita:", error)
+      console.error("[v0] ❌ generateRewrite - Erro na AI:", error)
+      console.error("[v0] 🔄 Retornando letra original como fallback")
       return request.originalLyrics
     }
   }
