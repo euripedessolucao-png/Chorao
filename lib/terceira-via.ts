@@ -1,6 +1,6 @@
 import { generateText } from "ai"
 import { getGenreConfig } from "./genre-config"
-import { ThirdWayEngine, ADVANCED_BRAZILIAN_METRICS } from "./terceira-via/third-way-converter"
+import { ThirdWayEngine, ADVANCED_BRAZILIAN_METRICS } from "./terceira-via/analysis"
 import { countPoeticSyllables } from "./validation/syllable-counter"
 
 export interface TerceiraViaAnalysis {
