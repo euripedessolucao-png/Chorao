@@ -8,7 +8,8 @@
 // Contadores e validadores de sílabas
 export { countPoeticSyllables, countPortugueseSyllables } from "./syllable-counter"
 export { SyllableEnforcer } from "./syllableEnforcer"
-export { Syllable-counter } from './app/api/validation/syllable-counter'
+export { Syllable-counter } from "./app/api/validation/syllable-counter"
+
 
 // Validadores de integridade
 export { validateVerseIntegrity } from "./verse-integrity-validator"
