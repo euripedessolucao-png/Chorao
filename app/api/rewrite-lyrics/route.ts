@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { generateText } from "ai"
+import { MetaComposer } from "@/lib/orchestrator/meta-composer"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 
 export async function POST(request: Request) {
@@ -21,44 +21,27 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Letra não encontrada ou muito curta" }, { status: 400 })
     }
 
-    console.log("[v0] 🎼 Gerando reescrita...")
+    console.log("[v0] 🎼 Gerando reescrita com MetaComposer...")
 
-    const prompt = `Reescreva esta letra de ${genre} mantendo a essência:
-
-LETRA ORIGINAL:
-${lyrics}
-
-TEMA: ${theme}
-HUMOR: ${mood}
-${additionalRequirements ? `REQUISITOS: ${additionalRequirements}` : ""}
-
-REGRAS:
-- Máximo 11 sílabas por verso
-- Manter estrutura original
-- Usar linguagem coloquial brasileira
-- Tags em inglês, versos em português
-
-Gere a letra reescrita:`
-
-    const { text } = await generateText({
-      model: "openai/gpt-4o",
-      prompt,
-      temperature: 0.7,
+    const result = await MetaComposer.compose({
+      genre,
+      theme,
+      mood,
+      additionalRequirements,
+      originalLyrics: lyrics,
+      applyFinalPolish: true,
+      useTerceiraVia: true,
     })
 
-    let rewrittenLyrics = text.trim()
+    console.log("[v0] ✅ Reescrita concluída - Score:", result.metadata.finalScore)
 
+    let rewrittenLyrics = result.lyrics
     rewrittenLyrics = capitalizeLines(rewrittenLyrics)
-
-    console.log("[v0] ✅ Reescrita concluída")
 
     return NextResponse.json({
       letra: rewrittenLyrics,
-      titulo: theme,
-      metadata: {
-        score: 85,
-        polishingApplied: true,
-      },
+      titulo: result.title,
+      metadata: result.metadata,
     })
   } catch (error) {
     console.error("[v0] ❌ ERRO:", error)
