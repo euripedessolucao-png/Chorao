@@ -3,7 +3,6 @@ import {
   type TerceiraViaAnalysis,
   analisarTerceiraVia,
   applyTerceiraViaToLine,
-  ThirdWayEngine,
 } from "@/lib/terceira-via"
 import { getGenreConfig } from "@/lib/genre-config"
 import { generateText } from "ai"
@@ -106,49 +105,33 @@ export class SyllableTyrant {
   private static async brutalFix(line: string, currentSyllables: number): Promise<string> {
     const difference = 11 - currentSyllables
     
-    const fixPrompt = `**EMERGÊNCIA: CORRIJA ESTE VERSO PARA TER EXATAMENTE 11 SÍLABAS**
+    const fixPrompt = `**CORRIJA ESTE VERSO PARA TER EXATAMENTE 11 SÍLABAS**
 
-VERSO ORIGINAL: "${line}"
-SÍLABAS ATUAIS: ${currentSyllables} 
-NECESSÁRIO: ${difference > 0 ? `ADICIONAR ${difference} sílaba(s)` : `REMOVER ${Math.abs(difference)} sílaba(s)`}
+VERSO: "${line}"
+SÍLABAS ATUAIS: ${currentSyllables}
+AÇÃO: ${difference > 0 ? `ADICIONAR ${difference} sílaba(s)` : `REMOVER ${Math.abs(difference)} sílaba(s)`}
 
-**TÉCNICAS OBRIGATÓRIAS (ESCOLA DE SAMBA):**
+TÉCNICAS:
 ${difference > 0 ? 
   '- ADICIONE: "o", "a", "meu", "minha", "esse", "essa"' :
-  '- ELISÃO: "de amor" → "d\'amor" (OBRIGATÓRIO)\n' +
-  '- CRASE: "a amante" → "àmante" (OBRIGATÓRIO)\n' +
-  '- CONTRACÇÃO: "você" → "cê", "para" → "pra", "está" → "tá"\n' +
-  '- JUNÇÃO: "que eu" → "qu\'eu", "se eu" → "s\'eu", "meu amor" → "meuamor"'
+  '- ELISÃO: "de amor" → "d\'amor"\n' +
+  '- CONTRACÇÃO: "você" → "cê", "para" → "pra"\n' +
+  '- JUNÇÃO: "que eu" → "qu\'eu", "meu amor" → "meuamor"'
 }
 
-**PROIBIDO:**
-- Cortar palavras ("não" → "nã" ❌)
-- Remover acentos
-- Quebrar gramática
+NUNCA: corte palavras ou remova acentos.
 
-**EXEMPLOS DE CORREÇÃO:**
-- "No céu estrelado da minha vida" (13→11): "No céu estrelado d'avida"
-- "E eu não sei mais o que fazer" (10→11): "E eu não sei mais o qu'eu fazer"
-
-VERSO CORRIGIDO (APENAS O TEXTO, SEM ASPAS):`
+VERSO CORRIGIDO (APENAS O TEXTO):`
 
     try {
       const { text } = await generateText({
         model: "openai/gpt-4o",
         prompt: fixPrompt,
-        temperature: 0.1, // Temperatura MUITO baixa para precisão
+        temperature: 0.1,
       })
       
       const fixedLine = text?.trim().replace(/^["']|["']$/g, "") || line
-      
-      // Verificação final
-      const finalSyllables = countPoeticSyllables(fixedLine)
-      if (finalSyllables === 11) {
-        return fixedLine
-      } else {
-        // Fallback: aplica correções automáticas
-        return this.applyEmergencyFix(line, difference)
-      }
+      return fixedLine
     } catch (error) {
       console.error("❌ Erro no brutalFix:", error)
       return this.applyEmergencyFix(line, difference)
@@ -156,24 +139,21 @@ VERSO CORRIGIDO (APENAS O TEXTO, SEM ASPAS):`
   }
   
   /**
-   * CORREÇÃO DE EMERGÊNCIA QUANDO A IA FALHA
+   * CORREÇÃO DE EMERGÊNCIA
    */
   private static applyEmergencyFix(line: string, difference: number): string {
     let fixedLine = line
     
-    if (difference < 0) { // Muitas sílabas - REMOVER
+    if (difference < 0) {
       const removals = [
         { regex: /\bde amor\b/gi, replacement: "d'amor" },
         { regex: /\bque eu\b/gi, replacement: "qu'eu" },
-        { regex: /\bse eu\b/gi, replacement: "s'eu" },
-        { regex: /\bmeu amor\b/gi, replacement: "meuamor" },
         { regex: /\bpara o\b/gi, replacement: "pro" },
         { regex: /\bpara a\b/gi, replacement: "pra" },
         { regex: /\bpara\b/gi, replacement: "pra" },
         { regex: /\bvocê\b/gi, replacement: "cê" },
-        { regex: /\bestá\b/gi, replacement: "tá" },
-        { regex: /\bo\b/gi, replacement: "" }, // Remove artigo
-        { regex: /\ba\b/gi, replacement: "" }, // Remove artigo
+        { regex: /\bo\b/gi, replacement: "" },
+        { regex: /\ba\b/gi, replacement: "" },
       ]
       
       for (const removal of removals) {
@@ -183,11 +163,8 @@ VERSO CORRIGIDO (APENAS O TEXTO, SEM ASPAS):`
           if (countPoeticSyllables(fixedLine) === 11) break
         }
       }
-    } else { // Poucas sílabas - ADICIONAR
-      const additions = [
-        "meu ", "minha ", "esse ", "essa ", "o ", "a ", "num ", "numa "
-      ]
-      
+    } else {
+      const additions = ["meu ", "minha ", "o ", "a "]
       for (const addition of additions) {
         const testLine = addition + fixedLine
         if (countPoeticSyllables(testLine) <= 11) {
@@ -203,47 +180,34 @@ VERSO CORRIGIDO (APENAS O TEXTO, SEM ASPAS):`
 
 export class MetaComposer {
   private static readonly MAX_ITERATIONS = 3
-  private static readonly MAX_AUDIT_ATTEMPTS = 5
   private static readonly ABSOLUTE_MAX_SYLLABLES = 11
-  private static readonly MIN_QUALITY_SCORE = 0.75
 
   /**
-   * Obtém a configuração de sílabas para um gênero específico
-   */
-  private static getGenreSyllableConfig(genre: string): { min: number; max: number; ideal: number } {
-    return {
-      min: 10, // Aumentado para forçar 11
-      max: 11,  // ABSOLUTO
-      ideal: 11, // SEMPRE 11
-    }
-  }
-
-  /**
-   * COMPOSIÇÃO TURBO COM ZERO TOLERÂNCIA PARA ≠11 SÍLABAS
+   * COMPOSIÇÃO COM ESTRATÉGIA DO GERADOR DE REFRÃO
    */
   static async compose(request: CompositionRequest): Promise<CompositionResult> {
-    console.log("[MetaComposer-TURBO] 🚀 Iniciando composição COM ZERO TOLERÂNCIA...")
-    console.log("[MetaComposer-TURBO] 🎯 REGRA: TODOS OS VERSOS = 11 SÍLABAS EXATAS")
+    console.log("[MetaComposer] 🚀 Iniciando composição com estratégia de refrão...")
 
     const multiGenResult = await MultiGenerationEngine.generateMultipleVariations(
       async () => {
-        return await this.generateStrictVersion(request)
+        return await this.generateWithChorusStrategy(request)
       },
       (lyrics) => {
-        const auditResult = LyricsAuditor.audit(lyrics, request.genre, request.theme)
-        
-        // PENALIZA GRAVEMENTE versos ≠11 sílabas
+        // SCORE BASEADO EM % DE LINHAS VÁLIDAS (como no gerador de refrão)
         const lines = lyrics.split('\n').filter(line => 
           line.trim() && !line.startsWith('[') && !line.startsWith('(')
         )
         
-        let perfectLines = 0
+        let validLines = 0
         lines.forEach(line => {
-          if (countPoeticSyllables(line) === 11) perfectLines++
+          if (countPoeticSyllables(line) <= 11) validLines++
         })
         
-        const syllableScore = (perfectLines / lines.length) * 100
-        const finalScore = (auditResult.score * 0.3) + (syllableScore * 0.7) // Prioridade MÁXIMA para sílabas
+        const syllableScore = (validLines / lines.length) * 100
+        
+        // Score combinado: 70% sílabas + 30% qualidade geral
+        const auditResult = LyricsAuditor.audit(lyrics, request.genre, request.theme)
+        const finalScore = (syllableScore * 0.7) + (auditResult.score * 0.3)
         
         return finalScore
       },
@@ -253,10 +217,10 @@ export class MetaComposer {
     const bestLyrics = multiGenResult.variations[multiGenResult.bestVariationIndex].lyrics
     const bestScore = multiGenResult.bestScore
 
-    console.log(`[MetaComposer-TURBO] 🏆 Melhor versão escolhida! Score: ${bestScore}/100`)
+    console.log(`[MetaComposer] 🏆 Melhor versão: ${bestScore.toFixed(1)}/100`)
 
-    // ✅ APLICAÇÃO FINAL DO TIRANO DE SÍLABAS
-    console.log("🎯 APLICAÇÃO FINAL DO SYLLABLE TYRANT...")
+    // APLICA SYLLABLE TYRANT COMO GARANTIA FINAL
+    console.log("🎯 Aplicando garantia final de sílabas...")
     const finalLyrics = await SyllableTyrant.enforceAbsoluteSyllables(bestLyrics)
 
     return {
@@ -273,199 +237,194 @@ export class MetaComposer {
   }
 
   /**
-   * GERA VERSÃO ESTRITA COM REGRAS INVIOLÁVEIS
+   * GERAÇÃO COM ESTRATÉGIA DO GERADOR DE REFRÃO
    */
-  private static async generateStrictVersion(request: CompositionRequest): Promise<string> {
-    console.log("[MetaComposer-STRICT] 📝 Gerando versão COM REGRAS INVIOLÁVEIS...")
+  private static async generateWithChorusStrategy(request: CompositionRequest): Promise<string> {
+    console.log("[MetaComposer] 📝 Gerando com estratégia de refrão...")
 
     const applyFinalPolish = request.applyFinalPolish ?? true
-    const preservedChoruses = request.preservedChoruses || []
-    const hasPreservedChoruses = preservedChoruses.length > 0
     const isRewrite = !!request.originalLyrics
     const performanceMode = request.performanceMode || "standard"
 
-    const syllableEnforcement = { min: 10, max: 11, ideal: 11 } // REGRA ABSOLUTA
-
-    // Gera letra base COM PROMPT ULTRA-RESTRITIVO
+    // GERA LETRA BASE COM ESTRATÉGIA DE REFRÃO
     let rawLyrics: string
 
     if (isRewrite) {
       rawLyrics = await this.generateStrictRewrite(request)
-    } else if (hasPreservedChoruses) {
-      rawLyrics = await this.generateStrictWithPreservedChoruses(preservedChoruses, request, syllableEnforcement)
     } else {
-      rawLyrics = await this.generateStrictLyrics(request, syllableEnforcement)
+      rawLyrics = await this.generateStrictLyrics(request)
     }
 
-    // ✅ APLICAÇÃO IMEDIATA DO SYLLABLE TYRANT
-    console.log("🎯 APLICANDO SYLLABLE TYRANT NA VERSÃO BRUTA...")
-    rawLyrics = await SyllableTyrant.enforceAbsoluteSyllables(rawLyrics)
-
-    // Correção automática de sílabas (backup)
-    const autoCorrectionResult = AutoSyllableCorrector.correctLyrics(rawLyrics)
-    rawLyrics = autoCorrectionResult.correctedLyrics
-
-    // ✅ TERCEIRA VIA APENAS SE NECESSÁRIO
-    const terceiraViaAnalysis = analisarTerceiraVia(rawLyrics, request.genre, request.theme)
-    if (terceiraViaAnalysis && terceiraViaAnalysis.score_geral < 80) {
-      rawLyrics = await this.applyTerceiraViaCorrections(rawLyrics, request, terceiraViaAnalysis, getGenreConfig(request.genre))
-      // RE-APLICA SYLLABLE TYRANT após Terceira Via
+    // VALIDAÇÃO IMEDIATA (como no gerador de refrão)
+    const validationResult = this.validateLyricsSyllables(rawLyrics)
+    if (validationResult.validityRatio < 0.8) {
+      console.log(`⚠️ Validação fraca (${(validationResult.validityRatio * 100).toFixed(1)}%), aplicando correções...`)
       rawLyrics = await SyllableTyrant.enforceAbsoluteSyllables(rawLyrics)
     }
 
-    // Polimento final
-    let finalLyrics = rawLyrics
-    if (applyFinalPolish) {
-      finalLyrics = await this.applyStrictPolish(
-        finalLyrics,
-        request.genre,
-        request.theme,
-        syllableEnforcement,
-        performanceMode,
-        getGenreConfig(request.genre),
-      )
-      // APLICAÇÃO FINAL DO SYLLABLE TYRANT
-      finalLyrics = await SyllableTyrant.enforceAbsoluteSyllables(finalLyrics)
+    // TERCEIRA VIA SE NECESSÁRIO
+    const terceiraViaAnalysis = analisarTerceiraVia(rawLyrics, request.genre, request.theme)
+    if (terceiraViaAnalysis && terceiraViaAnalysis.score_geral < 75) {
+      rawLyrics = await this.applyTerceiraViaCorrections(rawLyrics, request, terceiraViaAnalysis)
     }
 
-    // Validação de pontuação
+    // POLIMENTO FINAL
+    let finalLyrics = rawLyrics
+    if (applyFinalPolish) {
+      finalLyrics = await this.applyStrictPolish(finalLyrics, request.genre, performanceMode)
+    }
+
+    // VALIDAÇÕES FINAIS
     const punctuationResult = PunctuationValidator.validate(finalLyrics)
     if (!punctuationResult.isValid) {
       finalLyrics = punctuationResult.correctedLyrics
     }
 
-    // Empilhamento de versos
     const stackingResult = LineStacker.stackLines(finalLyrics)
     finalLyrics = stackingResult.stackedLyrics
 
-    // VALIDAÇÃO FINAL ABSOLUTA
-    const finalValidation = this.validateAllLines11Syllables(finalLyrics)
-    if (!finalValidation.isValid) {
-      console.warn("⚠️ VALIDAÇÃO FINAL: AINDA EXISTEM VERSOS ≠11 SÍLABAS")
-      console.warn("Versos problemáticos:", finalValidation.violations)
-    } else {
-      console.log("✅ VALIDAÇÃO FINAL: TODOS OS VERSOS TEM 11 SÍLABAS EXATAS!")
-    }
-
+    console.log("✅ Geração concluída com estratégia de refrão")
     return finalLyrics
   }
 
   /**
-   * GERA LETRA ESTRITA - PROMPT ULTRA-RESTRITIVO
+   * GERA LETRA ESTRITA - ESTRATÉGIA DE REFRÃO
    */
-  private static async generateStrictLyrics(
-    request: CompositionRequest,
-    syllableEnforcement: { min: number; max: number; ideal: number },
-  ): Promise<string> {
-    console.log("[MetaComposer-STRICT] Gerando letra COM REGRAS INVIOLÁVEIS...")
+  private static async generateStrictLyrics(request: CompositionRequest): Promise<string> {
+    let attempts = 0
+    let bestLyrics = ""
+    let bestScore = 0
 
-    const STRICT_PROMPT = `VOCÊ É UM COMPOSITOR BRASILEIRO COM REGRAS INVIOLÁVEIS.
+    while (attempts < 3) {
+      attempts++
+      console.log(`[MetaComposer] Tentativa ${attempts}/3...`)
 
-**REGRA ABSOLUTA E INEGOCIÁVEL:**
-CADA VERSO DEVE TER EXATAMENTE 11 SÍLABAS POÉTICAS. NADA MAIS, NADA MENOS.
+      const prompt = `COMPOSITOR DE MEGA HITS - REGRAS ABSOLUTAS:
 
-**TÉCNICAS OBRIGATÓRIAS PARA 11 SÍLABAS:**
-1. ELISÃO: "de amor" → "d'amor" (3→2 sílabas) - SEMPRE
-2. CRASE: "a amante" → "àmante" (4→3 sílabas) - SEMPRE  
-3. CONTRACÇÕES: "para o" → "pro", "você" → "cê", "está" → "tá"
-4. JUNÇÃO: "que eu" → "qu'eu", "se eu" → "s'eu", "meu amor" → "meuamor"
-5. REMOÇÃO: artigos "o", "a" quando possível
+**CADA VERSO = MÁXIMO 11 SÍLABAS POÉTICAS**
 
-**PROIBIDO (NUNCA USE):**
-- "coraçãozinho", "saudadezinha", "amorzão", "vida linda"
-- "felicidade", "tristeza", "alma", "destino", "esperança"
-- Palavras cortadas: "não" → "nã" ❌
-- Remover acentos
+TÉCNICAS OBRIGATÓRIAS:
+- ELISÃO: "de amor" → "d'amor"
+- CONTRACÇÕES: "você" → "cê", "para" → "pra"  
+- JUNÇÃO: "que eu" → "qu'eu", "meu amor" → "meuamor"
+- REMOVER: artigos "o", "a" quando possível
 
-**OBRIGATÓRIO (USE SEMPRE):**
-- "cê", "tô", "tá", "pra", "pro", "d'", "qu'", "s'", "num", "numa"
+PROIBIDO:
+- Versos com mais de 11 sílabas
+- Palavras cortadas ou sem acentos
+- "coraçãozinho", "saudadezinha", clichês
 
-**EXEMPLOS PERFEITOS (11 SÍLABAS):**
-- "No céu estrelado da noite" (11)
-- "Qu'eu vi cê dançando sozinha" (11) 
-- "E o vento batendo na porta" (11)
-- "Na beira do rio, meuamor" (11)
-- "S'eu pudesse voltar no tempo" (11)
-
-**INSTRUÇÕES FINAIS:**
-- CONTE as sílabas em VOZ ALTA antes de entregar
-- SE tiver 12+ sílabas, REESCREVA com elisão
-- SE tiver menos, ADICIONE palavras
-- ENTREGUE SÓ se TODOS os versos tiverem 11 sílabas
-- VERIFIQUE 3 VEZES CADA VERSO
+EXEMPLOS (11 SÍLABAS):
+- "No céu estrelado da noite"
+- "Qu'eu vi cê dançando sozinha"
+- "E o vento batendo na porta"
 
 TEMA: ${request.theme}
 GÊNERO: ${request.genre}
-HUMOR: ${request.mood}
+HUMOR: ${request.mood || "adaptável"}
 
-AGORA COMPONHA UMA LETRA COMPLETA (com estrutura [VERSE], [CHORUS] etc.)
-onde TODOS os versos têm EXATAMENTE 11 sílabas:`
+COMPONHA UMA LETRA COMPLETA onde TODOS os versos têm 11 sílabas ou menos:`
 
-    try {
       const { text } = await generateText({
         model: "openai/gpt-4o",
-        prompt: STRICT_PROMPT,
-        temperature: 0.3, // Baixa temperatura para precisão
+        prompt,
+        temperature: 0.7, // Alta como no gerador de refrão
       })
 
-      return text || ""
-    } catch (error) {
-      console.error("[MetaComposer-STRICT] Erro ao gerar letra estrita:", error)
-      throw error
+      if (!text) continue
+
+      // VALIDAÇÃO COMO NO GERADOR DE REFRÃO
+      const validation = this.validateLyricsSyllables(text)
+      const score = validation.validityRatio * 100
+
+      if (score > bestScore) {
+        bestScore = score
+        bestLyrics = text
+      }
+
+      if (validation.validityRatio >= 0.9) {
+        console.log(`✅ Tentativa ${attempts} APROVADA: ${score.toFixed(1)}% válido`)
+        break
+      } else {
+        console.log(`⚠️ Tentativa ${attempts}: ${score.toFixed(1)}% válido`)
+      }
     }
+
+    return bestLyrics || "Não foi possível gerar letra válida após 3 tentativas."
   }
 
   /**
-   * REESCRITA ESTRITA - PROMPT ULTRA-RESTRITIVO
+   * REESCRITA ESTRITA
    */
   private static async generateStrictRewrite(request: CompositionRequest): Promise<string> {
-    console.log("[MetaComposer-STRICT] Gerando reescrita COM REGRAS INVIOLÁVEIS...")
-
     if (!request.originalLyrics) {
       throw new Error("Original lyrics required for rewrite")
     }
 
-    const STRICT_REWRITE_PROMPT = `VOCÊ É UM REESCRITOR BRASILEIRO COM REGRAS INVIOLÁVEIS.
+    const prompt = `REESCRITOR PROFISSIONAL - REGRAS:
 
-**REGRA ABSOLUTA:**
-CADA VERSO DEVE TER EXATAMENTE 11 SÍLABAS POÉTICAS.
+**CADA VERSO = 11 SÍLABAS EXATAS**
 
-**TÉCNICAS OBRIGATÓRIAS:**
-- ELISÃO: "de amor" → "d'amor" (SEMPRE)
-- CRASE: "a amante" → "àmante" (SEMPRE)  
-- CONTRACÇÕES: "você" → "cê", "para" → "pra" (SEMPRE)
-- JUNÇÃO: "que eu" → "qu'eu", "meu amor" → "meuamor" (SEMPRE)
+TÉCNICAS:
+- ELISÃO: "de amor" → "d'amor"
+- CONTRACÇÕES: "você" → "cê", "para" → "pra"
+- JUNÇÃO: "que eu" → "qu'eu"
 
-**PROIBIDO:**
-- Versos com ≠11 sílabas
-- Palavras cortadas ou sem acentos
-- "coraçãozinho", "saudadezinha", clichês de IA
-
-LETRA ORIGINAL PARA REWRITE:
+LETRA ORIGINAL:
 ${request.originalLyrics}
 
 TEMA: ${request.theme}
 GÊNERO: ${request.genre}
 
-SUA TAREFA: Reescrever a letra acima mantendo o significado emocional
-mas garantindo que CADA VERSO tenha EXATAMENTE 11 sílabas.
+REESCREVA mantendo o significado mas garantindo 11 sílabas por verso:`
 
-Use elisão, crase e contrações OBRIGATORIAMENTE.
+    const { text } = await generateText({
+      model: "openai/gpt-4o",
+      prompt,
+      temperature: 0.5,
+    })
 
-Retorne APENAS a letra reescrita (sem explicações):`
+    return text || request.originalLyrics
+  }
 
-    try {
-      const { text } = await generateText({
-        model: "openai/gpt-4o",
-        prompt: STRICT_REWRITE_PROMPT,
-        temperature: 0.3,
-      })
+  /**
+   * APLICA CORREÇÕES TERCEIRA VIA
+   */
+  private static async applyTerceiraViaCorrections(
+    lyrics: string,
+    request: CompositionRequest,
+    analysis: TerceiraViaAnalysis
+  ): Promise<string> {
+    console.log("[MetaComposer] 🔄 Aplicando Terceira Via...")
+    
+    const lines = lyrics.split("\n")
+    const correctedLines: string[] = []
+    let correctionsApplied = 0
 
-      return text || request.originalLyrics
-    } catch (error) {
-      console.error("[MetaComposer-STRICT] Erro na reescrita estrita:", error)
-      return request.originalLyrics
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+
+      if (this.needsTerceiraViaCorrection(line, analysis)) {
+        try {
+          const context = this.buildLineContext(lines, i, request.theme)
+          const correctedLine = await applyTerceiraViaToLine(line, i, context, false, "", request.genre)
+
+          if (correctedLine !== line) {
+            correctionsApplied++
+          }
+
+          correctedLines.push(correctedLine)
+        } catch (error) {
+          console.warn(`❌ Erro Terceira Via linha ${i}, mantendo original`)
+          correctedLines.push(line)
+        }
+      } else {
+        correctedLines.push(line)
+      }
     }
+
+    console.log(`✅ ${correctionsApplied} correções Terceira Via aplicadas`)
+    return correctedLines.join("\n")
   }
 
   /**
@@ -474,106 +433,63 @@ Retorne APENAS a letra reescrita (sem explicações):`
   private static async applyStrictPolish(
     lyrics: string,
     genre: string,
-    theme: string,
-    syllableTarget: { min: number; max: number; ideal: number },
-    performanceMode = "standard",
-    genreConfig: any,
+    performanceMode: string
   ): Promise<string> {
-    console.log(`[MetaComposer-STRICT] ✨ Polimento estrito para: ${genre}`)
+    console.log(`[MetaComposer] ✨ Aplicando polimento estrito...`)
 
     let polishedLyrics = lyrics
 
-    // Aplica melhorias de rima mantendo 11 sílabas
-    polishedLyrics = await this.applyStrictRhymeEnhancement(polishedLyrics, genre, theme)
-
     // Formatação de performance
     if (shouldUsePerformanceFormat(genre, performanceMode)) {
-      console.log("[MetaComposer-STRICT] 🎭 Aplicando formato de performance...")
       polishedLyrics = formatSertanejoPerformance(polishedLyrics)
     } else if (performanceMode === "performance") {
-      polishedLyrics = this.applyPerformanceFormatting(polishedLyrics, genre)
+      polishedLyrics = this.applyPerformanceFormatting(polishedLyrics)
     }
 
     return polishedLyrics
   }
 
   /**
-   * VALIDAÇÃO FINAL - TODAS AS LINHAS COM 11 SÍLABAS
+   * VALIDA SÍLABAS COMO NO GERADOR DE REFRÃO
    */
-  private static validateAllLines11Syllables(lyrics: string): {
-    isValid: boolean
-    violations: Array<{ line: string; syllables: number; lineNumber: number }>
+  private static validateLyricsSyllables(lyrics: string): {
+    valid: boolean
+    validityRatio: number
+    violations: Array<{ line: string; syllables: number }>
   } {
     const lines = lyrics.split('\n')
-    const violations: Array<{ line: string; syllables: number; lineNumber: number }> = []
+    const violations: Array<{ line: string; syllables: number }> = []
+    let validLines = 0
+    let totalLines = 0
 
     lines.forEach((line, index) => {
       if (line.trim() && !line.startsWith('[') && !line.startsWith('(') && !line.includes('Instruments:')) {
+        totalLines++
         const syllables = countPoeticSyllables(line)
-        if (syllables !== 11) {
+        if (syllables <= 11) {
+          validLines++
+        } else {
           violations.push({
             line: line.trim(),
-            syllables,
-            lineNumber: index + 1,
+            syllables
           })
         }
       }
     })
 
+    const validityRatio = totalLines > 0 ? validLines / totalLines : 0
+
     return {
-      isValid: violations.length === 0,
-      violations,
+      valid: validityRatio >= 0.95, // 95% das linhas válidas
+      validityRatio,
+      violations
     }
   }
 
-  // ... (métodos auxiliares mantidos - generateStrictWithPreservedChoruses, applyTerceiraViaCorrections, etc.)
-
-  private static async generateStrictWithPreservedChoruses(
-    preservedChoruses: string[],
-    request: CompositionRequest,
-    syllableEnforcement: { min: number; max: number; ideal: number },
-  ): Promise<string> {
-    console.log("[MetaComposer-STRICT] Gerando letra com refrões preservados...")
-
-    const chorusPrompt = `VOCÊ É UM COMPOSITOR COM REGRAS INVIOLÁVEIS:
-
-CADA VERSO = 11 SÍLABAS EXATAS.
-
-REFRAÕES PRESERVADOS:
-${preservedChoruses.join("\n\n")}
-
-TEMA: ${request.theme}
-GÊNERO: ${request.genre}
-
-REGRAS:
-1. TODOS os versos novos = 11 sílabas
-2. Use elisão: "de amor" → "d'amor"
-3. Use contrações: "você" → "cê", "para" → "pra"
-4. NUNCA entregue versos ≠11 sílabas
-
-COMPONHA AGORA:`
-
-    try {
-      const { text } = await generateText({
-        model: "openai/gpt-4o",
-        prompt: chorusPrompt,
-        temperature: 0.3,
-      })
-
-      return text || ""
-    } catch (error) {
-      console.error("[MetaComposer-STRICT] Erro com refrões preservados:", error)
-      return ""
-    }
-  }
-
-  private static async applyStrictRhymeEnhancement(lyrics: string, genre: string, theme: string): Promise<string> {
-    console.log("[MetaComposer-STRICT] Aplicando melhorias de rima estritas...")
-    // Implementação mantém 11 sílabas
-    return lyrics
-  }
-
-  private static applyPerformanceFormatting(lyrics: string, genre: string): string {
+  /**
+   * FORMATAÇÃO DE PERFORMANCE
+   */
+  private static applyPerformanceFormatting(lyrics: string): string {
     let formatted = lyrics
     formatted = formatted.replace(/\[Intro\]/gi, "[Intro]")
     formatted = formatted.replace(/\[Verso\s*(\d*)\]/gi, "[Verse$1]")
@@ -583,6 +499,9 @@ COMPONHA AGORA:`
     return formatted
   }
 
+  /**
+   * EXTRAI TÍTULO
+   */
   private static extractTitle(lyrics: string, request: CompositionRequest): string {
     const lines = lyrics.split('\n')
     for (const line of lines) {
@@ -599,6 +518,9 @@ COMPONHA AGORA:`
     return `${request.theme} - ${request.genre}`
   }
 
+  /**
+   * VERIFICA SE PRECISA DE CORREÇÃO TERCEIRA VIA
+   */
   private static needsTerceiraViaCorrection(line: string, analysis: TerceiraViaAnalysis): boolean {
     if (!line.trim() || line.startsWith('[') || line.startsWith('(') || line.includes('Instruments:')) {
       return false
@@ -612,6 +534,9 @@ COMPONHA AGORA:`
     return false
   }
 
+  /**
+   * CONSTRÓI CONTEXTO PARA LINHA
+   */
   private static buildLineContext(lines: string[], lineIndex: number, theme: string): string {
     const contextLines: string[] = []
     if (lineIndex > 0) {
