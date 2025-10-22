@@ -28,6 +28,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { HookGenerator } from "@/components/hook-generator"
+import { 
+  SyllableValidatorEditable,
+  GenreSelect,
+  InspirationManager 
+} from "@/components"
 
 // ✅ REMOVER A REDEFINIÇÃO DE EMOTIONS - usar apenas a importada
 const BRAZILIAN_GENRE_METRICS = {
