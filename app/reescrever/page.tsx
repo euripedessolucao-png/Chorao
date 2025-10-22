@@ -15,7 +15,7 @@ import { RefreshCw, Save, Copy, Search, Loader2, Star, Trophy, Trash2, Zap, Wand
 import { toast } from "sonner"
 import { EMOTIONS } from "@/lib/genres"
 import { GenreSelect } from "@/components/genre-select"
-import { SyllableValidatorWithSuggestions } from "@/components/syllable-validator-with-suggestions"
+import { SyllableValidatorEditable } from "@/components/syllable-validator-editable"
 import { InspirationManager } from "@/components/inspiration-manager"
 import {
   Dialog,
