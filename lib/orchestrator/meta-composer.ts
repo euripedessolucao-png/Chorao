@@ -248,8 +248,13 @@ Acredite nisso`
 
     console.log("[MetaComposer] 🔧 PRÉ-GERAÇÃO: Aplicando UltimateFixer preventivo...")
     if (isRewrite && request.originalLyrics) {
-      request.originalLyrics = UltimateFixer.fixFullLyrics(request.originalLyrics)
-      console.log("[MetaComposer] ✅ Letra original corrigida antes da reescrita")
+      try {
+        request.originalLyrics = UltimateFixer.fixFullLyrics(request.originalLyrics)
+        console.log("[MetaComposer] ✅ Letra original corrigida antes da reescrita")
+      } catch (error) {
+        console.error("[MetaComposer] ❌ Erro ao corrigir letra original:", error)
+        console.log("[MetaComposer] ⚠️ Usando letra original sem correção")
+      }
     }
 
     if (isRewrite) {
@@ -261,8 +266,13 @@ Acredite nisso`
     }
 
     console.log("[MetaComposer] 🔧 PÓS-GERAÇÃO: Aplicando UltimateFixer...")
-    rawLyrics = UltimateFixer.fixFullLyrics(rawLyrics)
-    console.log("[MetaComposer] ✅ Letra corrigida após geração")
+    try {
+      rawLyrics = UltimateFixer.fixFullLyrics(rawLyrics)
+      console.log("[MetaComposer] ✅ Letra corrigida após geração")
+    } catch (error) {
+      console.error("[MetaComposer] ❌ Erro ao corrigir letra após geração:", error)
+      console.log("[MetaComposer] ⚠️ Usando letra sem correção pós-geração")
+    }
 
     console.log("[MetaComposer] 🔍 VALIDAÇÃO IMEDIATA: Verificando regra universal de 11 sílabas...")
     const immediateValidation = AbsoluteSyllableEnforcer.validate(rawLyrics)
@@ -442,8 +452,13 @@ Acredite nisso`
     }
 
     console.log("[MetaComposer] 🔧 CORREÇÃO FINAL: Aplicando UltimateFixer final...")
-    finalLyrics = UltimateFixer.fixFullLyrics(finalLyrics)
-    console.log("[MetaComposer] ✅ Correção final aplicada")
+    try {
+      finalLyrics = UltimateFixer.fixFullLyrics(finalLyrics)
+      console.log("[MetaComposer] ✅ Correção final aplicada")
+    } catch (error) {
+      console.error("[MetaComposer] ❌ Erro na correção final:", error)
+      console.log("[MetaComposer] ⚠️ Usando letra sem correção final")
+    }
 
     console.log("[v0] 🎉 MetaComposer.compose - SUCESSO")
     return finalLyrics

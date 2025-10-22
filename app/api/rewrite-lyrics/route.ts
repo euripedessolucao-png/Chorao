@@ -176,10 +176,17 @@ export async function POST(request: Request) {
       )
     }
 
-    // ✅ APLICA ULTIMATEFIXER NO RESULTADO FINAL
+    // ✅ APLICA ULTIMATEFIXER NO RESULTADO FINAL COM TRY-CATCH
     console.log("[v0] 🔧 Aplicando UltimateFixer...")
-    const fixedResult = UltimateFixer.fixFullLyrics(result.lyrics)
-    console.log("[v0] ✅ Resultado final corrigido")
+    let fixedResult = result.lyrics
+    try {
+      fixedResult = UltimateFixer.fixFullLyrics(result.lyrics)
+      console.log("[v0] ✅ UltimateFixer aplicado com sucesso")
+    } catch (fixerError) {
+      console.error("[v0] ❌ UltimateFixer FALHOU:", fixerError)
+      console.log("[v0] ⚠️ Usando letra sem correção final")
+      // Mantém a letra original se o fixer falhar
+    }
 
     // ✅ APLICA FORMATAÇÃO PERFORMÁTICA
     console.log("[Rewrite-Lyrics] 🎭 Aplicando formatação performática...")
