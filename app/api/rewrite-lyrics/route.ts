@@ -2,7 +2,6 @@ import { NextResponse } from "next/server"
 import { generateText } from "ai"
 import { UltimateFixer } from "@/lib/validation/ultimate-fixer"
 import { applyTerceiraViaToLine } from "@/lib/terceira-via"
-import { buildGenreRulesPrompt } from "@/lib/validation/genre-rules-builder"
 
 export async function POST(request: Request) {
   console.log("[v0] 🚀 API Rewrite Lyrics - Sistema Completo com Todas as Regras")
@@ -19,10 +18,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Letra não encontrada ou muito curta" }, { status: 400 })
     }
 
-    const genreRules = buildGenreRulesPrompt(genre)
-    console.log("[v0] 📋 Regras do gênero carregadas:", genre)
-
-    console.log("[v0] 🤖 Chamando OpenAI com TODAS as regras do gênero...")
+    console.log("[v0] 🤖 Chamando OpenAI com foco em 11 sílabas...")
 
     const { text } = await generateText({
       model: "openai/gpt-4o-mini",
@@ -31,12 +27,23 @@ export async function POST(request: Request) {
 LETRA ORIGINAL:
 ${lyrics}
 
-INSTRUÇÕES OBRIGATÓRIAS:
-1. Mantenha EXATAMENTE a mesma estrutura (mesmo número de versos e refrões)
-2. Mantenha o tema e história da letra original
-3. Mantenha palavras-chave importantes da letra original
+REGRAS OBRIGATÓRIAS (ORDEM DE PRIORIDADE):
+1. MÁXIMO 11 SÍLABAS POR VERSO (regra de ouro - NUNCA viole isso)
+2. Mantenha EXATAMENTE a mesma estrutura (mesmo número de versos e refrões)
+3. Mantenha o tema e história da letra original
+4. Mantenha palavras-chave importantes
+5. Use rimas naturais (não force rimas)
+6. Evite clichês genéricos de IA
 
-${genreRules.fullPrompt}
+INSTRUÇÕES PARA TERCEIRA VIA (originalidade):
+- Evite frases como "tudo vai dar certo", "vai ficar tudo bem", "acredite nisso"
+- Use metáforas originais e específicas ao tema
+- Prefira linguagem brasileira autêntica
+
+COMO CONTAR SÍLABAS POÉTICAS:
+- Conte até a última sílaba tônica
+- "Lembro do cheiro da chuva na terra" = 11 sílabas ✅
+- "Da poeira na bota, firmeza que impera" = 11 sílabas ✅
 
 Retorne apenas a letra reescrita no formato:
 [VERSE 1]
