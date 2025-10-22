@@ -13,6 +13,68 @@ export interface ValidationResult {
   }[]
 }
 
+// CORRIJA o import no lib/validation/validateLyrics.ts
+
+import type { ParsedSection } from "./parser"
+import { SERTANEJO_RULES, countSyllables, hasForbiddenElement, hasVisualElement } from "./sertanejoRules"
+import { countPortugueseSyllables } from "./syllable-counter" // ✅ Use countPortugueseSyllables
+
+export interface ValidationResult {
+  isValid: boolean
+  score: number
+  errors: string[]
+  warnings: string[]
+  sections: {
+    type: string
+    valid: boolean
+    issues: string[]
+  }[]
+}
+
+export function validateSertanejoLyrics(sections: ParsedSection[]): ValidationResult {
+  // ... código existente mantido igual
+}
+
+export function validateLyricsSyllables(
+  lyrics: string,
+  maxSyllables = 11,
+): {
+  valid: boolean
+  violations: Array<{ line: string; syllables: number; lineNumber: number; suggestions: string[] }>
+} {
+  const lines = lyrics.split("\n")
+  const violations: Array<{ line: string; syllables: number; lineNumber: number; suggestions: string[] }> = []
+
+  lines.forEach((line, index) => {
+    if (
+      line.trim() &&
+      !line.startsWith("[") &&
+      !line.startsWith("(") &&
+      !line.startsWith("Title:") &&
+      !line.startsWith("Instrumentos:")
+    ) {
+      if (line.trim().endsWith(",")) {
+        return // Enjambement é válido
+      }
+
+      const syllables = countPortugueseSyllables(line) // ✅ Use countPortugueseSyllables
+      if (syllables > maxSyllables) {
+        violations.push({
+          line: line.trim(),
+          syllables: syllables,
+          lineNumber: index + 1,
+          suggestions: [] // Por enquanto vazio, pode adicionar depois
+        })
+      }
+    }
+  })
+
+  return {
+    valid: violations.length === 0,
+    violations,
+  }
+}
+
 export function validateSertanejoLyrics(sections: ParsedSection[]): ValidationResult {
   const errors: string[] = []
   const warnings: string[] = []
