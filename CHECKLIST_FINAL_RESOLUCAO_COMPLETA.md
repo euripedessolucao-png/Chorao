@@ -92,4 +92,4 @@ Após implementação, verificar:
 - [ ] Validador de sílabas funciona em todas as páginas
 \`\`\`
 
-```typescript file="" isHidden
+\`\`\`typescript file="" isHidden
