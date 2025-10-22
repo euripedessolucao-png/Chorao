@@ -1,3 +1,5 @@
+// app/editar/page.tsx - CORREÇÃO COMPLETA
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -7,14 +9,25 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { RefreshCw, Sparkles, Trash2, Search, Save, Copy } from "lucide-react"
+import { Slider } from "@/components/ui/slider"
+import { RefreshCw, Save, Copy, Search, Loader2, Star, Trophy, Trash2, Zap, Wand2 } from "lucide-react"
 import { toast } from "sonner"
-import { SyllableValidatorWithSuggestions } from "@/components/syllable-validator-with-suggestions"
+import { EMOTIONS } from "@/lib/genres"
+import { GenreSelect } from "@/components/genre-select"
+import { SyllableValidatorEditable } from "@/components/syllable-validator-editable"
 import { InspirationManager } from "@/components/inspiration-manager"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { HookGenerator } from "@/components/hook-generator"
 
 const GENRES = ["Pop", "Sertanejo Moderno", "MPB"]
 const MOODS = ["Feliz", "Triste", "Nostálgico"]
