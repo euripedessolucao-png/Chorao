@@ -1,4 +1,4 @@
-// components/syllable-validator-editable.tsx - SUBSTITUIR TODO O CONTEÚDO
+// components/syllable-validator-editable.tsx - VERSÃO FINAL CORRIGIDA
 
 "use client"
 
@@ -39,6 +39,7 @@ export function SyllableValidatorEditable({
     if (line.trim() && !line.startsWith('[') && !line.startsWith('(') && !line.includes('Instruments:')) {
       const syllables = countPoeticSyllables(line)
       
+      // ✅ CORREÇÃO: Verificação direta sem usar validateSyllableLimit
       if (syllables > maxSyllables) {
         // Gerar sugestões simples baseadas na contagem de sílabas
         const suggestions = generateSuggestions(line, maxSyllables)
