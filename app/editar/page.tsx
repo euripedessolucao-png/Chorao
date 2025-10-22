@@ -1,4 +1,4 @@
-// app/editar/page.tsx - IMPORT CORRIGIDA
+// app/editar/page.tsx - CORRIGIDO (SEM REDEFINIÇÃO)
 
 "use client"
 
@@ -17,7 +17,7 @@ import { RefreshCw, Save, Copy, Search, Loader2, Star, Trophy, Trash2, Zap, Wand
 import { toast } from "sonner"
 import { EMOTIONS } from "@/lib/genres"
 import { GenreSelect } from "@/components/genre-select"
-import { SyllableValidatorEditable } from "@/components/syllable-validator-editable" // ✅ IMPORT CORRETA
+import { SyllableValidatorEditable } from "@/components/syllable-validator-editable"
 import { InspirationManager } from "@/components/inspiration-manager"
 import {
   Dialog,
@@ -29,27 +29,7 @@ import {
 } from "@/components/ui/dialog"
 import { HookGenerator } from "@/components/hook-generator"
 
-// ✅ REMOVER A REDEFINIÇÃO DE EMOTIONS - usar apenas a importada
-const BRAZILIAN_GENRE_METRICS = {
-  "Sertanejo Moderno": { syllablesPerLine: 6, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
-  "Sertanejo": { syllablesPerLine: 7, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
-  "Sertanejo Universitário": { syllablesPerLine: 6, bpm: 95, structure: "VERSO-REFRAO" },
-  "Sertanejo Sofrência": { syllablesPerLine: 8, bpm: 75, structure: "VERSO-REFRAO-PONTE" },
-  "Sertanejo Raiz": { syllablesPerLine: 10, bpm: 80, structure: "VERSO-REFRAO" },
-  "Pagode": { syllablesPerLine: 7, bpm: 100, structure: "VERSO-REFRAO" },
-  "Samba": { syllablesPerLine: 7, bpm: 105, structure: "VERSO-REFRAO-PONTE" },
-  "Forró": { syllablesPerLine: 8, bpm: 120, structure: "VERSO-REFRAO" },
-  "Axé": { syllablesPerLine: 6, bpm: 130, structure: "VERSO-REFRAO" },
-  "MPB": { syllablesPerLine: 9, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
-  "Bossa Nova": { syllablesPerLine: 8, bpm: 70, structure: "VERSO-REFRAO" },
-  "Rock": { syllablesPerLine: 8, bpm: 115, structure: "VERSO-REFRAO-SOLO" },
-  "Pop": { syllablesPerLine: 7, bpm: 110, structure: "VERSO-REFRAO-PONTE" },
-  "Funk": { syllablesPerLine: 6, bpm: 125, structure: "REFRAO-VERSO" },
-  "Gospel": { syllablesPerLine: 8, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
-  "default": { syllablesPerLine: 8, bpm: 100, structure: "VERSO-REFRAO" },
-} as const
-
-// ✅ REMOVER A REDEFINIÇÃO DE EMOTIONS - usar apenas a importada
+// ✅ USA A MESMA CONSTANTE DAS OUTRAS PÁGINAS (NÃO REDEFINE)
 const BRAZILIAN_GENRE_METRICS = {
   "Sertanejo Moderno": { syllablesPerLine: 6, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
   "Sertanejo": { syllablesPerLine: 7, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
