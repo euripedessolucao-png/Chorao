@@ -2,9 +2,10 @@ import { NextResponse } from "next/server"
 import { generateText } from "ai"
 import { UltimateFixer } from "@/lib/validation/ultimate-fixer"
 import { applyTerceiraViaToLine } from "@/lib/terceira-via"
+import { buildGenreRulesPrompt } from "@/lib/validation/genre-rules-builder"
 
 export async function POST(request: Request) {
-  console.log("[v0] 🚀 API Rewrite Lyrics - Sistema Completo Simplificado")
+  console.log("[v0] 🚀 API Rewrite Lyrics - Sistema Completo com Todas as Regras")
 
   try {
     const body = await request.json()
@@ -12,12 +13,16 @@ export async function POST(request: Request) {
     const genre = body.genero || body.genre || "Sertanejo"
 
     console.log("[v0] 📝 Letra recebida:", lyrics.substring(0, 100))
+    console.log("[v0] 🎵 Gênero:", genre)
 
     if (!lyrics || lyrics.trim().length < 10) {
       return NextResponse.json({ error: "Letra não encontrada ou muito curta" }, { status: 400 })
     }
 
-    console.log("[v0] 🤖 Chamando OpenAI com Terceira Via...")
+    const genreRules = buildGenreRulesPrompt(genre)
+    console.log("[v0] 📋 Regras do gênero carregadas:", genre)
+
+    console.log("[v0] 🤖 Chamando OpenAI com TODAS as regras do gênero...")
 
     const { text } = await generateText({
       model: "openai/gpt-4o-mini",
@@ -29,14 +34,9 @@ ${lyrics}
 INSTRUÇÕES OBRIGATÓRIAS:
 1. Mantenha EXATAMENTE a mesma estrutura (mesmo número de versos e refrões)
 2. Mantenha o tema e história da letra original
-3. Máximo 11 sílabas por verso (REGRA DE OURO)
-4. Melhore as rimas
+3. Mantenha palavras-chave importantes da letra original
 
-TERCEIRA VIA - EVITE CLICHÊS:
-- NÃO use: "coração partido", "amor perdido", "solidão", "saudade que dói"
-- NÃO use: "vida ingrata", "tudo vai dar certo", "vai ficar tudo bem"
-- USE: Metáforas originais, imagens concretas, linguagem brasileira autêntica
-- USE: Palavras específicas ao invés de genéricas (ex: "riacho" ao invés de "água")
+${genreRules.fullPrompt}
 
 Retorne apenas a letra reescrita no formato:
 [VERSE 1]

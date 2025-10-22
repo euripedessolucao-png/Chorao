@@ -2,6 +2,10 @@ import { NextResponse } from "next/server"
 import { getGenreConfig, detectSubGenre, getGenreRhythm } from "@/lib/genre-config"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 import { MetaComposer } from "@/lib/orchestrator/meta-composer"
+import { generateText } from "ai"
+import { UltimateFixer } from "@/lib/validation/ultimate-fixer"
+import { applyTerceiraViaToLine } from "@/lib/terceira-via"
+import { buildGenreRulesPrompt } from "@/lib/validation/genre-rules-builder"
 
 // ✅ INTERFACES PARA TIPAGEM
 interface ChorusVariation {
@@ -190,35 +194,66 @@ async function generateChorusWithMetaComposer(params: {
   mood?: string
   additionalRequirements?: string
 }): Promise<ChorusData | null> {
-  const chorusRequest = {
-    genre: params.genre,
-    theme: params.theme,
-    mood: params.mood || "Adaptado",
-    additionalRequirements: `CRIAR APENAS REFRÃO - 4 LINHAS
+  try {
+    console.log("[v0] 🎵 Gerando refrão com OpenAI direto...")
+
+    const genreRules = buildGenreRulesPrompt(params.genre)
+
+    const { text } = await generateText({
+      model: "openai/gpt-4o-mini",
+      prompt: `Você é um compositor brasileiro especializado em ${params.genre}.
+
+TAREFA: Criar APENAS um refrão de 4 linhas.
 
 TEMA: ${params.theme}
+MOOD: ${params.mood || "Adaptado ao tema"}
 ${params.additionalRequirements ? `REQUISITOS: ${params.additionalRequirements}` : ""}
 
-Crie UM refrão forte:
-- 4 linhas, máximo 12 sílabas por linha
-- Gancho memorável na primeira linha
-- Linguagem coloquial brasileira
-- Tema: ${params.theme}`,
-    syllableTarget: getSyllableConfig(params.genre),
-    applyFinalPolish: true,
-    preservedChoruses: [],
-  }
+${genreRules.fullPrompt}
 
-  try {
-    const result = await MetaComposer.compose(chorusRequest)
-    const chorusLines = extractChorusLines(result.lyrics)
+FORMATO:
+[CHORUS]
+Linha 1 (gancho forte)
+Linha 2 (rima com linha 1)
+Linha 3 (desenvolvimento)
+Linha 4 (rima com linha 3)
+
+Retorne APENAS as 4 linhas do refrão, sem tags.`,
+      temperature: 0.7,
+    })
+
+    console.log("[v0] ✅ OpenAI respondeu - Aplicando correções...")
+
+    // Aplica UltimateFixer
+    let fixedChorus = text
+    try {
+      fixedChorus = UltimateFixer.fixFullLyrics(text)
+      console.log("[v0] ✅ UltimateFixer aplicado")
+    } catch (error) {
+      console.error("[v0] ⚠️ UltimateFixer falhou:", error)
+    }
+
+    // Aplica Terceira Via linha por linha
+    const lines = fixedChorus.split("\n").filter((l) => l.trim())
+    const finalLines = await Promise.all(
+      lines.map(async (line, index) => {
+        try {
+          return await applyTerceiraViaToLine(line, index, fixedChorus, false, undefined, params.genre, undefined)
+        } catch (error) {
+          console.error("[v0] ⚠️ Terceira Via falhou para linha:", line, error)
+          return line
+        }
+      }),
+    )
+
+    const chorusLines = finalLines.join("\\n")
 
     return {
       variations: [
         {
           chorus: chorusLines,
           style: "Refrão Original",
-          score: Math.round(result.metadata.finalScore * 10),
+          score: 85,
         },
       ],
       bestOptionIndex: 0,
@@ -236,35 +271,59 @@ async function generateHookWithMetaComposer(params: {
   mood?: string
   additionalRequirements?: string
 }): Promise<HookData | null> {
-  const hookRequest = {
-    genre: params.genre,
-    theme: params.theme,
-    mood: params.mood || "Adaptado",
-    additionalRequirements: `CRIAR APENAS UMA FRASE-HOOK
+  try {
+    console.log("[v0] 🎣 Gerando hook com OpenAI direto...")
+
+    const genreRules = buildGenreRulesPrompt(params.genre)
+
+    const { text } = await generateText({
+      model: "openai/gpt-4o-mini",
+      prompt: `Você é um compositor brasileiro especializado em ${params.genre}.
+
+TAREFA: Criar APENAS uma frase-hook impactante.
 
 TEMA: ${params.theme}
+MOOD: ${params.mood || "Adaptado ao tema"}
 ${params.additionalRequirements ? `REQUISITOS: ${params.additionalRequirements}` : ""}
 
-Crie UMA frase-hook impactante:
-- 1 linha apenas, máximo 12 sílabas
-- Grude na cabeça imediatamente
-- Represente o tema principal: ${params.theme}
-- Linguagem coloquial brasileira`,
-    syllableTarget: getSyllableConfig(params.genre),
-    applyFinalPolish: true,
-    preservedChoruses: [],
-  }
+${genreRules.syllableRules}
 
-  try {
-    const result = await MetaComposer.compose(hookRequest)
-    const hookLine = extractFirstLine(result.lyrics)
+${genreRules.antiForcingRules}
+
+TERCEIRA VIA - ORIGINALIDADE OBRIGATÓRIA:
+- NÃO use clichês genéricos de IA
+- USE metáforas originais e imagens concretas
+- USE linguagem brasileira autêntica
+
+Retorne APENAS a frase-hook, sem tags ou explicações.`,
+      temperature: 0.7,
+    })
+
+    console.log("[v0] ✅ OpenAI respondeu - Aplicando correções...")
+
+    // Aplica UltimateFixer
+    let fixedHook = text.trim()
+    try {
+      fixedHook = UltimateFixer.fixLine(fixedHook)
+      console.log("[v0] ✅ UltimateFixer aplicado")
+    } catch (error) {
+      console.error("[v0] ⚠️ UltimateFixer falhou:", error)
+    }
+
+    // Aplica Terceira Via
+    try {
+      fixedHook = await applyTerceiraViaToLine(fixedHook, 0, fixedHook, false, undefined, params.genre, undefined)
+      console.log("[v0] ✅ Terceira Via aplicada")
+    } catch (error) {
+      console.error("[v0] ⚠️ Terceira Via falhou:", error)
+    }
 
     return {
       variations: [
         {
-          hook: hookLine,
+          hook: fixedHook,
           style: "Hook Impactante",
-          score: Math.round(result.metadata.finalScore * 10),
+          score: 85,
         },
       ],
       bestOptionIndex: 0,
