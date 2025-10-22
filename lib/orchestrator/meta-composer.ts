@@ -11,13 +11,12 @@ import {
   formatSertanejoPerformance,
   shouldUsePerformanceFormat,
 } from "@/lib/formatters/sertanejo-performance-formatter"
-import { PunctuationValidator } from "@/lib/validation/punctuation-validator"
-import { LineStacker } from "@/lib/utils/line-stacker"
-import { AbsoluteSyllableEnforcer } from "@/lib/validation/absolute-syllable-enforcer"
-import { LyricsAuditor } from "@/lib/validation/lyrics-auditor"
 import { MultiGenerationEngine } from "./multi-generation-engine"
 import { WordIntegrityValidator } from "@/lib/validation/word-integrity-validator"
 import { UltimateFixer } from "@/lib/validation/ultimate-fixer"
+import { LyricsAuditor } from "@/lib/validation/lyrics-auditor"
+import { AbsoluteSyllableEnforcer } from "@/lib/validation/absolute-syllable-enforcer"
+import { PunctuationValidator } from "@/lib/validation/punctuation-validator"
 
 export interface CompositionRequest {
   genre: string
@@ -362,10 +361,6 @@ Acredite nisso`
     if (!punctuationResult.isValid) {
       finalLyrics = punctuationResult.correctedLyrics
     }
-
-    // Empilhamento de versos
-    const stackingResult = LineStacker.stackLines(finalLyrics)
-    finalLyrics = stackingResult.stackedLyrics
 
     console.log("[MetaComposer] 🔧 CORREÇÃO FINAL: Aplicando UltimateFixer final...")
     try {
