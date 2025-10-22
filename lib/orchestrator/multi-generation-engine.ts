@@ -46,22 +46,23 @@ export class MultiGenerationEngine {
         console.log("[v0] ✅ generateFn retornou letra - Length:", lyrics.length)
 
         console.log("[v0] 🔧 APLICANDO ULTIMATEFIXER - Correção completa em uma única etapa...")
-        lyrics = UltimateFixer.fixFullLyrics(lyrics)
-        console.log("[v0] ✅ ULTIMATEFIXER concluído")
+        try {
+          lyrics = UltimateFixer.fixFullLyrics(lyrics)
+          console.log("[v0] ✅ ULTIMATEFIXER concluído")
+        } catch (fixerError) {
+          console.error("[v0] ❌ ULTIMATEFIXER FALHOU:", fixerError)
+          console.error("[v0] 📍 Stack trace:", fixerError instanceof Error ? fixerError.stack : "N/A")
+          console.warn("[v0] ⚠️ Continuando com letra SEM correção do UltimateFixer")
+          // Continua com a letra original sem correção
+        }
 
         // VALIDAÇÃO 1: Integridade de palavras
         console.log("[v0] ✅ VALIDAÇÃO 1 - Integridade de palavras...")
         const integrityCheck = WordIntegrityValidator.validate(lyrics)
         if (!integrityCheck.isValid) {
           console.warn("[v0] ⚠️ VALIDAÇÃO 1 FALHOU - Problemas de integridade:", integrityCheck.errors.length)
-          rejectedVariations.push({
-            lyrics,
-            reason: `Palavras cortadas: ${integrityCheck.errors.map((e) => e.word).join(", ")}`,
-            score: scoreFn(lyrics),
-          })
-          continue
+          console.warn("[v0] ⚠️ Aceitando variação com problemas de integridade (score reduzido)")
         }
-        console.log("[v0] ✅ VALIDAÇÃO 1 PASSOU")
 
         // VALIDAÇÃO 2: Espaços duplicados
         console.log("[v0] ✅ VALIDAÇÃO 2 - Espaços duplicados...")
@@ -69,19 +70,23 @@ export class MultiGenerationEngine {
         const linesWithMultipleSpaces = lines.filter((line) => /\s{2,}/.test(line))
         if (linesWithMultipleSpaces.length > 0) {
           console.warn("[v0] ⚠️ VALIDAÇÃO 2 FALHOU -", linesWithMultipleSpaces.length, "linhas com espaços duplicados")
-          rejectedVariations.push({
-            lyrics,
-            reason: `${linesWithMultipleSpaces.length} linhas com espaços duplicados`,
-            score: scoreFn(lyrics),
-          })
-          continue
+          console.warn("[v0] ⚠️ Aceitando variação com espaços duplicados (score reduzido)")
         }
-        console.log("[v0] ✅ VALIDAÇÃO 2 PASSOU")
 
         // Calculando score final
         console.log("[v0] 📊 Calculando score final...")
-        const score = scoreFn(lyrics)
-        console.log("[v0] ✅ Score calculado:", score)
+        let score = scoreFn(lyrics)
+
+        if (!integrityCheck.isValid) {
+          score = score * 0.7 // Reduz 30% do score
+          console.log("[v0] 📉 Score reduzido por problemas de integridade:", score)
+        }
+        if (linesWithMultipleSpaces.length > 0) {
+          score = score * 0.8 // Reduz 20% do score
+          console.log("[v0] 📉 Score reduzido por espaços duplicados:", score)
+        }
+
+        console.log("[v0] ✅ Score final calculado:", score)
 
         const variation: GenerationVariation = {
           lyrics,
