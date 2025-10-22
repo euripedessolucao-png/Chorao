@@ -1,5 +1,8 @@
 // ✅ APLICAÇÃO DA TERCEIRA VIA COM THIRD WAY ENGINE (ATUALIZADA)
-import { ThirdWayEngine } from "./third-way-converter"
+import { ThirdWayEngine } from "./terceira-via/third-way-converter"
+
+export { ThirdWayEngine } from "./terceira-via/third-way-converter"
+export { analisarTerceiraVia } from "./terceira-via/analysis"
 
 export async function applyTerceiraViaToLine(
   line: string,
