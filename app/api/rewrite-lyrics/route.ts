@@ -9,7 +9,7 @@ export async function POST(request: Request) {
     const body = await request.json()
     console.log("[v0] 📦 Body recebido completo:", JSON.stringify(body, null, 2))
 
-    const lyrics = body.lyrics || body.letra || ""
+    const lyrics = body.lyrics || body.letra || body.letraOriginal || ""
     const genre = body.genero || body.genre || "Sertanejo"
     const theme = body.tema || body.theme || "Reescrita"
     const mood = body.humor || body.mood || "Adaptado"
