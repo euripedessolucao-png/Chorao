@@ -10,31 +10,6 @@ import { Progress } from "@/components/ui/progress"
 import { Loader2, Sparkles, TrendingUp, Zap, Check } from "lucide-react"
 import { toast } from "sonner"
 
-// components/hook-generator.tsx - ADICIONAR PROP
-
-interface HookGeneratorProps {
-  onSelectHook: (hook: string) => void
-  showSelectionMode?: boolean
-  initialLyrics?: string
-  initialGenre?: string
-  initialTheme?: string // ✅ ADICIONAR ESTA PROP
-}
-
-export function HookGenerator({
-  onSelectHook,
-  showSelectionMode = false,
-  initialLyrics = "",
-  initialGenre = "",
-  initialTheme = "" // ✅ ADICIONAR AQUI TAMBÉM
-}: HookGeneratorProps) {
-  // ... resto do código do componente
-  
-  // Use initialTheme onde for necessário no componente
-  console.log("Tema inicial:", initialTheme)
-  
-  // ... resto do código
-}
-
 interface HookResult {
   hook: string
   hookVariations: string[]
@@ -56,6 +31,7 @@ interface HookGeneratorProps {
   showSelectionMode?: boolean
   initialLyrics?: string
   initialGenre?: string
+  initialTheme?: string // ✅ PROP ADICIONADA
 }
 
 export function HookGenerator({
@@ -63,9 +39,11 @@ export function HookGenerator({
   showSelectionMode = false,
   initialLyrics = "",
   initialGenre = "",
+  initialTheme = "" // ✅ PROP ADICIONADA AQUI TAMBÉM
 }: HookGeneratorProps) {
   const [lyrics, setLyrics] = useState(initialLyrics)
   const [genre, setGenre] = useState(initialGenre)
+  const [theme, setTheme] = useState(initialTheme) // ✅ STATE ADICIONADO
   const [isGenerating, setIsGenerating] = useState(false)
   const [result, setResult] = useState<HookResult | null>(null)
   const [selectedHook, setSelectedHook] = useState<string | null>(null)
@@ -77,6 +55,10 @@ export function HookGenerator({
   useEffect(() => {
     if (initialGenre) setGenre(initialGenre)
   }, [initialGenre])
+
+  useEffect(() => {
+    if (initialTheme) setTheme(initialTheme)
+  }, [initialTheme])
 
   const generateHook = async () => {
     if (!lyrics.trim()) {
@@ -92,7 +74,11 @@ export function HookGenerator({
       const response = await fetch("/api/generate-hook", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lyrics: lyrics.trim(), genre }),
+        body: JSON.stringify({ 
+          lyrics: lyrics.trim(), 
+          genre,
+          theme // ✅ ENVIANDO TEMA PARA A API
+        }),
       })
 
       if (!response.ok) throw new Error("Erro ao gerar hook")
@@ -164,6 +150,7 @@ export function HookGenerator({
               <p className="text-sm text-green-800 dark:text-green-200">
                 ✓ Usando letra já colada ({lyrics.split("\n").filter((l) => l.trim()).length} linhas)
                 {genre && ` • Gênero: ${genre}`}
+                {theme && ` • Tema: ${theme}`} {/* ✅ MOSTRANDO TEMA SE EXISTIR */}
               </p>
             </div>
           )}
