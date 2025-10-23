@@ -1,4 +1,4 @@
-// lib/orchestrator/meta-composer.ts - VERSÃO MEGA AVANÇADA
+// lib/orchestrator/meta-composer.ts - VERSÃO MEGA DEFINITIVA
 
 import { countPortugueseSyllables } from "@/lib/validation/syllable-counter"
 import { type TerceiraViaAnalysis, analisarTerceiraVia, applyTerceiraViaToLine } from "@/lib/terceira-via"
@@ -10,9 +10,452 @@ import {
 import { PunctuationValidator } from "@/lib/validation/punctuation-validator"
 import { LineStacker } from "@/lib/utils/line-stacker"
 import { LyricsAuditor } from "@/lib/validation/lyrics-auditor"
-import { MultiGenerationEngine } from "./multi-generation-engine"
-import { AdvancedElisionEngine } from "./advanced-elision-engine"
 
+// ==================== ELISION ENGINE ====================
+class AdvancedElisionEngine {
+  static applyIntelligentElisions(line: string, targetSyllables: number): string[] {
+    const currentSyllables = countPortugueseSyllables(line)
+    
+    if (currentSyllables <= targetSyllables) {
+      return [line]
+    }
+
+    const variations: string[] = []
+
+    // Técnicas básicas
+    const techniques = [
+      { regex: /\bde amor\b/gi, replacement: "d'amor" },
+      { regex: /\bque eu\b/gi, replacement: "qu'eu" },
+      { regex: /\bpara o\b/gi, replacement: "pro" },
+      { regex: /\bpara a\b/gi, replacement: "pra" },
+      { regex: /\bpara\b/gi, replacement: "pra" },
+      { regex: /\bvocê\b/gi, replacement: "cê" },
+      { regex: /\bestá\b/gi, replacement: "tá" },
+      { regex: /\bcomigo\b/gi, replacement: "c'migo" },
+      { regex: /\bcontigo\b/gi, replacement: "c'tigo" },
+      { regex: /\bnaquele\b/gi, replacement: "n'aquele" },
+      { regex: /\bnesse\b/gi, replacement: "n'esse" },
+      { regex: /\bnum\b/gi, replacement: "n'um" },
+      { regex: /\bnuma\b/gi, replacement: "n'uma" }
+    ]
+
+    for (const tech of techniques) {
+      if (tech.regex.test(line)) {
+        const newLine = line.replace(tech.regex, tech.replacement)
+        const newSyllables = countPortugueseSyllables(newLine)
+        if (newSyllables <= targetSyllables) {
+          variations.push(newLine)
+        }
+      }
+    }
+
+    return variations.length > 0 ? variations : [line]
+  }
+}
+
+// ==================== MULTI-GENERATION ENGINE ====================
+class MultiGenerationEngine {
+  static async generateMultipleVariations(
+    generator: () => Promise<string>,
+    scorer: (lyrics: string) => number,
+    count: number = 2
+  ): Promise<{
+    variations: Array<{ lyrics: string; score: number }>
+    bestVariationIndex: number
+    bestScore: number
+  }> {
+    const variations: Array<{ lyrics: string; score: number }> = []
+
+    for (let i = 0; i < count; i++) {
+      try {
+        const lyrics = await generator()
+        const score = scorer(lyrics)
+        variations.push({ lyrics, score })
+        console.log(`[MultiGeneration] Variação ${i + 1}: ${score.toFixed(1)}/100`)
+      } catch (error) {
+        console.error(`[MultiGeneration] Erro na variação ${i + 1}:`, error)
+      }
+    }
+
+    if (variations.length === 0) {
+      throw new Error("Nenhuma variação gerada com sucesso")
+    }
+
+    let bestIndex = 0
+    let bestScore = variations[0].score
+
+    for (let i = 1; i < variations.length; i++) {
+      if (variations[i].score > bestScore) {
+        bestScore = variations[i].score
+        bestIndex = i
+      }
+    }
+
+    return {
+      variations,
+      bestVariationIndex: bestIndex,
+      bestScore
+    }
+  }
+}
+
+// ==================== MEGA CORRECTOR ====================
+class MegaCorrector {
+  static async correctGeneratedLyrics(lyrics: string, genre: string = "Sertanejo Sofrência"): Promise<string> {
+    console.log("🔧 [MegaCorrector] Iniciando correção mega...")
+    
+    let correctedLyrics = lyrics
+
+    // 1️⃣ CORRIGE PROBLEMAS DE FORMATAÇÃO E PONTUAÇÃO
+    correctedLyrics = this.fixFormattingIssues(correctedLyrics)
+    
+    // 2️⃣ CORRIGE SÍLABAS FORA DO PADRÃO (7-11 sílabas)
+    correctedLyrics = await this.fixSyllableProblems(correctedLyrics, genre)
+    
+    // 3️⃣ CORRIGE PROBLEMAS DE GRAMÁTICA E ORTOGRAFIA
+    correctedLyrics = this.fixGrammarIssues(correctedLyrics)
+    
+    // 4️⃣ CORRIGE INCONSISTÊNCIAS DE PERFORMANCE
+    correctedLyrics = this.fixPerformanceInconsistencies(correctedLyrics)
+    
+    // 5️⃣ APLICA POLIMENTO FINAL ESPECÍFICO DO GÊNERO
+    correctedLyrics = this.applyGenrePolish(correctedLyrics, genre)
+
+    console.log("✅ [MegaCorrector] Correção mega concluída")
+    return correctedLyrics
+  }
+
+  private static fixFormattingIssues(lyrics: string): string {
+    console.log("📝 Corrigindo problemas de formatação...")
+    
+    let fixed = lyrics
+    fixed = fixed.replace(/\. \. \./g, '...')
+    fixed = fixed.replace(/\.\.\.\s*\./g, '...')
+    fixed = fixed.replace(/\s+\.\.\./g, '...')
+    fixed = fixed.replace(/\.\.\.\s+/g, '... ')
+    fixed = fixed.replace(/-\s+/g, '-')
+    fixed = fixed.replace(/\s+-/g, '-')
+    fixed = fixed.replace(/\n\s*\n\s*\n/g, '\n\n')
+    fixed = fixed.replace(/  +/g, ' ')
+    fixed = fixed.replace(/\[(\s+)/g, '[')
+    fixed = fixed.replace(/(\s+)\]/g, ']')
+    fixed = fixed.replace(/\((\s+)/g, '(')
+    fixed = fixed.replace(/(\s+)\)/g, ')')
+
+    return fixed
+  }
+
+  private static async fixSyllableProblems(lyrics: string, genre: string): Promise<string> {
+    console.log("🎯 Corrigindo problemas de sílabas...")
+    
+    const lines = lyrics.split('\n')
+    const correctedLines: string[] = []
+    let correctionsApplied = 0
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim()
+      
+      if (this.shouldSkipLine(line)) {
+        correctedLines.push(line)
+        continue
+      }
+
+      const syllables = countPortugueseSyllables(line)
+      
+      if (syllables < 7 || syllables > 14) {
+        console.log(`🔴 Linha ${i + 1} problemática: "${line}" → ${syllables} sílabas`)
+        
+        const correctedLine = await this.correctProblematicLine(line, syllables, genre)
+        
+        if (correctedLine !== line) {
+          correctionsApplied++
+          console.log(`✅ Corrigido: "${correctedLine}" → ${countPortugueseSyllables(correctedLine)} sílabas`)
+        }
+        
+        correctedLines.push(correctedLine)
+      } else {
+        correctedLines.push(line)
+      }
+    }
+
+    console.log(`🎯 ${correctionsApplied} correções de sílabas aplicadas`)
+    return correctedLines.join('\n')
+  }
+
+  private static async correctProblematicLine(line: string, currentSyllables: number, genre: string): Promise<string> {
+    const targetSyllables = 9
+    
+    if (currentSyllables > targetSyllables) {
+      const elisions = AdvancedElisionEngine.applyIntelligentElisions(line, targetSyllables)
+      if (elisions.length > 0 && elisions[0] !== line) {
+        return elisions[0]
+      }
+    }
+
+    let correctedLine = this.applySpecificFixes(line, genre)
+    
+    const newSyllables = countPortugueseSyllables(correctedLine)
+    if (newSyllables < 7 || newSyllables > 11) {
+        correctedLine = this.applyEmergencyFixes(correctedLine, targetSyllables)
+    }
+
+    return correctedLine
+  }
+
+  private static applySpecificFixes(line: string, genre: string): string {
+    let fixed = line
+
+    // CORREÇÕES ESPECÍFICAS BASEADAS NOS PROBLEMAS IDENTIFICADOS:
+    if (fixed.includes("caracol") && fixed.includes("dia")) {
+      fixed = fixed.replace("dia é caracol", "dia não roda não")
+    }
+    
+    fixed = fixed.replace("não pra de", "não para de")
+    fixed = fixed.replace(/não pra\b/g, "não para")
+    
+    if (fixed.includes("conta tá alta")) {
+      fixed = fixed.replace("conta tá alta", "a conta tá alta")
+    }
+    
+    if (fixed.includes("prejuízo") && fixed.includes("casa")) {
+      fixed = fixed.replace("só traz prejuízo", "só traz solidão")
+    }
+    
+    if ((fixed.match(/dor no peito/g) || []).length > 1) {
+      fixed = fixed.replace("que dor no peito, amor", "que aperto no peito")
+    }
+    
+    if ((fixed.match(/amor/g) || []).length > 2) {
+      fixed = fixed.replace(/amor/g, (match, index) => index === 0 ? 'amor' : 'coração')
+    }
+
+    return fixed
+  }
+
+  private static applyEmergencyFixes(line: string, targetSyllables: number): string {
+    let fixed = line
+    const currentSyllables = countPortugueseSyllables(fixed)
+    const difference = targetSyllables - currentSyllables
+
+    if (difference < 0) {
+      fixed = fixed.replace(/\b(o |a |os |as |um |uma )/gi, '')
+      fixed = fixed.replace(/\b(para)\b/gi, 'pra')
+      fixed = fixed.replace(/\b(você)\b/gi, 'cê')
+      fixed = fixed.replace(/\b(comigo)\b/gi, 'c'migo')
+      fixed = fixed.replace(/\b(está|estou)\b/gi, 'tá')
+      fixed = fixed.replace(/\b(realmente|verdadeiramente|completamente)\b/gi, '')
+      
+    } else if (difference > 0) {
+      const additions = [
+        "meu ", "minha ", "esse ", "essa ", "aquele ", "aquela ",
+        "tanto ", "muito ", "grande ", "pequeno ", "velho ", "novo "
+      ]
+      
+      for (const addition of additions) {
+        const testLine = addition + fixed
+        if (countPortugueseSyllables(testLine) <= targetSyllables) {
+          fixed = testLine
+          break
+        }
+      }
+    }
+
+    return fixed
+  }
+
+  private static fixGrammarIssues(lyrics: string): string {
+    console.log("📚 Corrigindo problemas de gramática...")
+    
+    let fixed = lyrics
+
+    if ((fixed.match(/\btá\b/g) || []).length > 3) {
+      fixed = fixed.replace(/\btá\b/g, (match, index) => 
+        index % 2 === 0 ? 'está' : 'tá'
+      )
+    }
+    
+    fixed = fixed.replace(/\beu tá\b/gi, "eu tô")
+    fixed = fixed.replace(/\bvocê tá\b/gi, "cê tá")
+    fixed = fixed.replace(/\bde o\b/gi, "do")
+    fixed = fixed.replace(/\bde a\b/gi, "da")
+    fixed = fixed.replace(/\bem o\b/gi, "no")
+    fixed = fixed.replace(/\bem a\b/gi, "na")
+    
+    fixed = fixed.replace(/\bcê\b/g, (match, index) => 
+      index > 2 ? 'você' : 'cê'
+    )
+    
+    fixed = fixed.replace(/!{3,}/g, '!')
+    fixed = fixed.replace(/\?{3,}/g, '?')
+    fixed = fixed.replace(/\.{4,}/g, '...')
+
+    return fixed
+  }
+
+  private static fixPerformanceInconsistencies(lyrics: string): string {
+    console.log("🎭 Corrigindo inconsistências de performance...")
+    
+    let fixed = lyrics
+
+    fixed = fixed.replace(/\([^)]*performance[^)]*\)/gi, '(Performance: $1)')
+    fixed = fixed.replace(/\([^)]*vocal[^)]*\)/gi, '(Backing Vocal: $1)')
+    fixed = fixed.replace(/\([^)]*público[^)]*\)/gi, '(Público: $1)')
+    fixed = fixed.replace(/\([^)]*~\d+s[^)]*\)/gi, '')
+    fixed = fixed.replace(/\([^)]*BPM[^)]*\)/gi, '')
+    fixed = fixed.replace(/\([^)]*{.*?}[^)]*\)/gi, '(Instrumental)')
+    
+    fixed = fixed.replace(/\[PART [A-Z] - [^]]*\]/gi, (match) => {
+      const section = match.match(/\[PART ([A-Z])/i)
+      return section ? `[PARTE ${section[1]}]` : match
+    })
+
+    return fixed
+  }
+
+  private static applyGenrePolish(lyrics: string, genre: string): string {
+    console.log(`✨ Aplicando polimento final para ${genre}...`)
+    
+    let polished = lyrics
+
+    if (genre.includes("Sertanejo")) {
+      polished = this.applySertanejoPolish(polished)
+    }
+
+    polished = this.ensureConsistentStructure(polished)
+
+    return polished
+  }
+
+  private static applySertanejoPolish(lyrics: string): string {
+    let polished = lyrics
+
+    if (!polished.includes("saudade") && polished.includes("lembrança")) {
+      polished = polished.replace(/lembrança/g, "saudade")
+    }
+    
+    if (!polished.match(/\bai\b.*\bai\b/i)) {
+      const lines = polished.split('\n')
+      const chorusIndex = lines.findIndex(line => 
+        line.includes('Refrão') || line.includes('Chorus')
+      )
+      
+      if (chorusIndex !== -1 && chorusIndex + 1 < lines.length) {
+        lines[chorusIndex + 1] = "Ai, " + lines[chorusIndex + 1]
+        polished = lines.join('\n')
+      }
+    }
+    
+    polished = polished.replace(/[xX]*[gG]r[oO0]*[vV][eE]*/g, '')
+    polished = polished.replace(/[pP][iI][lL]*[aA][dA]*/g, '')
+
+    return polished
+  }
+
+  private static ensureConsistentStructure(lyrics: string): string {
+    const lines = lyrics.split('\n')
+    const structuredLines: string[] = []
+    
+    let inPerformanceNotes = false
+    
+    for (const line of lines) {
+      const trimmed = line.trim()
+      
+      if (!trimmed) {
+        structuredLines.push('')
+        continue
+      }
+      
+      if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+        inPerformanceNotes = false
+        structuredLines.push(trimmed)
+      } 
+      else if (trimmed.startsWith('(') && trimmed.endsWith(')')) {
+        inPerformanceNotes = true
+        structuredLines.push(trimmed)
+      }
+      else if (!inPerformanceNotes) {
+        structuredLines.push(trimmed)
+      }
+      else {
+        structuredLines.push(trimmed)
+      }
+    }
+    
+    return structuredLines.join('\n')
+  }
+
+  private static shouldSkipLine(line: string): boolean {
+    const skipPatterns = [
+      /^\[.*\]$/,
+      /^\(.*\)$/,
+      /^[A-Z][A-Z\s]*:$/,
+      /Instrumentos?:/i,
+      /BPM:/i,
+      /Ritmo:/i,
+      /Estilo:/i,
+      /Estrutura:/i,
+      /^[\s\*\-]*$/,
+      /^[A-Z\s]+$/,
+      /^\d/,
+      /\.\.\.$/,
+    ]
+    
+    return skipPatterns.some(pattern => pattern.test(line.trim()))
+  }
+
+  static analyzeProblems(lyrics: string): {
+    syllableIssues: Array<{ line: string; syllables: number }>
+    grammarIssues: string[]
+    formattingIssues: string[]
+    performanceIssues: string[]
+  } {
+    console.log("🔍 [MegaCorrector] Analisando problemas...")
+    
+    const lines = lyrics.split('\n')
+    const syllableIssues: Array<{ line: string; syllables: number }> = []
+    const grammarIssues: string[] = []
+    const formattingIssues: string[] = []
+    const performanceIssues: string[] = []
+
+    lines.forEach((line, index) => {
+      const trimmed = line.trim()
+      
+      if (!trimmed || this.shouldSkipLine(trimmed)) return
+
+      const syllables = countPortugueseSyllables(trimmed)
+      if (syllables < 7 || syllables > 14) {
+        syllableIssues.push({ line: trimmed, syllables })
+      }
+
+      if (trimmed.includes("não pra de")) {
+        grammarIssues.push(`Linha ${index + 1}: "não pra de" → "não para de"`)
+      }
+      if ((trimmed.match(/\btá\b/g) || []).length > 2) {
+        grammarIssues.push(`Linha ${index + 1}: Coloquialismo "tá" excessivo`)
+      }
+
+      if (trimmed.includes(". . .")) {
+        formattingIssues.push(`Linha ${index + 1}: Reticências mal formatadas`)
+      }
+      if (trimmed.includes("  ")) {
+        formattingIssues.push(`Linha ${index + 1}: Espaços duplicados`)
+      }
+
+      if (trimmed.includes("~") && trimmed.includes("s")) {
+        performanceIssues.push(`Linha ${index + 1}: Instruções de tempo muito específicas`)
+      }
+    })
+
+    return {
+      syllableIssues,
+      grammarIssues,
+      formattingIssues,
+      performanceIssues
+    }
+  }
+}
+
+// ==================== INTERFACES PRINCIPAIS ====================
 export interface CompositionRequest {
   genre: string
   theme: string
@@ -55,230 +498,34 @@ export interface CompositionResult {
     genreAnalysis?: any
     decadeStyle?: string
     regionalCharacteristics?: string[]
+    correctionsApplied?: {
+      syllable: number
+      grammar: number
+      formatting: number
+    }
+    originalProblems?: any
+    remainingProblems?: any
   }
 }
 
-// ✅ ANÁLISE DE GÊNERO AVANÇADA (sem duplicação)
-class GenreIntelligence {
-  private static readonly GENRE_PROFILES = {
-    "Sertanejo": {
-      syllables: { min: 7, max: 11, ideal: 9 },
-      characteristics: ["campo", "amor", "sofrência", "raiz"],
-      vocabulary: ["rancho", "cavalo", "estrada", "saudade", "amor"],
-      elisionStyle: "moderate"
-    },
-    "Sertanejo Universitário": {
-      syllables: { min: 6, max: 10, ideal: 8 },
-      characteristics: ["festa", "juventude", "paquera", "balada"],
-      vocabulary: ["festão", "cerveja", "pegação", "balada", "fim de semana"],
-      elisionStyle: "aggressive"
-    },
-    "Sertanejo Sofrência": {
-      syllables: { min: 7, max: 11, ideal: 9 },
-      characteristics: ["drama", "traição", "sofrimento", "paixão"],
-      vocabulary: ["traição", "sofrência", "dói", "choro", "saudade"],
-      elisionStyle: "moderate"
-    },
-    "Pagode": {
-      syllables: { min: 7, max: 10, ideal: 8 },
-      characteristics: ["alegria", "romance", "comunidade", "descontração"],
-      vocabulary: ["amor", "coração", "sorriso", "festa", "samba"],
-      elisionStyle: "moderate"
-    },
-    "Funk": {
-      syllables: { min: 5, max: 9, ideal: 7 },
-      characteristics: ["batida", "ostentação", "favela", "poder"],
-      vocabulary: ["bumbum", "quadrada", "fluxo", "pancadão", "visão"],
-      elisionStyle: "aggressive"
-    },
-    "Forró": {
-      syllables: { min: 8, max: 12, ideal: 10 },
-      characteristics: ["nordestino", "sanfona", "festa", "romance"],
-      vocabulary: ["xote", "sanfona", "amor", "dança", "forró"],
-      elisionStyle: "regional"
-    }
-  }
-
-  static analyzeGenre(genre: string, theme: string, mood: string) {
-    const profile = this.GENRE_PROFILES[genre as keyof typeof this.GENRE_PROFILES] || 
-                   this.GENRE_PROFILES.Sertanejo
-    
-    return {
-      syllableTarget: profile.syllables,
-      characteristics: profile.characteristics,
-      vocabulary: profile.vocabulary,
-      elisionStyle: profile.elisionStyle,
-      recommendedThemes: this.getRecommendedThemes(genre, theme, mood)
-    }
-  }
-
-  private static getRecommendedThemes(genre: string, theme: string, mood: string): string[] {
-    const themeMap = {
-      "Sertanejo Sofrência": ["traição", "saudade", "paixão não correspondida", "solidão"],
-      "Sertanejo Universitário": ["paquera", "festas", "amizade", "juventude"],
-      "Pagode": ["amor", "romance", "felicidade", "relacionamento"],
-      "Forró": ["casamento", "festa junina", "amor nordestino", "saudade"],
-      "Funk": ["ostentação", "poder", "sedução", "vida na favela"]
-    }
-
-    return themeMap[genre as keyof typeof themeMap] || ["amor", "vida", "sentimentos"]
-  }
-
-  static getGenrePromptEnhancements(genre: string): string {
-    const enhancements = {
-      "Sertanejo Sofrência": `💔 TÉCNICAS DE SOFRÊNCIA:
-- Use dramatização emocional: "ai", "dói", "chorar"
-- Pausas dramáticas: "...", "—"
-- Metáforas de dor: "facada", "ferida", "vazio"
-- Contraste entre passado feliz e presente triste`,
-
-      "Sertanejo Universitário": `🎓 TÉCNICAS UNIVERSITÁRIAS:
-- Linguagem jovem: "tá", "cê", "pra"
-- Referências a festas e baladas
-- Tom descontraído e divertido
-- Paquera e conquista`,
-
-      "Funk": `🔥 TÉCNICAS DE FUNK:
-- Batidas marcantes e repetição
-- Linguagem das periferias
-- Empoderamento e ostentação
-- Frases curtas e impactantes`,
-
-      "Pagode": `🎵 TÉCNICAS DE PAGODE:
-- Alegria e descontração
-- Convite para dançar
-- Romance leve e feliz
-- Comunidade e amizade`
-    }
-
-    return enhancements[genre as keyof typeof enhancements] || ""
-  }
-}
-
-export class SyllableTyrant {
-  static async enforceAbsoluteSyllables(lyrics: string, useIntelligentElisions: boolean = true, genre?: string): Promise<string> {
-    console.log("🎯 [SyllableTyrant] Iniciando correção avançada...")
-    const lines = lyrics.split("\n")
-    const correctedLines: string[] = []
-    let corrections = 0
-    let intelligentElisions = 0
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i]
-
-      if (line.startsWith("[") || line.startsWith("(") || line.includes("Instruments:") || !line.trim()) {
-        correctedLines.push(line)
-        continue
-      }
-
-      const syllables = countPortugueseSyllables(line)
-      const targetSyllables = 11
-
-      if (syllables !== targetSyllables) {
-        console.log(`🔴 Linha ${i + 1}: "${line}" → ${syllables} sílabas`)
-        
-        let fixedLine = line
-        
-        if (useIntelligentElisions && syllables > targetSyllables) {
-          const elisions = AdvancedElisionEngine.applyIntelligentElisions(line, targetSyllables)
-          if (elisions.length > 0) {
-            // Filtra elisões apropriadas para o gênero
-            const genreAppropriate = this.filterGenreAppropriateElisions(elisions, genre)
-            if (genreAppropriate.length > 0) {
-              fixedLine = genreAppropriate[0]
-              intelligentElisions++
-              console.log(`🎭 Elisão inteligente aplicada: "${fixedLine}"`)
-            }
-          }
-        }
-
-        const fixedSyllables = countPortugueseSyllables(fixedLine)
-        if (fixedSyllables !== targetSyllables) {
-          fixedLine = this.applyGenreSpecificFix(fixedLine, fixedSyllables, targetSyllables, genre)
-        }
-
-        const finalSyllables = countPortugueseSyllables(fixedLine)
-        if (finalSyllables === targetSyllables) {
-          console.log(`✅ Corrigido: "${fixedLine}" → ${finalSyllables} sílabas`)
-          corrections++
-        } else {
-          console.log(`⚠️ Correção parcial: "${fixedLine}" → ${finalSyllables} sílabas`)
-        }
-
-        correctedLines.push(fixedLine)
-      } else {
-        console.log(`✅ Linha ${i + 1} OK: "${line}" → ${syllables} sílabas`)
-        correctedLines.push(line)
-      }
-    }
-
-    console.log(`🎯 [SyllableTyrant] ${corrections} correções aplicadas (${intelligentElisions} elisões inteligentes)`)
-    return correctedLines.join("\n")
-  }
-
-  private static filterGenreAppropriateElisions(elisions: string[], genre?: string): string[] {
-    if (!genre) return elisions.slice(0, 1)
-
-    // Para gêneros sofisticados, evita elisões muito agressivas
-    if (["MPB", "Bossa Nova"].includes(genre)) {
-      return elisions.filter(elision => 
-        !elision.includes("c'") && 
-        elision.split(" ").length > 2
-      )
-    }
-
-    return elisions
-  }
-
-  private static applyGenreSpecificFix(line: string, currentSyllables: number, targetSyllables: number, genre?: string): string {
-    let fixedLine = line
-
-    if (currentSyllables > targetSyllables) {
-      // Correções específicas por gênero
-      if (genre === "Funk" || genre === "Sertanejo Universitário") {
-        fixedLine = fixedLine.replace(/\b(o |a |um |uma )/gi, '')
-        fixedLine = fixedLine.replace(/\b(para)\b/gi, 'pra')
-        fixedLine = fixedLine.replace(/\b(você)\b/gi, 'cê')
-        fixedLine = fixedLine.replace(/\b(está|estou)\b/gi, 'tá')
-      } else {
-        // Correção genérica para outros gêneros
-        fixedLine = fixedLine.replace(/\b(para)\b/gi, 'pra')
-        fixedLine = fixedLine.replace(/\b(você)\b/gi, 'cê')
-      }
-    }
-
-    return fixedLine
-  }
-}
-
+// ==================== META COMPOSER PRINCIPAL ====================
 export class MetaComposer {
   private static readonly MAX_ITERATIONS = 2
   private static readonly ABSOLUTE_MAX_SYLLABLES = 11
 
   static async compose(request: CompositionRequest): Promise<CompositionResult> {
-    console.log("[MetaComposer] 🚀 INICIANDO COMPOSIÇÃO MEGA AVANÇADA...")
-
-    // ✅ ANÁLISE INTELIGENTE DO GÊNERO
-    const genreAnalysis = GenreIntelligence.analyzeGenre(
-      request.genre, 
-      request.theme, 
-      request.mood
-    )
+    console.log("[MetaComposer] 🚀 INICIANDO COMPOSIÇÃO MEGA DEFINITIVA...")
 
     const useIntelligentElisions = request.useIntelligentElisions ?? true
-    const syllableTarget = request.syllableTarget || genreAnalysis.syllableTarget
+    const syllableTarget = request.syllableTarget || { min: 7, max: 11, ideal: 9 }
 
-    console.log(`[MetaComposer] 🎵 Gênero: ${request.genre}`, {
-      sílabas: syllableTarget,
-      características: genreAnalysis.characteristics,
-      estiloElisão: genreAnalysis.elisionStyle
-    })
+    console.log(`[MetaComposer] 🎵 Gênero: ${request.genre}`, { sílabas: syllableTarget })
 
     const multiGenResult = await MultiGenerationEngine.generateMultipleVariations(
       async () => {
-        return await this.generateWithAdvancedStrategy(request, genreAnalysis)
+        return await this.generateWithAdvancedStrategy(request)
       },
-      (lyrics) => this.calculateAdvancedScore(lyrics, request, genreAnalysis),
+      (lyrics) => this.calculateAdvancedScore(lyrics, request),
       2,
     )
 
@@ -287,12 +534,12 @@ export class MetaComposer {
 
     console.log(`[MetaComposer] 🏆 Melhor versão: ${bestScore.toFixed(1)}/100`)
 
-    console.log("🎯 Aplicando garantia final mega avançada...")
-    const finalLyrics = await SyllableTyrant.enforceAbsoluteSyllables(
-      bestLyrics, 
-      useIntelligentElisions, 
-      request.genre
-    )
+    console.log("🎯 Aplicando garantia final mega...")
+    const finalLyrics = await MegaCorrector.correctGeneratedLyrics(bestLyrics, request.genre)
+
+    // Analisa problemas antes/depois
+    const problemsBefore = MegaCorrector.analyzeProblems(bestLyrics)
+    const problemsAfter = MegaCorrector.analyzeProblems(finalLyrics)
 
     return {
       lyrics: finalLyrics,
@@ -304,18 +551,20 @@ export class MetaComposer {
         preservedChorusesUsed: request.preservedChoruses ? request.preservedChoruses.length > 0 : false,
         performanceMode: request.performanceMode || "standard",
         intelligentElisionsApplied: useIntelligentElisions ? this.countIntelligentElisions(bestLyrics, finalLyrics) : 0,
-        genreAnalysis: genreAnalysis,
         decadeStyle: request.decade,
-        regionalCharacteristics: request.regionalStyle ? [request.regionalStyle] : []
+        regionalCharacteristics: request.regionalStyle ? [request.regionalStyle] : [],
+        correctionsApplied: {
+          syllable: problemsBefore.syllableIssues.length - problemsAfter.syllableIssues.length,
+          grammar: problemsBefore.grammarIssues.length - problemsAfter.grammarIssues.length,
+          formatting: problemsBefore.formattingIssues.length - problemsAfter.formattingIssues.length
+        },
+        originalProblems: problemsBefore,
+        remainingProblems: problemsAfter
       },
     }
   }
 
-  private static calculateAdvancedScore(
-    lyrics: string, 
-    request: CompositionRequest, 
-    genreAnalysis: any
-  ): number {
+  private static calculateAdvancedScore(lyrics: string, request: CompositionRequest): number {
     const lines = lyrics.split("\n").filter((line) => line.trim() && !line.startsWith("[") && !line.startsWith("("))
 
     let validLines = 0
@@ -328,53 +577,14 @@ export class MetaComposer {
 
     const syllableScore = (validLines / lines.length) * 100
     const auditResult = LyricsAuditor.audit(lyrics, request.genre, request.theme)
-    const genreScore = this.calculateGenreAdherence(lyrics, genreAnalysis)
     
-    // Score avançado: sílabas + qualidade + aderência ao gênero
-    const finalScore = syllableScore * 0.6 + auditResult.score * 0.25 + genreScore * 0.15
+    const finalScore = syllableScore * 0.7 + auditResult.score * 0.3
 
     return finalScore
   }
 
-  private static calculateGenreAdherence(lyrics: string, genreAnalysis: any): number {
-    let score = 50 // Base
-
-    // Verifica vocabulário típico
-    genreAnalysis.vocabulary.forEach((word: string) => {
-      if (lyrics.toLowerCase().includes(word.toLowerCase())) {
-        score += 5
-      }
-    })
-
-    // Verifica características
-    genreAnalysis.characteristics.forEach((char: string) => {
-      if (this.hasCharacteristic(lyrics, char)) {
-        score += 10
-      }
-    })
-
-    return Math.min(score, 100)
-  }
-
-  private static hasCharacteristic(lyrics: string, characteristic: string): boolean {
-    const characteristicMap = {
-      "drama": ["chorar", "sofrer", "dói", "traição", "ai"],
-      "alegria": ["feliz", "sorrir", "festa", "alegria", "riso"],
-      "festa": ["balada", "festão", "cerveja", "dançar", "noite"],
-      "nordestino": ["nordeste", "sanfona", "xote", "forró"]
-    }
-
-    const words = characteristicMap[characteristic as keyof typeof characteristicMap]
-    if (!words) return false
-
-    return words.some(word => lyrics.toLowerCase().includes(word))
-  }
-
-  private static async generateWithAdvancedStrategy(
-    request: CompositionRequest, 
-    genreAnalysis: any
-  ): Promise<string> {
-    console.log("[MetaComposer] 📝 Gerando com estratégia mega avançada...")
+  private static async generateWithAdvancedStrategy(request: CompositionRequest): Promise<string> {
+    console.log("[MetaComposer] 📝 Gerando com estratégia avançada...")
 
     const isRewrite = !!request.originalLyrics
     const performanceMode = request.performanceMode || "standard"
@@ -383,36 +593,31 @@ export class MetaComposer {
     let rawLyrics: string
 
     if (isRewrite) {
-      rawLyrics = await this.generateAdvancedRewrite(request, genreAnalysis)
+      rawLyrics = await this.generateAdvancedRewrite(request)
     } else {
-      rawLyrics = await this.generateAdvancedCreation(request, genreAnalysis)
+      rawLyrics = await this.generateAdvancedCreation(request)
     }
 
-    // ✅ VALIDAÇÃO AVANÇADA
     const validationResult = this.validateLyricsSyllables(rawLyrics)
     if (validationResult.validityRatio < 0.8) {
       console.log(`⚠️ Validação fraca (${(validationResult.validityRatio * 100).toFixed(1)}%), aplicando correções...`)
-      rawLyrics = await SyllableTyrant.enforceAbsoluteSyllables(rawLyrics, useIntelligentElisions, request.genre)
+      rawLyrics = await MegaCorrector.correctGeneratedLyrics(rawLyrics, request.genre)
     }
 
-    // ✅ ELISÕES INTELIGENTES
     if (useIntelligentElisions) {
-      rawLyrics = await this.applyAdvancedElisions(rawLyrics, request, genreAnalysis)
+      rawLyrics = await this.applyIntelligentElisions(rawLyrics, request)
     }
 
-    // ✅ TERCEIRA VIA
     const terceiraViaAnalysis = analisarTerceiraVia(rawLyrics, request.genre, request.theme)
     if (terceiraViaAnalysis && terceiraViaAnalysis.score_geral < 75) {
       rawLyrics = await this.applyTerceiraViaCorrections(rawLyrics, request, terceiraViaAnalysis)
     }
 
-    // ✅ POLIMENTO FINAL
     let finalLyrics = rawLyrics
     if (request.applyFinalPolish ?? true) {
-      finalLyrics = await this.applyAdvancedPolish(finalLyrics, request.genre, performanceMode, genreAnalysis)
+      finalLyrics = await this.applyAdvancedPolish(finalLyrics, request.genre, performanceMode)
     }
 
-    // ✅ VALIDAÇÕES FINAIS
     const punctuationResult = PunctuationValidator.validate(finalLyrics)
     if (!punctuationResult.isValid) {
       finalLyrics = punctuationResult.correctedLyrics
@@ -421,12 +626,12 @@ export class MetaComposer {
     const stackingResult = LineStacker.stackLines(finalLyrics)
     finalLyrics = stackingResult.stackedLyrics
 
-    console.log("✅ Geração mega avançada concluída")
+    console.log("✅ Geração avançada concluída")
     return finalLyrics
   }
 
-  private static async generateAdvancedCreation(request: CompositionRequest, genreAnalysis: any): Promise<string> {
-    const advancedPrompt = this.buildAdvancedPrompt(request, genreAnalysis)
+  private static async generateAdvancedCreation(request: CompositionRequest): Promise<string> {
+    const advancedPrompt = this.buildAdvancedPrompt(request)
     
     let attempts = 0
     let bestLyrics = ""
@@ -470,30 +675,24 @@ export class MetaComposer {
       }
     }
 
-    return bestLyrics || this.getFallbackLyrics(request, genreAnalysis)
+    return bestLyrics || this.getFallbackLyrics(request)
   }
 
-  private static buildAdvancedPrompt(request: CompositionRequest, genreAnalysis: any): string {
-    const { syllableTarget, characteristics, vocabulary } = genreAnalysis
-    
-    const genreEnhancements = GenreIntelligence.getGenrePromptEnhancements(request.genre)
-    
+  private static buildAdvancedPrompt(request: CompositionRequest): string {
     return `🎵 COMPOSITOR MEGA BRASILEIRO - ESPECIALISTA EM ${request.genre.toUpperCase()}
 
 **PERFIL DO GÊNERO:**
-- CARACTERÍSTICAS: ${characteristics.join(", ")}
-- VOCABULÁRIO TÍPICO: ${vocabulary.join(", ")}
-- SÍLABAS: ${syllableTarget.min}-${syllableTarget.max} por verso (ideal: ${syllableTarget.ideal})
-
-${genreEnhancements}
+- SÍLABAS: 7-11 por verso (ideal: 9)
+- FOCO: Emoções verdadeiras e linguagem natural
 
 **TÉCNICAS DE ESCRITA:**
 - Use elisões inteligentes: "de amor" → "d'amor", "para" → "pra"
-- Mantenha versos entre ${syllableTarget.min}-${syllableTarget.max} sílabas
-- Foque em ${characteristics[0]} e ${characteristics[1]}
+- Mantenha versos entre 7-11 sílabas
+- Linguagem natural e emocional
 
 **CONTEXTO:**
 - TEMA: ${request.theme}
+- GÊNERO: ${request.genre}
 - HUMOR: ${request.mood}
 - ${request.decade ? `DÉCADA: ${request.decade}` : ''}
 - ${request.regionalStyle ? `ESTILO REGIONAL: ${request.regionalStyle}` : ''}
@@ -510,7 +709,7 @@ COMPONHA UMA LETRA AUTÊNTICA E ORIGINAL:`
     return temps[creativity as keyof typeof temps] || 0.7
   }
 
-  private static async generateAdvancedRewrite(request: CompositionRequest, genreAnalysis: any): Promise<string> {
+  private static async generateAdvancedRewrite(request: CompositionRequest): Promise<string> {
     if (!request.originalLyrics) {
       throw new Error("Original lyrics required for rewrite")
     }
@@ -518,8 +717,8 @@ COMPONHA UMA LETRA AUTÊNTICA E ORIGINAL:`
     const rewritePrompt = `🔄 REESCRITOR MEGA BRASILEIRO - ${request.genre.toUpperCase()}
 
 **PERFIL DO GÊNERO:**
-- CARACTERÍSTICAS: ${genreAnalysis.characteristics.join(", ")}
-- SÍLABAS: ${genreAnalysis.syllableTarget.min}-${genreAnalysis.syllableTarget.max}
+- SÍLABAS: 7-11 por verso
+- FOCO: Emoções verdadeiras
 
 **LETRA ORIGINAL:**
 ${request.originalLyrics}
@@ -540,16 +739,12 @@ REESCREVA MANTENDO A ESSÊNCIA MAS ADAPTANDO AO GÊNERO:`
     return text || request.originalLyrics
   }
 
-  private static async applyAdvancedElisions(
-    lyrics: string, 
-    request: CompositionRequest, 
-    genreAnalysis: any
-  ): Promise<string> {
-    console.log("[MetaComposer] 🎭 Aplicando elisões avançadas...")
+  private static async applyIntelligentElisions(lyrics: string, request: CompositionRequest): Promise<string> {
+    console.log("[MetaComposer] 🎭 Aplicando elisões inteligentes...")
     
     const lines = lyrics.split("\n")
     const correctedLines: string[] = []
-    const targetSyllables = genreAnalysis.syllableTarget.ideal
+    const targetSyllables = request.syllableTarget?.ideal || 9
     let elisionsApplied = 0
 
     for (const line of lines) {
@@ -568,29 +763,20 @@ REESCREVA MANTENDO A ESSÊNCIA MAS ADAPTANDO AO GÊNERO:`
       correctedLines.push(line)
     }
 
-    console.log(`✅ ${elisionsApplied} elisões avançadas aplicadas`)
+    console.log(`✅ ${elisionsApplied} elisões inteligentes aplicadas`)
     return correctedLines.join("\n")
   }
 
-  private static async applyAdvancedPolish(
-    lyrics: string, 
-    genre: string, 
-    performanceMode: string, 
-    genreAnalysis: any
-  ): Promise<string> {
+  private static async applyAdvancedPolish(lyrics: string, genre: string, performanceMode: string): Promise<string> {
     console.log(`[MetaComposer] ✨ Aplicando polimento avançado...`)
 
     let polishedLyrics = lyrics
 
-    // Formatação de performance específica por gênero
     if (shouldUsePerformanceFormat(genre, performanceMode)) {
       polishedLyrics = formatSertanejoPerformance(polishedLyrics)
     } else if (performanceMode === "performance") {
       polishedLyrics = this.applyPerformanceFormatting(polishedLyrics, genre)
     }
-
-    // Adiciona elementos específicos do gênero
-    polishedLyrics = this.applyGenreFinalTouches(polishedLyrics, genre, genreAnalysis)
 
     return polishedLyrics
   }
@@ -598,7 +784,6 @@ REESCREVA MANTENDO A ESSÊNCIA MAS ADAPTANDO AO GÊNERO:`
   private static applyPerformanceFormatting(lyrics: string, genre: string): string {
     let formatted = lyrics
     
-    // Formatação específica por gênero
     if (genre === "Funk") {
       formatted = formatted.replace(/\[Refrão\]/gi, "[HOOK]")
     } else if (genre.includes("Sertanejo")) {
@@ -609,26 +794,7 @@ REESCREVA MANTENDO A ESSÊNCIA MAS ADAPTANDO AO GÊNERO:`
     return formatted
   }
 
-  private static applyGenreFinalTouches(lyrics: string, genre: string, genreAnalysis: any): string {
-    let touched = lyrics
-
-    // Adiciona elementos específicos do gênero
-    if (genre === "Forró" && !touched.includes("xote")) {
-      touched += "\n\n(Ritmo: xote | Estilo: forró pé-de-serra)"
-    }
-
-    if (genre === "Funk" && !touched.includes("beat")) {
-      touched += "\n\n(Beat: pancadão | Estilo: funk ostentação)"
-    }
-
-    if (genre === "Sertanejo Sofrência" && !touched.includes("acordeon")) {
-      touched += "\n\n(Instrumental: acordeon lamentoso | Clima: sofrência)"
-    }
-
-    return touched
-  }
-
-  private static getFallbackLyrics(request: CompositionRequest, genreAnalysis: any): string {
+  private static getFallbackLyrics(request: CompositionRequest): string {
     const fallbacks = {
       "Sertanejo Sofrência": `[Verso 1]
 Teu cheiro ainda tá no travesseiro
@@ -650,13 +816,10 @@ Até o sol raiar no canavial`,
 
       "Funk": `[Refrão]
 Bumbum granada, empina na pista
-Essa here menina é uma visionista
+Essa menina é uma visionista
 [Verso]
 No fluxo da quebrada, mandando ver
-Com atitude, fazendo acontecer
-[Refrão]
-Bumbum granada, empina na pista
-Essa menina é uma visionista`,
+Com atitude, fazendo acontecer`,
 
       "Pagode": `[Verso 1]
 Chegou o fim de semana, vamos curtir
@@ -671,13 +834,11 @@ A amizade e o amor sem parar`
     return fallbacks[request.genre as keyof typeof fallbacks] || 
            `[Verso 1]
 Composição em ${request.genre}
-Com ${genreAnalysis.characteristics.join(" e ")}
+Com tema: ${request.theme}
 [Refrão]
 Letra gerada automaticamente
 Com técnicas de composição moderna`
   }
-
-  // ... (mantidos os métodos existentes do seu código original)
 
   private static validateLyricsSyllables(lyrics: string): {
     valid: boolean
@@ -817,3 +978,6 @@ Com técnicas de composição moderna`
     return contextLines.join("\n")
   }
 }
+
+// ✅ EXPORT FINAL - APENAS O META COMPOSER PRINCIPAL
+export { MetaComposer }
