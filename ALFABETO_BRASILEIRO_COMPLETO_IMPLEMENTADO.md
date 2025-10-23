@@ -1,4 +1,4 @@
-# ALFABETO BRASILEIRO COMPLETO - IMPLEMENTAÇÃO DEFINITIVA
+# ALFABETO BRASILEIRO COMPLETO - IMPLEMENTAÇÃO DEFINITIVA. Importante!
 
 ## PROBLEMA IDENTIFICADO
 O aplicativo estava gerando palavras sem acentuação correta do português brasileiro:
