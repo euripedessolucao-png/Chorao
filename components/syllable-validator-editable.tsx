@@ -1,3 +1,5 @@
+// components/syllable-validator-editable.tsx - VERSÃO FINAL CORRIGIDA
+
 "use client"
 
 import { useState } from "react"
@@ -6,34 +8,69 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { CheckCircle, AlertTriangle, XCircle, Edit2, Check, X } from "lucide-react"
-import { countPoeticSyllables, validateSyllableLimit } from "@/lib/validation/syllable-counter"
+import { countPoeticSyllables } from "@/lib/validation/syllable-counter"
 import { toast } from "sonner"
-
-interface ValidationResult {
-  isValid: boolean
-  currentSyllables: number
-  suggestions: string[]
-}
 
 interface LineValidation {
   line: string
   syllables: number
   lineNumber: number
   suggestions: string[]
-  isEditing?: boolean
-  editedText?: string
+}
+
+interface SyllableValidatorEditableProps {
+  lyrics: string
+  maxSyllables?: number
+  onLyricsChange: (newLyrics: string) => void
 }
 
 export function SyllableValidatorEditable({
   lyrics,
   maxSyllables = 11,
   onLyricsChange,
-}: {
-  lyrics: string
-  maxSyllables?: number
-  onLyricsChange: (newLyrics: string) => void
-}) {
+}: SyllableValidatorEditableProps) {
   const [editingLines, setEditingLines] = useState<Set<number>>(new Set())
+
+  // Função para gerar sugestões básicas
+  const generateBasicSuggestions = (line: string, maxSyllables: number): string[] => {
+    const suggestions: string[] = []
+    const words = line.split(" ")
+
+    // Sugestão 1: Remover última palavra se tiver mais de maxSyllables + 2
+    if (words.length > 1) {
+      const withoutLastWord = words.slice(0, -1).join(" ")
+      const syllablesWithoutLast = countPoeticSyllables(withoutLastWord)
+      if (syllablesWithoutLast <= maxSyllables && syllablesWithoutLast > 0) {
+        suggestions.push(withoutLastWord)
+      }
+    }
+
+    // Sugestão 2: Contrações comuns
+    const contractions: [string, string][] = [
+      [" para ", " pra "],
+      [" você ", " cê "],
+      [" está ", " tá "],
+      [" estou ", " tô "],
+      [" com ", " c/ "],
+      [" de ", " d"],
+      [" que ", " q"],
+      [" não ", " num "],
+      [" uma ", " "],
+      [" um ", " "],
+    ]
+
+    contractions.forEach(([from, to]) => {
+      if (line.includes(from)) {
+        const newLine = line.replace(new RegExp(from, "g"), to)
+        const syllables = countPoeticSyllables(newLine)
+        if (syllables <= maxSyllables && syllables > 0) {
+          suggestions.push(newLine.trim())
+        }
+      }
+    })
+
+    return suggestions.slice(0, 3) // Limitar a 3 sugestões
+  }
 
   // Analisa todas as linhas da letra
   const lines = lyrics.split("\n")
@@ -41,13 +78,18 @@ export function SyllableValidatorEditable({
 
   lines.forEach((line, index) => {
     if (line.trim() && !line.startsWith("[") && !line.startsWith("(") && !line.includes("Instruments:")) {
-      const validation = validateSyllableLimit(line, maxSyllables)
-      if (!validation.isValid) {
+      // ✅ VERSÃO CORRIGIDA: Contagem direta sem validateSyllableLimit
+      const syllables = countPoeticSyllables(line)
+
+      if (syllables > maxSyllables) {
+        // Gerar sugestões básicas
+        const suggestions = generateBasicSuggestions(line, maxSyllables)
+
         validations.push({
           line: line.trim(),
-          syllables: validation.currentSyllables,
+          syllables: syllables,
           lineNumber: index + 1,
-          suggestions: validation.suggestions,
+          suggestions: suggestions,
         })
       }
     }
@@ -146,13 +188,14 @@ export function SyllableValidatorEditable({
                       <div className="flex gap-2">
                         <Button
                           size="sm"
-                          onClick={() =>
-                            saveEdit(
-                              validation.lineNumber,
-                              document.querySelector<HTMLInputElement>(`input[defaultValue="${validation.line}"]`)
-                                ?.value || validation.line,
+                          onClick={() => {
+                            const input = document.querySelector<HTMLInputElement>(
+                              `input[defaultValue="${validation.line}"]`,
                             )
-                          }
+                            if (input) {
+                              saveEdit(validation.lineNumber, input.value)
+                            }
+                          }}
                           className="h-7"
                         >
                           <Check className="h-3 w-3 mr-1" />
@@ -185,7 +228,7 @@ export function SyllableValidatorEditable({
                 </div>
               </div>
 
-              {/* SUGESTÕES SEGURAS */}
+              {/* SUGESTÕES */}
               {validation.suggestions.length > 0 && !editingLines.has(validation.lineNumber) && (
                 <div className="mt-3 pt-3 border-t border-amber-100">
                   <span className="text-xs font-medium text-gray-600 mb-2 block">Sugestões automáticas:</span>
@@ -239,3 +282,5 @@ export function SyllableValidatorEditable({
     </Card>
   )
 }
+
+export default SyllableValidatorEditable
