@@ -28,72 +28,31 @@ export class MultiGenerationEngine {
     theme?: string,
     genreConfig?: any,
   ): Promise<MultiGenerationResult> {
-    console.log("[v0] ═══════════════════════════════════════════════════════")
-    console.log("[v0] 🎯 MultiGenerationEngine.generateMultipleVariations - INÍCIO")
-    console.log("[v0] ═══════════════════════════════════════════════════════")
-    console.log("[v0] 📊 Parâmetros:")
-    console.log("[v0]   - count:", count)
-    console.log("[v0]   - genre:", genre)
-    console.log("[v0]   - theme:", theme)
-    console.log("[v0]   - generateFn type:", typeof generateFn)
-    console.log("[v0]   - scoreFn type:", typeof scoreFn)
-
     const variations: GenerationVariation[] = []
-    const rejectedVariations: Array<{ lyrics: string; reason: string; score: number }> = []
-    const maxAttempts = count * 3 // Tenta até 3x mais para garantir versões válidas
+    const maxAttempts = count * 2 // Reduzido de 3x para 2x
 
     let attempts = 0
     while (variations.length < count && attempts < maxAttempts) {
       attempts++
-      console.log("[v0] 🔄 Tentativa", attempts, "de", maxAttempts, "- Válidas:", variations.length, "/", count)
 
       try {
-        console.log("[v0] 📝 Chamando generateFn...")
         let lyrics = await generateFn()
-        console.log("[v0] ✅ generateFn retornou letra - Length:", lyrics.length)
 
-        console.log("[v0] 🔧 APLICANDO ULTIMATEFIXER - Correção completa em uma única etapa...")
         try {
           lyrics = UltimateFixer.fixFullLyrics(lyrics)
-          console.log("[v0] ✅ ULTIMATEFIXER concluído")
         } catch (fixerError) {
-          console.error("[v0] ❌ ULTIMATEFIXER FALHOU:", fixerError)
-          console.error("[v0] 📍 Stack trace:", fixerError instanceof Error ? fixerError.stack : "N/A")
-          console.warn("[v0] ⚠️ Continuando com letra SEM correção do UltimateFixer")
-          // Continua com a letra original sem correção
+          console.warn("⚠️ UltimateFixer falhou, continuando sem correção")
         }
 
-        // VALIDAÇÃO 1: Integridade de palavras
-        console.log("[v0] ✅ VALIDAÇÃO 1 - Integridade de palavras...")
+        // Validação de integridade
         const integrityCheck = WordIntegrityValidator.validate(lyrics)
-        if (!integrityCheck.isValid) {
-          console.warn("[v0] ⚠️ VALIDAÇÃO 1 FALHOU - Problemas de integridade:", integrityCheck.errors.length)
-          console.warn("[v0] ⚠️ Aceitando variação com problemas de integridade (score reduzido)")
-        }
-
-        // VALIDAÇÃO 2: Espaços duplicados
-        console.log("[v0] ✅ VALIDAÇÃO 2 - Espaços duplicados...")
-        const lines = lyrics.split("\n")
-        const linesWithMultipleSpaces = lines.filter((line) => /\s{2,}/.test(line))
-        if (linesWithMultipleSpaces.length > 0) {
-          console.warn("[v0] ⚠️ VALIDAÇÃO 2 FALHOU -", linesWithMultipleSpaces.length, "linhas com espaços duplicados")
-          console.warn("[v0] ⚠️ Aceitando variação com espaços duplicados (score reduzido)")
-        }
 
         // Calculando score final
-        console.log("[v0] 📊 Calculando score final...")
         let score = scoreFn(lyrics)
 
         if (!integrityCheck.isValid) {
-          score = score * 0.7 // Reduz 30% do score
-          console.log("[v0] 📉 Score reduzido por problemas de integridade:", score)
+          score = score * 0.7
         }
-        if (linesWithMultipleSpaces.length > 0) {
-          score = score * 0.8 // Reduz 20% do score
-          console.log("[v0] 📉 Score reduzido por espaços duplicados:", score)
-        }
-
-        console.log("[v0] ✅ Score final calculado:", score)
 
         const variation: GenerationVariation = {
           lyrics,
@@ -104,52 +63,20 @@ export class MultiGenerationEngine {
         }
 
         variations.push(variation)
-        console.log("[v0] 🎉 Variação", variations.length, "ACEITA - Score:", score)
       } catch (error) {
-        console.error("[v0] ❌ Erro na tentativa", attempts, ":", error)
-        console.error("[v0] 📍 Stack trace:", error instanceof Error ? error.stack : "N/A")
-        rejectedVariations.push({
-          lyrics: "",
-          reason: `Erro: ${error instanceof Error ? error.message : String(error)}`,
-          score: 0,
-        })
+        console.error("❌ Erro na tentativa", attempts, ":", error instanceof Error ? error.message : String(error))
       }
     }
 
     if (variations.length === 0) {
-      console.error("[v0] 💥 NENHUMA VARIAÇÃO VÁLIDA após", attempts, "tentativas")
-      console.error("[v0] 📋 Variações rejeitadas:", rejectedVariations.length)
-
-      const validRejected = rejectedVariations.filter((r) => r.lyrics && r.lyrics.length > 0)
-
-      if (validRejected.length > 0) {
-        // Ordena por score (melhor primeiro)
-        validRejected.sort((a, b) => b.score - a.score)
-        const bestRejected = validRejected[0]
-
-        console.warn("[v0] ⚠️ Usando melhor variação rejeitada como fallback (Score:", bestRejected.score, ")")
-        console.warn("[v0] ⚠️ Motivo da rejeição:", bestRejected.reason)
-
-        variations.push({
-          lyrics: bestRejected.lyrics,
-          score: bestRejected.score,
-          style: this.detectStyle(bestRejected.lyrics),
-          strengths: ["Melhor tentativa disponível"],
-          weaknesses: [bestRejected.reason],
-        })
-      } else {
-        console.error("[v0] 🚨 EMERGÊNCIA: Gerando letra simples como último recurso")
-        const emergencyLyrics = this.generateEmergencyLyrics()
-        const emergencyScore = scoreFn(emergencyLyrics)
-
-        variations.push({
-          lyrics: emergencyLyrics,
-          score: emergencyScore,
-          style: "Emergência",
-          strengths: ["Letra de emergência funcional"],
-          weaknesses: ["Gerada como último recurso"],
-        })
-      }
+      const emergencyLyrics = this.generateEmergencyLyrics()
+      variations.push({
+        lyrics: emergencyLyrics,
+        score: scoreFn(emergencyLyrics),
+        style: "Emergência",
+        strengths: ["Letra funcional"],
+        weaknesses: ["Gerada como último recurso"],
+      })
     }
 
     // Escolhe a melhor variação
@@ -162,10 +89,6 @@ export class MultiGenerationEngine {
         bestIndex = i
       }
     }
-
-    console.log("[v0] 🏆 Escolhendo melhor variação...")
-    console.log("[v0] 🎉 MultiGenerationEngine - SUCESSO")
-    console.log("[v0] 📊 Resultado final: Melhor variação índice", bestIndex, "- Score:", bestScore)
 
     return {
       variations,
@@ -196,9 +119,6 @@ Funcionando
 Sistema ok`
   }
 
-  /**
-   * DETECTA ESTILO DA LETRA
-   */
   private static detectStyle(lyrics: string): string {
     const lowerLyrics = lyrics.toLowerCase()
 
@@ -217,59 +137,42 @@ Sistema ok`
     return "Narrativo"
   }
 
-  /**
-   * ANALISA PONTOS FORTES
-   */
   private static analyzeStrengths(lyrics: string): string[] {
     const strengths: string[] = []
     const lines = lyrics.split("\n").filter((l) => l.trim() && !l.startsWith("[") && !l.startsWith("("))
 
-    // Verifica linguagem coloquial
     if (lyrics.includes("cê") || lyrics.includes("tô") || lyrics.includes("pra")) {
       strengths.push("Linguagem coloquial autêntica")
     }
 
-    // Verifica repetição (chorus memorável)
     const uniqueLines = new Set(lines)
     if (lines.length > uniqueLines.size) {
-      strengths.push("Repetição estratégica (memorável)")
+      strengths.push("Repetição estratégica")
     }
 
-    // Verifica frases curtas
     const avgLength = lines.reduce((sum, line) => sum + line.length, 0) / lines.length
     if (avgLength < 50) {
-      strengths.push("Frases concisas e diretas")
+      strengths.push("Frases concisas")
     }
 
     return strengths
   }
 
-  /**
-   * ANALISA PONTOS FRACOS
-   */
   private static analyzeWeaknesses(lyrics: string): string[] {
     const weaknesses: string[] = []
     const lines = lyrics.split("\n").filter((l) => l.trim() && !l.startsWith("[") && !l.startsWith("("))
 
-    // Verifica palavras cortadas
     const hasIncompleteWords = lines.some((line) => {
       return line.match(/\b\w{1,2}ç\b|\b\w{1,2}ã\b/) !== null
     })
 
     if (hasIncompleteWords) {
-      weaknesses.push("Palavras cortadas ou incompletas")
+      weaknesses.push("Palavras cortadas")
     }
 
-    // Verifica versos muito longos
     const hasLongLines = lines.some((line) => line.length > 80)
     if (hasLongLines) {
       weaknesses.push("Versos muito longos")
-    }
-
-    // Verifica falta de repetição
-    const uniqueLines = new Set(lines)
-    if (lines.length === uniqueLines.size && lines.length > 10) {
-      weaknesses.push("Falta repetição (menos memorável)")
     }
 
     return weaknesses
