@@ -11,6 +11,7 @@ import { PunctuationValidator } from "@/lib/validation/punctuation-validator"
 import { LineStacker } from "@/lib/utils/line-stacker"
 import { LyricsAuditor } from "@/lib/validation/lyrics-auditor"
 import { MultiGenerationEngine } from "./multi-generation-engine"
+import { AdvancedElisionEngine } from "./advanced-elision-engine"
 
 export interface CompositionRequest {
   genre: string
