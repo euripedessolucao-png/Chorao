@@ -1,7 +1,6 @@
-// app/api/rewrite-lyrics/route.ts - CORRIGIDO
-
-import { NextRequest, NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
 import { MetaComposer } from "@/lib/orchestrator/meta-composer"
+import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,85 +20,79 @@ export async function POST(request: NextRequest) {
       inspiracao,
       metaforas,
       titulo,
-      performanceMode
+      performanceMode,
     } = await request.json()
 
     // Validações básicas
     if (!letraOriginal?.trim()) {
-      return NextResponse.json(
-        { error: "Letra original é obrigatória" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Letra original é obrigatória" }, { status: 400 })
     }
 
     if (!genero) {
-      return NextResponse.json(
-        { error: "Gênero é obrigatório" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Gênero é obrigatório" }, { status: 400 })
     }
 
-    console.log("🎵 [API Rewrite] Iniciando reescrita...")
-    console.log("📊 Parâmetros:", {
+    console.log("[v0] 🎵 Iniciando reescrita com MetaComposer...")
+    console.log("[v0] 📊 Parâmetros:", {
       genero,
       tema: tema || "Não especificado",
       humor: humor || "Não especificado",
-      performanceMode: performanceMode || "standard"
+      performanceMode: performanceMode || "standard",
     })
 
-    // Prepara request para o MetaComposer
     const compositionRequest = {
       genre: genero,
-      theme: tema || "Amor",
-      mood: humor || "Romântico",
-      originalLyrics: letraOriginal,
-      additionalRequirements: additionalRequirements || "",
-      creativity: criatividade || "equilibrado",
-      applyFinalPolish: universalPolish ?? true,
-      syllableTarget: syllableTarget || { min: 7, max: 11, ideal: 9 },
-      performanceMode: performanceMode || "standard",
-      useTerceiraVia: true
+      theme: tema || "Reescrita melhorada",
+      mood: humor || "Adaptado ao tema",
+      additionalRequirements: `REESCRITA DA LETRA ORIGINAL:
+${letraOriginal}
+
+${additionalRequirements || ""}
+
+INSTRUÇÕES:
+- Melhore a qualidade mantendo o tema e estrutura
+- Corrija problemas de métrica e rimas
+- Mantenha a essência da letra original`,
+      syllableTarget: syllableTarget || { min: 9, max: 11, ideal: 10 },
+      applyFinalPolish: universalPolish !== false,
     }
 
-    // Executa a composição
     const result = await MetaComposer.compose(compositionRequest)
 
-    console.log("✅ [API Rewrite] Reescrita concluída com sucesso!")
-    console.log("📝 Resultado:", {
+    const finalLyrics = capitalizeLines(result.lyrics)
+
+    console.log("[v0] ✅ Reescrita concluída com MetaComposer!")
+    console.log("[v0] 📝 Resultado:", {
       titulo: result.title,
-      performanceMode: result.metadata.performanceMode,
-      score: result.metadata.finalScore
+      score: result.metadata.finalScore,
     })
 
-    // Retorna resposta formatada
     return NextResponse.json({
-      letra: result.lyrics,
-      titulo: result.title,
+      letra: finalLyrics,
+      titulo: result.title || titulo || "Sem Título",
       metadata: {
-        performanceMode: result.metadata.performanceMode,
+        performanceMode: performanceMode || "standard",
         score: result.metadata.finalScore,
         polishingApplied: result.metadata.polishingApplied,
-        iterations: result.metadata.iterations
-      }
+        iterations: result.metadata.iterations || 1,
+        rhymeScore: result.metadata.rhymeScore,
+        rhymeTarget: result.metadata.rhymeTarget,
+      },
     })
-
   } catch (error) {
-    console.error("💥 [API Rewrite] Erro na reescrita:", error)
-    
+    console.error("[v0] 💥 Erro na reescrita:", error)
+
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : "Erro interno ao reescrever letra",
-        details: process.env.NODE_ENV === "development" ? error : undefined
+        details: process.env.NODE_ENV === "development" ? String(error) : undefined,
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
 
 // Handler para método não permitido
 export async function GET() {
-  return NextResponse.json(
-    { error: "Método não permitido. Use POST." },
-    { status: 405 }
-  )
+  return NextResponse.json({ error: "Método não permitido. Use POST." }, { status: 405 })
 }
