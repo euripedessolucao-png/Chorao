@@ -1,5 +1,41 @@
-// Adicione esta função ao lib/validation/syllable-counter.ts se não existir
+/**
+ * Valida o limite de sílabas para uma linha de letra
+ */
+export function validateSyllableLimit(
+  line: string, 
+  maxSyllables: number = 11
+): {
+  isValid: boolean
+  currentSyllables: number
+  suggestions: string[]
+} {
+  const syllables = countPoeticSyllables(line)
+  const suggestions: string[] = []
+  
+  if (syllables > maxSyllables) {
+    suggestions.push(
+      `Remova ${syllables - maxSyllables} sílaba(s) - tente encurtar palavras`,
+      `Use contrações: "está" → "tá", "para" → "pra"`,
+      `Remova artigos ou preposições desnecessárias`
+    )
+  } else if (syllables < maxSyllables) {
+    suggestions.push(
+      `Adicione ${maxSyllables - syllables} sílaba(s) - expanda palavras ou adicione artigos`,
+      `Use palavras mais descritivas`,
+      `Adicione advérbios ou adjetivos`
+    )
+  }
+  
+  return {
+    isValid: syllables === maxSyllables,
+    currentSyllables: syllables,
+    suggestions
+  }
+}
 
+/**
+ * Valida sílabas de uma letra completa
+ */
 export function validateLyricsSyllables(
   lyrics: string,
   maxSyllables: number = 11,
