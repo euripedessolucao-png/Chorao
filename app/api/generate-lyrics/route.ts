@@ -34,14 +34,10 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
 
-    console.log("🎵 [Create-Song] Parâmetros recebidos:", {
+    console.log("[v0] 🎵 [Create-Song] Parâmetros recebidos:", {
       genero: body.genero,
       tema: body.tema,
       humor: body.humor,
-      additionalRequirements: body.additionalRequirements ? "✅" : "❌",
-      includeChorus: body.includeChorus !== false,
-      includeHook: body.includeHook !== false,
-      performanceMode: body.performanceMode || "standard",
     })
 
     const {
@@ -112,7 +108,7 @@ export async function POST(request: Request) {
     }
 
     // ✅ ETAPA 2: CRIAR MÚSICA COMPLETA COM METACOMPOSER
-    console.log("[Create-Song] 🎼 Criando música completa com MetaComposer...")
+    console.log("[v0] 🎼 Chamando MetaComposer.compose()...")
 
     const compositionRequest = {
       genre: genero,
@@ -129,7 +125,17 @@ export async function POST(request: Request) {
       preservedChoruses: generatedChorus ? [getBestChorus(generatedChorus)] : [],
     }
 
-    const result = await MetaComposer.compose(compositionRequest)
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Timeout: MetaComposer demorou mais de 50 segundos")), 50000),
+    )
+
+    const composePromise = MetaComposer.compose(compositionRequest)
+
+    const result = (await Promise.race([composePromise, timeoutPromise])) as Awaited<
+      ReturnType<typeof MetaComposer.compose>
+    >
+
+    console.log("[v0] ✅ MetaComposer.compose() retornou com sucesso")
 
     // ✅ ETAPA 3: APLICAR FORMATAÇÃO PERFORMÁTICA
     console.log("[Create-Song] 🎭 Aplicando formatação performática...")
@@ -174,13 +180,17 @@ export async function POST(request: Request) {
       },
     })
   } catch (error) {
-    console.error("[Create-Song] Erro:", error)
+    console.error("[v0] ❌ [Create-Song] Erro detalhado:", {
+      message: error instanceof Error ? error.message : "Erro desconhecido",
+      stack: error instanceof Error ? error.stack : undefined,
+      type: error instanceof Error ? error.constructor.name : typeof error,
+    })
 
     return NextResponse.json(
       {
         error: "Erro ao criar música",
         details: error instanceof Error ? error.message : "Erro desconhecido",
-        suggestion: "Tente novamente com um tema diferente",
+        suggestion: "Tente novamente. Se o erro persistir, o sistema pode estar sobrecarregado.",
       },
       { status: 500 },
     )
