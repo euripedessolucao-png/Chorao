@@ -178,7 +178,7 @@ class MegaCorrector {
       }
     }
 
-    console.log(`🎯 ${correctionsApplied} correções de sílabas aplicadas`)
+    console.log(`🎯 ${correctionsApplied} correções de sílabas aplicadas")
     return correctedLines.join('\n')
   }
 
@@ -711,32 +711,50 @@ COMPONHA UMA LETRA AUTÊNTICA E ORIGINAL:`
 
   private static async generateAdvancedRewrite(request: CompositionRequest): Promise<string> {
     if (!request.originalLyrics) {
-      throw new Error("Original lyrics required for rewrite")
+      throw new Error("Original lyrics required for rewrite");
     }
 
-    const rewritePrompt = `🔄 REESCRITOR MEGA BRASILEIRO - ${request.genre.toUpperCase()}
+    const rewritePrompt = `🎵 REESCRITOR PROFISSIONAL - ${request.genre.toUpperCase()}
 
-**PERFIL DO GÊNERO:**
-- SÍLABAS: 7-11 por verso
-- FOCO: Emoções verdadeiras
+**REGRAS ESTRITAS DE REESCRITA:**
 
-**LETRA ORIGINAL:**
+✅ **OBRIGATÓRIO - CORRIJA ESTES ERROS:**
+- "lembrançnãsai" → "lembrança não sai"
+- "nãvaleu" → "não valeu" 
+- "preçda" → "preço da"
+- "emoçãcontida" → "emoção contida"
+- "guitarra daço" → "guitarra de aço"
+- NUNCA use placeholders $1 - SEMPRE escreva o texto real
+- SEMPRE complete frases incompletas
+
+✅ **FORMATAÇÃO:**
+- Versos com 7-11 sílabas
+- Linguagem natural do ${request.genre}
+- Evite repetições excessivas
+- Use pontuação correta: ... (reticências), ! (exclamação)
+
+✅ **PERFORMANCE:**
+- (Backing Vocal: texto real) - NUNCA $1
+- (Público: resposta real) - NUNCA $1
+- Instruções de performance completas
+
+**LETRA ORIGINAL PARA REESCREVER:**
 ${request.originalLyrics}
 
 **CONTEXTO:**
 - TEMA: ${request.theme}
 - GÊNERO: ${request.genre}
-- ${request.decade ? `DÉCADA: ${request.decade}` : ''}
+- ESTILO: ${request.regionalStyle || "Universal"}
 
-REESCREVA MANTENDO A ESSÊNCIA MAS ADAPTANDO AO GÊNERO:`
+**REESCREVA CORRIGINDO TODOS OS ERROS E MANTENDO A EMOÇÃO:**`;
 
     const { text } = await generateText({
-      model: "openai/gpt-4o", 
+      model: "openai/gpt-4o",
       prompt: rewritePrompt,
       temperature: 0.6,
-    })
+    });
 
-    return text || request.originalLyrics
+    return text || request.originalLyrics;
   }
 
   private static async applyIntelligentElisions(lyrics: string, request: CompositionRequest): Promise<string> {
