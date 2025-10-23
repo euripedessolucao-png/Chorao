@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-import { generateText } from "ai"
-import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
+import { MetaComposer, type CompositionRequest } from "@/lib/orchestrator/meta-composer"
 
 // ✅ INTERFACES PARA TIPAGEM
 interface ChorusVariation {
@@ -31,7 +30,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
 
-    console.log("[v0] 🎵 [Create-Song] Parâmetros recebidos:", {
+    console.log("[v0] 🎵 [Generate-Lyrics] Parâmetros recebidos:", {
       genero: body.genero,
       tema: body.tema,
       humor: body.humor,
@@ -49,73 +48,27 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Tema é obrigatório e deve ser uma string válida" }, { status: 400 })
     }
 
-    const prompt = `Você é um compositor brasileiro especializado em ${genero}.
+    const compositionRequest: CompositionRequest = {
+      genre: genero,
+      theme: tema,
+      mood: humor || "adaptável",
+      additionalRequirements,
+      creativity: "equilibrado",
+      applyFinalPolish: true,
+      performanceMode: "standard",
+      useTerceiraVia: false,
+    }
 
-TAREFA: Criar uma música completa com estrutura profissional.
+    console.log("[v0] 🎵 Gerando letra com MetaComposer...")
 
-TEMA: ${tema}
-HUMOR: ${humor || "Adaptado ao tema"}
-${additionalRequirements ? `REQUISITOS: ${additionalRequirements}` : ""}
-
-⚠️ REGRA ABSOLUTA DE SÍLABAS (INVIOLÁVEL):
-- MÁXIMO 11 SÍLABAS POÉTICAS por linha
-- Este é o LIMITE HUMANO do canto
-- NUNCA exceda 11 sílabas
-
-ESTRUTURA OBRIGATÓRIA:
-[INTRO]
-[VERSE 1]
-4 linhas (máx 11 sílabas cada)
-
-[PRE-CHORUS]
-2 linhas (máx 11 sílabas cada)
-
-[CHORUS]
-4 linhas (máx 11 sílabas cada, gancho forte)
-
-[VERSE 2]
-4 linhas (máx 11 sílabas cada)
-
-[CHORUS]
-(repetir o mesmo refrão)
-
-[BRIDGE]
-4 linhas (máx 11 sílabas cada)
-
-[CHORUS]
-(repetir o mesmo refrão)
-
-[OUTRO]
-
-REGRAS CRÍTICAS:
-- MÁXIMO 11 SÍLABAS POÉTICAS por linha
-- Rimas naturais (ABAB ou AABB)
-- Linguagem brasileira autêntica
-- Evite clichês de IA
-- Refrão memorável e repetível
-- 100% em PORTUGUÊS BRASILEIRO
-
-Retorne a letra completa com as tags de seção.`
-
-    console.log("[v0] 🎵 Gerando letra com OpenAI...")
-
-    const { text } = await generateText({
-      model: "openai/gpt-4o",
-      prompt: prompt,
-      temperature: 0.8,
-    })
+    const result = await MetaComposer.compose(compositionRequest)
 
     console.log("[v0] ✅ Letra gerada com sucesso!")
 
-    const finalLyrics = capitalizeLines(text)
-
     return NextResponse.json({
-      letra: finalLyrics,
-      titulo: `${tema} - ${genero}`,
-      metadata: {
-        score: 85,
-        genre: genero,
-      },
+      letra: result.lyrics,
+      titulo: result.title,
+      metadata: result.metadata,
     })
   } catch (error) {
     console.error("[v0] ❌ Erro ao criar música:", error)
@@ -123,6 +76,7 @@ Retorne a letra completa com as tags de seção.`
       {
         error: "Erro ao criar música",
         details: error instanceof Error ? error.message : "Erro desconhecido",
+        stack: error instanceof Error ? error.stack : undefined,
       },
       { status: 500 },
     )

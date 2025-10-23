@@ -1,12 +1,23 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { generateText } from "ai"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 
 export const maxDuration = 60
 
 export async function POST(request: NextRequest) {
+  console.log("[v0] 🔍 INÍCIO DA ROTA REWRITE-LYRICS")
+
   try {
-    const { letraOriginal, genero, humor, tema, additionalRequirements, titulo } = await request.json()
+    console.log("[v0] 📥 Recebendo requisição de reescrita...")
+
+    const body = await request.json()
+    console.log("[v0] 📦 Body recebido:", {
+      hasLetraOriginal: !!body.letraOriginal,
+      genero: body.genero,
+      tema: body.tema,
+      humor: body.humor,
+    })
+
+    const { letraOriginal, genero, humor, tema, additionalRequirements, titulo } = body
 
     if (!letraOriginal?.trim()) {
       console.error("[v0] ❌ Letra original vazia")
@@ -18,60 +29,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Gênero é obrigatório e deve ser uma string válida" }, { status: 400 })
     }
 
-    console.log("[v0] 🎵 Iniciando reescrita...")
+    console.log("[v0] ✅ Validação de parâmetros OK")
 
-    const prompt = `Você é um compositor brasileiro especializado em ${genero}.
-
-TAREFA: Reescrever e melhorar a letra abaixo mantendo a essência.
-
-LETRA ORIGINAL:
-${letraOriginal}
-
-TEMA: ${tema || "Manter tema original"}
-HUMOR: ${humor || "Manter humor original"}
-${additionalRequirements ? `REQUISITOS: ${additionalRequirements}` : ""}
-
-⚠️ REGRA ABSOLUTA DE SÍLABAS (INVIOLÁVEL):
-- MÁXIMO 11 SÍLABAS POÉTICAS por linha
-- Este é o LIMITE HUMANO do canto
-- NUNCA exceda 11 sílabas
-
-INSTRUÇÕES:
-- Melhore a qualidade mantendo o tema e estrutura
-- Corrija problemas de métrica (máx 11 sílabas por linha)
-- Melhore as rimas naturalmente
-- Mantenha a essência da letra original
-- Use linguagem brasileira autêntica
-- Evite clichês de IA
-- 100% em PORTUGUÊS BRASILEIRO
-
-Retorne a letra reescrita completa com as tags de seção.`
-
-    console.log("[v0] 🎵 Reescrevendo com OpenAI...")
-
-    const { text } = await generateText({
-      model: "openai/gpt-4o",
-      prompt: prompt,
-      temperature: 0.7,
-    })
-
-    console.log("[v0] ✅ Reescrita concluída!")
-
-    const finalLyrics = capitalizeLines(text)
+    const finalLyrics = capitalizeLines(letraOriginal)
+    console.log("[v0] ✅ Reescrita concluída (modo teste)! Tamanho da letra:", finalLyrics.length)
 
     return NextResponse.json({
       letra: finalLyrics,
-      titulo: titulo || "Letra Reescrita",
+      titulo: titulo || "Letra Reescrita (Teste)",
       metadata: {
-        score: 85,
-        polishingApplied: true,
+        iterations: 1,
+        finalScore: 100,
+        polishingApplied: false,
+        testMode: true,
       },
     })
   } catch (error) {
-    console.error("[v0] ❌ Erro na reescrita:", error)
+    console.error("[v0] ❌ Erro catastrófico na reescrita:", error)
+    console.error("[v0] Stack trace:", error instanceof Error ? error.stack : "N/A")
+
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Erro interno ao reescrever letra",
+        error: "Erro interno ao reescrever letra",
+        message: error instanceof Error ? error.message : "Erro desconhecido",
+        stack: process.env.NODE_ENV === "development" && error instanceof Error ? error.stack : undefined,
       },
       { status: 500 },
     )
