@@ -27,6 +27,11 @@ export class ThirdWayEngine {
     performanceMode = false,
     additionalRequirements?: string,
   ): Promise<string> {
+    if (!genre || typeof genre !== "string" || !genre.trim()) {
+      console.error("[ThirdWay] Genre inválido:", genre)
+      return originalLine
+    }
+
     const normalizedGenre = genre.includes("Bachata") ? "Bachata Moderna" : genre
     const metrics = ADVANCED_BRAZILIAN_METRICS[normalizedGenre as GenreName] || ADVANCED_BRAZILIAN_METRICS.default
 

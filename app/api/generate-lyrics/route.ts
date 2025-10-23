@@ -207,8 +207,18 @@ async function generateChorusWithMetaComposer(params: {
   try {
     console.log("[v0] 🎵 Gerando refrão com OpenAI direto...")
 
+    if (!params.genre || typeof params.genre !== "string" || !params.genre.trim()) {
+      console.error("[v0] ❌ Genre inválido:", params.genre)
+      return null
+    }
+
     const genreRules = buildGenreRulesPrompt(params.genre)
     const genreConfig = getGenreConfig(params.genre)
+
+    if (!genreConfig) {
+      console.error("[v0] ❌ GenreConfig não encontrado para:", params.genre)
+      return null
+    }
 
     const { text } = await generateText({
       model: "openai/gpt-4o-mini",
@@ -249,7 +259,19 @@ Retorne APENAS as 4 linhas do refrão, sem tags.`,
     const finalLines = await Promise.all(
       lines.map(async (line, index) => {
         try {
-          return await applyTerceiraViaToLine(line, index, fixedChorus, false, undefined, params.genre, genreConfig)
+          if (!line || !line.trim()) {
+            return line
+          }
+
+          return await applyTerceiraViaToLine(
+            line,
+            index,
+            fixedChorus,
+            false,
+            index > 0 ? lines[index - 1] : undefined,
+            params.genre,
+            genreConfig,
+          )
         } catch (error) {
           console.error("[v0] ⚠️ Terceira Via falhou para linha:", line, error)
           return line
@@ -285,8 +307,18 @@ async function generateHookWithMetaComposer(params: {
   try {
     console.log("[v0] 🎣 Gerando hook com OpenAI direto...")
 
+    if (!params.genre || typeof params.genre !== "string" || !params.genre.trim()) {
+      console.error("[v0] ❌ Genre inválido:", params.genre)
+      return null
+    }
+
     const genreRules = buildGenreRulesPrompt(params.genre)
     const genreConfig = getGenreConfig(params.genre)
+
+    if (!genreConfig) {
+      console.error("[v0] ❌ GenreConfig não encontrado para:", params.genre)
+      return null
+    }
 
     const { text } = await generateText({
       model: "openai/gpt-4o-mini",
@@ -324,8 +356,10 @@ Retorne APENAS a frase-hook, sem tags ou explicações.`,
 
     // Aplica Terceira Via
     try {
-      fixedHook = await applyTerceiraViaToLine(fixedHook, 0, fixedHook, false, undefined, params.genre, genreConfig)
-      console.log("[v0] ✅ Terceira Via aplicada")
+      if (fixedHook && fixedHook.trim()) {
+        fixedHook = await applyTerceiraViaToLine(fixedHook, 0, fixedHook, false, undefined, params.genre, genreConfig)
+        console.log("[v0] ✅ Terceira Via aplicada")
+      }
     } catch (error) {
       console.error("[v0] ⚠️ Terceira Via falhou:", error)
     }
