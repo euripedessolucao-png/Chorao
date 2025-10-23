@@ -1,10 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
+import { MetaComposer } from "@/lib/orchestrator/meta-composer"
 
 export const maxDuration = 60
 
 export async function POST(request: NextRequest) {
-  console.log("[v0] 🔍 INÍCIO DA ROTA REWRITE-LYRICS")
+  console.log("[v0] 🔍 INÍCIO DA ROTA REWRITE-LYRICS COM METACOMPOSER")
 
   try {
     console.log("[v0] 📥 Recebendo requisição de reescrita...")
@@ -15,9 +15,10 @@ export async function POST(request: NextRequest) {
       genero: body.genero,
       tema: body.tema,
       humor: body.humor,
+      additionalRequirements: !!body.additionalRequirements,
     })
 
-    const { letraOriginal, genero, humor, tema, additionalRequirements, titulo } = body
+    const { letraOriginal, genero, humor, tema, additionalRequirements, titulo, formattingStyle, performanceMode } = body
 
     if (!letraOriginal?.trim()) {
       console.error("[v0] ❌ Letra original vazia")
@@ -30,27 +31,47 @@ export async function POST(request: NextRequest) {
     }
 
     console.log("[v0] ✅ Validação de parâmetros OK")
+    console.log("[v0] 🚀 Iniciando MetaComposer para reescrita...")
 
-    const finalLyrics = capitalizeLines(letraOriginal)
-    console.log("[v0] ✅ Reescrita concluída (modo teste)! Tamanho da letra:", finalLyrics.length)
+    // ✅ METACOMPOSER LIGADO COM ELISÕES INTELIGENTES!
+    const result = await MetaComposer.compose({
+      genre: genero,
+      theme: tema || "Amor",
+      mood: humor || "Romântico",
+      originalLyrics: letraOriginal, // ✅ MODO REESCRITA
+      syllableTarget: { min: 7, max: 11, ideal: 9 },
+      useIntelligentElisions: true, // ✅ ELISÕES LIGADAS!
+      performanceMode: performanceMode || (formattingStyle === "performatico" ? "performance" : "standard"),
+      additionalRequirements: additionalRequirements,
+      applyFinalPolish: true,
+      useTerceiraVia: true
+    })
+
+    console.log("[v0] ✅ MetaComposer concluído com sucesso!")
+    console.log("[v0] 📊 Resultado:", {
+      titulo: result.title,
+      tamanhoLetra: result.lyrics.length,
+      score: result.metadata.finalScore,
+      elisõesAplicadas: result.metadata.intelligentElisionsApplied,
+      performanceMode: result.metadata.performanceMode
+    })
 
     return NextResponse.json({
-      letra: finalLyrics,
-      titulo: titulo || "Letra Reescrita (Teste)",
+      letra: result.lyrics,
+      titulo: result.title,
       metadata: {
-        iterations: 1,
-        finalScore: 100,
-        polishingApplied: false,
-        testMode: true,
+        ...result.metadata,
+        reescrita: true,
+        generoAplicado: genero
       },
     })
   } catch (error) {
-    console.error("[v0] ❌ Erro catastrófico na reescrita:", error)
+    console.error("[v0] ❌ Erro no MetaComposer:", error)
     console.error("[v0] Stack trace:", error instanceof Error ? error.stack : "N/A")
 
     return NextResponse.json(
       {
-        error: "Erro interno ao reescrever letra",
+        error: "Erro interno ao reescrever letra com MetaComposer",
         message: error instanceof Error ? error.message : "Erro desconhecido",
         stack: process.env.NODE_ENV === "development" && error instanceof Error ? error.stack : undefined,
       },
