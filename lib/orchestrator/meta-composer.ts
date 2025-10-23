@@ -709,49 +709,63 @@ COMPONHA UMA LETRA AUTÊNTICA E ORIGINAL:`
     return temps[creativity as keyof typeof temps] || 0.7
   }
 
+  // NO META-COMPOSER.TS - SUBSTITUA O generateAdvancedRewrite POR ESTE:
   private static async generateAdvancedRewrite(request: CompositionRequest): Promise<string> {
     if (!request.originalLyrics) {
       throw new Error("Original lyrics required for rewrite")
     }
 
-    const rewritePrompt = `🎵 REESCRITOR PROFISSIONAL - ${request.genre.toUpperCase()}
+    const rewritePrompt = `🚨🚨🚨 REESCRITOR COM REGRAS ESTRITAS - LEIA TODAS AS REGRAS ANTES DE ESCREVER 🚨🚨🚨
 
-**REGRAS ESTRITAS DE REESCRITA:**
+📋 **REGRAS ABSOLUTAS - NÃO PODE QUEBRAR:**
 
-✅ **OBRIGATÓRIO - CORRIJA ESTES ERROS:**
-- "lembrançnãsai" → "lembrança não sai"
-- "nãvaleu" → "não valeu" 
-- "preçda" → "preço da"
-- "emoçãcontida" → "emoção contida"
-- "guitarra daço" → "guitarra de aço"
-- NUNCA use placeholders $1 - SEMPRE escreva o texto real
-- SEMPRE complete frases incompletas
+1. 🚫 **PROIBIDO:** "lembrançnãsai" → SEMPRE "lembrança não sai"
+2. 🚫 **PROIBIDO:** "nãvaleu", "nãpassou" → SEMPRE "não valeu", "não passou"  
+3. 🚫 **PROIBIDO:** "preçda", "reciboda" → SEMPRE "preço da", "recibo da"
+4. 🚫 **PROIBIDO:** "emoçãcontida" → SEMPRE "emoção contida"
+5. 🚫 **PROIBIDO:** "guitarra daço" → SEMPRE "guitarra de aço"
+6. 🚫 **PROIBIDO:** "Acordeãem" → SEMPRE "Acordeon em"
+7. 🚫 **PROIBIDO:** Usar $1 → SEMPRE escrever texto real
+8. 🚫 **PROIBIDO:** Frases incompletas → SEMPRE completar
 
-✅ **FORMATAÇÃO:**
+✅ **OBRIGATÓRIO:**
 - Versos com 7-11 sílabas
-- Linguagem natural do ${request.genre}
-- Evite repetições excessivas
-- Use pontuação correta: ... (reticências), ! (exclamação)
+- (Backing Vocal: "Ai ai ai!") → texto real entre aspas
+- (Público: "Aôôô sofrência!") → texto real entre aspas  
+- (Performance: "Vocalista fecha os olhos") → descrição real
+- Estruturas completas: "drums and bass lock into a tight groove"
 
-✅ **PERFORMANCE:**
-- (Backing Vocal: texto real) - NUNCA $1
-- (Público: resposta real) - NUNCA $1
-- Instruções de performance completas
+🎵 **EXEMPLOS CORRETOS:**
+- "CERTO": (Backing Vocal: "Ai, que dor!")
+- "ERRADO": (Backing Vocal: $1)
 
-**LETRA ORIGINAL PARA REESCREVER:**
+- "CERTO": "lembrança não sai da minha mente"
+- "ERRADO": "lembrançnãsai da mente"
+
+- "CERTO": "não valeu nada"
+- "ERRADO": "nãvaleu nada"
+
+---
+
+📜 **LETRA ORIGINAL COM PROBLEMAS:**
 ${request.originalLyrics}
 
-**CONTEXTO:**
-- TEMA: ${request.theme}
-- GÊNERO: ${request.genre}
-- ESTILO: ${request.regionalStyle || "Universal"}
+---
 
-**REESCREVA CORRIGINDO TODOS OS ERROS E MANTENDO A EMOÇÃO:**`
+🎯 **SUA TAREFA:**
+REESCREVA A LETRA ACIMA CORRIGINDO **TODOS** OS ERROS LISTADOS.
+SE EU VER QUALQUER UM DOS ERROS PROIBIDOS, A LETRA ESTÁ ERRADA.
+
+**Gênero:** ${request.genre}
+**Tema:** ${request.theme}
+
+🚨 **COMEÇE A REESCREVER AGORA, RESPEITANDO TODAS AS REGRAS:**`
 
     const { text } = await generateText({
-      model: "openai/gpt-4o",
+      model: "openai/gpt-4o", 
       prompt: rewritePrompt,
-      temperature: 0.6,
+      temperature: 0.3, // 🔥 BAIXA TEMPERATURA - MAIS CONSERVADOR
+      maxTokens: 2000,
     })
 
     return text || request.originalLyrics
