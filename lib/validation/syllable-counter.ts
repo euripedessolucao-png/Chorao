@@ -1,6 +1,15 @@
 /**
  * Valida o limite de sílabas para uma linha de letra
  */
+ export interface SyllableValidationResult {
+  valid: boolean
+  violations: Array<{
+    line: string
+    syllables: number
+    lineNumber: number
+    suggestions: string[]
+  }>
+}
 export function validateSyllableLimit(
   line: string, 
   maxSyllables: number = 11
