@@ -8,9 +8,10 @@
 // Contadores e validadores de sílabas
 export { 
   countPoeticSyllables, 
-  countPortugueseSyllables, 
+  countPortugueseSyllables,
+  validateSyllableLimit,
   validateLyricsSyllables,
-  validateSyllableLimit 
+  type SyllableValidationResult
 } from "./syllable-counter"
 
 export { SyllableEnforcer } from "./syllableEnforcer"
@@ -42,7 +43,6 @@ export type { UniversalRhymeRules } from "./universal-rhyme-rules"
 export { getUniversalRhymeRules } from "./universal-rhyme-rules"
 
 // Tipos comuns
-export type { SyllableValidationResult } from "./syllable-counter"
 export type { VerseValidationResult } from "./verse-integrity-validator"
 export type { SertanejoValidationResult } from "./sertanejo-moderno-validator"
 export type { RhymeAnalysis, RhymeScheme } from "./rhyme-validator"
