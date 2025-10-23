@@ -178,7 +178,7 @@ class MegaCorrector {
       }
     }
 
-    console.log(`🎯 ${correctionsApplied} correções de sílabas aplicadas")
+    console.log(`🎯 ${correctionsApplied} correções de sílabas aplicadas`)
     return correctedLines.join('\n')
   }
 
@@ -711,7 +711,7 @@ COMPONHA UMA LETRA AUTÊNTICA E ORIGINAL:`
 
   private static async generateAdvancedRewrite(request: CompositionRequest): Promise<string> {
     if (!request.originalLyrics) {
-      throw new Error("Original lyrics required for rewrite");
+      throw new Error("Original lyrics required for rewrite")
     }
 
     const rewritePrompt = `🎵 REESCRITOR PROFISSIONAL - ${request.genre.toUpperCase()}
@@ -746,15 +746,15 @@ ${request.originalLyrics}
 - GÊNERO: ${request.genre}
 - ESTILO: ${request.regionalStyle || "Universal"}
 
-**REESCREVA CORRIGINDO TODOS OS ERROS E MANTENDO A EMOÇÃO:**`;
+**REESCREVA CORRIGINDO TODOS OS ERROS E MANTENDO A EMOÇÃO:**`
 
     const { text } = await generateText({
       model: "openai/gpt-4o",
       prompt: rewritePrompt,
       temperature: 0.6,
-    });
+    })
 
-    return text || request.originalLyrics;
+    return text || request.originalLyrics
   }
 
   private static async applyIntelligentElisions(lyrics: string, request: CompositionRequest): Promise<string> {
