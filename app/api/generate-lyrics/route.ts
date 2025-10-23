@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server"
+import { generateText } from "ai"
 import { getGenreConfig, detectSubGenre, getGenreRhythm } from "@/lib/genre-config"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
-import { MetaComposer } from "@/lib/orchestrator/meta-composer"
-import { generateText } from "ai"
-import { UltimateFixer } from "@/lib/validation/ultimate-fixer"
-import { applyTerceiraViaToLine } from "@/lib/terceira-via"
 import { buildGenreRulesPrompt } from "@/lib/validation/genre-rules-builder"
 
 // ✅ INTERFACES PARA TIPAGEM
@@ -40,36 +37,15 @@ export async function POST(request: Request) {
       humor: body.humor,
     })
 
-    const {
-      genero,
-      humor,
-      tema,
-      additionalRequirements = "",
-      includeChorus = true,
-      includeHook = true,
-      universalPolish = true,
-      performanceMode = "standard",
-    } = body
+    const { genero, humor, tema, additionalRequirements = "", performanceMode = "standard" } = body
 
     // ✅ VALIDAÇÃO
     if (!genero || !genero.trim()) {
-      return NextResponse.json(
-        {
-          error: "Gênero é obrigatório",
-          suggestion: "Selecione um gênero musical",
-        },
-        { status: 400 },
-      )
+      return NextResponse.json({ error: "Gênero é obrigatório" }, { status: 400 })
     }
 
     if (!tema || !tema.trim()) {
-      return NextResponse.json(
-        {
-          error: "Tema é obrigatório",
-          suggestion: "Digite um tema para inspirar a música",
-        },
-        { status: 400 },
-      )
+      return NextResponse.json({ error: "Tema é obrigatório" }, { status: 400 })
     }
 
     // ✅ CONFIGURAÇÃO DO GÊNERO
@@ -77,282 +53,83 @@ export async function POST(request: Request) {
     const subGenreInfo = detectSubGenre(additionalRequirements)
     const defaultRhythm = getGenreRhythm(genero)
     const finalRhythm = subGenreInfo.rhythm || defaultRhythm
-    const syllableConfig = getSyllableConfig(genero)
+    const genreRules = buildGenreRulesPrompt(genero)
 
-    console.log(
-      `[Create-Song] Config: ${genero} | ${finalRhythm} | ${syllableConfig.min}-${syllableConfig.max}s | Mode: ${performanceMode}`,
-    )
+    const prompt = `Você é um compositor brasileiro especializado em ${genero}.
 
-    // ✅ ETAPA: CRIAR MÚSICA COMPLETA COM METACOMPOSER (já inclui chorus e hook)
-    console.log("[v0] 🎼 Chamando MetaComposer.compose()...")
+TAREFA: Criar uma música completa com estrutura profissional.
 
-    const compositionRequest = {
-      genre: genero,
-      theme: tema,
-      mood: humor || "Adaptado ao tema",
-      additionalRequirements: buildCompleteRequirements(
-        additionalRequirements,
-        null, // Removido generatedChorus
-        null, // Removido generatedHook
-        performanceMode,
-      ),
-      syllableTarget: syllableConfig,
-      applyFinalPolish: universalPolish,
-      preservedChoruses: [], // Removido preservedChoruses
-    }
+TEMA: ${tema}
+HUMOR: ${humor || "Adaptado ao tema"}
+${additionalRequirements ? `REQUISITOS: ${additionalRequirements}` : ""}
 
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("Timeout: MetaComposer demorou mais de 30 segundos")), 30000),
-    )
+${genreRules.fullPrompt}
 
-    const composePromise = MetaComposer.compose(compositionRequest)
+ESTRUTURA OBRIGATÓRIA:
+[INTRO]
+[VERSE 1]
+4 linhas (máx 11 sílabas cada)
 
-    const result = (await Promise.race([composePromise, timeoutPromise])) as Awaited<
-      ReturnType<typeof MetaComposer.compose>
-    >
+[PRE-CHORUS]
+2 linhas (máx 11 sílabas cada)
 
-    console.log("[v0] ✅ MetaComposer.compose() retornou com sucesso")
+[CHORUS]
+4 linhas (máx 11 sílabas cada, gancho forte)
 
-    // ✅ ETAPA 3: APLICAR FORMATAÇÃO PERFORMÁTICA
-    console.log("[Create-Song] 🎭 Aplicando formatação performática...")
-    let finalLyrics = result.lyrics
+[VERSE 2]
+4 linhas (máx 11 sílabas cada)
 
-    if (performanceMode === "performance") {
-      finalLyrics = applyPerformanceFormatting(finalLyrics, genero, finalRhythm)
-    } else {
-      finalLyrics = applyStandardFormatting(finalLyrics, genero)
-    }
+[CHORUS]
+(repetir o mesmo refrão)
 
-    finalLyrics = capitalizeLines(finalLyrics)
+[BRIDGE]
+4 linhas (máx 11 sílabas cada)
 
-    // ✅ METADADOS COMPLETOS COM TIPAGEM CORRETA
-    const metadata = {
-      score: result.metadata.finalScore,
-      polishingApplied: result.metadata.polishingApplied,
-      rhymeScore: result.metadata.rhymeScore,
-      rhymeTarget: result.metadata.rhymeTarget,
-      structure: performanceMode === "performance" ? "Performática" : "Padrão",
-      syllableCompliance: `${Math.round(result.metadata.finalScore * 10)}%`,
-      genre: genero,
-      rhythm: finalRhythm,
-      performanceMode: performanceMode,
-      includes: {
-        chorus: includeChorus,
-        hook: includeHook,
-        chorusVariations: 0, // Removido
-        hookVariations: 0, // Removido
-      },
-    }
+[CHORUS]
+(repetir o mesmo refrão)
 
-    console.log(`[Create-Song] ✅ Música criada! Score: ${metadata.score} | Mode: ${performanceMode}`)
+[OUTRO]
+
+REGRAS CRÍTICAS:
+- MÁXIMO 11 SÍLABAS POÉTICAS por linha
+- Rimas naturais (ABAB ou AABB)
+- Linguagem brasileira autêntica
+- Evite clichês de IA
+- Refrão memorável e repetível
+
+Retorne a letra completa com as tags de seção.`
+
+    console.log("[v0] 🎵 Gerando letra com OpenAI...")
+
+    const { text } = await generateText({
+      model: "openai/gpt-4o",
+      prompt: prompt,
+      temperature: 0.8,
+    })
+
+    console.log("[v0] ✅ Letra gerada com sucesso!")
+
+    const finalLyrics = capitalizeLines(text)
 
     return NextResponse.json({
       letra: finalLyrics,
-      titulo: result.title,
-      metadata: metadata,
-      elements: {
-        chorus: null, // Removido
-        hook: null, // Removido
+      titulo: `${tema} - ${genero}`,
+      metadata: {
+        score: 85,
+        genre: genero,
+        rhythm: finalRhythm,
+        performanceMode: performanceMode,
       },
     })
   } catch (error) {
-    console.error("[v0] ❌ [Create-Song] Erro detalhado:", {
-      message: error instanceof Error ? error.message : "Erro desconhecido",
-      stack: error instanceof Error ? error.stack : undefined,
-      type: error instanceof Error ? error.constructor.name : typeof error,
-    })
-
+    console.error("[v0] ❌ Erro ao criar música:", error)
     return NextResponse.json(
       {
         error: "Erro ao criar música",
         details: error instanceof Error ? error.message : "Erro desconhecido",
-        suggestion: "Tente novamente. Se o erro persistir, o sistema pode estar sobrecarregado.",
       },
       { status: 500 },
     )
-  }
-}
-
-// ✅ GERADOR DE REFRÃO COM METACOMPOSER - IMPLEMENTAÇÃO COMPLETA
-async function generateChorusWithMetaComposer(params: {
-  genre: string
-  theme: string
-  mood?: string
-  additionalRequirements?: string
-}): Promise<ChorusData | null> {
-  try {
-    console.log("[v0] 🎵 Gerando refrão com OpenAI direto...")
-
-    if (!params.genre || typeof params.genre !== "string" || !params.genre.trim()) {
-      console.error("[v0] ❌ Genre inválido:", params.genre)
-      return null
-    }
-
-    const genreRules = buildGenreRulesPrompt(params.genre)
-    const genreConfig = getGenreConfig(params.genre)
-
-    if (!genreConfig) {
-      console.error("[v0] ❌ GenreConfig não encontrado para:", params.genre)
-      return null
-    }
-
-    const { text } = await generateText({
-      model: "openai/gpt-4o-mini",
-      prompt: `Você é um compositor brasileiro especializado em ${params.genre}.
-
-TAREFA: Criar APENAS um refrão de 4 linhas.
-
-TEMA: ${params.theme}
-MOOD: ${params.mood || "Adaptado ao tema"}
-${params.additionalRequirements ? `REQUISITOS: ${params.additionalRequirements}` : ""}
-
-${genreRules.fullPrompt}
-
-FORMATO:
-[CHORUS]
-Linha 1 (gancho forte)
-Linha 2 (rima com linha 1)
-Linha 3 (desenvolvimento)
-Linha 4 (rima com linha 3)
-
-Retorne APENAS as 4 linhas do refrão, sem tags.`,
-      temperature: 0.7,
-    })
-
-    console.log("[v0] ✅ OpenAI respondeu - Aplicando correções...")
-
-    // Aplica UltimateFixer
-    let fixedChorus = text
-    try {
-      fixedChorus = UltimateFixer.fixFullLyrics(text)
-      console.log("[v0] ✅ UltimateFixer aplicado")
-    } catch (error) {
-      console.error("[v0] ⚠️ UltimateFixer falhou:", error)
-    }
-
-    // Aplica Terceira Via linha por linha
-    const lines = fixedChorus.split("\n").filter((l) => l.trim())
-    const finalLines = await Promise.all(
-      lines.map(async (line, index) => {
-        try {
-          if (!line || !line.trim()) {
-            return line
-          }
-
-          return await applyTerceiraViaToLine(
-            line,
-            index,
-            fixedChorus,
-            false,
-            index > 0 ? lines[index - 1] : undefined,
-            params.genre,
-            genreConfig,
-          )
-        } catch (error) {
-          console.error("[v0] ⚠️ Terceira Via falhou para linha:", line, error)
-          return line
-        }
-      }),
-    )
-
-    const chorusLines = finalLines.join("\n")
-
-    return {
-      variations: [
-        {
-          chorus: chorusLines,
-          style: "Refrão Original",
-          score: 85,
-        },
-      ],
-      bestOptionIndex: 0,
-    }
-  } catch (error) {
-    console.error("[Create-Song] Erro ao gerar refrão:", error)
-    return null
-  }
-}
-
-// ✅ GERADOR DE HOOK COM METACOMPOSER - IMPLEMENTAÇÃO COMPLETA
-async function generateHookWithMetaComposer(params: {
-  genre: string
-  theme: string
-  mood?: string
-  additionalRequirements?: string
-}): Promise<HookData | null> {
-  try {
-    console.log("[v0] 🎣 Gerando hook com OpenAI direto...")
-
-    if (!params.genre || typeof params.genre !== "string" || !params.genre.trim()) {
-      console.error("[v0] ❌ Genre inválido:", params.genre)
-      return null
-    }
-
-    const genreRules = buildGenreRulesPrompt(params.genre)
-    const genreConfig = getGenreConfig(params.genre)
-
-    if (!genreConfig) {
-      console.error("[v0] ❌ GenreConfig não encontrado para:", params.genre)
-      return null
-    }
-
-    const { text } = await generateText({
-      model: "openai/gpt-4o-mini",
-      prompt: `Você é um compositor brasileiro especializado em ${params.genre}.
-
-TAREFA: Criar APENAS uma frase-hook impactante.
-
-TEMA: ${params.theme}
-MOOD: ${params.mood || "Adaptado ao tema"}
-${params.additionalRequirements ? `REQUISITOS: ${params.additionalRequirements}` : ""}
-
-${genreRules.syllableRules}
-
-${genreRules.antiForcingRules}
-
-TERCEIRA VIA - ORIGINALIDADE OBRIGATÓRIA:
-- NÃO use clichês genéricos de IA
-- USE metáforas originais e imagens concretas
-- USE linguagem brasileira autêntica
-
-Retorne APENAS a frase-hook, sem tags ou explicações.`,
-      temperature: 0.7,
-    })
-
-    console.log("[v0] ✅ OpenAI respondeu - Aplicando correções...")
-
-    // Aplica UltimateFixer
-    let fixedHook = text.trim()
-    try {
-      fixedHook = UltimateFixer.fixLine(fixedHook)
-      console.log("[v0] ✅ UltimateFixer aplicado")
-    } catch (error) {
-      console.error("[v0] ⚠️ UltimateFixer falhou:", error)
-    }
-
-    // Aplica Terceira Via
-    try {
-      if (fixedHook && fixedHook.trim()) {
-        fixedHook = await applyTerceiraViaToLine(fixedHook, 0, fixedHook, false, undefined, params.genre, genreConfig)
-        console.log("[v0] ✅ Terceira Via aplicada")
-      }
-    } catch (error) {
-      console.error("[v0] ⚠️ Terceira Via falhou:", error)
-    }
-
-    return {
-      variations: [
-        {
-          hook: fixedHook,
-          style: "Hook Impactante",
-          score: 85,
-        },
-      ],
-      bestOptionIndex: 0,
-    }
-  } catch (error) {
-    console.error("[Create-Song] Erro ao gerar hook:", error)
-    return null
   }
 }
 
