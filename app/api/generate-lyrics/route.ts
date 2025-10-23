@@ -78,7 +78,10 @@ TEMA: ${tema}
 HUMOR: ${humor || "Adaptado ao tema"}
 ${additionalRequirements ? `REQUISITOS: ${additionalRequirements}` : ""}
 
-${genreRules.fullPrompt}
+⚠️ REGRA ABSOLUTA DE SÍLABAS (INVIOLÁVEL):
+- MÁXIMO 11 SÍLABAS POÉTICAS por linha
+- Este é o LIMITE HUMANO do canto
+- NUNCA exceda 11 sílabas
 
 ESTRUTURA OBRIGATÓRIA:
 [INTRO]
@@ -111,6 +114,7 @@ REGRAS CRÍTICAS:
 - Linguagem brasileira autêntica
 - Evite clichês de IA
 - Refrão memorável e repetível
+- 100% em PORTUGUÊS BRASILEIRO
 
 Retorne a letra completa com as tags de seção.`
 

@@ -1,7 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
-import { buildGenreRulesPrompt } from "@/lib/validation/genre-rules-builder"
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,21 +18,6 @@ export async function POST(request: NextRequest) {
 
     console.log("[v0] 🎵 Iniciando reescrita...")
 
-    let genreRules
-    try {
-      genreRules = buildGenreRulesPrompt(genero)
-      console.log("[v0] ✅ Regras de gênero construídas com sucesso")
-    } catch (error) {
-      console.error("[v0] ❌ Erro ao construir regras de gênero:", error)
-      return NextResponse.json(
-        {
-          error: "Erro ao processar regras do gênero",
-          details: error instanceof Error ? error.message : "Erro desconhecido",
-        },
-        { status: 500 },
-      )
-    }
-
     const prompt = `Você é um compositor brasileiro especializado em ${genero}.
 
 TAREFA: Reescrever e melhorar a letra abaixo mantendo a essência.
@@ -45,7 +29,10 @@ TEMA: ${tema || "Manter tema original"}
 HUMOR: ${humor || "Manter humor original"}
 ${additionalRequirements ? `REQUISITOS: ${additionalRequirements}` : ""}
 
-${genreRules.fullPrompt}
+⚠️ REGRA ABSOLUTA DE SÍLABAS (INVIOLÁVEL):
+- MÁXIMO 11 SÍLABAS POÉTICAS por linha
+- Este é o LIMITE HUMANO do canto
+- NUNCA exceda 11 sílabas
 
 INSTRUÇÕES:
 - Melhore a qualidade mantendo o tema e estrutura
@@ -54,6 +41,7 @@ INSTRUÇÕES:
 - Mantenha a essência da letra original
 - Use linguagem brasileira autêntica
 - Evite clichês de IA
+- 100% em PORTUGUÊS BRASILEIRO
 
 Retorne a letra reescrita completa com as tags de seção.`
 
