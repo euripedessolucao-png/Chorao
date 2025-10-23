@@ -115,20 +115,21 @@ export function validateAllLayers(lyrics: string, genre: string, theme?: string)
   result.layers.grammar.passed = grammarValidation.passed
   result.layers.grammar.score = grammarValidation.score
   result.layers.grammar.details = grammarValidation.details
+  result.layers.grammar.issues = grammarValidation.issues
 
   if (!grammarValidation.passed) {
-    result.layers.grammar.issues = grammarValidation.issues
     result.blockers.push(`❌ BLOQUEADOR: ${grammarValidation.issues.length} erros gramaticais`)
   }
 
   // CAMADA 5: ANTI-FORCING (BLOQUEANTE)
   const antiForcingValidation = validateFullLyricAgainstForcing(lyrics, genre)
-  result.layers.antiForcing.passed = antiForcingValidation.isValid
-  result.layers.antiForcing.score = antiForcingValidation.score
-  result.layers.antiForcing.details = `Score: ${antiForcingValidation.score}/100`
+  result.layers.antiForcing.passed = antiForcingValidation.valid
+  const forcedWordsCount = antiForcingValidation.forcedWords.length
+  result.layers.antiForcing.score = forcedWordsCount === 0 ? 100 : Math.max(0, 100 - forcedWordsCount * 20)
+  result.layers.antiForcing.details = `Score: ${result.layers.antiForcing.score}/100`
 
-  if (!antiForcingValidation.isValid) {
-    result.layers.antiForcing.issues = antiForcingValidation.warnings
+  if (!antiForcingValidation.valid) {
+    result.layers.antiForcing.issues = antiForcingValidation.forcedWords.map((word) => `Palavra forçada: "${word}"`)
     result.blockers.push(`❌ BLOQUEADOR: Palavras forçadas sem contexto`)
   }
 
@@ -137,9 +138,10 @@ export function validateAllLayers(lyrics: string, genre: string, theme?: string)
   result.layers.emotion.passed = emotionValidation.passed
   result.layers.emotion.score = emotionValidation.score
   result.layers.emotion.details = emotionValidation.details
+  result.layers.emotion.issues = emotionValidation.issues
 
   if (!emotionValidation.passed) {
-    result.warnings.push(`⚠️ Emoção fraca: ${emotionValidation.details}`)
+    result.warnings.push(`⚠️ ${emotionValidation.details}`)
   }
 
   // CÁLCULO FINAL
@@ -156,6 +158,47 @@ export function validateAllLayers(lyrics: string, genre: string, theme?: string)
   // Emoção não bloqueia, mas reduz score
 
   return result
+}
+
+/**
+ * Valida um único verso em todas as camadas
+ * Usado durante geração para validar verso por verso
+ */
+export function validateSingleVerse(
+  verse: string,
+  fullLyrics: string,
+  genre: string,
+): { isValid: boolean; issues: string[] } {
+  const issues: string[] = []
+
+  // 1. Sílabas
+  const syllables = countPoeticSyllables(verse)
+  if (syllables > 11 && !verse.trim().endsWith(",")) {
+    issues.push(`${syllables} sílabas (máx: 11)`)
+  }
+
+  // 2. Anti-forcing
+  const antiForcing = validateFullLyricAgainstForcing(verse, genre)
+  if (!antiForcing.valid) {
+    issues.push(...antiForcing.forcedWords.map((word) => `Palavra forçada: "${word}"`))
+  }
+
+  // 3. Gramática básica
+  const grammarValidation = validateGrammar(verse)
+  if (!grammarValidation.passed) {
+    issues.push(...grammarValidation.issues)
+  }
+
+  // 4. Emoção básica
+  const emotionValidation = validateEmotion(verse)
+  if (!emotionValidation.passed) {
+    issues.push(emotionValidation.details)
+  }
+
+  return {
+    isValid: issues.length === 0,
+    issues,
+  }
 }
 
 /**
@@ -239,39 +282,5 @@ function validateEmotion(lyrics: string, theme?: string): LayerResult {
     score,
     details,
     issues: passed ? [] : [details],
-  }
-}
-
-/**
- * Valida um único verso em todas as camadas
- * Usado durante geração para validar verso por verso
- */
-export function validateSingleVerse(
-  verse: string,
-  fullLyrics: string,
-  genre: string,
-): { isValid: boolean; issues: string[] } {
-  const issues: string[] = []
-
-  // 1. Sílabas
-  const syllables = countPoeticSyllables(verse)
-  if (syllables > 11 && !verse.trim().endsWith(",")) {
-    issues.push(`${syllables} sílabas (máx: 11)`)
-  }
-
-  // 2. Anti-forcing
-  const antiForcing = validateFullLyricAgainstForcing(verse, genre)
-  if (!antiForcing.isValid) {
-    issues.push(...antiForcing.warnings)
-  }
-
-  // 3. Gramática básica
-  if (/\b(eu|ele|ela)\s+(somos|são)\b/i.test(verse)) {
-    issues.push("Erro de concordância verbal")
-  }
-
-  return {
-    isValid: issues.length === 0,
-    issues,
   }
 }
