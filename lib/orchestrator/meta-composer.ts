@@ -765,7 +765,6 @@ SE EU VER QUALQUER UM DOS ERROS PROIBIDOS, A LETRA ESTÁ ERRADA.
       model: "openai/gpt-4o", 
       prompt: rewritePrompt,
       temperature: 0.3, // 🔥 BAIXA TEMPERATURA - MAIS CONSERVADOR
-      maxTokens: 2000,
     })
 
     return text || request.originalLyrics
