@@ -1,15 +1,10 @@
-// components/index.ts
+// lib/validation/index.ts
 
 /**
- * BARREL EXPORT - COMPONENTES E UTILITÁRIOS
+ * BARREL EXPORT - VALIDAÇÃO
  *
- * Exporta todos os componentes e utilitários principais para importação simplificada
- * Use: import { HookGenerator, InspirationManager, validateLyricsSyllables } from '@/components'
+ * Exporta todos os validadores e utilitários de validação
  */
-
-// Componentes principais
-export { HookGenerator } from "./hook-generator"
-export { InspirationManager } from "./inspiration-manager"
 
 // ========== VALIDAÇÃO DE SÍLABAS ==========
 export {
@@ -20,16 +15,16 @@ export {
   hasEnjambement, // Detecta enjambement
   validateVerseWithEnjambement, // Valida verso com continuação
   type SyllableValidationResult,
-} from "../lib/validation/syllable-counter-brasileiro"
+} from "./syllable-counter-brasileiro"
 
-export { SyllableEnforcer } from "../lib/validation/syllableEnforcer"
+export { SyllableEnforcer } from "./syllableEnforcer"
 
 // ========== VALIDAÇÃO DE NARRATIVA ==========
 export {
   validateNarrativeFlow, // Começo, meio e fim
   validateVerseContribution, // Cada verso contribui
   type NarrativeValidationResult,
-} from "../lib/validation/narrative-validator"
+} from "./narrative-validator"
 
 // ========== VALIDAÇÃO DE RIMAS ==========
 export {
@@ -53,11 +48,11 @@ export {
 export { validateSertanejoLyrics } from "./validateLyrics"
 
 // Validadores de integridade
-export { validateVerseIntegrity } from "../lib/validation/verse-integrity-validator"
-export { validateSertanejoModerno } from "../lib/validation/sertanejo-moderno-validator"
+export { validateVerseIntegrity } from "./verse-integrity-validator"
+export { validateSertanejoModerno } from "./sertanejo-moderno-validator"
 
 // Validadores de estrutura
-export { validateChorus } from "../lib/validation/validateChorus"
+export { validateChorus } from "./validateChorus"
 
 // Validador Multi-Camadas
 export {
@@ -65,7 +60,7 @@ export {
   validateSingleVerse,
   type MultiLayerValidationResult,
   type LayerResult,
-} from "../lib/validation/multi-layer-validator"
+} from "./multi-layer-validator"
 
 // Utilitários de validação
 export {
@@ -73,4 +68,4 @@ export {
   isVerseLine,
   isBridgeLine,
   shouldSkipValidation,
-} from "../lib/validation/validation-utils"
+} from "./validation-utils"
