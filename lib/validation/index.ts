@@ -36,7 +36,7 @@ export {
   analyzeRhyme, // Análise detalhada de rimas
   analyzeLyricsRhymeScheme, // Esquema de rimas da letra
   validateRhymesForGenre, // Valida rimas por gênero
-} from "../lib/validation/rhyme-validator"
+} from "./rhyme-validator"
 
 export {
   enhanceLyricsRhymes, // Melhora qualidade das rimas
@@ -44,22 +44,19 @@ export {
   quickRhymeCheck, // Verificação rápida
   suggestRhymingWords, // Sugestões de palavras que rimam
   type RhymeEnhancementResult,
-} from "../lib/validation/rhyme-enhancer"
+} from "./rhyme-enhancer"
 
 // ========== VALIDAÇÃO ANTI-FORÇAÇÃO ==========
-export {
-  validateAgainstForcing, // Valida linha específica
-  validateFullLyricAgainstForcing, // Valida letra completa
-  getAntiForcingRulesForGenre, // Regras por gênero
-  type AntiForcingRule,
-} from "../lib/validation/anti-forcing-validator"
+// Funções anti-forcing não implementadas ainda
+
+// ========== VALIDAÇÃO DE ESTRUTURA ==========
+export { validateSertanejoLyrics } from "./validateLyrics"
 
 // Validadores de integridade
 export { validateVerseIntegrity } from "../lib/validation/verse-integrity-validator"
 export { validateSertanejoModerno } from "../lib/validation/sertanejo-moderno-validator"
 
 // Validadores de estrutura
-export { validateSertanejoLyrics } from "../lib/validation/validateLyrics"
 export { validateChorus } from "../lib/validation/validateChorus"
 
 // Validador Multi-Camadas
