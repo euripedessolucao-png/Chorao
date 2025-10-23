@@ -1,5 +1,6 @@
 import type { ParsedSection } from "./parser"
 import { SERTANEJO_RULES, countSyllables, hasForbiddenElement, hasVisualElement } from "./sertanejoRules"
+import { countPortugueseSyllables } from "./syllable-counter"
 
 export interface ValidationResult {
   isValid: boolean
@@ -11,28 +12,6 @@ export interface ValidationResult {
     valid: boolean
     issues: string[]
   }[]
-}
-
-// CORRIJA o import no lib/validation/validateLyrics.ts
-
-import type { ParsedSection } from "./parser"
-import { SERTANEJO_RULES, countSyllables, hasForbiddenElement, hasVisualElement } from "./sertanejoRules"
-import { countPortugueseSyllables } from "./syllable-counter" // ✅ Use countPortugueseSyllables
-
-export interface ValidationResult {
-  isValid: boolean
-  score: number
-  errors: string[]
-  warnings: string[]
-  sections: {
-    type: string
-    valid: boolean
-    issues: string[]
-  }[]
-}
-
-export function validateSertanejoLyrics(sections: ParsedSection[]): ValidationResult {
-  // ... código existente mantido igual
 }
 
 export function validateLyricsSyllables(
@@ -57,13 +36,13 @@ export function validateLyricsSyllables(
         return // Enjambement é válido
       }
 
-      const syllables = countPortugueseSyllables(line) // ✅ Use countPortugueseSyllables
+      const syllables = countPortugueseSyllables(line)
       if (syllables > maxSyllables) {
         violations.push({
           line: line.trim(),
           syllables: syllables,
           lineNumber: index + 1,
-          suggestions: [] // Por enquanto vazio, pode adicionar depois
+          suggestions: [],
         })
       }
     }
