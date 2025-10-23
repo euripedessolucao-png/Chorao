@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     console.log("[v0] 🚀 Iniciando MetaComposer para reescrita...")
 
     // ✅ METACOMPOSER LIGADO COM ELISÕES INTELIGENTES!
-    const result = await MetaComposerWithAggressiveCorrection.compose({
+    const result = await MetaComposer.compose({
       genre: genero,
       theme: tema || "Amor",
       mood: humor || "Romântico",
