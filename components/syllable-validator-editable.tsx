@@ -1,4 +1,4 @@
-// components/syllable-validator-editable.tsx - VERSÃO SUPERIOR CORRIGIDA
+// components/syllable-validator-editable.tsx - VERSÃO CORRIGIDA
 
 "use client"
 
@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { CheckCircle, AlertTriangle, XCircle, Edit2, Check, X, Lightbulb } from "lucide-react"
-import { countPortugueseSyllables } from "@/lib/validation/syllable-counter" // ✅ Função corrigida
+import { countPortugueseSyllables } from "@/lib/validation/syllable-counter"
 import { toast } from "sonner"
 
 interface LineValidation {
@@ -76,7 +76,7 @@ export function SyllableValidatorEditable({
       [/\bestá\b/gi, "tá", "🔧"],
       [/\bestou\b/gi, "tô", "🔧"],
       [/\bvamos\b/gi, "vamo", "🔧"],
-      [/\btambém\b/gi, "também", "✂️"], // Mantém igual mas conta como dica
+      [/\btambém\b/gi, "também", "✂️"],
     ]
 
     advancedContractions.forEach(([regex, replacement, icon]) => {
@@ -89,9 +89,8 @@ export function SyllableValidatorEditable({
       }
     })
 
-    // Estratégia 3: Reestruturação criativa (apenas se diferença for grande)
+    // Estratégia 3: Reestruturação criativa
     if (difference >= 3 && words.length >= 4) {
-      // Tenta encurtar mantendo o significado
       const shortenedVersions = [
         line.replace(/\bmuito\b/gi, "mto"),
         line.replace(/\bgostaria\b/gi, "queria"),
@@ -110,7 +109,6 @@ export function SyllableValidatorEditable({
       })
     }
 
-    // Remove duplicatas e limita a 4 sugestões
     return [...new Set(suggestions)].slice(0, 4)
   }
 
@@ -144,7 +142,7 @@ export function SyllableValidatorEditable({
 
   const validationScore = totalLines > 0 ? (validLines / totalLines) * 100 : 100
 
-  // ✅ FUNÇÕES DE EDIÇÃO (mantidas do código original)
+  // ✅ FUNÇÕES DE EDIÇÃO
   const toggleEdit = (lineNumber: number) => {
     const newEditingLines = new Set(editingLines)
     if (newEditingLines.has(lineNumber)) {
@@ -165,7 +163,6 @@ export function SyllableValidatorEditable({
   }
 
   const applySuggestion = (lineNumber: number, suggestion: string) => {
-    // Remove emojis e marcadores da sugestão antes de aplicar
     const cleanSuggestion = suggestion.replace(/ [✓✂️🎭🔧💡]$/, "").trim()
     const newLines = [...lines]
     newLines[lineNumber - 1] = cleanSuggestion
@@ -178,7 +175,7 @@ export function SyllableValidatorEditable({
     toggleEdit(lineNumber)
   }
 
-  // ✅ COMPORTAMENTO INTELIGENTE: Só mostra se houver problemas
+  // ✅ COMPORTAMENTO INTELIGENTE
   if (validations.length === 0) {
     return (
       <Card className="border-green-200 bg-green-50">
@@ -286,8 +283,9 @@ export function SyllableValidatorEditable({
                     }>
                       {validation.syllables} sílabas
                     </Badge>
+                    {/* ✅ CORREÇÃO: Removido o Badge com variant="destructive" */}
                     {validation.severity === "error" && (
-                      <Badge variant="destructive" className="text-xs">
+                      <Badge variant="outline" className="bg-red-100 text-red-700 text-xs">
                         Crítico
                       </Badge>
                     )}
