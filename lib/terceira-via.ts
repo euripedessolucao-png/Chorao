@@ -21,11 +21,11 @@ export async function applyTerceiraViaToLine(
     console.log(`[TerceiraVia] 🔧 Processando linha ${index}: "${line.substring(0, 40)}..."`)
 
     // ✅ USA THIRD WAY ENGINE PARA CORREÇÕES AVANÇADAS
-    if (genre && genreConfig) {
+    if (genre && typeof genre === "string" && genreConfig) {
       const improvedLine = await ThirdWayEngine.generateThirdWayLine(
         line,
         genre,
-        genreConfig, // ✅ USA A CONFIGURAÇÃO PASSADA
+        genreConfig,
         context,
         isPerformanceMode,
         additionalRequirements,
@@ -36,7 +36,8 @@ export async function applyTerceiraViaToLine(
     }
 
     // ✅ FALLBACK PARA SISTEMA ORIGINAL (se não tiver genreConfig)
-    return await applyLegacyTerceiraVia(line, index, context, additionalRequirements)
+    console.log(`[TerceiraVia] ⚠️ Genre ou genreConfig inválidos, retornando linha original`)
+    return line
   } catch (error) {
     console.error(`[TerceiraVia] ❌ Erro na linha ${index}:`, error)
     return line

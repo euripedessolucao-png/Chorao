@@ -11,6 +11,11 @@ export class UltimateFixer {
    * Corrige uma linha completamente aplicando todas as técnicas
    */
   static fixLine(line: string): string {
+    if (!line || typeof line !== "string") {
+      console.warn("[v0] ⚠️ UltimateFixer: Linha inválida recebida:", line)
+      return line || ""
+    }
+
     console.log("[v0] 🔧 UltimateFixer: Corrigindo linha:", line)
 
     let fixed = line
@@ -55,17 +60,15 @@ export class UltimateFixer {
    * ETAPA 1 e 7: Normalizar espaços
    */
   private static normalizeSpaces(text: string): string {
-    return (
-      text
-        // Remover espaços no início e fim
-        .trim()
-        // Remover espaços duplicados/triplicados/etc
-        .replace(/\s{2,}/g, " ")
-        // Normalizar espaços antes de pontuação
-        .replace(/\s+([,.:;!?])/g, "$1")
-        // Garantir espaço após pontuação
-        .replace(/([,.:;!?])([^\s])/g, "$1 $2")
-    )
+    if (!text || typeof text !== "string") {
+      return text || ""
+    }
+
+    return text
+      .trim()
+      .replace(/\s{2,}/g, " ")
+      .replace(/\s+([,.:;!?])/g, "$1")
+      .replace(/([,.:;!?])([^\s])/g, "$1 $2")
   }
 
   /**

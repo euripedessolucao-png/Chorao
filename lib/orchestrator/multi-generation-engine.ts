@@ -38,6 +38,11 @@ export class MultiGenerationEngine {
       try {
         let lyrics = await generateFn()
 
+        if (!lyrics || typeof lyrics !== "string" || lyrics.trim().length === 0) {
+          console.warn(`⚠️ Tentativa ${attempts} retornou lyrics inválido, pulando...`)
+          continue
+        }
+
         try {
           lyrics = UltimateFixer.fixFullLyrics(lyrics)
         } catch (fixerError) {
@@ -65,6 +70,7 @@ export class MultiGenerationEngine {
         variations.push(variation)
       } catch (error) {
         console.error("❌ Erro na tentativa", attempts, ":", error instanceof Error ? error.message : String(error))
+        continue
       }
     }
 

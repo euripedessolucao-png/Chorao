@@ -291,13 +291,24 @@ HUMOR: ${request.mood || "adaptável"}
 
 COMPONHA UMA LETRA COMPLETA onde TODOS os versos têm 11 sílabas ou menos:`
 
-      const { text } = await generateText({
-        model: "openai/gpt-4o",
-        prompt,
-        temperature: 0.7, // Alta como no gerador de refrão
-      })
+      let response
+      try {
+        response = await generateText({
+          model: "openai/gpt-4o",
+          prompt,
+          temperature: 0.7,
+        })
+      } catch (error) {
+        console.error(`[MetaComposer] ❌ Erro na tentativa ${attempts}:`, error)
+        continue
+      }
 
-      if (!text) continue
+      if (!response || !response.text) {
+        console.error(`[MetaComposer] ❌ Resposta inválida na tentativa ${attempts}`)
+        continue
+      }
+
+      const { text } = response
 
       // VALIDAÇÃO COMO NO GERADOR DE REFRÃO
       const validation = this.validateLyricsSyllables(text)
