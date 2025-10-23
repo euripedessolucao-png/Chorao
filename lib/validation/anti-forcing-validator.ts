@@ -8,6 +8,7 @@
 
 export interface AntiForcingRule {
   keyword: string
+  description: string
   context: string[]
   minDistance: number
 }
