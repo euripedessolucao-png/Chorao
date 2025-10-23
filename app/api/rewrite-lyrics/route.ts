@@ -2,6 +2,8 @@ import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 
+export const maxDuration = 60
+
 export async function POST(request: NextRequest) {
   try {
     const { letraOriginal, genero, humor, tema, additionalRequirements, titulo } = await request.json()

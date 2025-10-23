@@ -25,6 +25,8 @@ interface HookData {
   bestOptionIndex: number
 }
 
+export const maxDuration = 60 // 60 segundos para geração completa
+
 export async function POST(request: Request) {
   try {
     const body = await request.json()
