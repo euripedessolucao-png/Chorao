@@ -1,22 +1,14 @@
 import { countPoeticSyllables } from "@/lib/validation/syllable-counter"
-import {
-  type TerceiraViaAnalysis,
-  analisarTerceiraVia,
-  applyTerceiraViaToLine,
-} from "@/lib/terceira-via"
-import { getGenreConfig } from "@/lib/genre-config"
+import { type TerceiraViaAnalysis, analisarTerceiraVia, applyTerceiraViaToLine } from "@/lib/terceira-via"
 import { generateText } from "ai"
 import {
   formatSertanejoPerformance,
   shouldUsePerformanceFormat,
 } from "@/lib/formatters/sertanejo-performance-formatter"
-import { AutoSyllableCorrector } from "@/lib/validation/auto-syllable-corrector"
 import { PunctuationValidator } from "@/lib/validation/punctuation-validator"
 import { LineStacker } from "@/lib/utils/line-stacker"
-import { AbsoluteSyllableEnforcer } from "@/lib/validation/absolute-syllable-enforcer"
 import { LyricsAuditor } from "@/lib/validation/lyrics-auditor"
 import { MultiGenerationEngine } from "./multi-generation-engine"
-import { WordIntegrityValidator } from "@/lib/validation/word-integrity-validator"
 
 export interface CompositionRequest {
   genre: string
@@ -57,29 +49,29 @@ export interface CompositionResult {
 
 export class SyllableTyrant {
   /**
-   * CORREÇÃO AGRESSIVA PARA 11 SÍLABAS EXATAS
+   * CORREÇÃO AGRESSIVA PARA 11 SÍLABAS EXATAS - SEM CHAMADAS AO OPENAI
    */
   static async enforceAbsoluteSyllables(lyrics: string): Promise<string> {
     console.log("🎯 [SyllableTyrant] Iniciando correção agressiva...")
-    const lines = lyrics.split('\n')
+    const lines = lyrics.split("\n")
     const correctedLines: string[] = []
     let corrections = 0
-    
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]
-      
+
       // Ignora tags e linhas vazias
-      if (line.startsWith('[') || line.startsWith('(') || line.includes('Instruments:') || !line.trim()) {
+      if (line.startsWith("[") || line.startsWith("(") || line.includes("Instruments:") || !line.trim()) {
         correctedLines.push(line)
         continue
       }
-      
+
       const syllables = countPoeticSyllables(line)
-      
+
       if (syllables !== 11) {
-        console.log(`🔴 Linha ${i+1}: "${line}" → ${syllables} sílabas`)
-        const fixedLine = await this.brutalFix(line, syllables)
-        
+        console.log(`🔴 Linha ${i + 1}: "${line}" → ${syllables} sílabas`)
+        const fixedLine = this.localFix(line, syllables)
+
         const fixedSyllables = countPoeticSyllables(fixedLine)
         if (fixedSyllables === 11) {
           console.log(`✅ Corrigido: "${fixedLine}" → ${fixedSyllables} sílabas`)
@@ -87,63 +79,39 @@ export class SyllableTyrant {
         } else {
           console.log(`⚠️ Correção parcial: "${fixedLine}" → ${fixedSyllables} sílabas`)
         }
-        
+
         correctedLines.push(fixedLine)
       } else {
-        console.log(`✅ Linha ${i+1} OK: "${line}" → 11 sílabas`)
+        console.log(`✅ Linha ${i + 1} OK: "${line}" → 11 sílabas`)
         correctedLines.push(line)
       }
     }
-    
+
     console.log(`🎯 [SyllableTyrant] ${corrections} correções aplicadas`)
-    return correctedLines.join('\n')
+    return correctedLines.join("\n")
   }
-  
+
   /**
-   * CORREÇÃO BRUTAL LINHA POR LINHA
+   * CORREÇÃO LOCAL SEM OPENAI - RÁPIDA E EFICIENTE
    */
-  private static async brutalFix(line: string, currentSyllables: number): Promise<string> {
+  private static localFix(line: string, currentSyllables: number): string {
     const difference = 11 - currentSyllables
-    
-    const fixPrompt = `**CORRIJA ESTE VERSO PARA TER EXATAMENTE 11 SÍLABAS**
 
-VERSO: "${line}"
-SÍLABAS ATUAIS: ${currentSyllables}
-AÇÃO: ${difference > 0 ? `ADICIONAR ${difference} sílaba(s)` : `REMOVER ${Math.abs(difference)} sílaba(s)`}
-
-TÉCNICAS:
-${difference > 0 ? 
-  '- ADICIONE: "o", "a", "meu", "minha", "esse", "essa"' :
-  '- ELISÃO: "de amor" → "d\'amor"\n' +
-  '- CONTRACÇÃO: "você" → "cê", "para" → "pra"\n' +
-  '- JUNÇÃO: "que eu" → "qu\'eu", "meu amor" → "meuamor"'
-}
-
-NUNCA: corte palavras ou remova acentos.
-
-VERSO CORRIGIDO (APENAS O TEXTO):`
-
-    try {
-      const { text } = await generateText({
-        model: "openai/gpt-4o",
-        prompt: fixPrompt,
-        temperature: 0.1,
-      })
-      
-      const fixedLine = text?.trim().replace(/^["']|["']$/g, "") || line
-      return fixedLine
-    } catch (error) {
-      console.error("❌ Erro no brutalFix:", error)
+    if (difference < 0) {
+      // Precisa remover sílabas
+      return this.applyEmergencyFix(line, difference)
+    } else {
+      // Precisa adicionar sílabas
       return this.applyEmergencyFix(line, difference)
     }
   }
-  
+
   /**
    * CORREÇÃO DE EMERGÊNCIA
    */
   private static applyEmergencyFix(line: string, difference: number): string {
     let fixedLine = line
-    
+
     if (difference < 0) {
       const removals = [
         { regex: /\bde amor\b/gi, replacement: "d'amor" },
@@ -155,7 +123,7 @@ VERSO CORRIGIDO (APENAS O TEXTO):`
         { regex: /\bo\b/gi, replacement: "" },
         { regex: /\ba\b/gi, replacement: "" },
       ]
-      
+
       for (const removal of removals) {
         const testLine = fixedLine.replace(removal.regex, removal.replacement)
         if (countPoeticSyllables(testLine) >= 11) {
@@ -173,7 +141,7 @@ VERSO CORRIGIDO (APENAS O TEXTO):`
         }
       }
     }
-    
+
     return fixedLine
   }
 }
@@ -194,21 +162,19 @@ export class MetaComposer {
       },
       (lyrics) => {
         // SCORE BASEADO EM % DE LINHAS VÁLIDAS (como no gerador de refrão)
-        const lines = lyrics.split('\n').filter(line => 
-          line.trim() && !line.startsWith('[') && !line.startsWith('(')
-        )
-        
+        const lines = lyrics.split("\n").filter((line) => line.trim() && !line.startsWith("[") && !line.startsWith("("))
+
         let validLines = 0
-        lines.forEach(line => {
+        lines.forEach((line) => {
           if (countPoeticSyllables(line) <= 11) validLines++
         })
-        
+
         const syllableScore = (validLines / lines.length) * 100
-        
+
         // Score combinado: 70% sílabas + 30% qualidade geral
         const auditResult = LyricsAuditor.audit(lyrics, request.genre, request.theme)
-        const finalScore = (syllableScore * 0.7) + (auditResult.score * 0.3)
-        
+        const finalScore = syllableScore * 0.7 + auditResult.score * 0.3
+
         return finalScore
       },
       3,
@@ -393,10 +359,10 @@ REESCREVA mantendo o significado mas garantindo 11 sílabas por verso:`
   private static async applyTerceiraViaCorrections(
     lyrics: string,
     request: CompositionRequest,
-    analysis: TerceiraViaAnalysis
+    analysis: TerceiraViaAnalysis,
   ): Promise<string> {
     console.log("[MetaComposer] 🔄 Aplicando Terceira Via...")
-    
+
     const lines = lyrics.split("\n")
     const correctedLines: string[] = []
     let correctionsApplied = 0
@@ -430,11 +396,7 @@ REESCREVA mantendo o significado mas garantindo 11 sílabas por verso:`
   /**
    * POLIMENTO ESTRITO
    */
-  private static async applyStrictPolish(
-    lyrics: string,
-    genre: string,
-    performanceMode: string
-  ): Promise<string> {
+  private static async applyStrictPolish(lyrics: string, genre: string, performanceMode: string): Promise<string> {
     console.log(`[MetaComposer] ✨ Aplicando polimento estrito...`)
 
     let polishedLyrics = lyrics
@@ -457,13 +419,13 @@ REESCREVA mantendo o significado mas garantindo 11 sílabas por verso:`
     validityRatio: number
     violations: Array<{ line: string; syllables: number }>
   } {
-    const lines = lyrics.split('\n')
+    const lines = lyrics.split("\n")
     const violations: Array<{ line: string; syllables: number }> = []
     let validLines = 0
     let totalLines = 0
 
     lines.forEach((line, index) => {
-      if (line.trim() && !line.startsWith('[') && !line.startsWith('(') && !line.includes('Instruments:')) {
+      if (line.trim() && !line.startsWith("[") && !line.startsWith("(") && !line.includes("Instruments:")) {
         totalLines++
         const syllables = countPoeticSyllables(line)
         if (syllables <= 11) {
@@ -471,7 +433,7 @@ REESCREVA mantendo o significado mas garantindo 11 sílabas por verso:`
         } else {
           violations.push({
             line: line.trim(),
-            syllables
+            syllables,
           })
         }
       }
@@ -482,7 +444,7 @@ REESCREVA mantendo o significado mas garantindo 11 sílabas por verso:`
     return {
       valid: validityRatio >= 0.95, // 95% das linhas válidas
       validityRatio,
-      violations
+      violations,
     }
   }
 
@@ -503,15 +465,15 @@ REESCREVA mantendo o significado mas garantindo 11 sílabas por verso:`
    * EXTRAI TÍTULO
    */
   private static extractTitle(lyrics: string, request: CompositionRequest): string {
-    const lines = lyrics.split('\n')
+    const lines = lyrics.split("\n")
     for (const line of lines) {
-      if (line.toLowerCase().includes('título:') || line.toLowerCase().includes('title:')) {
-        return line.split(':')[1]?.trim() || 'Sem Título'
+      if (line.toLowerCase().includes("título:") || line.toLowerCase().includes("title:")) {
+        return line.split(":")[1]?.trim() || "Sem Título"
       }
     }
     for (const line of lines) {
       const cleaned = line.trim()
-      if (cleaned && !cleaned.startsWith('[') && !cleaned.startsWith('(') && cleaned.length > 3) {
+      if (cleaned && !cleaned.startsWith("[") && !cleaned.startsWith("(") && cleaned.length > 3) {
         return cleaned.substring(0, 50)
       }
     }
@@ -522,7 +484,7 @@ REESCREVA mantendo o significado mas garantindo 11 sílabas por verso:`
    * VERIFICA SE PRECISA DE CORREÇÃO TERCEIRA VIA
    */
   private static needsTerceiraViaCorrection(line: string, analysis: TerceiraViaAnalysis): boolean {
-    if (!line.trim() || line.startsWith('[') || line.startsWith('(') || line.includes('Instruments:')) {
+    if (!line.trim() || line.startsWith("[") || line.startsWith("(") || line.includes("Instruments:")) {
       return false
     }
     if (analysis.score_geral < 70) {
@@ -547,6 +509,6 @@ REESCREVA mantendo o significado mas garantindo 11 sílabas por verso:`
       contextLines.push(`Próxima linha: ${lines[lineIndex + 1]}`)
     }
     contextLines.push(`Tema: ${theme}`)
-    return contextLines.join('\n')
+    return contextLines.join("\n")
   }
 }
