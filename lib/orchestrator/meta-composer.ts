@@ -1,4 +1,4 @@
-// lib/orchestrator/meta-composer.ts - VERSÃO DEFINITIVA ATUALIZADA
+// lib/orchestrator/meta-composer.ts - VERSÃO CORRIGIDA
 
 import { countPortugueseSyllables } from "@/lib/validation/syllable-counter"
 import { type TerceiraViaAnalysis, analisarTerceiraVia, applyTerceiraViaToLine } from "@/lib/terceira-via"
@@ -267,7 +267,7 @@ RESPOSTA:`
     return this.applyNuclearCorrection(text || request.originalLyrics)
   }
 
-  // ✅ MÉTODO DE GARANTIA NUCLEAR
+  // ✅ MÉTODO DE GARANTIA NUCLEAR - REGEX CORRIGIDOS
   private static applyNuclearCorrection(lyrics: string): string {
     console.log("☢️ Aplicando correção nuclear...")
     
@@ -283,10 +283,10 @@ RESPOSTA:`
       { regex: /Acordeãem/gi, replacement: "Acordeon em" },
       { regex: /Eu tá/gi, replacement: "Eu tô" },
       
-      // CORREÇÕES DE SINTAXE
+      // CORREÇÕES DE SINTAXE - REGEX CORRIGIDOS
       { regex: /\$1/gi, replacement: "\"texto real\"" },
-      { regex: /\(Backing Vocal:\s*\\)/gi, replacement: "(Backing Vocal: \"Harmonia\")" },
-      { regex: /\(Público:\s*\\)/gi, replacement: "(Público: \"Aí sim!\")" },
+      { regex: /\(Backing Vocal:\s*\\\)/gi, replacement: "(Backing Vocal: \"Harmonia\")" },
+      { regex: /\(Público:\s*\\\)/gi, replacement: "(Público: \"Aí sim!\")" },
     ]
 
     let correctedLyrics = lyrics
