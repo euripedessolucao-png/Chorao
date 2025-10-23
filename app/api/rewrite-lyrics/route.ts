@@ -8,16 +8,31 @@ export async function POST(request: NextRequest) {
     const { letraOriginal, genero, humor, tema, additionalRequirements, titulo } = await request.json()
 
     if (!letraOriginal?.trim()) {
+      console.error("[v0] ❌ Letra original vazia")
       return NextResponse.json({ error: "Letra original é obrigatória" }, { status: 400 })
     }
 
-    if (!genero) {
-      return NextResponse.json({ error: "Gênero é obrigatório" }, { status: 400 })
+    if (!genero || typeof genero !== "string" || !genero.trim()) {
+      console.error("[v0] ❌ Gênero inválido:", genero)
+      return NextResponse.json({ error: "Gênero é obrigatório e deve ser uma string válida" }, { status: 400 })
     }
 
     console.log("[v0] 🎵 Iniciando reescrita...")
 
-    const genreRules = buildGenreRulesPrompt(genero)
+    let genreRules
+    try {
+      genreRules = buildGenreRulesPrompt(genero)
+      console.log("[v0] ✅ Regras de gênero construídas com sucesso")
+    } catch (error) {
+      console.error("[v0] ❌ Erro ao construir regras de gênero:", error)
+      return NextResponse.json(
+        {
+          error: "Erro ao processar regras do gênero",
+          details: error instanceof Error ? error.message : "Erro desconhecido",
+        },
+        { status: 500 },
+      )
+    }
 
     const prompt = `Você é um compositor brasileiro especializado em ${genero}.
 
