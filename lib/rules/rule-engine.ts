@@ -46,9 +46,11 @@ export async function validateWithAllRules(
 
   // 1. Validar Anti-Forçação
   const forcingResult = validateFullLyricAgainstForcing(lyrics, genre)
-  if (!forcingResult.isValid) {
+  if (!forcingResult.valid) {
     details.anti_forcing_check = false
-    errors.push(...forcingResult.warnings)
+    if (forcingResult.forcedWords.length > 0) {
+      errors.push(`Palavras forçadas detectadas: ${forcingResult.forcedWords.join(", ")}`)
+    }
   }
 
   // 2. Validar Rimas
