@@ -1,4 +1,4 @@
-// lib/orchestrator/mega-aggressive-corrector.ts - VERSÃO SIMPLIFICADA QUE FUNCIONA
+// lib/orchestrator/mega-aggressive-corrector.ts - VERSÃO CORRIGIDA
 
 import { countPortugueseSyllables } from "@/lib/validation/syllable-counter"
 
@@ -97,9 +97,12 @@ export class MegaAggressiveCorrector {
   }
 
   /**
-   * VERIFICA SE É LINHA DE LETRA
+   * VERIFICA SE É LINHA DE LETRA - CORRIGIDO
    */
   private static isLyricLine(line: string): boolean {
+    const trimmedLine = line.trim()
+    if (!trimmedLine) return false
+
     const skipPatterns = [
       /^\[.*\]$/, // [SEÇÃO]
       /^\(.*\)$/, // (instruções)
@@ -112,7 +115,7 @@ export class MegaAggressiveCorrector {
       /^[\s\*\-]*$/, // Vazias
     ]
     
-    return line.trim() && !skipPatterns.some(pattern => pattern.test(line.trim()))
+    return !skipPatterns.some(pattern => pattern.test(trimmedLine))
   }
 
   /**
@@ -134,7 +137,7 @@ export class MegaAggressiveCorrector {
     // Contrações básicas
     simple = simple.replace(/\b(para)\b/gi, 'pra')
     simple = simple.replace(/\b(você)\b/gi, 'cê')
-    simple = simple.replace(/\b(comigo)\b/gi, 'c'migo')
+    simple = simple.replace(/\b(comigo)\b/gi, "c'migo") // ✅ Aspas corrigidas
 
     return simple.replace(/\s+/g, ' ').trim()
   }
