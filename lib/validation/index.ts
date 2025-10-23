@@ -11,8 +11,10 @@ export {
   countPortugueseSyllables,
   validateSyllableLimit,
   validateLyricsSyllables,
+  hasEnjambement,
+  validateVerseWithEnjambement,
   type SyllableValidationResult
-} from "./syllable-counter"
+} from "./syllable-counter-brasileiro"
 
 export { SyllableEnforcer } from "./syllableEnforcer"
 
