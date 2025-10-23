@@ -241,7 +241,7 @@ class MegaCorrector {
       fixed = fixed.replace(/\b(o |a |os |as |um |uma )/gi, '')
       fixed = fixed.replace(/\b(para)\b/gi, 'pra')
       fixed = fixed.replace(/\b(você)\b/gi, 'cê')
-      fixed = fixed.replace(/\b(comigo)\b/gi, "c'migo") // ✅ CORRIGIDO: aspas escapadas
+      fixed = fixed.replace(/\b(comigo)\b/gi, "c'migo")
       fixed = fixed.replace(/\b(está|estou)\b/gi, 'tá')
       fixed = fixed.replace(/\b(realmente|verdadeiramente|completamente)\b/gi, '')
       
@@ -978,6 +978,3 @@ Com técnicas de composição moderna`
     return contextLines.join("\n")
   }
 }
-
-// ✅ EXPORT FINAL - APENAS O META COMPOSER PRINCIPAL
-export { MetaComposer }
