@@ -1,4 +1,4 @@
-// lib/orchestrator/meta-composer.ts - VERSÃO DEFINITIVA
+// lib/orchestrator/meta-composer.ts - VERSÃO FUNCIONAL
 
 import { countPortugueseSyllables } from "@/lib/validation/syllable-counter"
 import { type TerceiraViaAnalysis, analisarTerceiraVia, applyTerceiraViaToLine } from "@/lib/terceira-via"
@@ -27,8 +27,6 @@ export interface CompositionRequest {
   applyFinalPolish?: boolean
   preservedChoruses?: string[]
   originalLyrics?: string
-  rhythm?: string
-  structureAnalysis?: any
   performanceMode?: "standard" | "performance"
   useTerceiraVia?: boolean
   useIntelligentElisions?: boolean
@@ -42,11 +40,6 @@ export interface CompositionResult {
     finalScore: number
     polishingApplied?: boolean
     preservedChorusesUsed?: boolean
-    rhymeScore?: number
-    rhymeTarget?: number
-    structureImproved?: boolean
-    terceiraViaAnalysis?: TerceiraViaAnalysis
-    melodicAnalysis?: any
     performanceMode?: string
     intelligentElisionsApplied?: number
   }
@@ -54,11 +47,10 @@ export interface CompositionResult {
 
 export class SyllableTyrant {
   static async enforceAbsoluteSyllables(lyrics: string, useIntelligentElisions: boolean = true): Promise<string> {
-    console.log("🎯 [SyllableTyrant] Iniciando correção agressiva...")
+    console.log("🎯 [SyllableTyrant] Iniciando correção...")
     const lines = lyrics.split("\n")
     const correctedLines: string[] = []
     let corrections = 0
-    let intelligentElisions = 0
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]
@@ -72,16 +64,13 @@ export class SyllableTyrant {
       const targetSyllables = 11
 
       if (syllables !== targetSyllables) {
-        console.log(`🔴 Linha ${i + 1}: "${line}" → ${syllables} sílabas`)
-        
         let fixedLine = line
         
         if (useIntelligentElisions && syllables > targetSyllables) {
           const elisions = AdvancedElisionEngine.applyIntelligentElisions(line, targetSyllables)
           if (elisions.length > 0) {
             fixedLine = elisions[0]
-            intelligentElisions++
-            console.log(`🎭 Elisão inteligente aplicada: "${fixedLine}"`)
+            console.log(`🎭 Elisão aplicada: "${line}" → "${fixedLine}"`)
           }
         }
 
@@ -92,60 +81,33 @@ export class SyllableTyrant {
 
         const finalSyllables = countPortugueseSyllables(fixedLine)
         if (finalSyllables === targetSyllables) {
-          console.log(`✅ Corrigido: "${fixedLine}" → ${finalSyllables} sílabas`)
           corrections++
-        } else {
-          console.log(`⚠️ Correção parcial: "${fixedLine}" → ${finalSyllables} sílabas`)
         }
 
         correctedLines.push(fixedLine)
       } else {
-        console.log(`✅ Linha ${i + 1} OK: "${line}" → ${syllables} sílabas`)
         correctedLines.push(line)
       }
     }
 
-    console.log(`🎯 [SyllableTyrant] ${corrections} correções aplicadas (${intelligentElisions} elisões inteligentes)`)
+    console.log(`🎯 [SyllableTyrant] ${corrections} correções aplicadas`)
     return correctedLines.join("\n")
   }
 
   private static localFix(line: string, currentSyllables: number, targetSyllables: number): string {
-    const difference = targetSyllables - currentSyllables
-
-    if (difference < 0) {
-      return this.applyEmergencyFix(line, difference, targetSyllables)
-    } else {
-      return this.applyEmergencyFix(line, difference, targetSyllables)
-    }
-  }
-
-  private static applyEmergencyFix(line: string, difference: number, targetSyllables: number): string {
     let fixedLine = line
 
-    if (difference < 0) {
+    if (currentSyllables > targetSyllables) {
       const removals = [
         { regex: /\b(o |a |um |uma )/gi, replacement: "" },
-        { regex: /\b(de |em |por )/gi, replacement: "d" },
-        { regex: /\b(no |na |do |da )/gi, replacement: "n" },
-        { regex: /\b(para o |para a )/gi, replacement: "pro" },
         { regex: /\b(para )/gi, replacement: "pra" },
         { regex: /\b(você )/gi, replacement: "cê " },
         { regex: /\b(está )/gi, replacement: "tá " },
-        { regex: /\b(com )/gi, replacement: "c" },
       ]
 
       for (const removal of removals) {
         const testLine = fixedLine.replace(removal.regex, removal.replacement)
         if (countPortugueseSyllables(testLine) >= targetSyllables) {
-          fixedLine = testLine
-          if (countPortugueseSyllables(fixedLine) === targetSyllables) break
-        }
-      }
-    } else {
-      const additions = ["meu ", "minha ", "esse ", "essa ", "aquele ", "aquela "]
-      for (const addition of additions) {
-        const testLine = addition + fixedLine
-        if (countPortugueseSyllables(testLine) <= targetSyllables) {
           fixedLine = testLine
           if (countPortugueseSyllables(fixedLine) === targetSyllables) break
         }
@@ -158,23 +120,23 @@ export class SyllableTyrant {
 
 export class MetaComposer {
   private static readonly MAX_ITERATIONS = 1
-  private static readonly ABSOLUTE_MAX_SYLLABLES = 11
 
   static async compose(request: CompositionRequest): Promise<CompositionResult> {
-    console.log("[MetaComposer] 🚀 Iniciando composição com elisões inteligentes...")
+    console.log("[MetaComposer] 🚀 Iniciando composição...")
 
     const useIntelligentElisions = request.useIntelligentElisions ?? true
+    const syllableTarget = request.syllableTarget || { min: 7, max: 11, ideal: 9 }
 
     const multiGenResult = await MultiGenerationEngine.generateMultipleVariations(
       async () => {
-        return await this.generateWithChorusStrategy(request)
+        return await this.generateWithStrategy(request)
       },
       (lyrics) => {
         const lines = lyrics.split("\n").filter((line) => line.trim() && !line.startsWith("[") && !line.startsWith("("))
 
         let validLines = 0
         lines.forEach((line) => {
-          if (countPortugueseSyllables(line) <= 11) validLines++
+          if (countPortugueseSyllables(line) <= syllableTarget.max) validLines++
         })
 
         const syllableScore = (validLines / lines.length) * 100
@@ -191,7 +153,6 @@ export class MetaComposer {
 
     console.log(`[MetaComposer] 🏆 Melhor versão: ${bestScore.toFixed(1)}/100`)
 
-    console.log("🎯 Aplicando garantia final com elisões inteligentes...")
     const finalLyrics = await SyllableTyrant.enforceAbsoluteSyllables(bestLyrics, useIntelligentElisions)
 
     return {
@@ -233,8 +194,8 @@ export class MetaComposer {
     return elisionCount
   }
 
-  private static async generateWithChorusStrategy(request: CompositionRequest): Promise<string> {
-    console.log("[MetaComposer] 📝 Gerando com estratégia de refrão e elisões...")
+  private static async generateWithStrategy(request: CompositionRequest): Promise<string> {
+    console.log("[MetaComposer] 📝 Gerando letra...")
 
     const applyFinalPolish = request.applyFinalPolish ?? true
     const isRewrite = !!request.originalLyrics
@@ -251,7 +212,6 @@ export class MetaComposer {
 
     const validationResult = this.validateLyricsSyllables(rawLyrics)
     if (validationResult.validityRatio < 0.8) {
-      console.log(`⚠️ Validação fraca (${(validationResult.validityRatio * 100).toFixed(1)}%), aplicando correções...`)
       rawLyrics = await SyllableTyrant.enforceAbsoluteSyllables(rawLyrics, useIntelligentElisions)
     }
 
@@ -277,17 +237,16 @@ export class MetaComposer {
     const stackingResult = LineStacker.stackLines(finalLyrics)
     finalLyrics = stackingResult.stackedLyrics
 
-    console.log("✅ Geração concluída com elisões inteligentes")
+    console.log("✅ Geração concluída")
     return finalLyrics
   }
 
   private static async applyIntelligentElisions(lyrics: string, request: CompositionRequest): Promise<string> {
-    console.log("[MetaComposer] 🎭 Aplicando elisões inteligentes...")
+    console.log("[MetaComposer] 🎭 Aplicando elisões...")
     
     const lines = lyrics.split("\n")
     const correctedLines: string[] = []
     const targetSyllables = request.syllableTarget?.ideal || 9
-    let elisionsApplied = 0
 
     for (const line of lines) {
       if (line.trim() && !line.startsWith("[") && !line.startsWith("(") && !line.includes("Instruments:")) {
@@ -297,7 +256,6 @@ export class MetaComposer {
           const elisions = AdvancedElisionEngine.applyIntelligentElisions(line, targetSyllables)
           if (elisions.length > 0) {
             correctedLines.push(elisions[0])
-            elisionsApplied++
             continue
           }
         }
@@ -305,56 +263,42 @@ export class MetaComposer {
       correctedLines.push(line)
     }
 
-    console.log(`✅ ${elisionsApplied} elisões inteligentes aplicadas`)
     return correctedLines.join("\n")
   }
 
   private static async generateStrictLyrics(request: CompositionRequest): Promise<string> {
+    const prompt = `COMPOSITOR BRASILEIRO - ${request.genre.toUpperCase()}
+
+**REGRAS:**
+- MÁXIMO ${request.syllableTarget?.max || 11} SÍLABAS POR VERSO
+- USE ELISÕES NATURAIS: "de amor" → "d'amor", "para" → "pra", "você" → "cê"
+- EVITE PALAVRAS CORTADAS OU SEM ACENTOS
+
+**TEMA:** ${request.theme}
+**GÊNERO:** ${request.genre}
+**HUMOR:** ${request.mood || "adaptável"}
+
+COMPONHA UMA LETRA AUTÊNTICA:`
+
     let attempts = 0
     let bestLyrics = ""
     let bestScore = 0
 
-    const elisionPrompt = `COMPOSITOR DE MEGA HITS - ELISÕES INTELIGENTES:
-
-**TÉCNICAS AVANÇADAS DE ELISÃO:**
-- FUSÃO VOCÁLICA: "de amor" → "d'amor", "que eu" → "qu'eu"
-- REMOÇÃO DE ARTIGOS: "o travesseiro" → "travesseiro" 
-- CONTRACÇÕES: "você" → "cê", "para" → "pra", "comigo" → "c'migo"
-- ECONOMIA VERBAL: "ainda está" → "tá", "poderíamos" → "dava"
-
-**EXEMPLOS PRÁTICOS (7-11 sílabas):**
-- "Teu cheiro ainda tá no travesseiro" → "Teu cheiro no travesseiro" (10→7)
-- "Vai encontrar um rastro da mulher" → "Vai achar o rastro de mim" (9→7) 
-- "E se um dia você voltar" → "Se um dia cê voltar" (8→6)
-
-**MÁXIMO: ${request.syllableTarget?.max || 11} SÍLABAS POR VERSO**
-
-TEMA: ${request.theme}
-GÊNERO: ${request.genre}
-HUMOR: ${request.mood || "adaptável"}
-
-COMPONHA USANDO ELISÕES NATURAIS:`
-
     while (attempts < 1) {
       attempts++
-      console.log(`[MetaComposer] Tentativa ${attempts}/1 com elisões...`)
 
       let response
       try {
         response = await generateText({
           model: "openai/gpt-4o",
-          prompt: elisionPrompt,
+          prompt: prompt,
           temperature: 0.7,
         })
       } catch (error) {
-        console.error(`[MetaComposer] ❌ Erro na tentativa ${attempts}:`, error)
         continue
       }
 
-      if (!response || !response.text) {
-        console.error(`[MetaComposer] ❌ Resposta inválida na tentativa ${attempts}`)
-        continue
-      }
+      if (!response?.text) continue
 
       const { text } = response
       const validation = this.validateLyricsSyllables(text)
@@ -365,12 +309,7 @@ COMPONHA USANDO ELISÕES NATURAIS:`
         bestLyrics = text
       }
 
-      if (validation.validityRatio >= 0.9) {
-        console.log(`✅ Tentativa ${attempts} APROVADA: ${score.toFixed(1)}% válido`)
-        break
-      } else {
-        console.log(`⚠️ Tentativa ${attempts}: ${score.toFixed(1)}% válido`)
-      }
+      if (validation.validityRatio >= 0.9) break
     }
 
     return bestLyrics || "Não foi possível gerar letra válida."
@@ -381,21 +320,20 @@ COMPONHA USANDO ELISÕES NATURAIS:`
       throw new Error("Original lyrics required for rewrite")
     }
 
-    const rewritePrompt = `REESCRITOR PROFISSIONAL - ELISÕES INTELIGENTES:
+    const rewritePrompt = `REESCRITOR - ${request.genre.toUpperCase()}
 
-**TÉCNICAS DE ELISÃO:**
+**TÉCNICAS:**
 - "de amor" → "d'amor", "que eu" → "qu'eu"
-- Remove artigos: "o", "a", "um", "uma"
-- Contrações: "você" → "cê", "para" → "pra"
-- Economia verbal quando possível
+- "para" → "pra", "você" → "cê"
+- REMOVA ARTIGOS QUANDO POSSÍVEL
 
-LETRA ORIGINAL:
+**LETRA ORIGINAL:**
 ${request.originalLyrics}
 
-TEMA: ${request.theme} 
-GÊNERO: ${request.genre}
+**TEMA:** ${request.theme}
+**GÊNERO:** ${request.genre}
 
-REESCREVA USANDO ELISÕES para ${request.syllableTarget?.ideal || 9} sílabas:`
+REESCREVA USANDO ELISÕES:`
 
     const { text } = await generateText({
       model: "openai/gpt-4o", 
@@ -461,11 +399,8 @@ REESCREVA USANDO ELISÕES para ${request.syllableTarget?.ideal || 9} sílabas:`
     request: CompositionRequest,
     analysis: TerceiraViaAnalysis,
   ): Promise<string> {
-    console.log("[MetaComposer] 🔄 Aplicando Terceira Via...")
-
     const lines = lyrics.split("\n")
     const correctedLines: string[] = []
-    let correctionsApplied = 0
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]
@@ -474,14 +409,8 @@ REESCREVA USANDO ELISÕES para ${request.syllableTarget?.ideal || 9} sílabas:`
         try {
           const context = this.buildLineContext(lines, i, request.theme)
           const correctedLine = await applyTerceiraViaToLine(line, i, context, false, "", request.genre)
-
-          if (correctedLine !== line) {
-            correctionsApplied++
-          }
-
           correctedLines.push(correctedLine)
         } catch (error) {
-          console.warn(`❌ Erro Terceira Via linha ${i}, mantendo original`)
           correctedLines.push(line)
         }
       } else {
@@ -489,7 +418,6 @@ REESCREVA USANDO ELISÕES para ${request.syllableTarget?.ideal || 9} sílabas:`
       }
     }
 
-    console.log(`✅ ${correctionsApplied} correções Terceira Via aplicadas`)
     return correctedLines.join("\n")
   }
 
@@ -500,46 +428,25 @@ REESCREVA USANDO ELISÕES para ${request.syllableTarget?.ideal || 9} sílabas:`
     if (analysis.score_geral < 70) {
       return true
     }
-    if (analysis.pontos_fracos && analysis.pontos_fracos.length > 0) {
-      return true
-    }
     return false
   }
 
   private static buildLineContext(lines: string[], lineIndex: number, theme: string): string {
     const contextLines: string[] = []
-    if (lineIndex > 0) {
-      contextLines.push(`Linha anterior: ${lines[lineIndex - 1]}`)
-    }
+    if (lineIndex > 0) contextLines.push(`Linha anterior: ${lines[lineIndex - 1]}`)
     contextLines.push(`Linha atual: ${lines[lineIndex]}`)
-    if (lineIndex < lines.length - 1) {
-      contextLines.push(`Próxima linha: ${lines[lineIndex + 1]}`)
-    }
+    if (lineIndex < lines.length - 1) contextLines.push(`Próxima linha: ${lines[lineIndex + 1]}`)
     contextLines.push(`Tema: ${theme}`)
     return contextLines.join("\n")
   }
 
   private static async applyStrictPolish(lyrics: string, genre: string, performanceMode: string): Promise<string> {
-    console.log(`[MetaComposer] ✨ Aplicando polimento estrito...`)
-
     let polishedLyrics = lyrics
 
     if (shouldUsePerformanceFormat(genre, performanceMode)) {
       polishedLyrics = formatSertanejoPerformance(polishedLyrics)
-    } else if (performanceMode === "performance") {
-      polishedLyrics = this.applyPerformanceFormatting(polishedLyrics)
     }
 
     return polishedLyrics
-  }
-
-  private static applyPerformanceFormatting(lyrics: string): string {
-    let formatted = lyrics
-    formatted = formatted.replace(/\[Intro\]/gi, "[Intro]")
-    formatted = formatted.replace(/\[Verso\s*(\d*)\]/gi, "[Verse$1]")
-    formatted = formatted.replace(/\[Refrão\]/gi, "[Chorus]")
-    formatted = formatted.replace(/\[Ponte\]/gi, "[Bridge]")
-    formatted = formatted.replace(/\[Final\]/gi, "[Outro]")
-    return formatted
   }
 }
