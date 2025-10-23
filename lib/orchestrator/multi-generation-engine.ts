@@ -23,13 +23,13 @@ export class MultiGenerationEngine {
   static async generateMultipleVariations(
     generateFn: () => Promise<string>,
     scoreFn: (lyrics: string) => number,
-    count = 3,
+    count = 1, // Reduzido de 3 para 1
     genre?: string,
     theme?: string,
     genreConfig?: any,
   ): Promise<MultiGenerationResult> {
     const variations: GenerationVariation[] = []
-    const maxAttempts = count * 2 // Reduzido de 3x para 2x
+    const maxAttempts = count * 2 // Máximo 2 tentativas
 
     let attempts = 0
     while (variations.length < count && attempts < maxAttempts) {

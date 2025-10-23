@@ -147,21 +147,20 @@ export class SyllableTyrant {
 }
 
 export class MetaComposer {
-  private static readonly MAX_ITERATIONS = 3
+  private static readonly MAX_ITERATIONS = 1 // Reduzindo MAX_ITERATIONS de 3 para 1 para evitar timeout
   private static readonly ABSOLUTE_MAX_SYLLABLES = 11
 
   /**
    * COMPOSIÇÃO COM ESTRATÉGIA DO GERADOR DE REFRÃO
    */
   static async compose(request: CompositionRequest): Promise<CompositionResult> {
-    console.log("[MetaComposer] 🚀 Iniciando composição com estratégia de refrão...")
+    console.log("[MetaComposer] 🚀 Iniciando composição otimizada...")
 
     const multiGenResult = await MultiGenerationEngine.generateMultipleVariations(
       async () => {
         return await this.generateWithChorusStrategy(request)
       },
       (lyrics) => {
-        // SCORE BASEADO EM % DE LINHAS VÁLIDAS (como no gerador de refrão)
         const lines = lyrics.split("\n").filter((line) => line.trim() && !line.startsWith("[") && !line.startsWith("("))
 
         let validLines = 0
@@ -170,14 +169,12 @@ export class MetaComposer {
         })
 
         const syllableScore = (validLines / lines.length) * 100
-
-        // Score combinado: 70% sílabas + 30% qualidade geral
         const auditResult = LyricsAuditor.audit(lyrics, request.genre, request.theme)
         const finalScore = syllableScore * 0.7 + auditResult.score * 0.3
 
         return finalScore
       },
-      3,
+      1, // Reduzido de 3 para 1
     )
 
     const bestLyrics = multiGenResult.variations[multiGenResult.bestVariationIndex].lyrics
@@ -193,7 +190,7 @@ export class MetaComposer {
       lyrics: finalLyrics,
       title: this.extractTitle(finalLyrics, request),
       metadata: {
-        iterations: 3,
+        iterations: 1,
         finalScore: bestScore,
         polishingApplied: true,
         preservedChorusesUsed: request.preservedChoruses ? request.preservedChoruses.length > 0 : false,
@@ -261,9 +258,10 @@ export class MetaComposer {
     let bestLyrics = ""
     let bestScore = 0
 
-    while (attempts < 3) {
+    while (attempts < 1) {
+      // Reduzido de 3 para 1
       attempts++
-      console.log(`[MetaComposer] Tentativa ${attempts}/3...`)
+      console.log(`[MetaComposer] Tentativa ${attempts}/1...`)
 
       const prompt = `COMPOSITOR DE MEGA HITS - REGRAS ABSOLUTAS:
 
@@ -327,7 +325,7 @@ COMPONHA UMA LETRA COMPLETA onde TODOS os versos têm 11 sílabas ou menos:`
       }
     }
 
-    return bestLyrics || "Não foi possível gerar letra válida após 3 tentativas."
+    return bestLyrics || "Não foi possível gerar letra válida."
   }
 
   /**

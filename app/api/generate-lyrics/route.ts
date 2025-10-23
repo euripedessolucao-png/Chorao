@@ -83,31 +83,7 @@ export async function POST(request: Request) {
       `[Create-Song] Config: ${genero} | ${finalRhythm} | ${syllableConfig.min}-${syllableConfig.max}s | Mode: ${performanceMode}`,
     )
 
-    // ✅ ETAPA 1: GERAR ELEMENTOS COM METACOMPOSER
-    let generatedChorus: ChorusData | null = null
-    let generatedHook: HookData | null = null
-
-    if (includeChorus) {
-      console.log("[Create-Song] 🎵 Gerando refrão com MetaComposer...")
-      generatedChorus = await generateChorusWithMetaComposer({
-        genre: genero,
-        theme: tema,
-        mood: humor,
-        additionalRequirements: additionalRequirements,
-      })
-    }
-
-    if (includeHook) {
-      console.log("[Create-Song] 🎣 Gerando hook com MetaComposer...")
-      generatedHook = await generateHookWithMetaComposer({
-        genre: genero,
-        theme: tema,
-        mood: humor,
-        additionalRequirements: additionalRequirements,
-      })
-    }
-
-    // ✅ ETAPA 2: CRIAR MÚSICA COMPLETA COM METACOMPOSER
+    // ✅ ETAPA: CRIAR MÚSICA COMPLETA COM METACOMPOSER (já inclui chorus e hook)
     console.log("[v0] 🎼 Chamando MetaComposer.compose()...")
 
     const compositionRequest = {
@@ -116,17 +92,17 @@ export async function POST(request: Request) {
       mood: humor || "Adaptado ao tema",
       additionalRequirements: buildCompleteRequirements(
         additionalRequirements,
-        generatedChorus,
-        generatedHook,
+        null, // Removido generatedChorus
+        null, // Removido generatedHook
         performanceMode,
       ),
       syllableTarget: syllableConfig,
       applyFinalPolish: universalPolish,
-      preservedChoruses: generatedChorus ? [getBestChorus(generatedChorus)] : [],
+      preservedChoruses: [], // Removido preservedChoruses
     }
 
     const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("Timeout: MetaComposer demorou mais de 50 segundos")), 50000),
+      setTimeout(() => reject(new Error("Timeout: MetaComposer demorou mais de 30 segundos")), 30000),
     )
 
     const composePromise = MetaComposer.compose(compositionRequest)
@@ -163,8 +139,8 @@ export async function POST(request: Request) {
       includes: {
         chorus: includeChorus,
         hook: includeHook,
-        chorusVariations: generatedChorus?.variations?.length || 0,
-        hookVariations: generatedHook?.variations?.length || 0,
+        chorusVariations: 0, // Removido
+        hookVariations: 0, // Removido
       },
     }
 
@@ -175,8 +151,8 @@ export async function POST(request: Request) {
       titulo: result.title,
       metadata: metadata,
       elements: {
-        chorus: generatedChorus,
-        hook: generatedHook,
+        chorus: null, // Removido
+        hook: null, // Removido
       },
     })
   } catch (error) {
