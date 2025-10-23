@@ -20,8 +20,7 @@ export async function applyTerceiraViaToLine(
   try {
     console.log(`[TerceiraVia] 🔧 Processando linha ${index}: "${line.substring(0, 40)}..."`)
 
-    // ✅ USA THIRD WAY ENGINE PARA CORREÇÕES AVANÇADAS
-    if (genre && typeof genre === "string" && genreConfig) {
+    if (genre && typeof genre === "string" && genre.trim() && genreConfig && typeof genreConfig === "object") {
       const improvedLine = await ThirdWayEngine.generateThirdWayLine(
         line,
         genre,
@@ -35,7 +34,6 @@ export async function applyTerceiraViaToLine(
       return improvedLine
     }
 
-    // ✅ FALLBACK PARA SISTEMA ORIGINAL (se não tiver genreConfig)
     console.log(`[TerceiraVia] ⚠️ Genre ou genreConfig inválidos, retornando linha original`)
     return line
   } catch (error) {
