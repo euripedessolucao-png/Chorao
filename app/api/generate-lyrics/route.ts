@@ -246,7 +246,7 @@ Retorne APENAS as 4 linhas do refrão, sem tags.`,
       }),
     )
 
-    const chorusLines = finalLines.join("\\n")
+    const chorusLines = finalLines.join("\n")
 
     return {
       variations: [
@@ -347,7 +347,7 @@ function extractChorusLines(lyrics: string): string {
     }
   }
 
-  return verseLines.slice(0, 4).join("\\n")
+  return verseLines.slice(0, 4).join("\n")
 }
 
 // ✅ EXTRAI PRIMEIRA LINHA (PARA HOOK)
