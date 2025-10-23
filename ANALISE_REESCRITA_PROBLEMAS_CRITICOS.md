@@ -29,7 +29,7 @@
 **[VERSE 2]**
 1. "Troquei minha paz por papel colorido" = Tro-quei-mi-nha-paz-por-pa-pel-co-lo-ri-do = 12 ❌
 2. "Deixei o riacho por um som perdido" = Dei-xei-o-ri-a-cho-por-um-som-per-di-do = 12 ❌
-3. "Escolhi dinheiro, falsa segurança" = Es-co-lhi-di-nhei-ro-fal-sa-se-gu-ran-ça = 12 ❌
+3. "Escolhi dinheiro, falsa segurança" = Es-co-lhi-di-nhei-ro-fal-sa-se-gu-ran-ça = 12 ��
 4. "Hoje na alma não o o o há esperança" = (com espaços extras) ≈ 11 ✅ (mas erro de espaçamento)
 
 **[CHORUS]**
