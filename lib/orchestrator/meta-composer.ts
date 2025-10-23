@@ -1,4 +1,4 @@
-// lib/orchestrator/meta-composer.ts - VERSÃO MEGA DEFINITIVA
+// lib/orchestrator/meta-composer.ts - VERSÃO CORRIGIDA
 
 import { countPortugueseSyllables } from "@/lib/validation/syllable-counter"
 import { type TerceiraViaAnalysis, analisarTerceiraVia, applyTerceiraViaToLine } from "@/lib/terceira-via"
@@ -241,7 +241,7 @@ class MegaCorrector {
       fixed = fixed.replace(/\b(o |a |os |as |um |uma )/gi, '')
       fixed = fixed.replace(/\b(para)\b/gi, 'pra')
       fixed = fixed.replace(/\b(você)\b/gi, 'cê')
-      fixed = fixed.replace(/\b(comigo)\b/gi, 'c'migo')
+      fixed = fixed.replace(/\b(comigo)\b/gi, "c'migo") // ✅ CORRIGIDO: aspas escapadas
       fixed = fixed.replace(/\b(está|estou)\b/gi, 'tá')
       fixed = fixed.replace(/\b(realmente|verdadeiramente|completamente)\b/gi, '')
       
