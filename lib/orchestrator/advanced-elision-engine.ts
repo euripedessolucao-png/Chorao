@@ -1,4 +1,4 @@
-// lib/composition/advanced-elision-engine.ts
+// lib/orchestrator/advanced-elision-engine.ts
 
 import { countPortugueseSyllables } from "@/lib/validation/syllable-counter"
 
@@ -275,4 +275,4 @@ export class AdvancedElisionEngine {
   }
 }
 
-export default AdvancedElisionEngine
+export { AdvancedElisionEngine }
