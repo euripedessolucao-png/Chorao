@@ -316,34 +316,3 @@ export class MegaAggressiveCorrector {
     console.log(`📊 TOTAL DE PROBLEMAS ENCONTRADOS: ${totalProblems}`)
   }
 }
-
-// ✅ INTEGRAÇÃO DIRETA COM O META-COMPOSER
-export class MetaComposerWithAggressiveCorrection {
-  static async compose(request: any): Promise<any> {
-    console.log("🚀 INICIANDO COMPOSIÇÃO COM CORREÇÃO AGRESSIVA...")
-
-    // Gera a letra normalmente (use sua geração atual)
-    const originalResult = await MetaComposer.compose(request)
-    
-    // ANALISA PROBLEMAS ANTES
-    console.log("🔍 ANALISANDO PROBLEMAS ANTES DA CORREÇÃO:")
-    MegaAggressiveCorrector.analyzeAllProblems(originalResult.lyrics)
-
-    // APLICA CORREÇÃO AGRESSIVA
-    const correctedLyrics = await MegaAggressiveCorrector.correctAllProblems(originalResult.lyrics)
-
-    // ANALISA PROBLEMAS DEPOIS
-    console.log("🔍 ANALISANDO PROBLEMAS DEPOIS DA CORREÇÃO:")
-    MegaAggressiveCorrector.analyzeAllProblems(correctedLyrics)
-
-    return {
-      ...originalResult,
-      lyrics: correctedLyrics,
-      metadata: {
-        ...originalResult.metadata,
-        aggressiveCorrection: true,
-        correctionTimestamp: new Date().toISOString()
-      }
-    }
-  }
-}
