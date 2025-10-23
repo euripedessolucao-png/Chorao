@@ -1,3 +1,5 @@
+// lib/validation/index.ts
+
 /**
  * VALIDADORES - BARREL EXPORT
  *
@@ -22,6 +24,13 @@ export { SyllableEnforcer } from "./syllableEnforcer"
 export { validateVerseIntegrity } from "./verse-integrity-validator"
 export { validateSertanejoModerno } from "./sertanejo-moderno-validator"
 
+// Validadores de narrativa (NOVO)
+export {
+  validateNarrativeFlow,
+  validateVerseContribution,
+  type NarrativeValidationResult
+} from "./narrative-validator"
+
 // Validadores de rimas
 export { 
   analyzeRhyme, 
@@ -39,6 +48,14 @@ export {
 // Validadores de estrutura
 export { validateSertanejoLyrics } from "./validateLyrics"
 export { validateChorus } from "./validateChorus"
+
+// Validador Multi-Camadas
+export {
+  validateAllLayers,
+  validateSingleVerse,
+  type MultiLayerValidationResult,
+  type LayerResult
+} from "./multi-layer-validator"
 
 // Regras específicas
 export type { UniversalRhymeRules } from "./universal-rhyme-rules"
