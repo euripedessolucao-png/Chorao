@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server"
 import { generateText } from "ai"
-import { getGenreConfig, detectSubGenre, getGenreRhythm } from "@/lib/genre-config"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
-import { buildGenreRulesPrompt } from "@/lib/validation/genre-rules-builder"
 
 // ✅ INTERFACES PARA TIPAGEM
 interface ChorusVariation {
@@ -37,7 +35,7 @@ export async function POST(request: Request) {
       humor: body.humor,
     })
 
-    const { genero, humor, tema, additionalRequirements = "", performanceMode = "standard" } = body
+    const { genero, humor, tema, additionalRequirements = "" } = body
 
     if (!genero || typeof genero !== "string" || !genero.trim()) {
       console.error("[v0] ❌ Gênero inválido:", genero)
@@ -48,27 +46,6 @@ export async function POST(request: Request) {
       console.error("[v0] ❌ Tema inválido:", tema)
       return NextResponse.json({ error: "Tema é obrigatório e deve ser uma string válida" }, { status: 400 })
     }
-
-    let genreRules
-    try {
-      genreRules = buildGenreRulesPrompt(genero)
-      console.log("[v0] ✅ Regras de gênero construídas com sucesso")
-    } catch (error) {
-      console.error("[v0] ❌ Erro ao construir regras de gênero:", error)
-      return NextResponse.json(
-        {
-          error: "Erro ao processar regras do gênero",
-          details: error instanceof Error ? error.message : "Erro desconhecido",
-        },
-        { status: 500 },
-      )
-    }
-
-    // ✅ CONFIGURAÇÃO DO GÊNERO
-    const genreConfig = getGenreConfig(genero)
-    const subGenreInfo = detectSubGenre(additionalRequirements)
-    const defaultRhythm = getGenreRhythm(genero)
-    const finalRhythm = subGenreInfo.rhythm || defaultRhythm
 
     const prompt = `Você é um compositor brasileiro especializado em ${genero}.
 
@@ -136,8 +113,6 @@ Retorne a letra completa com as tags de seção.`
       metadata: {
         score: 85,
         genre: genero,
-        rhythm: finalRhythm,
-        performanceMode: performanceMode,
       },
     })
   } catch (error) {
@@ -404,50 +379,6 @@ function applyStandardFormatting(lyrics: string, genre: string): string {
   }
 
   return formatted
-}
-
-// ✅ CONSTRÓI REQUISITOS
-function buildCompleteRequirements(
-  baseRequirements: string,
-  generatedChorus: ChorusData | null,
-  generatedHook: HookData | null,
-  performanceMode: string,
-): string {
-  let requirements = baseRequirements
-
-  const performanceInstruction =
-    performanceMode === "performance"
-      ? `🎭 MODO PERFORMÁTICO ATIVADO:
-- TAGS EM INGLÊS: [SECTION - Instruments]
-- VERSOS EM PORTUGUÊS: Apenas a parte cantada
-- BACKING VOCALS: (Backing: "Oh, oh") em inglês
-- INSTRUMENTOS: Descrições detalhadas em inglês`
-      : `📝 MODO PADRÃO:
-- Tags em inglês simples
-- Versos em português
-- Instrumentos básicos em inglês`
-
-  requirements += `
-
-${performanceInstruction}
-
-ESTRUTURA COMPLETA:
-[INTRO] → [VERSE 1] → [PRE-CHORUS] → [CHORUS] → [VERSE 2] → [CHORUS] → [BRIDGE] → [CHORUS] → [OUTRO]
-
-REGRAS DE IDIOMA:
-✅ PORTUGUÊS: Apenas versos cantados
-✅ INGLÊS: Tags, instruções, instrumentos, backing vocals
-❌ NUNCA MISTURE idiomas nos versos`
-
-  if (generatedChorus) {
-    requirements += `\n- Use o refrão sugerido ou crie um similar`
-  }
-
-  if (generatedHook) {
-    requirements += `\n- Integre o hook sugerido naturalmente`
-  }
-
-  return requirements
 }
 
 // ✅ FUNÇÕES AUXILIARES
