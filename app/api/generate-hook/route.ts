@@ -92,7 +92,6 @@ Retorne APENAS o JSON, sem markdown.`
         model: "openai/gpt-4o-mini", // ✅ Mais rápido e barato
         prompt,
         temperature: 0.8,
-        maxTokens: 400,
       })
 
       try {
