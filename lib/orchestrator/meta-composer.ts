@@ -199,10 +199,12 @@ RETORNE APENAS A LETRA REESCRITA, SEM EXPLICAÇÕES.`
           line,
           i,
           context,
-          false,
-          "",
           request.genre,
           getGenreMetrics(request.genre),
+          {
+            isPerformanceMode: request.performanceMode === "performance",
+            additionalRequirements: request.additionalRequirements || "",
+          },
         )
         correctedLines.push(corrected)
       } catch (error) {
