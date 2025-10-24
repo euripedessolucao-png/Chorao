@@ -90,7 +90,7 @@ export function SyllableValidator({ lyrics, maxSyllables, onValidate }: Syllable
       <CardHeader className="pb-2">
         <CardTitle className="text-sm flex items-center justify-between">
           Validador de Sílabas
-          <Badge variant={result.valid ? "default" : "destructive"}>
+          <Badge variant={result.valid ? "default" : "secondary"}>
             {result.valid ? "✓ Validado" : `${result.linesWithIssues} problemas`}
           </Badge>
         </CardTitle>
