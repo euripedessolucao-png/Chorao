@@ -1,84 +1,118 @@
-// lib/validation/punctuation-validator.ts
-
 /**
- * Valida e corrige pontuação em letras de música
- * PRESERVA instruções de performance ([...], (...))
+ * VALIDADOR DE PONTUAÇÃO PARA LETRAS MUSICAIS BRASILEIRAS
+ * Baseado nas regras do LETRAS.MUS.BR e Musixmatch
  */
+
+export interface PunctuationValidationResult {
+  isValid: boolean
+  errors: string[]
+  warnings: string[]
+  correctedLyrics: string
+}
+
 export class PunctuationValidator {
-  static validate(lyrics: string): {
-    isValid: boolean;
-    errors: Array<{ line: number; message: string }>;
-    correctedLyrics: string;
-  } {
-    const lines = lyrics.split("\n");
-    const errors: Array<{ line: number; message: string }> = [];
-    const correctedLines: string[] = [];
+  // ✅ Pontuação permitida em letras musicais
+  private static readonly ALLOWED_PUNCTUATION = [",", "?", "!", "...", "-", "—"]
+
+  // ❌ Pontuação proibida no fim de verso
+  private static readonly FORBIDDEN_AT_END = [".", ",", ";", ":"]
+
+  // ✅ Pontuação permitida no fim de verso
+  private static readonly ALLOWED_AT_END = ["?", "!", "..."]
+
+  /**
+   * Valida e corrige pontuação de uma letra musical
+   */
+  static validate(lyrics: string): PunctuationValidationResult {
+    const errors: string[] = []
+    const warnings: string[] = []
+    const lines = lyrics.split("\n")
+    const correctedLines: string[] = []
 
     lines.forEach((line, index) => {
-      let corrected = line;
+      const trimmed = line.trim()
 
-      // Pula linhas de instrução (tags e parênteses)
-      if (this.isInstructionLine(line)) {
-        correctedLines.push(line);
-        return;
+      // Ignora linhas vazias e marcadores de seção
+      if (!trimmed || trimmed.startsWith("[") || trimmed.startsWith("(")) {
+        correctedLines.push(line)
+        return
       }
 
-      // Corrige reticências mal formatadas
-      if (corrected.includes(". . .")) {
-        corrected = corrected.replace(/\. \. \./g, "...");
-        errors.push({ line: index + 1, message: "Reticências mal formatadas" });
+      let correctedLine = trimmed
+      const lineNumber = index + 1
+
+      const lastChar = trimmed.slice(-1)
+      const lastThreeChars = trimmed.slice(-3)
+
+      // Verifica reticências
+      if (lastThreeChars === "...") {
+        // ✅ Reticências são permitidas
+        correctedLines.push(line)
+        return
       }
 
-      // Corrige espaços antes de pontuação
-      corrected = corrected.replace(/\s+([.,!?;:])/g, "$1");
-
-      // Corrige falta de espaço após pontuação (só em letras, não em instruções)
-      corrected = corrected.replace(/([.,!?;:])([a-zA-Záàâãéèêíìîóòôõúùû])/g, "$1 $2");
-
-      // Corrige múltiplos espaços
-      corrected = corrected.replace(/ {2,}/g, " ");
-
-      // Corrige pontuação excessiva
-      corrected = corrected.replace(/!{3,}/g, "!");
-      corrected = corrected.replace(/\?{3,}/g, "?");
-      corrected = corrected.replace(/\.{4,}/g, "...");
-
-      if (corrected !== line) {
-        errors.push({ line: index + 1, message: "Pontuação corrigida" });
+      // Verifica pontuação proibida no fim
+      if (this.FORBIDDEN_AT_END.includes(lastChar)) {
+        errors.push(`Linha ${lineNumber}: Pontuação "${lastChar}" não permitida no fim de verso`)
+        // Remove pontuação proibida
+        correctedLine = trimmed.slice(0, -1).trim()
       }
 
-      correctedLines.push(corrected);
-    });
+      const commaCount = (trimmed.match(/,/g) || []).length
+      if (commaCount > 3) {
+        warnings.push(
+          `Linha ${lineNumber}: Muitas vírgulas (${commaCount}). Use apenas para separar elementos gramaticais, não pausas musicais.`,
+        )
+      }
+
+      const ellipsisCount = (trimmed.match(/\.\.\./g) || []).length
+      if (ellipsisCount > 1) {
+        warnings.push(`Linha ${lineNumber}: Múltiplas reticências. Use apenas uma por verso.`)
+      }
+
+      correctedLines.push(correctedLine)
+    })
 
     return {
       isValid: errors.length === 0,
       errors,
+      warnings,
       correctedLyrics: correctedLines.join("\n"),
-    };
+    }
   }
 
   /**
-   * Verifica se a linha é uma instrução (não deve ser corrigida)
+   * Corrige automaticamente pontuação de uma letra
    */
-  private static isInstructionLine(line: string): boolean {
-    const trimmed = line.trim();
-    return (
-      trimmed.startsWith("[") ||
-      trimmed.startsWith("(") ||
-      trimmed.startsWith("{") ||
-      trimmed.includes("Instruments:") ||
-      trimmed.includes("BPM:") ||
-      trimmed.includes("Key:")
-    );
+  static autoCorrect(lyrics: string): string {
+    const result = this.validate(lyrics)
+    return result.correctedLyrics
   }
 
-  static hasProblems(lyrics: string): boolean {
-    const result = this.validate(lyrics);
-    return !result.isValid;
-  }
+  /**
+   * Verifica se uma linha tem pontuação válida
+   */
+  static isLineValid(line: string): boolean {
+    const trimmed = line.trim()
 
-  static fix(lyrics: string): string {
-    const result = this.validate(lyrics);
-    return result.correctedLyrics;
+    // Ignora linhas vazias e marcadores
+    if (!trimmed || trimmed.startsWith("[") || trimmed.startsWith("(")) {
+      return true
+    }
+
+    const lastChar = trimmed.slice(-1)
+    const lastThreeChars = trimmed.slice(-3)
+
+    // Reticências são válidas
+    if (lastThreeChars === "...") {
+      return true
+    }
+
+    // Verifica se termina com pontuação proibida
+    if (this.FORBIDDEN_AT_END.includes(lastChar)) {
+      return false
+    }
+
+    return true
   }
 }
