@@ -78,7 +78,6 @@ Retorne APENAS a letra, sem explicações.`
       model: "openai/gpt-4o-mini", // ✅ mais rápido e barato
       prompt,
       temperature: 0.7,
-      maxTokens: 800,
     })
 
     // ✅ Processamento pós-geração
