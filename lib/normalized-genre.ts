@@ -1,4 +1,4 @@
-import { GENRE_CONFIGS } from "@/lib/genre-config"
+import { GENRE_CONFIGS, INSTRUMENTATION_RULES } from "@/lib/genre-config"
 
 /**
  * Normaliza o nome do gênero para corresponder exatamente às chaves do GENRE_CONFIGS
@@ -57,10 +57,13 @@ export function normalizeGenreName(genre: string): string {
 export function getGenreInstrumentation(genre: string): string[] {
   const normalizedGenre = normalizeGenreName(genre)
 
-  if (normalizedGenre in GENRE_CONFIGS) {
-    const config = GENRE_CONFIGS[normalizedGenre as keyof typeof GENRE_CONFIGS]
-    // Retorna instrumentação do config ou padrão
-    return config.instrumentation || ["Violão", "Guitarra", "Baixo", "Bateria"]
+  if (normalizedGenre in INSTRUMENTATION_RULES) {
+    const instrumentation = INSTRUMENTATION_RULES[normalizedGenre as keyof typeof INSTRUMENTATION_RULES]
+    // Parse the required instruments from the format "(Instrumental: ...)"
+    const match = instrumentation.required.match(/$$Instrumental: ([^)]+)$$/)
+    if (match) {
+      return match[1].split(", ").map((inst) => inst.trim())
+    }
   }
 
   return ["Violão", "Guitarra", "Baixo", "Bateria"]
