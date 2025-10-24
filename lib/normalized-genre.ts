@@ -7,7 +7,7 @@ export function normalizeGenreName(genre: string): string {
   const normalized = genre.trim()
 
   // Verifica se já existe exatamente no GENRE_CONFIGS
-  if (GENRE_CONFIGS[normalized]) {
+  if (normalized in GENRE_CONFIGS) {
     return normalized
   }
 
@@ -56,14 +56,14 @@ export function normalizeGenreName(genre: string): string {
  */
 export function getGenreInstrumentation(genre: string): string[] {
   const normalizedGenre = normalizeGenreName(genre)
-  const config = GENRE_CONFIGS[normalizedGenre]
 
-  if (!config) {
-    return ["Violão", "Guitarra", "Baixo", "Bateria"]
+  if (normalizedGenre in GENRE_CONFIGS) {
+    const config = GENRE_CONFIGS[normalizedGenre as keyof typeof GENRE_CONFIGS]
+    // Retorna instrumentação do config ou padrão
+    return config.instrumentation || ["Violão", "Guitarra", "Baixo", "Bateria"]
   }
 
-  // Retorna instrumentação do config ou padrão
-  return config.instrumentation || ["Violão", "Guitarra", "Baixo", "Bateria"]
+  return ["Violão", "Guitarra", "Baixo", "Bateria"]
 }
 
 /**
