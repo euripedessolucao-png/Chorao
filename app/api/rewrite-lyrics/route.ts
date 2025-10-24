@@ -83,7 +83,7 @@ Retorne APENAS a letra reescrita, sem explicações.`
     const { text } = await generateText({
       model: "openai/gpt-4o-mini", // mais rápido e barato
       prompt,
-      temperature: 0.6,
+      temperature: 0.8, // Aumentado para melhor variação mantendo essência
     })
 
     // Validação pós-geração
