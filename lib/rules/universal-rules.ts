@@ -1,6 +1,6 @@
 // lib/rules/universal-rules.ts
 
-import { countPoeticSyllables } from "./validation/syllable-counter-brasileiro" // ✅ CORRIGIDO
+import { countPoeticSyllables } from "../validation/syllable-counter-brasileiro" // ✅ CORRIGIDO
 
 export const GENRE_CONFIGS = {
   "Sertanejo Moderno Feminino": {
@@ -605,8 +605,7 @@ export const GENRE_CONFIGS = {
         without_comma: { min: 5, max: 8, acceptable_up_to: 9 },
       },
       breathability: "Toda linha deve caber em um fôlego natural ao cantar",
-      verse_counting_rule:
-        "Uma linha com vírgula (ex: 6+6, 7+5 ou 5+7 sílabas) conta como 2 VERSOS na estrutura total, não 1 verso",
+      verse_stacking: "UM VERSO POR LINHA (empilhamento brasileiro) - exceto quando segundo é continuação direta",
     },
     harmony_and_rhythm: {
       key: "C major",
