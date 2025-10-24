@@ -11,6 +11,7 @@ import {
   formatSertanejoPerformance,
   shouldUsePerformanceFormat,
 } from "@/lib/formatters/sertanejo-performance-formatter"
+import { formatInstrumentationForAI } from "@/lib/normalized-genre"
 
 export async function POST(request: NextRequest) {
   try {
@@ -101,6 +102,9 @@ Retorne APENAS a letra, sem explicações.`
       finalLyrics = formatSertanejoPerformance(finalLyrics)
     }
 
+    const instrumentation = formatInstrumentationForAI(genre)
+    finalLyrics = `${finalLyrics}\n\n${instrumentation}`
+
     // ✅ Validação de métrica
     const lines = finalLyrics.split("\n")
     let validLines = 0
@@ -141,34 +145,6 @@ Retorne APENAS a letra, sem explicações.`
       { status: 500 },
     )
   }
-}
-
-function getGenreInstruments(genre: string): string {
-  const instruments: Record<string, string> = {
-    Sertanejo: "acoustic guitar, viola, bass, drums, accordion",
-    "Sertanejo Moderno": "acoustic guitar, electric guitar, synth, bass, drums",
-    MPB: "nylon guitar, piano, bass, light percussion",
-    Funk: "drum machine, synth bass, samples",
-    Forró: "accordion, triangle, zabumba, bass",
-    Rock: "electric guitar, bass, drums, keyboard",
-    Pop: "synth, drum machine, bass, piano",
-    default: "guitar, bass, drums, keyboard",
-  }
-  return instruments[genre] || instruments.default
-}
-
-function getGenreBPM(genre: string): string {
-  const bpms: Record<string, string> = {
-    Sertanejo: "72",
-    "Sertanejo Moderno": "85",
-    MPB: "90",
-    Funk: "110",
-    Forró: "120",
-    Rock: "130",
-    Pop: "100",
-    default: "100",
-  }
-  return bpms[genre] || bpms.default
 }
 
 export async function GET() {

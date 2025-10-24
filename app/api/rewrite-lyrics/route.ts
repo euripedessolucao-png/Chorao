@@ -11,6 +11,7 @@ import {
   formatSertanejoPerformance,
   shouldUsePerformanceFormat,
 } from "@/lib/formatters/sertanejo-performance-formatter"
+import { formatInstrumentationForAI } from "@/lib/normalized-genre"
 
 export async function POST(request: NextRequest) {
   try {
@@ -102,6 +103,9 @@ Retorne APENAS a letra reescrita, sem explicações.`
     if (shouldUsePerformanceFormat(genre, performanceMode)) {
       finalLyrics = formatSertanejoPerformance(finalLyrics)
     }
+
+    const instrumentation = formatInstrumentationForAI(genre)
+    finalLyrics = `${finalLyrics}\n\n${instrumentation}`
 
     // Valida métrica real
     const lines = finalLyrics.split("\n")
