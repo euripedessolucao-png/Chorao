@@ -4,7 +4,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro" // ✅ CORRETO
-import { BRAZILIAN_GENRE_METRICS } from "@/lib/metrics/brazilian-metrics"
+import { getGenreMetrics } from "@/lib/metrics/brazilian-metrics"
 import { getUniversalRhymeRules } from "@/lib/validation/universal-rhyme-rules"
 
 export async function POST(request: NextRequest) {
@@ -15,16 +15,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Gênero e tema são obrigatórios" }, { status: 400 })
     }
 
-    // ✅ Obtém métricas reais do gênero
-    const genreMetrics = BRAZILIAN_GENRE_METRICS[genre as keyof typeof BRAZILIAN_GENRE_METRICS] 
-      || BRAZILIAN_GENRE_METRICS.default;
-    
-    const maxSyllables = Math.min(genreMetrics.syllableRange.max, 12);
-    const minSyllables = genreMetrics.syllableRange.min;
-    const rhymeRules = getUniversalRhymeRules(genre);
+    const genreMetrics = getGenreMetrics(genre)
+
+    const maxSyllables = Math.min(genreMetrics.syllableRange.max, 12)
+    const minSyllables = genreMetrics.syllableRange.min
+    const rhymeRules = getUniversalRhymeRules(genre)
 
     // ✅ Contexto flexível
-    const lyricsContext = lyrics ? `
+    const lyricsContext = lyrics
+      ? `
 📝 LETRA EXISTENTE (CONTEXTO OBRIGATÓRIO):
 ${lyrics}
 
@@ -32,7 +31,8 @@ ${lyrics}
 - Conectar-se PERFEITAMENTE com esta letra
 - Usar o MESMO tom emocional e linguagem
 - Manter TOTAL coerência com a história
-` : `
+`
+      : `
 🎯 CRIAR REFRÃO ORIGINAL PARA:
 - Tema: ${theme}
 - Humor: ${mood || "adaptável"}
@@ -66,7 +66,8 @@ PRIORIDADE ABSOLUTA:
 5. FÁCIL DE CANTAR JUNTO
 `
 
-    const advancedModeRules = advancedMode ? `
+    const advancedModeRules = advancedMode
+      ? `
 🔥 MODO AVANÇADO - CRITÉRIOS DE HIT
 
 GANCHO PREMIUM:
@@ -76,7 +77,8 @@ GANCHO PREMIUM:
 RIMAS:
 - ${rhymeRules.minRichRhymePercentage > 0 ? `Mínimo ${rhymeRules.minRichRhymePercentage}% rimas ricas` : "Rimas naturais aceitáveis"}
 - ${rhymeRules.maxFalseRhymePercentage === 0 ? "ZERO rimas falsas" : `Máximo ${rhymeRules.maxFalseRhymePercentage}% rimas falsas`}
-` : ""
+`
+      : ""
 
     const prompt = `${universalRules}
 ${advancedModeRules}
@@ -118,9 +120,10 @@ Gere as 5 variações de REFRÃO DE HIT agora:`
     let result: any = null
     let allValid = false
 
-    while (attempts < 2 && !allValid) { // ✅ Reduzido para 2 tentativas
+    while (attempts < 2 && !allValid) {
+      // ✅ Reduzido para 2 tentativas
       attempts++
-      
+
       const { text } = await generateText({
         model: "openai/gpt-4o-mini", // ✅ Mais rápido e barato
         prompt,
@@ -133,7 +136,7 @@ Gere as 5 variações de REFRÃO DE HIT agora:`
 
       try {
         result = JSON.parse(jsonMatch[0])
-        
+
         if (result.variations?.length) {
           allValid = true
           const violations: string[] = []
@@ -172,11 +175,13 @@ Gere as 5 variações de REFRÃO DE HIT agora:`
       }))
     }
 
-    return NextResponse.json(result || {
-      error: "Não foi possível gerar refrões válidos",
-      variations: [],
-      bestCommercialOptionIndex: -1
-    })
+    return NextResponse.json(
+      result || {
+        error: "Não foi possível gerar refrões válidos",
+        variations: [],
+        bestCommercialOptionIndex: -1,
+      },
+    )
   } catch (error) {
     console.error("[Chorus] ❌ Erro:", error)
     return NextResponse.json({ error: error instanceof Error ? error.message : "Erro desconhecido" }, { status: 500 })
