@@ -1,85 +1,144 @@
+// app/api/rewrite-lyrics/route.ts
+
 import { type NextRequest, NextResponse } from "next/server"
-import { MetaComposer } from "@/lib/orchestrator/meta-composer"
-import { MegaAggressiveCorrector } from "@/lib/orchestrator/mega-aggressive-corrector"
-export const maxDuration = 60
+import { generateText } from "ai"
+import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
+import { buildGenreRulesPrompt } from "@/lib/validation/genre-rules-builder"
+import { BRAZILIAN_GENRE_METRICS } from "@/lib/metrics/brazilian-metrics"
+import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro"
+import { getUniversalRhymeRules } from "@/lib/validation/universal-rhyme-rules"
 
 export async function POST(request: NextRequest) {
-  console.log("[v0] 🔍 INÍCIO DA ROTA REWRITE-LYRICS COM METACOMPOSER")
-
   try {
-    console.log("[v0] 📥 Recebendo requisição de reescrita...")
+    const { 
+      originalLyrics, // ✅ nome correto
+      genre,          // ✅ nome correto  
+      mood,
+      theme,
+      additionalRequirements,
+      title,
+      syllableTarget,
+      performanceMode = "standard"
+    } = await request.json()
 
-    const body = await request.json()
-    console.log("[v0] 📦 Body recebido:", {
-      hasLetraOriginal: !!body.letraOriginal,
-      genero: body.genero,
-      tema: body.tema,
-      humor: body.humor,
-      additionalRequirements: !!body.additionalRequirements,
-    })
-
-    const { letraOriginal, genero, humor, tema, additionalRequirements, titulo, formattingStyle, performanceMode } = body
-
-    if (!letraOriginal?.trim()) {
-      console.error("[v0] ❌ Letra original vazia")
+    // ✅ Validação robusta
+    if (!originalLyrics?.trim()) {
       return NextResponse.json({ error: "Letra original é obrigatória" }, { status: 400 })
     }
 
-    if (!genero || typeof genero !== "string" || !genero.trim()) {
-      console.error("[v0] ❌ Gênero inválido:", genero)
-      return NextResponse.json({ error: "Gênero é obrigatório e deve ser uma string válida" }, { status: 400 })
+    if (!genre || typeof genre !== "string" || !genre.trim()) {
+      return NextResponse.json({ error: "Gênero é obrigatório" }, { status: 400 })
     }
 
-    console.log("[v0] ✅ Validação de parâmetros OK")
-    console.log("[v0] 🚀 Iniciando MetaComposer para reescrita...")
+    console.log(`[API] 🎵 Reescrevendo para gênero: ${genre}`)
 
-    // ✅ METACOMPOSER LIGADO COM ELISÕES INTELIGENTES!
-    const result = await MetaComposer.compose({
-      genre: genero,
-      theme: tema || "Amor",
-      mood: humor || "Romântico",
-      originalLyrics: letraOriginal, // ✅ MODO REESCRITA
-      syllableTarget: { min: 7, max: 11, ideal: 9 },
-      useIntelligentElisions: true, // ✅ ELISÕES LIGADAS!
-      performanceMode: performanceMode || (formattingStyle === "performatico" ? "performance" : "standard"),
-      additionalRequirements: additionalRequirements,
-      applyFinalPolish: true,
-      useTerceiraVia: true
+    // ✅ Obtém métricas reais do gênero
+    const genreMetrics = BRAZILIAN_GENRE_METRICS[genre as keyof typeof BRAZILIAN_GENRE_METRICS] 
+      || BRAZILIAN_GENRE_METRICS.default;
+    
+    const maxSyllables = Math.min(genreMetrics.syllableRange.max, 12);
+    const minSyllables = genreMetrics.syllableRange.min;
+    
+    // ✅ Obtém regras de rima
+    const rhymeRules = getUniversalRhymeRules(genre);
+
+    // ✅ Constrói prompt com métrica realista
+    const genreRules = buildGenreRulesPrompt(genre)
+    const prompt = `Você é um compositor brasileiro especializado em ${genre}.
+
+TAREFA: Reescrever e melhorar a letra abaixo mantendo a essência.
+
+LETRA ORIGINAL:
+${originalLyrics}
+
+TEMA: ${theme || "Manter tema original"}
+HUMOR: ${mood || "Manter humor original"}
+${additionalRequirements ? `REQUISITOS: ${additionalRequirements}` : ""}
+
+REGRAS DE MÉTRICA:
+- Cada verso deve ter ENTRE ${minSyllables} E ${maxSyllables} SÍLABAS
+- Use contrações naturais: "você" → "cê", "para" → "pra", "estou" → "tô"
+- Evite versos com mais de ${maxSyllables} sílabas
+
+REGRAS DE RIMA:
+- ${rhymeRules.requirePerfectRhymes ? "Rimas devem ser perfeitas (consoantes)" : "Rimas naturais são aceitáveis"}
+- ${rhymeRules.minRichRhymePercentage > 0 ? `Mínimo de ${rhymeRules.minRichRhymePercentage}% de rimas ricas` : "Rimas pobres aceitáveis"}
+
+${genreRules.fullPrompt}
+
+INSTRUÇÕES:
+- Melhore a qualidade mantendo o tema e estrutura original
+- Corrija problemas de métrica e rima naturalmente  
+- Use linguagem brasileira autêntica
+- Evite clichês ("coraçãozinho", "lágrimas no rosto")
+- ${performanceMode === "performance" ? "Formate com tags em inglês: [Verse], [Chorus], [Bridge]" : "Use tags em português: [Verso], [Refrão], [Ponte]"}
+
+Retorne APENAS a letra reescrita, sem explicações.`
+
+    console.log(`[API] 🎵 Gerando com métrica ${minSyllables}-${maxSyllables} sílabas...`)
+
+    const { text } = await generateText({
+      model: "openai/gpt-4o-mini", // ✅ mais rápido e barato
+      prompt,
+      temperature: 0.6,
+      maxTokens: 800,
     })
 
-    console.log("[v0] ✅ MetaComposer concluído com sucesso!")
-    console.log("[v0] 📊 Resultado:", {
-      titulo: result.title,
-      tamanhoLetra: result.lyrics.length,
-      score: result.metadata.finalScore,
-      elisõesAplicadas: result.metadata.intelligentElisionsApplied,
-      performanceMode: result.metadata.performanceMode
-    })
+    // ✅ Validação pós-geração
+    let finalLyrics = capitalizeLines(text)
+    
+    // Remove explicações da IA
+    finalLyrics = finalLyrics
+      .split('\n')
+      .filter(line => !line.trim().startsWith('Retorne') && 
+                     !line.trim().startsWith('INSTRUÇÕES') &&
+                     !line.includes('Explicação'))
+      .join('\n')
+      .trim()
+
+    // ✅ Valida métrica real
+    const lines = finalLyrics.split('\n')
+    let validLines = 0
+    let totalLines = 0
+    
+    for (const line of lines) {
+      if (line.trim() && !line.startsWith('[') && !line.startsWith('(')) {
+        totalLines++
+        const syllables = countPoeticSyllables(line)
+        if (syllables >= minSyllables && syllables <= maxSyllables) {
+          validLines++
+        }
+      }
+    }
+    
+    const validityRatio = totalLines > 0 ? validLines / totalLines : 1
+    const finalScore = Math.round(validityRatio * 100)
+
+    console.log(`[API] ✅ Validação: ${finalScore}% das linhas dentro da métrica`)
 
     return NextResponse.json({
-      letra: result.lyrics,
-      titulo: result.title,
+      lyrics: finalLyrics, // ✅ nome consistente
+      title: title || "Letra Reescrita",
       metadata: {
-        ...result.metadata,
-        reescrita: true,
-        generoAplicado: genero
+        finalScore,
+        polishingApplied: true,
+        performanceMode,
+        syllableRange: { min: minSyllables, max: maxSyllables },
+        genre: genre,
       },
     })
   } catch (error) {
-    console.error("[v0] ❌ Erro no MetaComposer:", error)
-    console.error("[v0] Stack trace:", error instanceof Error ? error.stack : "N/A")
-
+    console.error("[API] ❌ Erro na reescrita:", error)
     return NextResponse.json(
       {
-        error: "Erro interno ao reescrever letra com MetaComposer",
-        message: error instanceof Error ? error.message : "Erro desconhecido",
-        stack: process.env.NODE_ENV === "development" && error instanceof Error ? error.stack : undefined,
+        error: error instanceof Error ? error.message : "Erro interno",
+        details: process.env.NODE_ENV === 'development' ? (error as any)?.stack : undefined
       },
-      { status: 500 },
+      { status: 500 }
     )
   }
 }
 
 export async function GET() {
-  return NextResponse.json({ error: "Método não permitido. Use POST." }, { status: 405 })
+  return NextResponse.json({ error: "Método não permitido" }, { status: 405 })
 }
