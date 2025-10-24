@@ -1,4 +1,4 @@
-import { countPoeticSyllables } from "./syllable-counter" // ← CORRIGIDO
+import { countPoeticSyllables } from "./syllable-counter-brasileiro"
 
 export interface BachataSyllableValidation {
   isValid: boolean
@@ -196,16 +196,16 @@ export function suggestBachataCorrections(line: string): string[] {
 
 // ✅ CORREÇÃO: Adicionar a função splitAtCaesura que estava faltando
 function splitAtCaesura(line: string): [string, string | null] {
-  const commaIndex = line.indexOf(',')
+  const commaIndex = line.indexOf(",")
   if (commaIndex !== -1) {
     return [line.substring(0, commaIndex).trim(), line.substring(commaIndex + 1).trim()]
   }
-  
-  const spaceIndex = line.lastIndexOf(' ', Math.floor(line.length / 2))
+
+  const spaceIndex = line.lastIndexOf(" ", Math.floor(line.length / 2))
   if (spaceIndex !== -1 && spaceIndex > 0 && spaceIndex < line.length - 1) {
     return [line.substring(0, spaceIndex).trim(), line.substring(spaceIndex + 1).trim()]
   }
-  
+
   return [line, null]
 }
 
