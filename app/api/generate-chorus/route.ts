@@ -127,7 +127,7 @@ Gere as 5 variações de REFRÃO DE HIT agora:`
       const { text } = await generateText({
         model: "openai/gpt-4o-mini", // ✅ Mais rápido e barato
         prompt,
-        temperature: 0.8,
+        temperature: 0.85,
       })
 
       const jsonMatch = text.match(/\{[\s\S]*\}/)

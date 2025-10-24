@@ -1,5 +1,3 @@
-// app/api/generate-lyrics/route.ts
-
 import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
@@ -16,7 +14,7 @@ import { formatInstrumentationForAI } from "@/lib/normalized-genre"
 export async function POST(request: NextRequest) {
   try {
     const {
-      genre, // ✅ nomes consistentes
+      genre,
       mood,
       theme,
       additionalRequirements = "",
@@ -24,7 +22,6 @@ export async function POST(request: NextRequest) {
       title,
     } = await request.json()
 
-    // ✅ Validação robusta
     if (!genre || typeof genre !== "string" || !genre.trim()) {
       return NextResponse.json({ error: "Gênero é obrigatório" }, { status: 400 })
     }
@@ -34,14 +31,11 @@ export async function POST(request: NextRequest) {
 
     console.log(`[API] 🎵 Criando letra para: ${genre} | Tema: ${theme}`)
 
-    // ✅ Obtém métricas reais
     const genreMetrics = getGenreMetrics(genre)
-
     const maxSyllables = Math.min(genreMetrics.syllableRange.max, 12)
     const minSyllables = genreMetrics.syllableRange.min
     const rhymeRules = getUniversalRhymeRules(genre)
 
-    // ✅ Constrói prompt com métrica realista
     const genreRules = buildGenreRulesPrompt(genre)
     const prompt = `Você é um compositor brasileiro especializado em ${genre}.
 
@@ -80,12 +74,11 @@ Retorne APENAS a letra, sem explicações.`
     console.log(`[API] 🎵 Gerando com métrica ${minSyllables}-${maxSyllables} sílabas...`)
 
     const { text } = await generateText({
-      model: "openai/gpt-4o-mini", // ✅ mais rápido e barato
+      model: "openai/gpt-4o-mini",
       prompt,
-      temperature: 0.85, // Aumentado para melhor criatividade
+      temperature: 0.85,
     })
 
-    // ✅ Processamento pós-geração
     let finalLyrics = capitalizeLines(text)
 
     // Remove explicações da IA
@@ -93,19 +86,35 @@ Retorne APENAS a letra, sem explicações.`
       .split("\n")
       .filter(
         (line) =>
-          !line.trim().startsWith("Retorne") && !line.trim().startsWith("REGRAS") && !line.includes("Explicação"),
+          !line.trim().startsWith("Retorne") &&
+          !line.trim().startsWith("REGRAS") &&
+          !line.includes("Explicação"),
       )
       .join("\n")
       .trim()
 
+    // 🔁 PÓS-GERAÇÃO: Validação e correção para Sertanejo Raiz
+    if (genre.toLowerCase().includes("raiz")) {
+      const forbiddenInstruments = ["electric guitar", "808", "synth", "drum machine", "bateria eletrônica"]
+      const lowerLyrics = finalLyrics.toLowerCase()
+      if (forbiddenInstruments.some(inst => lowerLyrics.includes(inst))) {
+        // Substitui termos proibidos por alternativas acústicas
+        finalLyrics = finalLyrics
+          .replace(/electric guitar/gi, "acoustic guitar")
+          .replace(/808|drum machine|bateria eletrônica/gi, "light percussion")
+          .replace(/synth/gi, "sanfona")
+      }
+    }
+
+    // Aplica formatação de performance se necessário
     if (shouldUsePerformanceFormat(genre, performanceMode)) {
-      finalLyrics = formatSertanejoPerformance(finalLyrics)
+      finalLyrics = formatSertanejoPerformance(finalLyrics, genre)
     }
 
     const instrumentation = formatInstrumentationForAI(genre)
     finalLyrics = `${finalLyrics}\n\n${instrumentation}`
 
-    // ✅ Validação de métrica
+    // Validação de métrica
     const lines = finalLyrics.split("\n")
     let validLines = 0
     let totalLines = 0
