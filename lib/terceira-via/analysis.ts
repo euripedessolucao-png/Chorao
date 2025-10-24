@@ -3,6 +3,23 @@
 import { countPoeticSyllables } from "../validation/syllable-counter-brasileiro"
 import { GENRE_CONFIGS } from "../genre-config"
 
+export interface TerceiraViaAnalysis {
+  originalidade: number
+  profundidade_emocional: number
+  tecnica_compositiva: number
+  adequacao_genero: number
+  score_geral: number
+  sugestoes: string[]
+  pontos_fortes: string[]
+  pontos_fracos: string[]
+  metric_analysis: {
+    syllable_compliance: number
+    poetic_contractions: number
+    genre_rhythm_match: number
+    structural_integrity: number
+  }
+}
+
 // ... resto do código ...
 
 function calculateSyllableCompliance(lines: string[], genre: string): number {
@@ -21,8 +38,7 @@ function calculateSyllableCompliance(lines: string[], genre: string): number {
     if ("absolute_max" in rules) {
       isValid = syllables <= rules.absolute_max
     } else if ("without_comma" in rules) {
-      isValid = syllables >= rules.without_comma.min && 
-                syllables <= rules.without_comma.acceptable_up_to
+      isValid = syllables >= rules.without_comma.min && syllables <= rules.without_comma.acceptable_up_to
     }
 
     if (isValid) compliantCount++
@@ -162,13 +178,12 @@ export function analisarTerceiraVia(lyrics: string, genre: string, theme: string
   const melodiaRitmo = analisarMelodiaRitmo(lyrics, genre)
   tecnica = Math.min(100, tecnica + Math.round((melodiaRitmo.flow_score - 70) / 3))
 
-  const config = getGenreConfig(genre)
+  const config = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS]
   let adequacao = 70
 
-  const genreMetrics = ADVANCED_BRAZILIAN_METRICS[genre as keyof typeof ADVANCED_BRAZILIAN_METRICS]
-  if (genreMetrics) {
+  if (config && config.metrics) {
     const avgSyllables = lines.reduce((sum, line) => sum + countPoeticSyllables(line), 0) / lines.length
-    const targetSyllables = genreMetrics.syllablesPerLine
+    const targetSyllables = config.metrics.syllablesPerLine
 
     if (Math.abs(avgSyllables - targetSyllables) <= 2) {
       adequacao += 15
@@ -242,18 +257,12 @@ function checkAdvancedRhyme(line1: string, line2: string): boolean {
   )
 }
 
-function calculateSyllableCompliance(lines: string[], genre: string): number {
-  if (lines.length === 0) return 0
-
-  const genreMetrics = ADVANCED_BRAZILIAN_METRICS[genre as keyof typeof ADVANCED_BRAZILIAN_METRICS]
-  if (!genreMetrics) return 0.7
-
-  const compliantLines = lines.filter((line) => {
-    const syllables = countPoeticSyllables(line)
-    return syllables >= genreMetrics.syllablesPerLine - 2 && syllables <= genreMetrics.maxSyllables
-  })
-
-  return compliantLines.length / lines.length
+function analisarMelodiaRitmo(lyrics: string, genre: string): { flow_score: number; melodic_suggestions: string[] } {
+  // Placeholder function for melody and rhythm analysis
+  return {
+    flow_score: 85,
+    melodic_suggestions: ["Melhora o ritmo para maior impacto"],
+  }
 }
 
 export function analisarTendenciasCompositivas(
