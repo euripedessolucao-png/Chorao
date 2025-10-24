@@ -1,36 +1,8 @@
-// app/editar/page.tsx
-
 "use client"
 
-import { useState, useEffect } from "react"
-import { Navigation } from "@/components/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Slider } from "@/components/ui/slider"
-import { RefreshCw, Save, Copy, Search, Loader2, Star, Trophy, Trash2, Zap, Wand2 } from "lucide-react"
+import { useState } from "react"
 import { toast } from "sonner"
-import { EMOTIONS } from "@/lib/genres"
-import { GenreSelect } from "@/components/genre-select"
-import { SyllableValidatorEditable } from "@/components/syllable-validator-editable"
-import { InspirationManager } from "@/components/inspiration-manager"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { HookGenerator } from "@/components/hook-generator"
-import { BRAZILIAN_GENRE_METRICS } from "@/lib/metrics/brazilian-metrics" // ✅ IMPORT CORRETO
-
-// REMOVA a constante local BRAZILIAN_GENRE_METRICS
+import { getGenreMetrics } from "@/lib/metrics/brazilian-metrics"
 
 type ChorusVariation = {
   chorus: string
@@ -45,7 +17,19 @@ type ChorusResponse = {
 }
 
 export default function EditarPage() {
-  // ... estados iguais ...
+  const [lyrics, setLyrics] = useState("")
+  const [genre, setGenre] = useState("")
+  const [mood, setMood] = useState("")
+  const [theme, setTheme] = useState("")
+  const [title, setTitle] = useState("")
+  const [formattingStyle, setFormattingStyle] = useState<"standard" | "performatico">("standard")
+  const [additionalReqs, setAdditionalReqs] = useState("")
+  const [advancedMode, setAdvancedMode] = useState(false)
+  const [selectedEmotions, setSelectedEmotions] = useState<string[]>([])
+  const [inspirationText, setInspirationText] = useState("")
+  const [metaphorSearch, setMetaphorSearch] = useState("")
+  const [isEditing, setIsEditing] = useState(false)
+  const [savedInspirations, setSavedInspirations] = useState<Array<{ text: string; timestamp: number }>>([])
 
   const handleEditLyrics = async () => {
     if (!lyrics.trim()) {
@@ -61,22 +45,21 @@ export default function EditarPage() {
     setIsEditing(true)
 
     try {
-      // ✅ Obtém métricas reais do gênero
-      const genreMetrics = BRAZILIAN_GENRE_METRICS[genre as keyof typeof BRAZILIAN_GENRE_METRICS] 
-        || BRAZILIAN_GENRE_METRICS.default;
-      
+      const genreMetrics = getGenreMetrics(genre)
+
       const syllableConfig = {
         min: genreMetrics.syllableRange.min,
         max: genreMetrics.syllableRange.max,
-        ideal: genreMetrics.syllableRange.ideal || Math.floor((genreMetrics.syllableRange.min + genreMetrics.syllableRange.max) / 2)
-      };
+        ideal:
+          genreMetrics.syllableRange.ideal ||
+          Math.floor((genreMetrics.syllableRange.min + genreMetrics.syllableRange.max) / 2),
+      }
 
       const inspirationsText = savedInspirations.map((i) => i.text).join("\n\n")
 
-      // ✅ Nomes de campo alinhados com a API
       const requestBody = {
-        originalLyrics: lyrics, // ✅ não "letraOriginal"
-        genre,                  // ✅ não "genero"
+        originalLyrics: lyrics,
+        genre,
         mood: mood || "Romântico",
         theme: theme || "Amor",
         creativity: "equilibrado",
@@ -104,7 +87,7 @@ export default function EditarPage() {
         throw new Error(data.error || `Erro ${response.status} na API`)
       }
 
-      if (!data.lyrics) { // ✅ "lyrics", não "letra"
+      if (!data.lyrics) {
         throw new Error("Resposta da API não contém letra")
       }
 
@@ -123,6 +106,4 @@ export default function EditarPage() {
       setIsEditing(false)
     }
   }
-
-  // ... resto do componente igual, com as mesmas correções de nomes de campos ...
 }
