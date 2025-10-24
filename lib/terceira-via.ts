@@ -1,9 +1,9 @@
 // lib/terceira-via/terceira-via-orchestrator.ts
 
-import { ThirdWayEngine } from "./third-way-converter"
-import type { TerceiraViaAnalysis } from "./analysis"
+import { ThirdWayEngine } from "./terceira-via/third-way-converter"
+import type { TerceiraViaAnalysis } from "./terceira-via/analysis"
 import { analisarTerceiraVia } from "./terceira-via/analysis"
-import { isValidImprovement } from "./validation" // Importing isValidImprovement function
+import { isValidImprovement } from "./terceira-via/validation"
 
 // ✅ Tipagem explícita para configuração de gênero
 export interface GenreConfig {
