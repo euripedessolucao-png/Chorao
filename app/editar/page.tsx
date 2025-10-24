@@ -131,23 +131,14 @@ export default function EditarPage() {
           Math.floor((genreMetrics.syllableRange.min + genreMetrics.syllableRange.max) / 2),
       }
 
-      const inspirationsText = savedInspirations.map((i) => i.text).join("\n\n")
-
       const requestBody = {
         originalLyrics: lyrics,
         genre,
         mood: mood || "Romântico",
         theme: theme || "Amor",
-        creativity: "equilibrado",
-        formattingStyle: formattingStyle,
         additionalRequirements: additionalReqs,
-        advancedMode: advancedMode,
-        universalPolish: true,
-        syllableTarget: syllableConfig,
-        emotions: selectedEmotions,
-        inspiration: inspirationsText || inspirationText,
-        metaphors: metaphorSearch,
         title,
+        syllableTarget: syllableConfig,
         performanceMode: formattingStyle === "performatico" ? "performance" : "standard",
       }
 

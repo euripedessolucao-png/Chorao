@@ -108,20 +108,13 @@ export default function ReescreverPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           originalLyrics,
-          genero: genre,
-          humor: mood,
-          tema: theme,
-          criatividade: creativity[0] < 33 ? "conservador" : creativity[0] < 66 ? "equilibrado" : "ousado",
-          inspiracao: inspirationText,
-          metaforas: metaphorSearch,
-          emocoes: selectedEmotions,
-          titulo: title,
-          formattingStyle: formattingStyle,
+          genre: genre, // ✅ Changed from "genero" to "genre"
+          mood: mood,
+          theme: theme,
           additionalRequirements: additionalReqs,
-          advancedMode: advancedMode,
-          universalPolish: universalPolish,
+          title: title,
           syllableTarget: syllableConfig,
-          metrics: genreMetrics,
+          performanceMode: formattingStyle === "performatico" ? "performance" : "standard",
         }),
       })
 
