@@ -1,6 +1,6 @@
-// lib/genre-config.ts
+// lib/rules/universal-rules.ts
 
-import { countPoeticSyllables } from "./validation/syllable-counter-brasileiro"; // ✅ CORRIGIDO
+import { countPoeticSyllables } from "./validation/syllable-counter-brasileiro" // ✅ CORRIGIDO
 
 export const GENRE_CONFIGS = {
   "Sertanejo Moderno Feminino": {
@@ -553,7 +553,9 @@ export const GENRE_CONFIGS = {
         with_comma: { max_before_comma: 7, max_after_comma: 5, total_max: 12 },
         without_comma: { min: 5, max: 8, acceptable_up_to: 9 },
       },
-      verse_counting_rule: "Uma linha com vírgula (6+6, 7+5 ou 5+7 sílabas) conta como 2 VERSOS na estrutura total",
+      breathability: "Toda linha deve caber em um fôlego natural ao cantar",
+      verse_counting_rule:
+        "Uma linha com vírgula (6+6, 7+5 ou 5+7 sílabas) conta como 2 VERSOS na estrutura total, não 1 verso",
     },
     harmony_and_rhythm: {
       key: "D major",
@@ -771,6 +773,7 @@ export const GENRE_CONFIGS = {
         with_comma: { max_before_comma: 7, max_after_comma: 5, total_max: 12 },
         without_comma: { min: 5, max: 8, acceptable_up_to: 9 },
       },
+      breathability: "Toda linha deve caber em um fôlego natural ao cantar",
       verse_counting_rule: "Uma linha com vírgula (6+6, 7+5 ou 5+7 sílabas) conta como 2 VERSOS na estrutura total",
     },
     harmony_and_rhythm: {
@@ -780,12 +783,12 @@ export const GENRE_CONFIGS = {
       rhythm_style: "Samba tradicional com pandeiro, cavaquinho, surdo e tamborim",
     },
   },
-} as const;
+} as const
 
-export type GenreConfig = (typeof GENRE_CONFIGS)[keyof typeof GENRE_CONFIGS];
+export type GenreConfig = (typeof GENRE_CONFIGS)[keyof typeof GENRE_CONFIGS]
 
 export function getGenreConfig(genre: string): GenreConfig & { name: string } {
-  const config = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS];
+  const config = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS]
   if (!config) {
     return {
       name: genre,
@@ -815,12 +818,11 @@ export function getGenreConfig(genre: string): GenreConfig & { name: string } {
       },
       prosody_rules: {
         syllable_count: {
-          with_comma: { max_before_comma: 7, max_after_comma: 5, total_max: 12 },
-          without_comma: { min: 5, max: 8, acceptable_up_to: 9 },
+          absolute_max: 12,
+          rule: "NUNCA exceder 12 sílabas poéticas por verso - limite humano de canto",
         },
         breathability: "Toda linha deve caber em um fôlego natural ao cantar",
-        verse_counting_rule:
-          "Uma linha com vírgula (ex: 6+6, 7+5 ou 5+7 sílabas) conta como 2 VERSOS na estrutura total, não 1 verso",
+        verse_stacking: "UM VERSO POR LINHA (empilhamento brasileiro) - exceto quando segundo é continuação direta",
       },
       harmony_and_rhythm: {
         key: "C major" as any,
@@ -828,98 +830,182 @@ export function getGenreConfig(genre: string): GenreConfig & { name: string } {
         bpm_range: { min: 90, max: 110, ideal: 100 },
         rhythm_style: "Ritmo brasileiro moderno",
       },
-    } as unknown as GenreConfig & { name: string };
+    } as unknown as GenreConfig & { name: string }
   }
   return {
     name: genre,
     ...config,
-  };
+  }
 }
 
 export function validateLyrics(
   lyrics: string,
   genre: string,
 ): {
-  valid: boolean;
-  errors: string[];
-  warnings: string[];
+  valid: boolean
+  errors: string[]
+  warnings: string[]
 } {
-  const errors: string[] = [];
-  const warnings: string[] = [];
-  const config = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS];
+  const errors: string[] = []
+  const warnings: string[] = []
+  const config = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS]
   if (!config) {
-    return { valid: true, errors: [], warnings: ["Gênero não encontrado nas configurações"] };
+    return { valid: true, errors: [], warnings: ["Gênero não encontrado nas configurações"] }
   }
 
   // Validar palavras proibidas
-  const lyricsLower = lyrics.toLowerCase();
+  const lyricsLower = lyrics.toLowerCase()
   if (config.language_rules.forbidden) {
     Object.entries(config.language_rules.forbidden).forEach(([category, words]) => {
       words.forEach((word: string) => {
         if (lyricsLower.includes(word.toLowerCase())) {
-          errors.push(`Palavra/frase proibida encontrada (${category}): "${word}"`);
+          errors.push(`Palavra/frase proibida encontrada (${category}): "${word}"`)
         }
-      });
-    });
+      })
+    })
   }
 
   // Validar contagem de sílabas - USANDO O NOVO SISTEMA
-  const lines = lyrics.split("\n").filter((line) => line.trim() && !line.startsWith("["));
+  const lines = lyrics.split("\n").filter((line) => line.trim() && !line.startsWith("["))
   lines.forEach((line, index) => {
-    const syllables = countPoeticSyllables(line); // ← AGORA CORRETO
-    const rules = config.prosody_rules.syllable_count;
+    const syllables = countPoeticSyllables(line) // ← AGORA CORRETO
+    const rules = config.prosody_rules.syllable_count
 
     if ("with_comma" in rules && line.includes(",")) {
-      const [before, after] = line.split(",", 2);
-      const beforeCount = countPoeticSyllables(before.trim());
-      const afterCount = countPoeticSyllables(after?.trim() || "");
+      const [before, after] = line.split(",", 2)
+      const beforeCount = countPoeticSyllables(before.trim())
+      const afterCount = countPoeticSyllables(after?.trim() || "")
       if (beforeCount > rules.with_comma.max_before_comma) {
-        warnings.push(`Linha ${index + 1}: Muitas sílabas antes da vírgula (${beforeCount})`);
+        warnings.push(`Linha ${index + 1}: Muitas sílabas antes da vírgula (${beforeCount})`)
       }
       if (afterCount > rules.with_comma.max_after_comma) {
-        warnings.push(`Linha ${index + 1}: Muitas sílabas depois da vírgula (${afterCount})`);
+        warnings.push(`Linha ${index + 1}: Muitas sílabas depois da vírgula (${afterCount})`)
       }
     } else if ("absolute_max" in rules) {
       if (syllables > rules.absolute_max) {
-        errors.push(`Linha ${index + 1}: Excede o limite de ${rules.absolute_max} sílabas (${syllables})`);
+        errors.push(`Linha ${index + 1}: Excede o limite de ${rules.absolute_max} sílabas (${syllables})`)
       }
     } else if ("without_comma" in rules) {
       if (syllables < rules.without_comma.min || syllables > rules.without_comma.acceptable_up_to) {
-        warnings.push(`Linha ${index + 1}: Contagem de sílabas fora do ideal (${syllables})`);
+        warnings.push(`Linha ${index + 1}: Contagem de sílabas fora do ideal (${syllables})`)
       }
     }
-  });
+  })
 
   return {
     valid: errors.length === 0,
     errors,
     warnings,
-  };
+  }
 }
 
 // ✅ Mantém as regras de instrumentação e subgêneros (já estão corretas)
 export const INSTRUMENTATION_RULES = {
   // ... (mantido igual, pois está correto)
-} as const;
+} as const
 
 export const SUB_GENRE_INSTRUMENTS = {
   // ... (mantido igual)
-} as const;
+} as const
 
 export function detectSubGenre(additionalRequirements: string | undefined): {
-  subGenre: string | null;
-  instruments: string | null;
-  bpm: number | null;
-  rhythm: string | null;
-  styleNote: string | null;
+  subGenre: string | null
+  instruments: string | null
+  bpm: number | null
+  rhythm: string | null
+  styleNote: string | null
 } {
   // ... (mantido igual)
 }
 
 export const GENRE_RHYTHMS = {
   // ... (mantido igual)
-} as const;
+} as const
 
 export function getGenreRhythm(genre: string): string {
-  return GENRE_RHYTHMS[genre as keyof typeof GENRE_RHYTHMS] || genre;
+  return GENRE_RHYTHMS[genre as keyof typeof GENRE_RHYTHMS] || genre
+}
+
+export const UNIVERSAL_RULES = {
+  syllables: {
+    max_syllables: 12, // Limite universal de sílabas por linha
+    ideal_range: { min: 5, max: 10 },
+  },
+  breathability: {
+    max_words_per_line: 15,
+    max_characters_per_line: 80,
+  },
+} as const
+
+export interface RhymeRules {
+  min_rich_rhymes: number
+  max_false_rhymes: number
+  required_rhyme_scheme?: string
+  allow_assonance: boolean
+}
+
+export function getRhymeRulesForGenre(genre: string): RhymeRules {
+  // Regras padrão para todos os gêneros
+  const defaultRules: RhymeRules = {
+    min_rich_rhymes: 0.6, // 60% de rimas ricas
+    max_false_rhymes: 0.2, // Máximo 20% de rimas falsas
+    allow_assonance: true,
+  }
+
+  // Regras específicas por gênero
+  const genreRules: Record<string, Partial<RhymeRules>> = {
+    "Sertanejo Moderno Feminino": {
+      min_rich_rhymes: 0.7,
+      max_false_rhymes: 0.15,
+    },
+    "Sertanejo Moderno Masculino": {
+      min_rich_rhymes: 0.7,
+      max_false_rhymes: 0.15,
+    },
+    "Sertanejo Universitário": {
+      min_rich_rhymes: 0.6,
+      max_false_rhymes: 0.2,
+    },
+    "Funk Carioca": {
+      min_rich_rhymes: 0.5,
+      max_false_rhymes: 0.3,
+      allow_assonance: true,
+    },
+    MPB: {
+      min_rich_rhymes: 0.8,
+      max_false_rhymes: 0.1,
+    },
+  }
+
+  return {
+    ...defaultRules,
+    ...genreRules[genre],
+  }
+}
+
+export function buildUniversalRulesPrompt(genre: string): string {
+  const rhymeRules = getRhymeRulesForGenre(genre)
+
+  return `
+REGRAS UNIVERSAIS DE COMPOSIÇÃO:
+
+1. SÍLABAS POÉTICAS:
+   - Máximo absoluto: ${UNIVERSAL_RULES.syllables.max_syllables} sílabas por linha
+   - Faixa ideal: ${UNIVERSAL_RULES.syllables.ideal_range.min}-${UNIVERSAL_RULES.syllables.ideal_range.max} sílabas
+   - Toda linha deve caber em um fôlego natural ao cantar
+
+2. RIMAS:
+   - Mínimo de rimas ricas: ${(rhymeRules.min_rich_rhymes * 100).toFixed(0)}%
+   - Máximo de rimas falsas: ${(rhymeRules.max_false_rhymes * 100).toFixed(0)}%
+   - Assonância permitida: ${rhymeRules.allow_assonance ? "Sim" : "Não"}
+
+3. RESPIRABILIDADE:
+   - Máximo ${UNIVERSAL_RULES.breathability.max_words_per_line} palavras por linha
+   - Máximo ${UNIVERSAL_RULES.breathability.max_characters_per_line} caracteres por linha
+
+4. NATURALIDADE:
+   - Use linguagem coloquial brasileira
+   - Evite palavras forçadas ou rebuscadas
+   - Mantenha o fluxo natural da fala
+`.trim()
 }
