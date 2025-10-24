@@ -3,7 +3,7 @@
  * Aplica as 6 técnicas de correção AUTOMATICAMENTE após a geração da IA
  */
 
-import { countPoeticSyllables } from "./syllable-counter"
+import { countPoeticSyllables } from "./syllable-counter-brasileiro"
 import { applyErrorSolutionDictionary } from "./error-solution-dictionary"
 
 export interface CorrectionResult {

@@ -26,7 +26,7 @@
  * - Técnicas poéticas: elisão, crase, sinalefa
  */
 
-import { countPoeticSyllables } from "./syllable-counter"
+import { countPoeticSyllables } from "./syllable-counter-brasileiro"
 
 interface ReductionRule {
   pattern: RegExp
