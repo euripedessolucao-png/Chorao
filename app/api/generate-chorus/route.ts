@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
 import { getGenreConfig, detectSubGenre, getGenreRhythm } from "@/lib/genre-config"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
-import { countPoeticSyllables } from "@/lib/validation/syllable-counter"
+import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro"
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,7 +19,8 @@ export async function POST(request: NextRequest) {
     const finalRhythm = subGenreInfo.rhythm || defaultRhythm
 
     // ✅ CONTEXTO FLEXÍVEL - FUNCIONA COM OU SEM LETRA
-    const lyricsContext = lyrics ? `
+    const lyricsContext = lyrics
+      ? `
 📝 LETRA EXISTENTE (CONTEXTO OBRIGATÓRIO):
 ${lyrics}
 
@@ -28,7 +29,8 @@ ${lyrics}
 - Usar o MESMO tom emocional e linguagem
 - Manter TOTAL coerência com a história
 - Parecer parte NATURAL desta composição
-` : `
+`
+      : `
 🎯 CRIAR REFRÃO ORIGINAL PARA:
 - Tema: ${theme}
 - Humor: ${mood || "adaptável"}
@@ -80,7 +82,8 @@ CARACTERÍSTICAS DE HIT:
 - Melodia implícita grudenta
 `
 
-    const advancedModeRules = advancedMode ? `
+    const advancedModeRules = advancedMode
+      ? `
 🔥 MODO AVANÇADO - CRITÉRIOS DE HIT
 
 GANCHO PREMIUM:
@@ -97,13 +100,16 @@ LINGUAGEM LIMPA:
 - Adequado para rádio e streaming
 - Zero palavrões pesados
 - Respeito e bom gosto
-` : ""
+`
+      : ""
 
-    const metaforasRule = additionalRequirements ? `
+    const metaforasRule = additionalRequirements
+      ? `
 ⚡ REQUISITOS ESPECIAIS (PRIORIDADE MÁXIMA):
 ${additionalRequirements}
 
-Se metáforas especificadas, são OBRIGATÓRIAS no refrão.` : ""
+Se metáforas especificadas, são OBRIGATÓRIAS no refrão.`
+      : ""
 
     const prompt = `${universalRules}
 ${advancedModeRules}
@@ -154,7 +160,7 @@ FORMATO JSON:
     }
   ],
   "bestCommercialOptionIndex": 0-4,
-  "generationType": "${lyrics ? 'BasedOnExistingLyrics' : 'OriginalCreation'}"
+  "generationType": "${lyrics ? "BasedOnExistingLyrics" : "OriginalCreation"}"
 }
 
 CRITÉRIOS DE SCORE:
@@ -164,7 +170,7 @@ CRITÉRIOS DE SCORE:
 - <8: Refaça, não atinge padrão de hit
 
 IMPORTANTE:
-- ${lyrics ? 'Use contexto da letra existente' : 'Crie refrão autônomo e impactante'}
+- ${lyrics ? "Use contexto da letra existente" : "Crie refrão autônomo e impactante"}
 - Cada variação TOTALMENTE DIFERENTE
 - Todos scores 8-10 (padrão de hit)
 - Melhor opção: score 10
@@ -173,7 +179,7 @@ IMPORTANTE:
 
 Gere as 5 variações de REFRÃO DE HIT agora:`
 
-    console.log(`[Chorus-Generator] Gerando refrão: ${lyrics ? 'baseado em letra existente' : 'criação original'}`)
+    console.log(`[Chorus-Generator] Gerando refrão: ${lyrics ? "baseado em letra existente" : "criação original"}`)
 
     let attempts = 0
     let result: any = null
@@ -242,7 +248,7 @@ Gere as 5 variações de REFRÃO DE HIT agora:`
       }))
     }
 
-    console.log(`[Chorus-Generator] ✅ Refrão gerado com sucesso! Tipo: ${lyrics ? 'Baseado em letra' : 'Original'}`)
+    console.log(`[Chorus-Generator] ✅ Refrão gerado com sucesso! Tipo: ${lyrics ? "Baseado em letra" : "Original"}`)
 
     return NextResponse.json(result)
   } catch (error) {
