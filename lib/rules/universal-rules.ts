@@ -914,7 +914,60 @@ export function detectSubGenre(additionalRequirements: string | undefined): {
   rhythm: string | null
   styleNote: string | null
 } {
-  // ... (mantido igual)
+  if (!additionalRequirements) {
+    return {
+      subGenre: null,
+      instruments: null,
+      bpm: null,
+      rhythm: null,
+      styleNote: null,
+    }
+  }
+
+  const lowerReqs = additionalRequirements.toLowerCase()
+
+  // Detect sub-genre based on keywords
+  let subGenre: string | null = null
+  let instruments: string | null = null
+  let bpm: number | null = null
+  let rhythm: string | null = null
+  const styleNote: string | null = null
+
+  // Check for specific sub-genres
+  if (lowerReqs.includes("raiz") || lowerReqs.includes("tradicional")) {
+    subGenre = "Sertanejo Raiz"
+    instruments = "viola caipira, sanfona, violão acústico"
+    bpm = 90
+    rhythm = "Moda de viola tradicional"
+  } else if (lowerReqs.includes("universitário")) {
+    subGenre = "Sertanejo Universitário"
+    instruments = "violão, guitarra, bateria"
+    bpm = 100
+    rhythm = "Sertanejo universitário com groove animado"
+  } else if (lowerReqs.includes("funk") && lowerReqs.includes("melody")) {
+    subGenre = "Funk Melody"
+    instruments = "bateria eletrônica, sintetizador, baixo"
+    bpm = 128
+    rhythm = "Funk melody com melodia romântica"
+  } else if (lowerReqs.includes("funk") && lowerReqs.includes("consciente")) {
+    subGenre = "Funk Consciente"
+    instruments = "bateria eletrônica, sintetizador"
+    bpm = 130
+    rhythm = "Funk com mensagem social"
+  } else if (lowerReqs.includes("pagode")) {
+    subGenre = "Pagode Romântico"
+    instruments = "cavaquinho, pandeiro, tantã"
+    bpm = 100
+    rhythm = "Pagode romântico"
+  }
+
+  return {
+    subGenre,
+    instruments,
+    bpm,
+    rhythm,
+    styleNote,
+  }
 }
 
 export const GENRE_RHYTHMS = {
