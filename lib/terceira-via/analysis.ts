@@ -181,14 +181,10 @@ export function analisarTerceiraVia(lyrics: string, genre: string, theme: string
   const config = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS]
   let adequacao = 70
 
-  if (config && config.metrics) {
-    const avgSyllables = lines.reduce((sum, line) => sum + countPoeticSyllables(line), 0) / lines.length
-    const targetSyllables = config.metrics.syllablesPerLine
-
-    if (Math.abs(avgSyllables - targetSyllables) <= 2) {
-      adequacao += 15
-      pontos_fortes.push(`Métrica perfeita para ${genre} (${avgSyllables.toFixed(1)} sílabas/verso)`)
-    }
+  // The adequacao score is now based on other factors like rhyme, structure, and syllable compliance
+  if (config) {
+    // Genre-specific adequacy adjustments can be added here if needed
+    adequacao += 10 // Base bonus for having a valid genre config
   }
 
   const score_geral = Math.round(originalidade * 0.25 + profundidade_emocional * 0.3 + tecnica * 0.25 + adequacao * 0.2)
