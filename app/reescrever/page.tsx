@@ -1,58 +1,47 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Navigation } from "@/components/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Slider } from "@/components/ui/slider"
-import { RefreshCw, Save, Copy, Search, Loader2, Star, Trophy, Trash2, Zap, Wand2 } from "lucide-react"
+import { useState } from "react"
 import { toast } from "sonner"
-import { EMOTIONS } from "@/lib/genres"
-import { GenreSelect } from "@/components/genre-select"
-import { SyllableValidatorEditable } from "@/components/syllable-validator-editable"
-import { InspirationManager } from "@/components/inspiration-manager"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { HookGenerator } from "@/components/hook-generator"
-import { BRAZILIAN_GENRE_METRICS } from "@/lib/metrics/brazilian-metrics" // ✅ IMPORT CORRETO
-
-// REMOVA a constante BRAZILIAN_GENRE_METRICS local (está duplicada e desatualizada)
+import { getGenreMetrics } from "@/lib/metrics/brazilian-metrics"
 
 export default function ReescreverPage() {
-  // ... estados iguais ...
+  const [originalLyrics, setOriginalLyrics] = useState("")
+  const [lyrics, setLyrics] = useState("")
+  const [genre, setGenre] = useState("Sertanejo Moderno")
+  const [mood, setMood] = useState("")
+  const [theme, setTheme] = useState("")
+  const [formattingStyle, setFormattingStyle] = useState("standard")
+  const [additionalReqs, setAdditionalReqs] = useState("")
+  const [advancedMode, setAdvancedMode] = useState(false)
+  const [selectedEmotions, setSelectedEmotions] = useState<string[]>([])
+  const [inspirationText, setInspirationText] = useState("")
+  const [metaphorSearch, setMetaphorSearch] = useState("")
+  const [title, setTitle] = useState("")
+  const [isRewriting, setIsRewriting] = useState(false)
+  const [savedInspirations, setSavedInspirations] = useState<Array<{ id: string; text: string; timestamp: number }>>([])
 
   const handleRewriteLyrics = async () => {
-    // ... validações ...
+    if (!originalLyrics.trim()) {
+      toast.error("Por favor, cole a letra original para reescrever")
+      return
+    }
 
     setIsRewriting(true)
 
     try {
-      // ✅ Obtém métricas reais do gênero
-      const genreMetrics = BRAZILIAN_GENRE_METRICS[genre as keyof typeof BRAZILIAN_GENRE_METRICS] || BRAZILIAN_GENRE_METRICS.default;
-      
-      // ✅ Usa faixa realista (não fixa)
+      const genreMetrics = getGenreMetrics(genre)
+
       const syllableConfig = {
         min: genreMetrics.syllableRange.min,
         max: genreMetrics.syllableRange.max,
-        ideal: genreMetrics.syllableRange.ideal || Math.floor((genreMetrics.syllableRange.min + genreMetrics.syllableRange.max) / 2)
-      };
+        ideal:
+          genreMetrics.syllableRange.ideal ||
+          Math.floor((genreMetrics.syllableRange.min + genreMetrics.syllableRange.max) / 2),
+      }
 
       const requestBody = {
-        // ✅ Nomes de campo alinhados com a API
-        originalLyrics, // ✅ não "letraOriginal"
-        genre,          // ✅ não "genero"
+        originalLyrics,
+        genre,
         mood: mood || "Romântico",
         theme: theme || "Amor",
         creativity: "equilibrado",
@@ -61,9 +50,8 @@ export default function ReescreverPage() {
         advancedMode,
         universalPolish: true,
         syllableTarget: syllableConfig,
-        // ✅ NÃO envia "metrics" (a API já tem acesso a BRAZILIAN_GENRE_METRICS)
         emotions: selectedEmotions,
-        inspiration: savedInspirations.map(i => i.text).join("\n\n") || inspirationText,
+        inspiration: savedInspirations.map((i) => i.text).join("\n\n") || inspirationText,
         metaphors: metaphorSearch,
         title,
         performanceMode: formattingStyle === "performatico" ? "performance" : "standard",
@@ -81,7 +69,6 @@ export default function ReescreverPage() {
         throw new Error(data.error || `Erro ${response.status}`)
       }
 
-      // ✅ Valida resposta
       if (!data.lyrics) {
         throw new Error("Resposta inválida da API")
       }
