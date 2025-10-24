@@ -106,7 +106,7 @@ export default function CriarPage() {
             <div className="space-y-4">
               <div>
                 <Label htmlFor="genre">Gênero Musical</Label>
-                <GenreSelect value={genre} onChange={setGenre} />
+                <GenreSelect value={genre} onValueChange={setGenre} />
               </div>
 
               <div>
