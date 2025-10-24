@@ -75,6 +75,11 @@ export function SyllableValidator({ lyrics, maxSyllables, onValidate }: Syllable
   }
 
   useEffect(() => {
+    if (!lyrics.trim()) {
+      setResult(null)
+      return
+    }
+
     if (lyrics.trim()) {
       const timeoutId = setTimeout(() => {
         validateSyllables()

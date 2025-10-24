@@ -288,6 +288,9 @@ export default function ReescreverPage() {
                   <Label htmlFor="advancedMode" className="text-xs cursor-pointer font-semibold">
                     Modo Avançado
                   </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Rimas perfeitas, métrica rigorosa, ganchos premium em PT-BR, linguagem limpa e fidelidade de estilo.
+                  </p>
                 </div>
               </div>
 
@@ -301,6 +304,9 @@ export default function ReescreverPage() {
                   <Label htmlFor="universalPolish" className="text-xs cursor-pointer font-semibold text-green-600">
                     Sistema Universal de Polimento
                   </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Aplica polimento específico por gênero, correção automática de rimas e instrumentos em inglês.
+                  </p>
                 </div>
               </div>
 

@@ -11,10 +11,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Slider } from "@/components/ui/slider"
 import { RefreshCw, Sparkles, Trash2, Search, Save, Copy } from "lucide-react"
 import { toast } from "sonner"
 import { GenreSelect } from "@/components/genre-select"
 import { getGenreMetrics } from "@/lib/metrics/brazilian-metrics"
+import { SyllableValidator } from "@/components/syllable-validator"
+import { RhymeAnalyzer } from "@/components/rhyme-analyzer"
 
 const MOODS = ["Feliz", "Triste", "Nostálgico", "Romântico", "Animado", "Melancólico"]
 const EMOTIONS = [
@@ -52,6 +55,25 @@ const EMOTIONS = [
   "Vergonha",
 ]
 
+const GENRE_QUALITY_CONFIG = {
+  Sertanejo: { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
+  "Sertanejo Moderno": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
+  "Sertanejo Universitário": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
+  "Sertanejo Sofrência": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
+  "Sertanejo Raiz": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
+  MPB: { min: 7, max: 12, ideal: 9, rhymeQuality: 0.6 },
+  "Bossa Nova": { min: 7, max: 12, ideal: 9, rhymeQuality: 0.6 },
+  Funk: { min: 6, max: 10, ideal: 8, rhymeQuality: 0.3 },
+  Pagode: { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
+  Samba: { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
+  Forró: { min: 8, max: 11, ideal: 9, rhymeQuality: 0.4 },
+  Axé: { min: 6, max: 10, ideal: 8, rhymeQuality: 0.3 },
+  Rock: { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
+  Pop: { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
+  Gospel: { min: 8, max: 11, ideal: 9, rhymeQuality: 0.5 },
+  default: { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
+}
+
 export default function EditarPage() {
   const [showExplanations, setShowExplanations] = useState(true)
   const [showQuickTips, setShowQuickTips] = useState(true)
@@ -68,9 +90,21 @@ export default function EditarPage() {
   const [projectId, setProjectId] = useState<number | null>(null)
   const [additionalReqs, setAdditionalReqs] = useState("")
   const [advancedMode, setAdvancedMode] = useState(false)
-  const [formattingStyle, setFormattingStyle] = useState<"standard" | "performatico">("standard")
+  const [creativity, setCreativity] = useState([50])
+  const [formattingStyle, setFormattingStyle] = useState<"padrao" | "performatico">("performatico")
+  const [universalPolish, setUniversalPolish] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
   const [savedInspirations, setSavedInspirations] = useState<Array<{ text: string; timestamp: number }>>([])
+
+  const getSyllableConfig = (selectedGenre: string) => {
+    const config =
+      GENRE_QUALITY_CONFIG[selectedGenre as keyof typeof GENRE_QUALITY_CONFIG] || GENRE_QUALITY_CONFIG.default
+    return {
+      min: config.min,
+      max: config.max,
+      ideal: config.ideal,
+    }
+  }
 
   useEffect(() => {
     const editingProject = localStorage.getItem("editingProject")
@@ -122,14 +156,7 @@ export default function EditarPage() {
 
     try {
       const genreMetrics = getGenreMetrics(genre)
-
-      const syllableConfig = {
-        min: genreMetrics.syllableRange.min,
-        max: genreMetrics.syllableRange.max,
-        ideal:
-          genreMetrics.syllableRange.ideal ||
-          Math.floor((genreMetrics.syllableRange.min + genreMetrics.syllableRange.max) / 2),
-      }
+      const syllableConfig = getSyllableConfig(genre)
 
       const requestBody = {
         originalLyrics: lyrics,
@@ -154,18 +181,22 @@ export default function EditarPage() {
         throw new Error(data.error || `Erro ${response.status} na API`)
       }
 
-      if (!data.lyrics) {
+      if (!data.lyrics && !data.letra) {
         throw new Error("Resposta da API não contém letra")
       }
 
-      setLyrics(data.lyrics)
+      setLyrics(data.lyrics || data.letra)
       if (data.title && !title) {
         setTitle(data.title)
       }
 
-      toast.success("Letra editada com sucesso!", {
-        description: `Score: ${data.metadata?.finalScore || "N/A"} | Modo: ${data.metadata?.performanceMode || "padrão"}`,
-      })
+      if (data.metadata?.polishingApplied) {
+        toast.success("Letra editada com Sistema Universal de Qualidade!", {
+          description: `Polimento específico para ${genre} aplicado com sucesso`,
+        })
+      } else {
+        toast.success("Letra editada com sucesso!")
+      }
     } catch (error) {
       console.error("Erro na edição:", error)
       toast.error(error instanceof Error ? error.message : "Erro ao editar letra")
@@ -231,11 +262,12 @@ export default function EditarPage() {
   const handleClear = () => {
     if (window.confirm("Tem certeza que deseja limpar a letra? Esta ação não pode ser desfeita.")) {
       setLyrics("")
-      toast.success("Letra limpa", {
-        description: "A letra foi removida do editor.",
-      })
+      setTitle("")
+      toast.success("Letra limpa")
     }
   }
+
+  const currentSyllableConfig = genre ? getSyllableConfig(genre) : null
 
   return (
     <div className="min-h-screen bg-background">
@@ -397,6 +429,21 @@ export default function EditarPage() {
                 <Label className="text-xs font-semibold">Gênero (para sugestões)</Label>
                 <GenreSelect value={genre} onValueChange={setGenre} />
 
+                {currentSyllableConfig && (
+                  <div className="bg-blue-50 border border-blue-200 rounded p-2 text-xs">
+                    <div className="font-semibold text-blue-800">Configuração {genre}:</div>
+                    <div className="text-blue-700">
+                      Sílabas: {currentSyllableConfig.min}-{currentSyllableConfig.max} (ideal:{" "}
+                      {currentSyllableConfig.ideal})
+                    </div>
+                    <div className="text-blue-700">
+                      Rimas:{" "}
+                      {GENRE_QUALITY_CONFIG[genre as keyof typeof GENRE_QUALITY_CONFIG]?.rhymeQuality * 100 || 40}%
+                      mínimas
+                    </div>
+                  </div>
+                )}
+
                 <Label className="text-xs font-semibold">Humor (para sugestões)</Label>
                 <Select value={mood} onValueChange={setMood}>
                   <SelectTrigger className="h-9">
@@ -428,15 +475,67 @@ export default function EditarPage() {
                   className="text-xs"
                 />
 
-                <div className="flex items-center space-x-2">
+                <div className="flex items-start space-x-2">
                   <Checkbox
                     id="advancedMode"
                     checked={advancedMode}
                     onCheckedChange={(checked) => setAdvancedMode(checked as boolean)}
                   />
-                  <Label htmlFor="advancedMode" className="text-xs cursor-pointer">
-                    Modo Avançado
-                  </Label>
+                  <div>
+                    <Label htmlFor="advancedMode" className="text-xs cursor-pointer font-semibold">
+                      Modo Avançado
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Rimas perfeitas, métrica rigorosa, ganchos premium em PT-BR, linguagem limpa e fidelidade de
+                      estilo.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-2">
+                  <Checkbox
+                    id="universalPolish"
+                    checked={universalPolish}
+                    onCheckedChange={(checked) => setUniversalPolish(checked as boolean)}
+                  />
+                  <div>
+                    <Label htmlFor="universalPolish" className="text-xs cursor-pointer font-semibold text-green-600">
+                      Sistema Universal de Polimento
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Aplica polimento específico por gênero, correção automática de rimas e instrumentos em inglês.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3 border rounded-lg p-3">
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <Label className="text-xs">Nível de Criatividade</Label>
+                    <span className="text-xs text-muted-foreground">
+                      {creativity[0] < 33 ? "Conservador" : creativity[0] < 66 ? "Equilibrado" : "Ousado"}
+                    </span>
+                  </div>
+                  <Slider value={creativity} onValueChange={setCreativity} max={100} step={1} />
+                </div>
+
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <Label className="text-xs">Estilo de Formatação</Label>
+                    <span className="text-xs text-muted-foreground">
+                      {formattingStyle === "padrao" ? "Padrão" : "Performático"}
+                    </span>
+                  </div>
+                  <Select value={formattingStyle} onValueChange={setFormattingStyle}>
+                    <SelectTrigger className="h-8">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="padrao">Padrão</SelectItem>
+                      <SelectItem value="performatico">Performático</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
@@ -474,7 +573,9 @@ export default function EditarPage() {
                     disabled={isEditing || !lyrics || !genre}
                   >
                     <Sparkles className="h-3 w-3 mr-1" />
-                    <span className="text-xs">{isEditing ? "Editando..." : "Editar"}</span>
+                    <span className="text-xs">
+                      {isEditing ? "Editando..." : universalPolish ? "Editar com Polimento" : "Editar"}
+                    </span>
                   </Button>
                   <Button variant="outline" size="sm" className="flex-1 bg-transparent">
                     <RefreshCw className="h-3 w-3 mr-1" />
@@ -485,6 +586,13 @@ export default function EditarPage() {
                     <span className="text-xs">Limpar</span>
                   </Button>
                 </div>
+
+                {universalPolish && genre && (
+                  <div className="bg-green-50 border border-green-200 rounded p-2 text-xs text-green-700 mt-2">
+                    <div className="font-semibold">Sistema Universal Ativo</div>
+                    <div>Polimento específico para {genre} habilitado</div>
+                  </div>
+                )}
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
                 <Input
@@ -503,14 +611,43 @@ export default function EditarPage() {
                     rows={18}
                     className="font-mono text-xs"
                   />
+
+                  <SyllableValidator
+                    lyrics={lyrics}
+                    maxSyllables={currentSyllableConfig?.max || 11}
+                    onValidate={(result) => {
+                      if (!result.valid) {
+                        toast.warning(`${result.linesWithIssues} versos fora do padrão ${genre}`, {
+                          description: `Use ${currentSyllableConfig?.min}-${currentSyllableConfig?.max} sílabas`,
+                          duration: 5000,
+                        })
+                      }
+                    }}
+                  />
+
+                  <RhymeAnalyzer
+                    lyrics={lyrics}
+                    genre={genre}
+                    onAnalysis={(report) => {
+                      if (report.overallScore < 60) {
+                        toast.warning(`Rimas precisam de melhoria (Score: ${report.overallScore})`)
+                      }
+                    }}
+                  />
                 </div>
 
                 <div className="flex gap-2">
-                  <Button size="sm" className="flex-1" onClick={handleCopy}>
+                  <Button size="sm" className="flex-1" onClick={handleCopy} disabled={!lyrics}>
                     <Copy className="h-3 w-3 mr-1" />
                     Copiar
                   </Button>
-                  <Button size="sm" className="flex-1 bg-transparent" variant="outline" onClick={handleSave}>
+                  <Button
+                    size="sm"
+                    className="flex-1 bg-transparent"
+                    variant="outline"
+                    onClick={handleSave}
+                    disabled={!title || !lyrics}
+                  >
                     <Save className="h-3 w-3 mr-1" />
                     Salvar
                   </Button>
