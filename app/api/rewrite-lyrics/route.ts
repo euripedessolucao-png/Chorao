@@ -7,12 +7,16 @@ import { buildGenreRulesPrompt } from "@/lib/validation/genre-rules-builder"
 import { getGenreMetrics } from "@/lib/metrics/brazilian-metrics"
 import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro"
 import { getUniversalRhymeRules } from "@/lib/validation/universal-rhyme-rules"
+import {
+  formatSertanejoPerformance,
+  shouldUsePerformanceFormat,
+} from "@/lib/formatters/sertanejo-performance-formatter"
 
 export async function POST(request: NextRequest) {
   try {
     const {
-      originalLyrics, // ✅ nome correto
-      genre, // ✅ nome correto
+      originalLyrics, // nome correto
+      genre, // nome correto
       mood,
       theme,
       additionalRequirements,
@@ -21,7 +25,7 @@ export async function POST(request: NextRequest) {
       performanceMode = "standard",
     } = await request.json()
 
-    // ✅ Validação robusta
+    // Validação robusta
     if (!originalLyrics?.trim()) {
       return NextResponse.json({ error: "Letra original é obrigatória" }, { status: 400 })
     }
@@ -32,16 +36,16 @@ export async function POST(request: NextRequest) {
 
     console.log(`[API] 🎵 Reescrevendo para gênero: ${genre}`)
 
-    // ✅ Obtém métricas reais do gênero
+    // Obtém métricas reais do gênero
     const genreMetrics = getGenreMetrics(genre)
 
     const maxSyllables = Math.min(genreMetrics.syllableRange.max, 12)
     const minSyllables = genreMetrics.syllableRange.min
 
-    // ✅ Obtém regras de rima
+    // Obtém regras de rima
     const rhymeRules = getUniversalRhymeRules(genre)
 
-    // ✅ Constrói prompt com métrica realista
+    // Constrói prompt com métrica realista
     const genreRules = buildGenreRulesPrompt(genre)
     const prompt = `Você é um compositor brasileiro especializado em ${genre}.
 
@@ -77,12 +81,12 @@ Retorne APENAS a letra reescrita, sem explicações.`
     console.log(`[API] 🎵 Gerando com métrica ${minSyllables}-${maxSyllables} sílabas...`)
 
     const { text } = await generateText({
-      model: "openai/gpt-4o-mini", // ✅ mais rápido e barato
+      model: "openai/gpt-4o-mini", // mais rápido e barato
       prompt,
       temperature: 0.6,
     })
 
-    // ✅ Validação pós-geração
+    // Validação pós-geração
     let finalLyrics = capitalizeLines(text)
 
     // Remove explicações da IA
@@ -95,7 +99,11 @@ Retorne APENAS a letra reescrita, sem explicações.`
       .join("\n")
       .trim()
 
-    // ✅ Valida métrica real
+    if (shouldUsePerformanceFormat(genre, performanceMode)) {
+      finalLyrics = formatSertanejoPerformance(finalLyrics)
+    }
+
+    // Valida métrica real
     const lines = finalLyrics.split("\n")
     let validLines = 0
     let totalLines = 0
@@ -116,7 +124,7 @@ Retorne APENAS a letra reescrita, sem explicações.`
     console.log(`[API] ✅ Validação: ${finalScore}% das linhas dentro da métrica`)
 
     return NextResponse.json({
-      lyrics: finalLyrics, // ✅ nome consistente
+      lyrics: finalLyrics, // nome consistente
       title: title || "Letra Reescrita",
       metadata: {
         finalScore,

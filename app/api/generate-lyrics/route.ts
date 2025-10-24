@@ -7,6 +7,10 @@ import { buildGenreRulesPrompt } from "@/lib/validation/genre-rules-builder"
 import { getGenreMetrics } from "@/lib/metrics/brazilian-metrics"
 import { getUniversalRhymeRules } from "@/lib/validation/universal-rhyme-rules"
 import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro"
+import {
+  formatSertanejoPerformance,
+  shouldUsePerformanceFormat,
+} from "@/lib/formatters/sertanejo-performance-formatter"
 
 export async function POST(request: NextRequest) {
   try {
@@ -93,9 +97,8 @@ Retorne APENAS a letra, sem explicações.`
       .join("\n")
       .trim()
 
-    // ✅ Aplica formatação performática se necessário
-    if (performanceMode === "performance") {
-      finalLyrics = applyPerformanceFormatting(finalLyrics, genre)
+    if (shouldUsePerformanceFormat(genre, performanceMode)) {
+      finalLyrics = formatSertanejoPerformance(finalLyrics)
     }
 
     // ✅ Validação de métrica
@@ -140,29 +143,6 @@ Retorne APENAS a letra, sem explicações.`
   }
 }
 
-// ✅ FORMATAÇÃO PERFORMÁTICA (simplificada e robusta)
-function applyPerformanceFormatting(lyrics: string, genre: string): string {
-  // Converte tags para inglês
-  let formatted = lyrics
-    .replace(/\[Intro\]/gi, "[INTRO]")
-    .replace(/\[Verso\s*\d*\]/gi, "[VERSE]")
-    .replace(/\[Refrão\]/gi, "[CHORUS]")
-    .replace(/\[Pré-Refrão\]/gi, "[PRE-CHORUS]")
-    .replace(/\[Ponte\]/gi, "[BRIDGE]")
-    .replace(/\[Final\]|\[Outro\]/gi, "[OUTRO]")
-    .replace(/\[Solo\]/gi, "[SOLO]")
-
-  // Adiciona instrumentos se não existir
-  if (!formatted.includes("(Instruments:")) {
-    const instruments = getGenreInstruments(genre)
-    const bpm = getGenreBPM(genre)
-    formatted += `\n\n(Instruments: ${instruments} | BPM: ${bpm})`
-  }
-
-  return formatted
-}
-
-// ✅ FUNÇÕES AUXILIARES (mantidas do seu código original)
 function getGenreInstruments(genre: string): string {
   const instruments: Record<string, string> = {
     Sertanejo: "acoustic guitar, viola, bass, drums, accordion",
