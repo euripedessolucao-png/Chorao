@@ -527,7 +527,10 @@ export default function EditarPage() {
                       {formattingStyle === "padrao" ? "Padrão" : "Performático"}
                     </span>
                   </div>
-                  <Select value={formattingStyle} onValueChange={setFormattingStyle}>
+                  <Select
+                    value={formattingStyle}
+                    onValueChange={(value) => setFormattingStyle(value as "padrao" | "performatico")}
+                  >
                     <SelectTrigger className="h-8">
                       <SelectValue />
                     </SelectTrigger>
