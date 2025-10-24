@@ -122,7 +122,6 @@ RETORNE APENAS A LETRA, SEM EXPLICAÇÕES.`
       model: this.MODEL,
       prompt,
       temperature: request.creativity === "ousado" ? 0.8 : request.creativity === "conservador" ? 0.4 : 0.6,
-      maxTokens: 800, // evita respostas longas demais
     })
 
     return this.cleanLyricsResponse(text || "")
@@ -157,7 +156,6 @@ RETORNE APENAS A LETRA REESCRITA, SEM EXPLICAÇÕES.`
       model: this.MODEL,
       prompt,
       temperature: 0.5,
-      maxTokens: 800,
     })
 
     return this.cleanLyricsResponse(text || "")
