@@ -11,40 +11,57 @@ export function normalizeGenreName(genre: string): string {
     return normalized
   }
 
-  // Mapeamento de variações comuns para nomes oficiais
   const genreMap: Record<string, string> = {
-    sertanejo: "Sertanejo Moderno",
-    "sertanejo moderno": "Sertanejo Moderno",
+    // Sertanejo - mantém específico, não mapeia para genérico
     "sertanejo raiz": "Sertanejo Raiz",
+    "sertanejo de raiz": "Sertanejo Raiz",
     "sertanejo universitario": "Sertanejo Universitário",
     "sertanejo universitário": "Sertanejo Universitário",
     "sertanejo romantico": "Sertanejo Romântico",
     "sertanejo romântico": "Sertanejo Romântico",
+    "sertanejo moderno feminino": "Sertanejo Moderno Feminino",
+    "sertanejo moderno masculino": "Sertanejo Moderno Masculino",
+    // Outros gêneros
     funk: "Funk Carioca",
     "funk carioca": "Funk Carioca",
-    pagode: "Pagode",
+    "funk melody": "Funk Melody",
+    "funk consciente": "Funk Consciente",
+    pagode: "Pagode Romântico",
+    "pagode romantico": "Pagode Romântico",
+    "pagode romântico": "Pagode Romântico",
     samba: "Samba",
     mpb: "MPB",
-    forro: "Forró",
-    forró: "Forró",
+    forro: "Forró Pé de Serra",
+    forró: "Forró Pé de Serra",
+    "forro pe de serra": "Forró Pé de Serra",
+    "forró pé de serra": "Forró Pé de Serra",
     arrocha: "Arrocha",
-    gospel: "Gospel",
+    gospel: "Gospel Contemporâneo",
+    "gospel contemporaneo": "Gospel Contemporâneo",
+    "gospel contemporâneo": "Gospel Contemporâneo",
     bachata: "Bachata",
-    "bachata brasileira": "Bachata Brasileira",
   }
 
   const lowerGenre = normalized.toLowerCase()
 
-  // Busca no mapeamento
+  // Busca exata no mapeamento primeiro
   if (genreMap[lowerGenre]) {
     return genreMap[lowerGenre]
   }
 
-  // Busca parcial (ex: "Sertanejo Moderno Feminino" contém "Sertanejo")
-  for (const [key, value] of Object.entries(genreMap)) {
-    if (lowerGenre.includes(key)) {
-      return value
-    }
+  // Busca parcial APENAS se não encontrou exata
+  // Prioriza matches mais específicos
+  if (lowerGenre.includes("raiz")) {
+    return "Sertanejo Raiz"
+  }
+  if (lowerGenre.includes("moderno feminino")) {
+    return "Sertanejo Moderno Feminino"
+  }
+  if (lowerGenre.includes("moderno masculino")) {
+    return "Sertanejo Moderno Masculino"
+  }
+  if (lowerGenre.includes("universitário") || lowerGenre.includes("universitario")) {
+    return "Sertanejo Universitário"
   }
 
   // Se não encontrar, retorna o original
@@ -60,7 +77,7 @@ export function getGenreInstrumentation(genre: string): string[] {
   if (normalizedGenre in INSTRUMENTATION_RULES) {
     const instrumentation = INSTRUMENTATION_RULES[normalizedGenre as keyof typeof INSTRUMENTATION_RULES]
     // Parse the required instruments from the format "(Instrumental: ...)"
-    const match = instrumentation.required.match(/$$Instrumental: ([^)]+)$$/)
+    const match = instrumentation.required.match(/\$\$Instrumental: ([^)]+)\$\$/)
     if (match) {
       return match[1].split(", ").map((inst) => inst.trim())
     }

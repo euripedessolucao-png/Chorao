@@ -5,22 +5,22 @@
  */
 export interface GenreMetadata {
   /** Nome exibido na UI */
-  label: string;
+  label: string
   /** Subgêneros com metadados próprios */
-  subgenres: SubgenreMetadata[];
+  subgenres: SubgenreMetadata[]
   /** Características estilísticas (opcional) */
-  stylisticTraits?: string[];
+  stylisticTraits?: string[]
 }
 
 export interface SubgenreMetadata {
   /** Nome do subgênero */
-  name: string;
+  name: string
   /** Rótulo amigável */
-  label: string;
+  label: string
   /** Descrição curta (para IA ou tooltips) */
-  description?: string;
+  description?: string
   /** Palavras-chave associadas */
-  keywords?: string[];
+  keywords?: string[]
 }
 
 /**
@@ -35,7 +35,11 @@ export const GENRE_HIERARCHY = {
       { name: "Sertanejo Moderno Masculino", label: "Moderno (Masculino)" },
       { name: "Sertanejo Universitário", label: "Universitário" },
       { name: "Sertanejo Raiz", label: "Raiz", keywords: ["viola", "roça", "tradição"] },
-      { name: "Sertanejo Sofrência", label: "Sofrência", keywords: ["dor de cotovelo", "choro", "fim de relacionamento"] },
+      {
+        name: "Sertanejo Sofrência",
+        label: "Sofrência",
+        keywords: ["dor de cotovelo", "choro", "fim de relacionamento"],
+      },
       { name: "Sertanejo Romântico", label: "Romântico", keywords: ["declaração", "paixão", "lua"] },
     ],
   },
@@ -131,12 +135,12 @@ export const GENRE_HIERARCHY = {
       { name: "R&B", label: "R&B" },
     ],
   },
-} as const;
+} as const
 
 // ✅ Inferência de tipos
-export type MainGenre = keyof typeof GENRE_HIERARCHY;
-export type Subgenre = (typeof GENRE_HIERARCHY)[MainGenre]["subgenres"][number]["name"];
-export type AnyGenre = MainGenre | Subgenre;
+export type MainGenre = keyof typeof GENRE_HIERARCHY
+export type Subgenre = (typeof GENRE_HIERARCHY)[MainGenre]["subgenres"][number]["name"]
+export type AnyGenre = MainGenre | Subgenre
 
 /**
  * Lista plana de todos os gêneros (principais + subgêneros)
@@ -144,7 +148,7 @@ export type AnyGenre = MainGenre | Subgenre;
 export const FLAT_GENRES = Object.entries(GENRE_HIERARCHY).flatMap(([mainGenre, data]) => [
   mainGenre,
   ...data.subgenres.map((sg) => sg.name),
-]) as readonly AnyGenre[];
+]) as readonly AnyGenre[]
 
 /**
  * Mapeamento reverso: subgênero → gênero principal
@@ -152,12 +156,12 @@ export const FLAT_GENRES = Object.entries(GENRE_HIERARCHY).flatMap(([mainGenre, 
 export const SUBGENRE_TO_MAIN_GENRE = Object.entries(GENRE_HIERARCHY).reduce(
   (acc, [mainGenre, data]) => {
     data.subgenres.forEach((sub) => {
-      acc[sub.name as Subgenre] = mainGenre as MainGenre;
-    });
-    return acc;
+      acc[sub.name as Subgenre] = mainGenre as MainGenre
+    })
+    return acc
   },
-  {} as Record<Subgenre, MainGenre>
-);
+  {} as Record<Subgenre, MainGenre>,
+)
 
 /**
  * Normaliza um nome de gênero para comparação (case-insensitive, remove acentos)
@@ -167,39 +171,39 @@ function normalizeGenre(genre: string): string {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .trim();
+    .trim()
 }
 
 /**
  * Encontra o gênero principal a partir de qualquer string (flexível)
  */
 export function findMainGenre(input: string): MainGenre | null {
-  if (!input) return null;
+  if (!input) return null
 
-  const normalizedInput = normalizeGenre(input);
+  const normalizedInput = normalizeGenre(input)
 
   // Verifica se é um gênero principal
   for (const mainGenre of Object.keys(GENRE_HIERARCHY) as MainGenre[]) {
     if (normalizeGenre(mainGenre) === normalizedInput) {
-      return mainGenre;
+      return mainGenre
     }
   }
 
   // Verifica se é um subgênero
   for (const [subgenre, mainGenre] of Object.entries(SUBGENRE_TO_MAIN_GENRE)) {
     if (normalizeGenre(subgenre) === normalizedInput) {
-      return mainGenre as MainGenre;
+      return mainGenre as MainGenre
     }
   }
 
   // Busca parcial (útil para inputs de IA)
   for (const mainGenre of Object.keys(GENRE_HIERARCHY) as MainGenre[]) {
     if (normalizedInput.includes(normalizeGenre(mainGenre))) {
-      return mainGenre;
+      return mainGenre
     }
   }
 
-  return null;
+  return null
 }
 
 /**
@@ -216,9 +220,9 @@ export const MOODS = [
   "Empolgado",
   "Reflexivo",
   "Confiante",
-] as const;
+] as const
 
-export type Mood = (typeof MOODS)[number];
+export type Mood = (typeof MOODS)[number]
 
 export const EMOTIONS = [
   "Alegria",
@@ -253,6 +257,6 @@ export const EMOTIONS = [
   "Ternura",
   "Tristeza",
   "Vergonha",
-] as const;
+] as const
 
-export type Emotion = (typeof EMOTIONS)[number];
+export type Emotion = (typeof EMOTIONS)[number]
