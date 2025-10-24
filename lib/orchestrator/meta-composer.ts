@@ -11,6 +11,7 @@ import { PunctuationValidator } from "@/lib/validation/punctuation-validator"
 import { LineStacker } from "@/lib/utils/line-stacker"
 import { LyricsAuditor } from "@/lib/validation/lyrics-auditor"
 import { getGenreMetrics } from "@/lib/metrics/brazilian-metrics"
+import { AbsoluteSyllableEnforcer } from "@/lib/validation/absolute-syllable-enforcer"
 
 export interface CompositionRequest {
   genre: string
@@ -233,7 +234,14 @@ RETORNE APENAS A LETRA REESCRITA, SEM EXPLICAÇÕES.`
       polished = punctResult.correctedLyrics
     }
 
-    // Quebra de linhas
+    const syllableCheck = AbsoluteSyllableEnforcer.validate(polished)
+    if (!syllableCheck.isValid) {
+      console.log("[MetaComposer] 🔧 Corrigindo sílabas excedentes...")
+      const fixResult = AbsoluteSyllableEnforcer.validateAndFix(polished)
+      polished = fixResult.correctedLyrics
+    }
+
+    // Quebra de linhas (agora mais agressivo)
     const stackResult = LineStacker.stackLines(polished)
     return stackResult.stackedLyrics
   }
