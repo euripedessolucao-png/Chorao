@@ -4,7 +4,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 import { buildGenreRulesPrompt } from "@/lib/validation/genre-rules-builder"
-import { BRAZILIAN_GENRE_METRICS } from "@/lib/metrics/brazilian-metrics"
+import { getGenreMetrics } from "@/lib/metrics/brazilian-metrics"
 import { getUniversalRhymeRules } from "@/lib/validation/universal-rhyme-rules"
 import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro"
 
@@ -30,8 +30,7 @@ export async function POST(request: NextRequest) {
     console.log(`[API] 🎵 Criando letra para: ${genre} | Tema: ${theme}`)
 
     // ✅ Obtém métricas reais
-    const genreMetrics =
-      BRAZILIAN_GENRE_METRICS[genre as keyof typeof BRAZILIAN_GENRE_METRICS] || BRAZILIAN_GENRE_METRICS.default
+    const genreMetrics = getGenreMetrics(genre)
 
     const maxSyllables = Math.min(genreMetrics.syllableRange.max, 12)
     const minSyllables = genreMetrics.syllableRange.min
