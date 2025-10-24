@@ -2,6 +2,7 @@
 
 import { ThirdWayEngine } from "./third-way-converter"
 import type { TerceiraViaAnalysis } from "./analysis"
+import { analisarTerceiraVia } from "./terceira-via/analysis"
 import { isValidImprovement } from "./validation" // Importing isValidImprovement function
 
 // ✅ Tipagem explícita para configuração de gênero
@@ -143,3 +144,4 @@ function buildDefaultGenreConfig(genre: string): GenreConfig {
 }
 
 export type { TerceiraViaAnalysis }
+export { analisarTerceiraVia }
