@@ -101,13 +101,12 @@ Retorne APENAS a letra reescrita, sem explicações.`
       .trim()
 
     if (shouldUsePerformanceFormat(genre, performanceMode)) {
-      finalLyrics = formatSertanejoPerformance(finalLyrics)
+      finalLyrics = formatSertanejoPerformance(finalLyrics, genre)
     }
 
-    const instrumentation = formatInstrumentationForAI(genre)
+    const instrumentation = formatInstrumentationForAI(genre, finalLyrics)
     finalLyrics = `${finalLyrics}\n\n${instrumentation}`
 
-    // Valida métrica real
     const lines = finalLyrics.split("\n")
     let validLines = 0
     let totalLines = 0

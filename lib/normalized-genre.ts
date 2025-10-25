@@ -87,20 +87,67 @@ export function getGenreInstrumentation(genre: string): string[] {
 }
 
 /**
+ * Extrai instrumentos dos colchetes de performance na letra
+ */
+export function extractInstrumentsFromLyrics(lyrics: string): string[] {
+  const instruments = new Set<string>()
+  const lines = lyrics.split("\n")
+
+  for (const line of lines) {
+    // Procura por padrões como [PART A - Verse 1 - acoustic guitar, bass, light percussion]
+    const match = line.match(/\[.*?-\s*([^\]]+)\]/)
+    if (match) {
+      const instrumentsPart = match[1]
+      // Verifica se contém instrumentos (não é apenas "Verse 1" ou "Chorus")
+      if (
+        instrumentsPart.includes(",") ||
+        instrumentsPart.match(/guitar|bass|drum|percussion|accordion|viola|sanfona/i)
+      ) {
+        const instList = instrumentsPart.split(",").map((inst) => inst.trim())
+        instList.forEach((inst) => {
+          // Filtra apenas instrumentos válidos
+          if (inst && !inst.match(/^(verse|chorus|bridge|part|intro|outro)/i)) {
+            instruments.add(inst)
+          }
+        })
+      }
+    }
+  }
+
+  return Array.from(instruments)
+}
+
+/**
  * Formata a instrumentação para IA de canto com instruções em inglês
  */
-export function formatInstrumentationForAI(genre: string): string {
-  const instruments = getGenreInstrumentation(genre)
+export function formatInstrumentationForAI(genre: string, lyrics?: string): string {
   const normalizedGenre = normalizeGenreName(genre)
+
+  let instruments: string[]
+  if (lyrics) {
+    const extractedInstruments = extractInstrumentsFromLyrics(lyrics)
+    instruments = extractedInstruments.length > 0 ? extractedInstruments : getGenreInstrumentation(genre)
+  } else {
+    instruments = getGenreInstrumentation(genre)
+  }
 
   // Tradução de instrumentos para inglês
   const instrumentTranslation: Record<string, string> = {
     Violão: "Acoustic Guitar",
+    "viola caipira": "Viola Caipira",
+    "acoustic guitar": "Acoustic Guitar",
     Guitarra: "Electric Guitar",
+    "electric guitar": "Electric Guitar",
     Baixo: "Bass",
+    bass: "Bass",
     Bateria: "Drums",
+    drums: "Drums",
+    "light percussion": "Light Percussion",
+    percussion: "Percussion",
     Teclado: "Keyboard",
     Sanfona: "Accordion",
+    sanfona: "Accordion",
+    accordion: "Accordion",
     Zabumba: "Zabumba",
     Triângulo: "Triangle",
     Pandeiro: "Pandeiro",
@@ -126,9 +173,15 @@ export function formatInstrumentationForAI(genre: string): string {
     Coro: "Choir",
   }
 
-  const translatedInstruments = instruments.map((inst) => instrumentTranslation[inst] || inst)
+  const translatedInstruments = instruments.map((inst) => {
+    const lower = inst.toLowerCase()
+    return instrumentTranslation[inst] || instrumentTranslation[lower] || inst
+  })
 
-  return `\n\n---\n[Instrumentation]\nGenre: ${normalizedGenre}\nInstruments: ${translatedInstruments.join(", ")}\n---`
+  // Remove duplicatas e capitaliza
+  const uniqueInstruments = Array.from(new Set(translatedInstruments))
+
+  return `\n\n---\n[Instrumentation]\nGenre: ${normalizedGenre}\nInstruments: ${uniqueInstruments.join(", ")}\n---`
 }
 
 /**
@@ -138,8 +191,7 @@ export function addInstrumentationToLyrics(lyrics: string, genre: string): strin
   // Remove instrumentação existente se houver
   const cleanedLyrics = lyrics.replace(/\n*---\n\[Instrumentation\][\s\S]*?---\n*/g, "")
 
-  // Adiciona nova instrumentação
-  const instrumentation = formatInstrumentationForAI(genre)
+  const instrumentation = formatInstrumentationForAI(genre, cleanedLyrics)
 
   return cleanedLyrics.trim() + instrumentation
 }

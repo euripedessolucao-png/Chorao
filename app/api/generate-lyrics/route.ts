@@ -86,9 +86,7 @@ Retorne APENAS a letra, sem explicações.`
       .split("\n")
       .filter(
         (line) =>
-          !line.trim().startsWith("Retorne") &&
-          !line.trim().startsWith("REGRAS") &&
-          !line.includes("Explicação"),
+          !line.trim().startsWith("Retorne") && !line.trim().startsWith("REGRAS") && !line.includes("Explicação"),
       )
       .join("\n")
       .trim()
@@ -97,7 +95,7 @@ Retorne APENAS a letra, sem explicações.`
     if (genre.toLowerCase().includes("raiz")) {
       const forbiddenInstruments = ["electric guitar", "808", "synth", "drum machine", "bateria eletrônica"]
       const lowerLyrics = finalLyrics.toLowerCase()
-      if (forbiddenInstruments.some(inst => lowerLyrics.includes(inst))) {
+      if (forbiddenInstruments.some((inst) => lowerLyrics.includes(inst))) {
         // Substitui termos proibidos por alternativas acústicas
         finalLyrics = finalLyrics
           .replace(/electric guitar/gi, "acoustic guitar")
@@ -111,7 +109,7 @@ Retorne APENAS a letra, sem explicações.`
       finalLyrics = formatSertanejoPerformance(finalLyrics, genre)
     }
 
-    const instrumentation = formatInstrumentationForAI(genre)
+    const instrumentation = formatInstrumentationForAI(genre, finalLyrics)
     finalLyrics = `${finalLyrics}\n\n${instrumentation}`
 
     // Validação de métrica
