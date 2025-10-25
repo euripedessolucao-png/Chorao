@@ -12,6 +12,8 @@ import {
   shouldUsePerformanceFormat,
 } from "@/lib/formatters/sertanejo-performance-formatter"
 import { formatInstrumentationForAI } from "@/lib/normalized-genre"
+import { AbsoluteSyllableEnforcer } from "@/lib/validation/absolute-syllable-enforcer"
+import { LineStacker } from "@/lib/utils/line-stacker"
 
 export async function POST(request: NextRequest) {
   try {
@@ -100,6 +102,20 @@ Retorne APENAS a letra reescrita, sem explicações.`
       .join("\n")
       .trim()
 
+    console.log("[API] 🔧 Aplicando correção automática de sílabas...")
+    const enforcementResult = AbsoluteSyllableEnforcer.validateAndFix(finalLyrics)
+    if (enforcementResult.corrections > 0) {
+      console.log(`[API] ✅ ${enforcementResult.corrections} verso(s) corrigido(s) automaticamente`)
+      finalLyrics = enforcementResult.correctedLyrics
+    }
+
+    console.log("[API] 📚 Empilhando versos...")
+    const stackResult = LineStacker.stackLines(finalLyrics)
+    finalLyrics = stackResult.stackedLyrics
+    if (stackResult.improvements.length > 0) {
+      console.log(`[API] ✅ ${stackResult.improvements.length} melhoria(s) de empilhamento aplicadas`)
+    }
+
     if (shouldUsePerformanceFormat(genre, performanceMode)) {
       finalLyrics = formatSertanejoPerformance(finalLyrics, genre)
     }
@@ -135,6 +151,7 @@ Retorne APENAS a letra reescrita, sem explicações.`
         performanceMode,
         syllableRange: { min: minSyllables, max: maxSyllables },
         genre: genre,
+        syllableCorrections: enforcementResult.corrections,
       },
     })
   } catch (error) {

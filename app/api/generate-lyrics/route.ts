@@ -10,6 +10,8 @@ import {
   shouldUsePerformanceFormat,
 } from "@/lib/formatters/sertanejo-performance-formatter"
 import { formatInstrumentationForAI } from "@/lib/normalized-genre"
+import { AbsoluteSyllableEnforcer } from "@/lib/validation/absolute-syllable-enforcer"
+import { LineStacker } from "@/lib/utils/line-stacker"
 
 export async function POST(request: NextRequest) {
   try {
@@ -91,6 +93,20 @@ Retorne APENAS a letra, sem explicações.`
       .join("\n")
       .trim()
 
+    console.log("[API] 🔧 Aplicando correção automática de sílabas...")
+    const enforcementResult = AbsoluteSyllableEnforcer.validateAndFix(finalLyrics)
+    if (enforcementResult.corrections > 0) {
+      console.log(`[API] ✅ ${enforcementResult.corrections} verso(s) corrigido(s) automaticamente`)
+      finalLyrics = enforcementResult.correctedLyrics
+    }
+
+    console.log("[API] 📚 Empilhando versos...")
+    const stackResult = LineStacker.stackLines(finalLyrics)
+    finalLyrics = stackResult.stackedLyrics
+    if (stackResult.improvements.length > 0) {
+      console.log(`[API] ✅ ${stackResult.improvements.length} melhoria(s) de empilhamento aplicadas`)
+    }
+
     // 🔁 PÓS-GERAÇÃO: Validação e correção para Sertanejo Raiz
     if (genre.toLowerCase().includes("raiz")) {
       const forbiddenInstruments = ["electric guitar", "808", "synth", "drum machine", "bateria eletrônica"]
@@ -140,6 +156,7 @@ Retorne APENAS a letra, sem explicações.`
         genre,
         performanceMode,
         syllableRange: { min: minSyllables, max: maxSyllables },
+        syllableCorrections: enforcementResult.corrections,
       },
     })
   } catch (error) {
