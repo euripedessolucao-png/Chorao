@@ -90,7 +90,7 @@ export default function EditarPage() {
   const [projectId, setProjectId] = useState<number | null>(null)
   const [additionalReqs, setAdditionalReqs] = useState("")
   const [advancedMode, setAdvancedMode] = useState(false)
-  const [creativity, setCreativity] = useState([50])
+  const [creativity, setCreativity] = useState([80]) // Default 80 = 0.80 temperature
   const [formattingStyle, setFormattingStyle] = useState<"padrao" | "performatico">("performatico")
   const [universalPolish, setUniversalPolish] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
@@ -167,6 +167,7 @@ export default function EditarPage() {
         title,
         syllableTarget: syllableConfig,
         performanceMode: formattingStyle === "performatico" ? "performance" : "standard",
+        temperature: Number.parseFloat(getTemperatureValue(creativity[0])),
       }
 
       const response = await fetch("/api/rewrite-lyrics", {
@@ -268,6 +269,18 @@ export default function EditarPage() {
   }
 
   const currentSyllableConfig = genre ? getSyllableConfig(genre) : null
+
+  const getTemperatureValue = (sliderValue: number) => {
+    return (sliderValue / 100).toFixed(2)
+  }
+
+  const getTemperatureLabel = (temp: number) => {
+    if (temp < 0.5) return "Muito Conservador"
+    if (temp < 0.7) return "Conservador"
+    if (temp < 0.85) return "Equilibrado"
+    if (temp < 0.95) return "Criativo"
+    return "Muito Criativo"
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -510,154 +523,164 @@ export default function EditarPage() {
               </div>
 
               <div className="space-y-3 border rounded-lg p-3">
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <Label className="text-xs">Nível de Criatividade</Label>
-                    <span className="text-xs text-muted-foreground">
-                      {creativity[0] < 33 ? "Conservador" : creativity[0] < 66 ? "Equilibrado" : "Ousado"}
-                    </span>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center mb-2">
+                    <Label className="text-xs font-semibold">Temperatura da IA</Label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-mono font-bold text-primary">
+                        {getTemperatureValue(creativity[0])}
+                      </span>
+                      <Badge variant="outline" className="text-xs">
+                        {getTemperatureLabel(Number.parseFloat(getTemperatureValue(creativity[0])))}
+                      </Badge>
+                    </div>
                   </div>
-                  <Slider value={creativity} onValueChange={setCreativity} max={100} step={1} />
+                  <Slider
+                    value={creativity}
+                    onValueChange={setCreativity}
+                    min={50}
+                    max={100}
+                    step={1}
+                    className="cursor-pointer"
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>0.50</span>
+                    <span>0.70</span>
+                    <span className="font-semibold text-primary">0.80 (padrão)</span>
+                    <span>1.00</span>
+                  </div>
+                  <div className="bg-amber-50 border border-amber-200 rounded p-2 text-xs text-amber-800">
+                    <div className="font-semibold flex items-center gap-1">⚠️ Controle Sensível</div>
+                    <div className="mt-1">
+                      {Number.parseFloat(getTemperatureValue(creativity[0])) < 0.7 &&
+                        "Edições conservadoras e previsíveis. Mantém estrutura original."}
+                      {Number.parseFloat(getTemperatureValue(creativity[0])) >= 0.7 &&
+                        Number.parseFloat(getTemperatureValue(creativity[0])) < 0.85 &&
+                        "Equilíbrio entre preservação e criatividade nas edições."}
+                      {Number.parseFloat(getTemperatureValue(creativity[0])) >= 0.85 &&
+                        Number.parseFloat(getTemperatureValue(creativity[0])) < 0.95 &&
+                        "Edições criativas com mudanças significativas."}
+                      {Number.parseFloat(getTemperatureValue(creativity[0])) >= 0.95 &&
+                        "Edições experimentais com máxima liberdade criativa."}
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <Label className="text-xs">Estilo de Formatação</Label>
-                    <span className="text-xs text-muted-foreground">
-                      {formattingStyle === "padrao" ? "Padrão" : "Performático"}
-                    </span>
+                <div className="border rounded-lg p-3 space-y-2">
+                  <Label className="text-xs font-semibold">Ferramentas</Label>
+                  <div className="space-y-1">
+                    <Button variant="outline" size="sm" className="w-full justify-start text-xs bg-transparent">
+                      Encontrar Rimas
+                    </Button>
+                    <Button variant="outline" size="sm" className="w-full justify-start text-xs bg-transparent">
+                      Encontrar Sinônimos
+                    </Button>
+                    <Button variant="outline" size="sm" className="w-full justify-start text-xs bg-transparent">
+                      Completar Verso
+                    </Button>
+                    <Button variant="outline" size="sm" className="w-full justify-start text-xs bg-transparent">
+                      Expressões Estratégicas
+                    </Button>
                   </div>
-                  <Select
-                    value={formattingStyle}
-                    onValueChange={(value) => setFormattingStyle(value as "padrao" | "performatico")}
-                  >
-                    <SelectTrigger className="h-8">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="padrao">Padrão</SelectItem>
-                      <SelectItem value="performatico">Performático</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="border rounded-lg p-3 space-y-2">
-                <Label className="text-xs font-semibold">Ferramentas</Label>
-                <div className="space-y-1">
-                  <Button variant="outline" size="sm" className="w-full justify-start text-xs bg-transparent">
-                    Encontrar Rimas
-                  </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start text-xs bg-transparent">
-                    Encontrar Sinônimos
-                  </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start text-xs bg-transparent">
-                    Completar Verso
-                  </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start text-xs bg-transparent">
-                    Expressões Estratégicas
-                  </Button>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Coluna 3: Editor de Letra */}
-          <div className="order-3 space-y-4 h-fit">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Editor</CardTitle>
-                <div className="flex gap-2 mt-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 bg-transparent"
-                    onClick={handleEditLyrics}
-                    disabled={isEditing || !lyrics || !genre}
-                  >
-                    <Sparkles className="h-3 w-3 mr-1" />
-                    <span className="text-xs">
-                      {isEditing ? "Editando..." : universalPolish ? "Editar com Polimento" : "Editar"}
-                    </span>
-                  </Button>
-                  <Button variant="outline" size="sm" className="flex-1 bg-transparent">
-                    <RefreshCw className="h-3 w-3 mr-1" />
-                    <span className="text-xs">Refazer</span>
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={handleClear}>
-                    <Trash2 className="h-3 w-3 mr-1" />
-                    <span className="text-xs">Limpar</span>
-                  </Button>
-                </div>
+          <Card className="order-3 space-y-4 h-fit">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Editor</CardTitle>
+              <div className="flex gap-2 mt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 bg-transparent"
+                  onClick={handleEditLyrics}
+                  disabled={isEditing || !lyrics || !genre}
+                >
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  <span className="text-xs">
+                    {isEditing ? "Editando..." : universalPolish ? "Editar com Polimento" : "Editar"}
+                  </span>
+                </Button>
+                <Button variant="outline" size="sm" className="flex-1 bg-transparent">
+                  <RefreshCw className="h-3 w-3 mr-1" />
+                  <span className="text-xs">Refazer</span>
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleClear}>
+                  <Trash2 className="h-3 w-3 mr-1" />
+                  <span className="text-xs">Limpar</span>
+                </Button>
+              </div>
 
-                {universalPolish && genre && (
-                  <div className="bg-green-50 border border-green-200 rounded p-2 text-xs text-green-700 mt-2">
-                    <div className="font-semibold">Sistema Universal Ativo</div>
-                    <div>Polimento específico para {genre} habilitado</div>
-                  </div>
-                )}
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm">
-                <Input
-                  placeholder="Título da música..."
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="h-9"
+              {universalPolish && genre && (
+                <div className="bg-green-50 border border-green-200 rounded p-2 text-xs text-green-700 mt-2">
+                  <div className="font-semibold">Sistema Universal Ativo</div>
+                  <div>Polimento específico para {genre} habilitado</div>
+                </div>
+              )}
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              <Input
+                placeholder="Título da música..."
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="h-9"
+              />
+
+              <div className="space-y-2">
+                <Label className="text-xs">Letra</Label>
+                <Textarea
+                  placeholder="Cole aqui a letra que deseja editar..."
+                  value={lyrics}
+                  onChange={(e) => setLyrics(e.target.value)}
+                  rows={18}
+                  className="font-mono text-xs"
                 />
 
-                <div className="space-y-2">
-                  <Label className="text-xs">Letra</Label>
-                  <Textarea
-                    placeholder="Cole aqui a letra que deseja editar..."
-                    value={lyrics}
-                    onChange={(e) => setLyrics(e.target.value)}
-                    rows={18}
-                    className="font-mono text-xs"
-                  />
+                <SyllableValidator
+                  lyrics={lyrics}
+                  maxSyllables={currentSyllableConfig?.max || 11}
+                  onValidate={(result) => {
+                    if (!result.valid) {
+                      toast.warning(`${result.linesWithIssues} versos fora do padrão ${genre}`, {
+                        description: `Use ${currentSyllableConfig?.min}-${currentSyllableConfig?.max} sílabas`,
+                        duration: 5000,
+                      })
+                    }
+                  }}
+                />
 
-                  <SyllableValidator
-                    lyrics={lyrics}
-                    maxSyllables={currentSyllableConfig?.max || 11}
-                    onValidate={(result) => {
-                      if (!result.valid) {
-                        toast.warning(`${result.linesWithIssues} versos fora do padrão ${genre}`, {
-                          description: `Use ${currentSyllableConfig?.min}-${currentSyllableConfig?.max} sílabas`,
-                          duration: 5000,
-                        })
-                      }
-                    }}
-                  />
+                <RhymeAnalyzer
+                  lyrics={lyrics}
+                  genre={genre}
+                  onAnalysis={(report) => {
+                    if (report.overallScore < 60) {
+                      toast.warning(`Rimas precisam de melhoria (Score: ${report.overallScore})`)
+                    }
+                  }}
+                />
+              </div>
 
-                  <RhymeAnalyzer
-                    lyrics={lyrics}
-                    genre={genre}
-                    onAnalysis={(report) => {
-                      if (report.overallScore < 60) {
-                        toast.warning(`Rimas precisam de melhoria (Score: ${report.overallScore})`)
-                      }
-                    }}
-                  />
-                </div>
-
-                <div className="flex gap-2">
-                  <Button size="sm" className="flex-1" onClick={handleCopy} disabled={!lyrics}>
-                    <Copy className="h-3 w-3 mr-1" />
-                    Copiar
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="flex-1 bg-transparent"
-                    variant="outline"
-                    onClick={handleSave}
-                    disabled={!title || !lyrics}
-                  >
-                    <Save className="h-3 w-3 mr-1" />
-                    Salvar
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+              <div className="flex gap-2">
+                <Button size="sm" className="flex-1" onClick={handleCopy} disabled={!lyrics}>
+                  <Copy className="h-3 w-3 mr-1" />
+                  Copiar
+                </Button>
+                <Button
+                  size="sm"
+                  className="flex-1 bg-transparent"
+                  variant="outline"
+                  onClick={handleSave}
+                  disabled={!title || !lyrics}
+                >
+                  <Save className="h-3 w-3 mr-1" />
+                  Salvar
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

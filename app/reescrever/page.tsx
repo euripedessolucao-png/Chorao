@@ -57,7 +57,7 @@ export default function ReescreverPage() {
   const [additionalReqs, setAdditionalReqs] = useState("")
   const [useDiary, setUseDiary] = useState(true)
   const [advancedMode, setAdvancedMode] = useState(false)
-  const [creativity, setCreativity] = useState([50])
+  const [creativity, setCreativity] = useState([80])
   const [inspirationText, setInspirationText] = useState("")
   const [literaryGenre, setLiteraryGenre] = useState("")
   const [literaryEmotion, setLiteraryEmotion] = useState("")
@@ -115,6 +115,7 @@ export default function ReescreverPage() {
           title: title,
           syllableTarget: syllableConfig,
           performanceMode: formattingStyle === "performatico" ? "performance" : "standard",
+          temperature: Number.parseFloat(getTemperatureValue(creativity[0])),
         }),
       })
 
@@ -175,6 +176,18 @@ export default function ReescreverPage() {
   }
 
   const currentSyllableConfig = genre ? getSyllableConfig(genre) : null
+
+  const getTemperatureValue = (sliderValue: number) => {
+    return (sliderValue / 100).toFixed(2)
+  }
+
+  const getTemperatureLabel = (temp: number) => {
+    if (temp < 0.5) return "Muito Conservador"
+    if (temp < 0.7) return "Conservador"
+    if (temp < 0.85) return "Equilibrado"
+    if (temp < 0.95) return "Criativo"
+    return "Muito Criativo"
+  }
 
   return (
     <div className="bg-background">
@@ -311,23 +324,51 @@ export default function ReescreverPage() {
               </div>
 
               <div className="space-y-3 border rounded-lg p-3">
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <Label className="text-xs">Nível de Criatividade</Label>
-                    <span className="text-xs text-muted-foreground">
-                      {creativity[0] < 33 ? "Conservador" : creativity[0] < 66 ? "Equilibrado" : "Ousado"}
-                    </span>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center mb-2">
+                    <Label className="text-xs font-semibold">Temperatura da IA</Label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-mono font-bold text-primary">
+                        {getTemperatureValue(creativity[0])}
+                      </span>
+                      <Badge variant="outline" className="text-xs">
+                        {getTemperatureLabel(Number.parseFloat(getTemperatureValue(creativity[0])))}
+                      </Badge>
+                    </div>
                   </div>
-                  <Slider value={creativity} onValueChange={setCreativity} max={100} step={1} />
+                  <Slider
+                    value={creativity}
+                    onValueChange={setCreativity}
+                    min={50}
+                    max={100}
+                    step={1}
+                    className="cursor-pointer"
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>0.50</span>
+                    <span>0.70</span>
+                    <span className="font-semibold text-primary">0.80 (padrão)</span>
+                    <span>1.00</span>
+                  </div>
+                  <div className="bg-amber-50 border border-amber-200 rounded p-2 text-xs text-amber-800">
+                    <div className="font-semibold flex items-center gap-1">⚠️ Controle Sensível</div>
+                    <div className="mt-1">
+                      {Number.parseFloat(getTemperatureValue(creativity[0])) < 0.7 &&
+                        "Reescrita conservadora mantendo estrutura original. Mudanças mínimas."}
+                      {Number.parseFloat(getTemperatureValue(creativity[0])) >= 0.7 &&
+                        Number.parseFloat(getTemperatureValue(creativity[0])) < 0.85 &&
+                        "Equilíbrio entre preservação e inovação. Recomendado para reescritas."}
+                      {Number.parseFloat(getTemperatureValue(creativity[0])) >= 0.85 &&
+                        Number.parseFloat(getTemperatureValue(creativity[0])) < 0.95 &&
+                        "Reescrita criativa com mudanças significativas mantendo essência."}
+                      {Number.parseFloat(getTemperatureValue(creativity[0])) >= 0.95 &&
+                        "Reescrita experimental com máxima liberdade criativa."}
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <Label className="text-xs">Estilo de Formatação</Label>
-                    <span className="text-xs text-muted-foreground">
-                      {formattingStyle === "padrao" ? "Padrão" : "Performático"}
-                    </span>
-                  </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Estilo de Formatação</Label>
                   <Select value={formattingStyle} onValueChange={setFormattingStyle}>
                     <SelectTrigger className="h-8">
                       <SelectValue />
