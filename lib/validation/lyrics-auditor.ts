@@ -231,4 +231,4 @@ export function getSyllableLimitsForGenre(genre: string) {
   }
   return { min: 5, max: 12, ideal: 9 };
 }
-export { LyricsAuditor };
+export class LyricsAuditor { ... }
