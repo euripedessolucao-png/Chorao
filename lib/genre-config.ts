@@ -1,5 +1,6 @@
 // lib/genre-config.ts
 import { countPoeticSyllables } from "./validation/syllable-counter-brasileiro"
+
 export const GENRE_CONFIGS = {
   "Sertanejo Moderno Feminino": {
     year_range: "2024-2025",
@@ -53,9 +54,7 @@ export const GENRE_CONFIGS = {
     prosody_rules: {
       syllable_count: {
         absolute_max: 12,
-        ideal_range: { min: 8, max: 10 },
-        acceptable_up_to: 11,
-        rule: "NUNCA exceder 12 sílabas poéticas por verso - limite humano de canto. Ideal: 8–10 sílabas (aceitável até 11 em versos narrativos).",
+        rule: "NUNCA exceder 12 sílabas poéticas por verso - limite humano de canto",
       },
       breathability: "Toda linha deve caber em um fôlego natural ao cantar (máximo 12 sílabas)",
       verse_stacking: "UM VERSO POR LINHA (empilhamento brasileiro) - exceto quando segundo é continuação direta",
@@ -129,9 +128,7 @@ export const GENRE_CONFIGS = {
     prosody_rules: {
       syllable_count: {
         absolute_max: 12,
-        ideal_range: { min: 8, max: 10 },
-        acceptable_up_to: 11,
-        rule: "NUNCA exceder 12 sílabas poéticas por verso - limite humano de canto. Ideal: 8–10 sílabas (aceitável até 11 em versos narrativos).",
+        rule: "NUNCA exceder 12 sílabas poéticas por verso - limite humano de canto",
       },
       breathability: "Toda linha deve caber em um fôlego natural ao cantar (máximo 12 sílabas)",
       verse_stacking: "UM VERSO POR LINHA (empilhamento brasileiro) - exceto quando segundo é continuação direta",
@@ -783,9 +780,12 @@ export const GENRE_CONFIGS = {
     },
   },
 } as const
+
 export type GenreConfig = (typeof GENRE_CONFIGS)[keyof typeof GENRE_CONFIGS]
+
 export function getGenreConfig(genre: string): GenreConfig & { name: string } {
   const config = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS]
+
   if (!config) {
     return {
       name: genre,
@@ -830,11 +830,13 @@ export function getGenreConfig(genre: string): GenreConfig & { name: string } {
       },
     } as unknown as GenreConfig & { name: string }
   }
+
   return {
     name: genre,
     ...config,
   }
 }
+
 export function validateLyrics(
   lyrics: string,
   genre: string,
@@ -845,10 +847,12 @@ export function validateLyrics(
 } {
   const errors: string[] = []
   const warnings: string[] = []
+
   const config = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS]
   if (!config) {
     return { valid: true, errors: [], warnings: ["Gênero não encontrado nas configurações"] }
   }
+
   // Validar palavras proibidas
   const lyricsLower = lyrics.toLowerCase()
   if (config.language_rules.forbidden) {
@@ -860,15 +864,18 @@ export function validateLyrics(
       })
     })
   }
+
   // Validar contagem de sílabas - USANDO O NOVO SISTEMA
   const lines = lyrics.split("\n").filter((line) => line.trim() && !line.startsWith("["))
   lines.forEach((line, index) => {
     const syllables = countPoeticSyllables(line) // ← CORRIGIDO: usa o novo sistema
     const rules = config.prosody_rules.syllable_count
+
     if ("with_comma" in rules && line.includes(",")) {
       const [before, after] = line.split(",")
       const beforeCount = countPoeticSyllables(before) // ← CORRIGIDO
       const afterCount = countPoeticSyllables(after) // ← CORRIGIDO
+
       if (beforeCount > rules.with_comma.max_before_comma) {
         warnings.push(`Linha ${index + 1}: Muitas sílabas antes da vírgula (${beforeCount})`)
       }
@@ -879,12 +886,6 @@ export function validateLyrics(
       // For Sertanejo Moderno genres with absolute_max rule
       if (syllables > rules.absolute_max) {
         errors.push(`Linha ${index + 1}: Excede o limite de ${rules.absolute_max} sílabas (${syllables})`)
-      } else if ("ideal_range" in rules && "acceptable_up_to" in rules) {
-        if (syllables > rules.acceptable_up_to) {
-          warnings.push(`Linha ${index + 1}: Acima do recomendado (${syllables} sílabas; aceitável até ${rules.acceptable_up_to})`)
-        } else if (syllables < rules.ideal_range.min || syllables > rules.ideal_range.max) {
-          warnings.push(`Linha ${index + 1}: Fora da faixa ideal (${syllables} sílabas; ideal: ${rules.ideal_range.min}–${rules.ideal_range.max})`)
-        }
       }
     } else if ("without_comma" in rules) {
       // For genres with without_comma rules
@@ -893,12 +894,14 @@ export function validateLyrics(
       }
     }
   })
+
   return {
     valid: errors.length === 0,
     errors,
     warnings,
   }
 }
+
 export const INSTRUMENTATION_RULES = {
   "Sertanejo Moderno Feminino": {
     required: "(Instrumental: acoustic guitar, electric guitar, drums, bass)",
@@ -946,6 +949,7 @@ export const INSTRUMENTATION_RULES = {
     format: "Sempre entre parênteses, em inglês, após o nome da seção",
   },
 } as const
+
 export const SUB_GENRE_INSTRUMENTS = {
   // Sertanejo sub-genres
   arrocha: {
@@ -966,6 +970,7 @@ export const SUB_GENRE_INSTRUMENTS = {
     rhythm: "Modão",
     style_note: "Modão tradicional",
   },
+
   // Forró sub-genres
   xote: {
     instruments: "zabumba, triangle, accordion",
@@ -979,6 +984,7 @@ export const SUB_GENRE_INSTRUMENTS = {
     rhythm: "Baião",
     style_note: "Baião animado",
   },
+
   // Pagode sub-genres
   "pagode 90": {
     instruments: "cavaquinho, pandeiro, tantã, surdo, acoustic guitar",
@@ -993,6 +999,7 @@ export const SUB_GENRE_INSTRUMENTS = {
     style_note: "Pagode romântico",
   },
 } as const
+
 export function detectSubGenre(additionalRequirements: string | undefined): {
   subGenre: string | null
   instruments: string | null
@@ -1003,7 +1010,9 @@ export function detectSubGenre(additionalRequirements: string | undefined): {
   if (!additionalRequirements) {
     return { subGenre: null, instruments: null, bpm: null, rhythm: null, styleNote: null }
   }
+
   const text = additionalRequirements.toLowerCase()
+
   for (const [subGenre, config] of Object.entries(SUB_GENRE_INSTRUMENTS)) {
     if (text.includes(subGenre)) {
       return {
@@ -1015,8 +1024,10 @@ export function detectSubGenre(additionalRequirements: string | undefined): {
       }
     }
   }
+
   return { subGenre: null, instruments: null, bpm: null, rhythm: null, styleNote: null }
 }
+
 export const GENRE_RHYTHMS = {
   "Sertanejo Moderno Feminino": "Sertanejo Moderno",
   "Sertanejo Moderno Masculino": "Sertanejo Moderno",
@@ -1033,23 +1044,29 @@ export const GENRE_RHYTHMS = {
   Arrocha: "Arrocha",
   Samba: "Samba de Raiz",
 } as const
+
 export function getGenreRhythm(genre: string): string {
   return GENRE_RHYTHMS[genre as keyof typeof GENRE_RHYTHMS] || genre
 }
+
 export function getSyllableLimitsForGenre(genre: string) {
   const config = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS]
+
   if (!config) {
     // Fallback seguro
     return { min: 5, max: 12, ideal: 9 }
   }
+
   const rules = config.prosody_rules.syllable_count
+
   if ("absolute_max" in rules) {
     return {
-      min: rules.ideal_range?.min ?? Math.max(4, rules.absolute_max - 5),
+      min: Math.max(4, rules.absolute_max - 5),
       max: rules.absolute_max,
-      ideal: rules.ideal_range ? Math.floor((rules.ideal_range.min + rules.ideal_range.max) / 2) : Math.min(11, Math.floor((Math.max(4, rules.absolute_max - 5) + rules.absolute_max) / 2)),
+      ideal: Math.min(11, Math.floor((Math.max(4, rules.absolute_max - 5) + rules.absolute_max) / 2)),
     }
   }
+
   if ("without_comma" in rules) {
     return {
       min: rules.without_comma.min,
@@ -1057,6 +1074,7 @@ export function getSyllableLimitsForGenre(genre: string) {
       ideal: Math.floor((rules.without_comma.min + rules.without_comma.max) / 2),
     }
   }
+
   // Fallback para regras com vírgula
   return { min: 5, max: 12, ideal: 9 }
 }
