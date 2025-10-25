@@ -10,32 +10,39 @@ import {
 import { PunctuationValidator } from "@/lib/validation/punctuation-validator"
 import { LineStacker } from "@/lib/utils/line-stacker"
 import { LyricsAuditor } from "@/lib/validation/lyrics-auditor"
-import { getGenreMetrics } from "@/lib/metrics/brazilian-metrics"
+import { GENRE_CONFIGS } from "@/lib/genre-config" // ✅ ÚNICA importação válida
 import { AbsoluteSyllableEnforcer } from "@/lib/validation/absolute-syllable-enforcer"
 
-export interface CompositionRequest {
-  genre: string
-  theme: string
-  mood: string
-  additionalRequirements?: string
-  creativity?: "conservador" | "equilibrado" | "ousado"
-  applyFinalPolish?: boolean
-  preservedChoruses?: string[]
-  originalLyrics?: string
-  performanceMode?: "standard" | "performance"
-  useTerceiraVia?: boolean
-}
-
-export interface CompositionResult {
-  lyrics: string
-  title: string
-  metadata: {
-    finalScore: number
-    polishingApplied: boolean
-    terceiraViaApplied: boolean
-    performanceMode: string
-    modelUsed: string
+// Função local para extrair métricas (sem depender de módulo ausente)
+function getGenreMetrics(genre: string) {
+  const config = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS]
+  if (!config) {
+    return { syllableRange: { min: 5, max: 12 }, idealRange: { min: 8, max: 10 } }
   }
+
+  const rules = config.prosody_rules.syllable_count
+
+  if ("absolute_max" in rules) {
+    return {
+      syllableRange: { min: 7, max: rules.absolute_max },
+      idealRange: { min: 8, max: 10 },
+    }
+  }
+
+  if ("with_comma" in rules) {
+    return {
+      syllableRange: { 
+        min: rules.without_comma?.min || 5, 
+        max: rules.without_comma?.acceptable_up_to || 9 
+      },
+      idealRange: { 
+        min: rules.without_comma?.min || 5, 
+        max: rules.without_comma?.max || 8 
+      },
+    }
+  }
+
+  return { syllableRange: { min: 5, max: 12 }, idealRange: { min: 8, max: 10 } }
 }
 
 /**
@@ -91,14 +98,26 @@ export class MetaComposer {
   private static async generateLyrics(request: CompositionRequest): Promise<string> {
     const metrics = getGenreMetrics(request.genre)
     const maxSyllables = Math.min(metrics.syllableRange.max, this.MAX_SYLLABLES)
+    const idealMin = metrics.idealRange?.min || 8
+    const idealMax = metrics.idealRange?.max || 10
+
+    // Extrai exemplos de allowed do genre-config.ts
+    const config = GENRE_CONFIGS[request.genre as keyof typeof GENRE_CONFIGS]
+    const allowedExamples = config?.language_rules.allowed
+      ? [
+          ...config.language_rules.allowed.concrete_objects.slice(0, 3),
+          ...config.language_rules.allowed.phrases.slice(0, 2),
+        ].join(", ")
+      : ""
 
     const prompt = `Você é um compositor profissional de hits brasileiros.
 
 REGRAS ABSOLUTAS:
-- Cada verso deve ter ENTRE ${metrics.syllableRange.min} E ${maxSyllables} SÍLABAS
+- Cada verso deve ter ENTRE ${idealMin} E ${idealMax} SÍLABAS (máximo absoluto: ${maxSyllables})
 - Use contrações naturais: "você" → "cê", "para" → "pra", "estou" → "tô"
-- Evite clichês: "coraçãozinho", "lágrimas no rosto", "viola caipira"
-- Mantenha a naturalidade da fala cantada
+- Use palavras concretas como: ${allowedExamples || "conta, lixo, saudade, carro"}
+- Evite: "sofrimento", "dor profunda", "alma perdida", "coração partido", "prejuízo"
+- Mantenha tom de empoderamento (se feminino) ou superação (se masculino)
 - Inclua elementos visuais para clipe (ex: "lua", "carro", "cidade", "chuva")
 
 GÊNERO: ${request.genre}
@@ -136,12 +155,24 @@ RETORNE APENAS A LETRA, SEM EXPLICAÇÕES.`
 
     const metrics = getGenreMetrics(request.genre)
     const maxSyllables = Math.min(metrics.syllableRange.max, this.MAX_SYLLABLES)
+    const idealMin = metrics.idealRange?.min || 8
+    const idealMax = metrics.idealRange?.max || 10
+
+    const config = GENRE_CONFIGS[request.genre as keyof typeof GENRE_CONFIGS]
+    const allowedExamples = config?.language_rules.allowed
+      ? [
+          ...config.language_rules.allowed.concrete_objects.slice(0, 3),
+          ...config.language_rules.allowed.phrases.slice(0, 2),
+        ].join(", ")
+      : ""
 
     const prompt = `Reescreva esta letra musical para o gênero "${request.genre}", mantendo o significado mas:
 
 REGRAS:
-- Cada verso: ${metrics.syllableRange.min}–${maxSyllables} sílabas
+- Cada verso: ${idealMin}–${idealMax} sílabas (máx: ${maxSyllables})
 - Use contrações naturais ("cê", "pra", "tô")
+- Substitua termos proibidos por permitidos: evite "sofrimento", use "desperdício"; evite "prejuízo", use "conta"
+- Use palavras concretas como: ${allowedExamples || "conta, lixo, saudade"}
 - Remova clichês e torne mais natural
 - Adicione elementos visuais se possível
 
@@ -273,7 +304,7 @@ RETORNE APENAS A LETRA REESCRITA, SEM EXPLICAÇÕES.`
   private static applyLocalFix(line: string, maxSyllables: number): string {
     let fixed = line
 
-    // Contrações
+    // 1. Contrações
     const contractions = [
       [/você/gi, "cê"],
       [/para o/gi, "pro"],
@@ -281,14 +312,40 @@ RETORNE APENAS A LETRA REESCRITA, SEM EXPLICAÇÕES.`
       [/para/gi, "pra"],
       [/está/gi, "tá"],
       [/estou/gi, "tô"],
+      [/não/g, "num"],
     ]
 
     for (const [regex, replacement] of contractions) {
       const test = fixed.replace(regex, replacement as string)
       if (countPoeticSyllables(test) <= maxSyllables) {
-        fixed = test
-        break
+        return test
       }
+    }
+
+    // 2. Substituições semânticas (Sertanejo Moderno)
+    const semanticFixes = [
+      [/jogou no papel/gi, "jogou no lixo"],
+      [/prejuízo/gi, "desperdício"],
+      [/sofrimento/gi, "desperdício"],
+      [/dor/gi, "desperdício"],
+      [/minha alma/gi, "minha paz"],
+      [/que não valeu/gi, "que foi embuste"],
+    ]
+
+    for (const [regex, replacement] of semanticFixes) {
+      const test = fixed.replace(regex, replacement as string)
+      if (countPoeticSyllables(test) <= maxSyllables) {
+        return test
+      }
+    }
+
+    // 3. Último recurso: corta final
+    if (fixed.includes(" ")) {
+      const words = fixed.split(" ")
+      while (words.length > 1 && countPoeticSyllables(words.join(" ")) > maxSyllables) {
+        words.pop()
+      }
+      return words.join(" ") + "..."
     }
 
     return fixed
