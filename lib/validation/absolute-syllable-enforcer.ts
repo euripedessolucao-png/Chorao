@@ -1,116 +1,73 @@
-// app/api/generate-lyrics/route.ts
+// lib/validation/absolute-syllable-enforcer.ts
 
-import { NextRequest, NextResponse } from "next/server"
-import { MetaComposer } from "@/lib/orchestrator/meta-composer"
-import {
-  formatSertanejoPerformance,
-  shouldUsePerformanceFormat,
-} from "@/lib/formatters/sertanejo-performance-formatter"
-import { formatInstrumentationForAI } from "@/lib/normalized-genre"
-import { validateSyllablesByGenre } from "@/lib/validation/absolute-syllable-enforcer"
-import { LineStacker } from "@/lib/utils/line-stacker"
+import { countPoeticSyllables } from "./syllable-counter-brasileiro"
+import { GENRE_CONFIGS } from "@/lib/genre-config"
 
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json()
-    
-    const {
-      genre,
-      theme,
-      mood,
-      additionalRequirements,
-      creativity = "equilibrado",
-      applyFinalPolish = true,
-      preservedChoruses = [],
-      rhythm,
-      performanceMode = "standard",
-      useTerceiraVia = true,
-      useIntelligentElisions = true,
-    } = body
+// ✅ MANTENHA A CLASSE ANTIGA (para compatibilidade)
+export class AbsoluteSyllableEnforcer {
+  private static readonly ABSOLUTE_MAX_SYLLABLES = 11
 
-    console.log("🎵 Recebendo requisição de composição:", {
-      genre,
-      theme,
-      mood,
-      creativity,
-      performanceMode,
-    })
-
-    // Validação básica
-    if (!genre || !theme) {
-      return NextResponse.json(
-        { error: "Gênero e tema são obrigatórios" },
-        { status: 400 }
-      )
+  static validate(lyrics: string) {
+    // ... implementação antiga com limite fixo de 11 sílabas
+    const lines = lyrics.split("\n")
+    const violations = []
+    for (const line of lines) {
+      const trimmed = line.trim()
+      if (!trimmed || trimmed.startsWith("[") || trimmed.startsWith("(")) continue
+      const syllables = countPoeticSyllables(trimmed)
+      if (syllables > this.ABSOLUTE_MAX_SYLLABLES) {
+        violations.push({ line: trimmed, syllables, lineNumber: lines.indexOf(line) + 1 })
+      }
     }
-
-    // Composição principal
-    const compositionResult = await MetaComposer.compose({
-      genre,
-      theme,
-      mood: mood || "adaptável",
-      additionalRequirements,
-      creativity,
-      applyFinalPolish,
-      preservedChoruses,
-      rhythm,
-      performanceMode,
-      useTerceiraVia,
-      useIntelligentElisions,
-      syllableTarget: {
-        min: 7,
-        max: 11,
-        ideal: 9,
-      },
-    })
-
-    // Validação final de sílabas
-    const syllableValidation = validateSyllablesByGenre(compositionResult.lyrics, genre)
-    
-    if (!syllableValidation.isValid) {
-      console.warn("⚠️ Validação de sílabas falhou:", syllableValidation.message)
-      
-      // Ainda retorna a letra, mas com aviso no metadata
-      compositionResult.metadata.syllableViolations = syllableValidation.violations
-      compositionResult.metadata.syllableMessage = syllableValidation.message
+    return {
+      isValid: violations.length === 0,
+      violations,
+      message: violations.length === 0 
+        ? "✅ APROVADO: Todos os versos têm no máximo 11 sílabas" 
+        : `❌ BLOQUEADO: ${violations.length} verso(s) com mais de 11 sílabas`
     }
-
-    // Aplica formatação de performance se necessário
-    let finalLyrics = compositionResult.lyrics
-    if (shouldUsePerformanceFormat(genre, performanceMode)) {
-      finalLyrics = formatSertanejoPerformance(finalLyrics)
-    }
-
-    // Stack de linhas para melhor legibilidade
-    const stackingResult = LineStacker.stackLines(finalLyrics)
-    finalLyrics = stackingResult.stackedLyrics
-
-    console.log("✅ Composição finalizada com sucesso!")
-    console.log(`📊 Métricas: Score ${compositionResult.metadata.finalScore.toFixed(1)}`)
-
-    return NextResponse.json({
-      success: true,
-      lyrics: finalLyrics,
-      title: compositionResult.title,
-      metadata: {
-        ...compositionResult.metadata,
-        syllableValidation: {
-          isValid: syllableValidation.isValid,
-          message: syllableValidation.message,
-          maxSyllables: syllableValidation.maxSyllables,
-        },
-      },
-    })
-
-  } catch (error) {
-    console.error("❌ Erro na composição:", error)
-    
-    return NextResponse.json(
-      { 
-        error: "Erro interno do servidor",
-        details: error instanceof Error ? error.message : "Erro desconhecido"
-      },
-      { status: 500 }
-    )
   }
+}
+
+// ✅ ADICIONE A FUNÇÃO NOVA (com suporte a gênero)
+export function validateSyllablesByGenre(
+  lyrics: string,
+  genre: string
+): {
+  isValid: boolean;
+  violations: Array<{ line: string; syllables: number; lineNumber: number }>;
+  message: string;
+  maxSyllables: number;
+} {
+  const config = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS];
+  let maxSyllables = 11;
+
+  if (config) {
+    const rules = config.prosody_rules.syllable_count;
+    if ("absolute_max" in rules) {
+      maxSyllables = rules.absolute_max;
+    } else if ("without_comma" in rules) {
+      maxSyllables = rules.without_comma.acceptable_up_to;
+    }
+  }
+
+  const lines = lyrics.split("\n");
+  const violations = [];
+
+  for (const [index, line] of lines.entries()) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("[") || trimmed.startsWith("(")) continue;
+    
+    const syllables = countPoeticSyllables(trimmed);
+    if (syllables > maxSyllables) {
+      violations.push({ line: trimmed, syllables, lineNumber: index + 1 });
+    }
+  }
+
+  const isValid = violations.length === 0;
+  const message = isValid
+    ? `✅ APROVADO: Todos os versos respeitam o limite de ${maxSyllables} sílabas (${genre})`
+    : `❌ BLOQUEADO: ${violations.length} verso(s) com mais de ${maxSyllables} sílabas (${genre})`;
+
+  return { isValid, violations, message, maxSyllables };
 }
