@@ -10,10 +10,36 @@ import {
 import { PunctuationValidator } from "@/lib/validation/punctuation-validator"
 import { LineStacker } from "@/lib/utils/line-stacker"
 import { LyricsAuditor } from "@/lib/validation/lyrics-auditor"
-import { GENRE_CONFIGS } from "@/lib/genre-config" // ✅ ÚNICA importação válida
+import { GENRE_CONFIGS } from "@/lib/genre-config"
 import { AbsoluteSyllableEnforcer } from "@/lib/validation/absolute-syllable-enforcer"
 
-// Função local para extrair métricas (sem depender de módulo ausente)
+// ✅ Interfaces definidas LOCALMENTE (sem dependência externa)
+export interface CompositionRequest {
+  genre: string
+  theme: string
+  mood: string
+  additionalRequirements?: string
+  creativity?: "conservador" | "equilibrado" | "ousado"
+  applyFinalPolish?: boolean
+  preservedChoruses?: string[]
+  originalLyrics?: string
+  performanceMode?: "standard" | "performance"
+  useTerceiraVia?: boolean
+}
+
+export interface CompositionResult {
+  lyrics: string
+  title: string
+  metadata: {
+    finalScore: number
+    polishingApplied: boolean
+    terceiraViaApplied: boolean
+    performanceMode: string
+    modelUsed: string
+  }
+}
+
+// Função auxiliar: extrai métricas diretamente do GENRE_CONFIGS
 function getGenreMetrics(genre: string) {
   const config = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS]
   if (!config) {
@@ -49,17 +75,16 @@ function getGenreMetrics(genre: string) {
  * Motor de composição otimizado para produção (Vercel)
  */
 export class MetaComposer {
-  // ✅ Usa gpt-4o-mini: mais rápido, barato e consistente
   private static readonly MODEL = "openai/gpt-4o-mini"
-  private static readonly MAX_SYLLABLES = 12 // 12 é limite real na música
+  private static readonly MAX_SYLLABLES = 12
 
   static async compose(request: CompositionRequest): Promise<CompositionResult> {
     console.log("[MetaComposer] 🚀 Iniciando composição (produção)...")
 
-    // 1. Gera letra base
-    let lyrics = request.originalLyrics ? await this.rewriteLyrics(request) : await this.generateLyrics(request)
+    let lyrics = request.originalLyrics 
+      ? await this.rewriteLyrics(request) 
+      : await this.generateLyrics(request)
 
-    // 2. Aplica Terceira Via se necessário
     let terceiraViaApplied = false
     const analysis = analisarTerceiraVia(lyrics, request.genre, request.theme)
     if (analysis.score_geral < 75) {
@@ -67,15 +92,12 @@ export class MetaComposer {
       terceiraViaApplied = true
     }
 
-    // 3. Polimento final
     if (request.applyFinalPolish !== false) {
       lyrics = await this.applyPolish(lyrics, request)
     }
 
-    // 4. Validação final (sem loops!)
     lyrics = this.enforceSyllableLimits(lyrics, request.genre)
 
-    // 5. Auditoria final
     const audit = LyricsAuditor.audit(lyrics, request.genre, request.theme)
     const finalScore = Math.min(100, audit.score + (terceiraViaApplied ? 5 : 0))
 
@@ -92,16 +114,12 @@ export class MetaComposer {
     }
   }
 
-  /**
-   * GERA LETRA COM PROMPT ESTRUTURADO E CLARO
-   */
   private static async generateLyrics(request: CompositionRequest): Promise<string> {
     const metrics = getGenreMetrics(request.genre)
     const maxSyllables = Math.min(metrics.syllableRange.max, this.MAX_SYLLABLES)
     const idealMin = metrics.idealRange?.min || 8
     const idealMax = metrics.idealRange?.max || 10
 
-    // Extrai exemplos de allowed do genre-config.ts
     const config = GENRE_CONFIGS[request.genre as keyof typeof GENRE_CONFIGS]
     const allowedExamples = config?.language_rules.allowed
       ? [
@@ -118,7 +136,7 @@ REGRAS ABSOLUTAS:
 - Use palavras concretas como: ${allowedExamples || "conta, lixo, saudade, carro"}
 - Evite: "sofrimento", "dor profunda", "alma perdida", "coração partido", "prejuízo"
 - Mantenha tom de empoderamento (se feminino) ou superação (se masculino)
-- Inclua elementos visuais para clipe (ex: "lua", "carro", "cidade", "chuva")
+- Inclua elementos visuais para clipe
 
 GÊNERO: ${request.genre}
 TEMA: ${request.theme}
@@ -147,9 +165,6 @@ RETORNE APENAS A LETRA, SEM EXPLICAÇÕES.`
     return this.cleanLyricsResponse(text || "")
   }
 
-  /**
-   * REESCREVE LETRA EXISTENTE
-   */
   private static async rewriteLyrics(request: CompositionRequest): Promise<string> {
     if (!request.originalLyrics) throw new Error("Original lyrics required")
 
@@ -193,23 +208,19 @@ RETORNE APENAS A LETRA REESCRITA, SEM EXPLICAÇÕES.`
     return this.cleanLyricsResponse(text || "")
   }
 
-  /**
-   * LIMPA RESPOSTA DA IA (remove explicações, markdown, etc.)
-   */
   private static cleanLyricsResponse(text: string): string {
     return text
       .split("\n")
       .filter(
         (line) =>
-          !line.trim().startsWith("RETORNE") && !line.trim().startsWith("FORMATO") && !line.includes("Explicação"),
+          !line.trim().startsWith("RETORNE") && 
+          !line.trim().startsWith("FORMATO") && 
+          !line.includes("Explicação")
       )
       .join("\n")
       .trim()
   }
 
-  /**
-   * APLICA TERCEIRA VIA (sem loops, com fallback)
-   */
   private static async applyTerceiraVia(
     lyrics: string,
     request: CompositionRequest,
@@ -241,25 +252,20 @@ RETORNE APENAS A LETRA REESCRITA, SEM EXPLICAÇÕES.`
         correctedLines.push(corrected)
       } catch (error) {
         console.warn(`[TerceiraVia] Fallback na linha ${i}`)
-        correctedLines.push(line) // mantém original em erro
+        correctedLines.push(line)
       }
     }
 
     return correctedLines.join("\n")
   }
 
-  /**
-   * POLIMENTO FINAL
-   */
   private static async applyPolish(lyrics: string, request: CompositionRequest): Promise<string> {
     let polished = lyrics
 
-    // Formatação de performance
     if (shouldUsePerformanceFormat(request.genre, request.performanceMode || "standard")) {
       polished = formatSertanejoPerformance(polished, request.genre)
     }
 
-    // Validação de pontuação
     const punctResult = PunctuationValidator.validate(polished)
     if (!punctResult.isValid) {
       polished = punctResult.correctedLyrics
@@ -272,14 +278,10 @@ RETORNE APENAS A LETRA REESCRITA, SEM EXPLICAÇÕES.`
       polished = fixResult.correctedLyrics
     }
 
-    // Quebra de linhas (agora mais agressivo)
     const stackResult = LineStacker.stackLines(polished)
     return stackResult.stackedLyrics
   }
 
-  /**
-   * GARANTIA FINAL DE SÍLABAS (sem IA, só lógica local)
-   */
   private static enforceSyllableLimits(lyrics: string, genre: string): string {
     const metrics = getGenreMetrics(genre)
     const maxSyllables = Math.min(metrics.syllableRange.max, this.MAX_SYLLABLES)
@@ -288,23 +290,16 @@ RETORNE APENAS A LETRA REESCRITA, SEM EXPLICAÇÕES.`
       .split("\n")
       .map((line) => {
         if (this.shouldSkipLine(line)) return line
-
         const syllables = countPoeticSyllables(line)
         if (syllables <= maxSyllables) return line
-
-        // Aplica correções locais (sem IA)
         return this.applyLocalFix(line, maxSyllables)
       })
       .join("\n")
   }
 
-  /**
-   * CORREÇÃO LOCAL RÁPIDA
-   */
   private static applyLocalFix(line: string, maxSyllables: number): string {
     let fixed = line
 
-    // 1. Contrações
     const contractions = [
       [/você/gi, "cê"],
       [/para o/gi, "pro"],
@@ -322,7 +317,6 @@ RETORNE APENAS A LETRA REESCRITA, SEM EXPLICAÇÕES.`
       }
     }
 
-    // 2. Substituições semânticas (Sertanejo Moderno)
     const semanticFixes = [
       [/jogou no papel/gi, "jogou no lixo"],
       [/prejuízo/gi, "desperdício"],
@@ -339,7 +333,6 @@ RETORNE APENAS A LETRA REESCRITA, SEM EXPLICAÇÕES.`
       }
     }
 
-    // 3. Último recurso: corta final
     if (fixed.includes(" ")) {
       const words = fixed.split(" ")
       while (words.length > 1 && countPoeticSyllables(words.join(" ")) > maxSyllables) {
@@ -350,8 +343,6 @@ RETORNE APENAS A LETRA REESCRITA, SEM EXPLICAÇÕES.`
 
     return fixed
   }
-
-  // ─── Funções auxiliares ───────────────────────────────────────────────
 
   private static shouldSkipLine(line: string): boolean {
     const trimmed = line.trim()
