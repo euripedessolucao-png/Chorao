@@ -1,4 +1,4 @@
-import { countPoeticSyllables } from "./syllable-counter-brasileiro"
+import { countPoeticSyllables } from "./syllable-counter"
 
 /**
  * CORRETOR ULTRA AGRESSIVO DE SÍLABAS

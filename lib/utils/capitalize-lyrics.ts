@@ -1,39 +1,33 @@
-// lib/utils/capitalize-lyrics.ts
-
 /**
- * REGRA UNIVERSAL: CAPITALIZAÇÃO PROFISSIONAL COM INTELIGÊNCIA LINGUÍSTICA
- * 
- * - Preserva contrações coloquiais em minúscula no início da frase ("pra", "pro", "pela")
- * - Capitaliza apenas palavras que devem ser capitalizadas
- * - Mantém tags e instruções intactas
+ * REGRA UNIVERSAL: CAPITALIZAÇÃO PROFISSIONAL
+ *
+ * Garante que todas as letras geradas tenham capitalização consistente e profissional:
+ * - Primeira letra de cada linha em maiúscula (se estiver em minúscula)
+ * - Resto da linha PRESERVADO como está (não força minúscula)
+ * - Marcadores de seção ([INTRO], [VERSO], etc.) sempre em maiúsculas
+ *
+ * Esta é uma regra de pós-processamento aplicada em TODAS as gerações.
  */
+
 export function capitalizeLines(lyric: string): string {
   return lyric
     .split("\n")
     .map((line) => {
       const trimmed = line.trim()
+
+      // Mantém linhas vazias
       if (trimmed === "") return line
 
-      // Mantém marcadores de seção em maiúsculas
+      // Mantém marcadores de seção em maiúsculas: [INTRO], [VERSO], [REFRÃO], etc.
       if (trimmed.startsWith("[")) {
         return trimmed.toUpperCase()
       }
 
-      // Mantém instruções de instrumentos
-      if (trimmed.startsWith("(Instruments:") || trimmed.startsWith("(Instrumentos:")) {
+      // Mantém marcadores de instrumentos: (Instruments: [...])
+      if (trimmed.startsWith("(Instruments:")) {
         return trimmed
       }
 
-      // Regras inteligentes de capitalização
-      const lowerLine = trimmed.toLowerCase()
-      
-      // NÃO capitaliza se começar com contrações coloquiais
-      const colloquialStarts = ["pra ", "pro ", "pela ", "pelos ", "pelas ", "d'", "n'", "s'", "qu'"]
-      if (colloquialStarts.some(prefix => lowerLine.startsWith(prefix))) {
-        return trimmed.charAt(0).toLowerCase() + trimmed.slice(1)
-      }
-
-      // Capitaliza normalmente (ex: "cê", "você", "hoje", etc.)
       const firstChar = trimmed.charAt(0)
       if (firstChar === firstChar.toLowerCase()) {
         return firstChar.toUpperCase() + trimmed.slice(1)
@@ -44,6 +38,9 @@ export function capitalizeLines(lyric: string): string {
     .join("\n")
 }
 
+/**
+ * Aplica capitalização profissional mantendo a estrutura original
+ */
 export function postProcessLyrics(lyric: string): string {
   return capitalizeLines(lyric)
 }

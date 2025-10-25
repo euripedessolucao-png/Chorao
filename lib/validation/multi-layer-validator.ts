@@ -12,7 +12,7 @@
  * REGRA DE OURO: Cada passo só segue se atender TODAS as regras
  */
 
-import { countPoeticSyllables, validateLyricsSyllables } from "./syllable-counter-brasileiro"
+import { countPoeticSyllables, validateLyricsSyllables } from "./syllable-counter"
 import { validateNarrativeFlow } from "./narrative-validator"
 import { analyzeLyricsRhymeScheme, validateRhymesForGenre } from "./rhyme-validator"
 import { validateFullLyricAgainstForcing } from "./anti-forcing-validator"

@@ -78,7 +78,7 @@ FORMATO DE RESPOSTA EM JSON:
     const { text } = await generateText({
       model: "gpt-4o",
       prompt: prompt,
-      temperature: 0.85,
+      temperature: 0.7,
     })
 
     let analysis

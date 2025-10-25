@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { validateLyricsSyllables } from "@/lib/validation/syllable-counter-brasileiro"
+import { validateLyricsSyllables } from "@/lib/validation/syllable-counter"
 
 export async function POST(request: Request) {
   try {

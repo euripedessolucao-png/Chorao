@@ -7,7 +7,7 @@
  * Este dicionário é chamado PRIMEIRO pelo MetaComposer antes de qualquer outra técnica.
  */
 
-import { countPoeticSyllables } from "./syllable-counter-brasileiro"
+import { countPoeticSyllables } from "./syllable-counter"
 
 export interface ErrorPattern {
   pattern: RegExp

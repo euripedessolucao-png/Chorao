@@ -4,7 +4,7 @@
  * Acima disso não é possível ser cantada!
  */
 
-import { countPoeticSyllables } from "./syllable-counter-brasileiro"
+import { countPoeticSyllables } from "./syllable-counter"
 import { IntelligentSyllableReducer } from "./intelligent-syllable-reducer"
 
 export class AbsoluteSyllableEnforcer {

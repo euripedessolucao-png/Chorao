@@ -1,11 +1,11 @@
 /**
- * FORMATADOR DE PERFORMANCE PARA MÚSICA BRASILEIRA MODERNA
+ * FORMATADOR DE PERFORMANCE PARA SERTANEJO MODERNO
  * Adiciona instruções detalhadas de performance, instrumentação e dinâmica
- * Compatível com Sertanejo, Funk, MPB e outros gêneros performáticos
  */
 
 interface PerformanceInstruction {
   section: string
+  instrumentation: string
   dynamics: string
   vocalStyle: string
 }
@@ -13,36 +13,43 @@ interface PerformanceInstruction {
 const PERFORMANCE_INSTRUCTIONS: Record<string, PerformanceInstruction> = {
   verse1: {
     section: "PART A - Verse 1",
+    instrumentation: "Solo voice with firm confidence; acoustic guitar and bass marking the vaneira rhythm",
     dynamics: "moderate",
     vocalStyle: "confident, storytelling",
   },
   verse2: {
     section: "PART A2 - Verse 2",
+    instrumentation: "Music softens slightly, letting the lyrics cut through with attitude",
     dynamics: "moderate with attitude",
     vocalStyle: "direct, with edge",
   },
   chorus1: {
     section: "PART B - Chorus",
+    instrumentation: "All instruments enter with full force; drums drive a danceable beat, accordion leads",
     dynamics: "full energy",
     vocalStyle: "passionate, powerful",
   },
   chorus2: {
     section: "PART B - Chorus",
+    instrumentation: "Music explodes back with even more energy; vocalist sings with passion and defiance",
     dynamics: "maximum energy",
     vocalStyle: "defiant, celebratory",
   },
   chorusFinal: {
     section: "PART B - Final Chorus",
+    instrumentation: "Maximum energy, vocalist ad-libs over the top, crowd sings along loudly",
     dynamics: "explosive",
     vocalStyle: "triumphant, interactive",
   },
   bridge: {
     section: "PART C - Bridge",
+    instrumentation: "Dramatic pause; just a soft acoustic guitar arpeggio and a sustained accordion note remain",
     dynamics: "minimal, building tension",
     vocalStyle: "emotional, building",
   },
   outro: {
     section: "OUTRO",
+    instrumentation: "Instruments begin to fade, leaving the accordion and the hook echoing",
     dynamics: "fading",
     vocalStyle: "soft, reflective",
   },
@@ -58,20 +65,9 @@ const PERFORMANCE_ACTIONS = [
   "Vocalist closes eyes, feeling the emotion",
 ]
 
-const getInstrumentation = (sectionType: string, genre: string): string => {
-  const lowerGenre = genre.toLowerCase()
-  if (lowerGenre.includes("raiz")) {
-    return sectionType === 'chorus'
-      ? "viola caipira, acoustic guitar, sanfona"
-      : "viola caipira, acoustic guitar, light bass"
-  }
-
-  // Padrão para outros subgêneros (universitário, moderno etc.)
-  return sectionType === 'chorus'
-    ? "electric guitar, drums, bass, accordion"
-    : "acoustic guitar, bass, light percussion"
-}
-
+/**
+ * Seleciona uma estrutura aleatória baseada nas probabilidades
+ */
 function selectStructure(): string[] {
   const structures = [
     { pattern: ["A", "B", "A", "B", "C", "B"], probability: 0.5 },
@@ -90,9 +86,12 @@ function selectStructure(): string[] {
     }
   }
 
-  return structures[0].pattern
+  return structures[0].pattern // fallback
 }
 
+/**
+ * Detecta a estrutura da letra baseada nas seções presentes
+ */
 function detectStructure(lyrics: string): string[] {
   const structure: string[] = []
   const lines = lyrics.split("\n")
@@ -112,18 +111,20 @@ function detectStructure(lyrics: string): string[] {
   return structure.length > 0 ? structure : ["A", "B", "A", "B", "C", "B"]
 }
 
-export function formatSertanejoPerformance(
-  lyrics: string,
-  genre: string,
-  useRandomStructure = false
-): string {
+/**
+ * Formata letra de sertanejo moderno com instruções de performance
+ * e estrutura PART A, PART B, PART C
+ */
+export function formatSertanejoPerformance(lyrics: string, useRandomStructure = false): string {
   const lines = lyrics.split("\n")
   const formatted: string[] = []
 
   const structure = useRandomStructure ? selectStructure() : detectStructure(lyrics)
 
+  let currentSection = ""
   let partACount = 0
   let partBCount = 0
+  let hasPartC = false
   let hasInstrumentalSolo = false
 
   for (let i = 0; i < lines.length; i++) {
@@ -131,36 +132,54 @@ export function formatSertanejoPerformance(
 
     if (line.match(/\[verse\s*1?\]/i) || line.match(/\[verso\s*1?\]/i)) {
       partACount++
-      const instrumentation = getInstrumentation('verse', genre)
-      formatted.push(`[PART A - Verse 1 - ${instrumentation}]`)
+      currentSection = "verse1"
+      const instruction = PERFORMANCE_INSTRUCTIONS.verse1
+      // Substitui "Verse 1" por "PART A - Verse 1"
+      formatted.push(`[PART A - Verse 1 - ${instruction.instrumentation}]`)
       continue
     }
 
     if (line.match(/\[verse\s*2\]/i) || line.match(/\[verso\s*2\]/i)) {
       partACount++
-      const instrumentation = getInstrumentation('verse', genre)
-      formatted.push(`[PART A2 - Verse 2 - ${instrumentation}]`)
+      currentSection = "verse2"
+      const instruction = PERFORMANCE_INSTRUCTIONS.verse2
+      // Substitui "Verse 2" por "PART A2 - Verse 2"
+      formatted.push(`[PART A2 - Verse 2 - ${instruction.instrumentation}]`)
       continue
     }
 
     if (line.match(/\[chorus\]/i) || line.match(/\[refrão\]/i)) {
       partBCount++
-      const instrumentation = getInstrumentation('chorus', genre)
-      let label = "PART B - Chorus"
-      if (partBCount >= 3) label = "PART B - Final Chorus"
-      formatted.push(`[${label} - ${instrumentation}]`)
+
+      if (partBCount === 1) {
+        currentSection = "chorus1"
+        const instruction = PERFORMANCE_INSTRUCTIONS.chorus1
+        formatted.push(`[PART B - Chorus - ${instruction.instrumentation}]`)
+      } else if (partBCount === 2) {
+        currentSection = "chorus2"
+        const instruction = PERFORMANCE_INSTRUCTIONS.chorus2
+        formatted.push(`[PART B - Chorus - ${instruction.instrumentation}]`)
+      } else {
+        currentSection = "chorusFinal"
+        const instruction = PERFORMANCE_INSTRUCTIONS.chorusFinal
+        formatted.push(`[PART B - Final Chorus - ${instruction.instrumentation}]`)
+      }
       continue
     }
 
     if (line.match(/\[bridge\]/i) || line.match(/\[ponte\]/i)) {
-      const instrumentation = getInstrumentation('bridge', genre)
-      formatted.push(`[PART C - Bridge - ${instrumentation}]`)
+      hasPartC = true
+      currentSection = "bridge"
+      const instruction = PERFORMANCE_INSTRUCTIONS.bridge
+      // Substitui "Bridge" por "PART C - Bridge"
+      formatted.push(`[PART C - Bridge - ${instruction.instrumentation}]`)
       continue
     }
 
     if (line.match(/\[outro\]/i) || line.match(/\[final\]/i)) {
-      const instrumentation = getInstrumentation('outro', genre)
-      formatted.push(`[OUTRO - ${instrumentation}]`)
+      currentSection = "outro"
+      const instruction = PERFORMANCE_INSTRUCTIONS.outro
+      formatted.push(`[${instruction.section} - ${instruction.instrumentation}]`)
       continue
     }
 
@@ -168,18 +187,21 @@ export function formatSertanejoPerformance(
     if (line && !line.startsWith("[") && !line.startsWith("(")) {
       formatted.push(line)
 
-      // Adiciona elementos performáticos
-      if (partBCount === 1 && Math.random() > 0.7) {
+      // Adiciona audience cue no primeiro refrão
+      if (currentSection === "chorus1" && formatted.length > 2 && Math.random() > 0.7) {
         const cue = AUDIENCE_CUES[Math.floor(Math.random() * AUDIENCE_CUES.length)]
         formatted.push(`(Audience: "${cue}")`)
       }
 
-      if (partBCount === 2 && Math.random() > 0.8) {
+      // Adiciona performance action no segundo refrão
+      if (currentSection === "chorus2" && formatted.length > 2 && Math.random() > 0.8) {
         const action = PERFORMANCE_ACTIONS[Math.floor(Math.random() * PERFORMANCE_ACTIONS.length)]
         formatted.push(`(Performance: ${action})`)
       }
 
-      if (partBCount >= 3 && line.includes("!") && Math.random() > 0.6) {
+      // Adiciona backing vocal no refrão final
+      if (currentSection === "chorusFinal" && line.includes("!") && Math.random() > 0.6) {
+        // Extrai parte da linha para backing vocal
         const words = line.split(" ")
         if (words.length >= 3) {
           const backingVocal = words.slice(-3).join(" ")
@@ -187,7 +209,8 @@ export function formatSertanejoPerformance(
         }
       }
 
-      if (line.match(/\[bridge\]/i) && Math.random() > 0.7) {
+      // Adiciona dinâmica na ponte
+      if (currentSection === "bridge" && Math.random() > 0.7) {
         const dynamics = ["slowly builds tension", "whispered", "with intensity", "pause"]
         const dynamic = dynamics[Math.floor(Math.random() * dynamics.length)]
         formatted.push(`(${dynamic})`)
@@ -197,7 +220,7 @@ export function formatSertanejoPerformance(
     }
 
     // Adiciona solo instrumental após a ponte
-    if (line.match(/\[bridge\]/i) && i < lines.length - 1 && !hasInstrumentalSolo) {
+    if (currentSection === "bridge" && i < lines.length - 1 && !hasInstrumentalSolo) {
       const nextLine = lines[i + 1]?.trim()
       if (nextLine && (nextLine.match(/\[chorus\]/i) || nextLine.match(/\[refrão\]/i))) {
         formatted.push("")
@@ -211,27 +234,16 @@ export function formatSertanejoPerformance(
   }
 
   const structureNote = `\n\n[ESTRUTURA: ${structure.join("-")} | PART A = Verso, PART B = Refrão, PART C = Ponte]`
+
   return formatted.join("\n") + structureNote
 }
 
 /**
- * Verifica se deve usar formato de performance (expandido para múltiplos gêneros)
+ * Verifica se a letra deve usar formato de performance
  */
 export function shouldUsePerformanceFormat(genre: string, performanceMode?: string): boolean {
-  const performaticGenres = [
-    "sertanejo moderno feminino",
-    "sertanejo moderno masculino",
-    "funk",
-    "mpb",
-    "pagode",
-    "arrocha",
-    "forró",
-    "gospel",
-    "bachata",
-  ]
-
-  const genreLower = genre.toLowerCase()
-  const isPerformaticGenre = performaticGenres.some((g) => genreLower.includes(g))
-
-  return isPerformaticGenre && performanceMode === "performance"
+  return (
+    (genre.toLowerCase().includes("sertanejo") || genre.toLowerCase().includes("moderno")) &&
+    performanceMode === "performance"
+  )
 }

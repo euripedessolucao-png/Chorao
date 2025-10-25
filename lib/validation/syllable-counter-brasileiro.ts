@@ -1,203 +1,133 @@
-// lib/validation/syllable-counter-brasileiro.ts
-
 /**
- * Contador de sílabas poéticas para música brasileira.
- * Baseado em fonética real, não em poesia clássica.
- * Conta todas as sílabas pronunciadas (incluindo átonas finais).
+ * Contador de Sílabas Poéticas Brasileiro
+ *
+ * Implementa as regras de escansão poética da música brasileira:
+ * 1. Conta apenas até a última sílaba TÔNICA
+ * 2. Aplica sinalefa/elisão (vogais adjacentes)
+ * 3. Suporta enjambement (versos que continuam)
  */
 
-// Contrações e palavras irregulares comuns em letras musicais
-const SPECIAL_WORDS: Record<string, number> = {
-  // Contrações informais
-  pra: 1,
-  pro: 1,
-  pras: 1,
-  pros: 1,
-  tá: 1,
-  tô: 1,
-  vô: 1,
-  pô: 1,
-  dá: 1,
-  pé: 1,
-  pá: 1,
-  mãe: 1,
-  põe: 1,
-  vêm: 1,
-  têm: 1,
-  vai: 1,
-  sou: 1,
-  dói: 1,
-  fui: 1,
-  viu: 1,
-  diz: 1,
-  faz: 1,
-  luz: 1,
-  voz: 1,
-  ninguém: 2,
-  alguém: 2,
-  ninguem: 2,
-  alguem: 2,
-  você: 2,
-  café: 2,
-  sofá: 2,
-  paletó: 3,
-  jiló: 2,
-  cipó: 2,
-  vatapá: 3,
-  acarajé: 4,
-  tem: 1,
-  bem: 1,
-  sem: 1,
-  quem: 1,
-  meu: 1,
-  teu: 1,
-  seu: 1,
-  deus: 1,
-  céu: 1,
-  véu: 1,
-  chapéu: 2,
-}
+// Vogais para detecção de sinalefa
+const VOGAIS = ["a", "e", "i", "o", "u", "á", "é", "í", "ó", "ú", "â", "ê", "ô", "ã", "õ"]
 
-// Ditongos (1 sílaba cada)
-const DITONGOS = [
-  "ai",
-  "ei",
-  "oi",
-  "au",
-  "eu",
-  "ou",
-  "ui",
-  "ia",
-  "ie",
-  "io",
-  "ua",
-  "ue",
-  "uo",
-  "iu",
-  "ão",
-  "õe",
-  "ãi",
-  "ẽi",
-  "õi",
-  "ãe",
-  "ée",
+// Palavras oxítonas comuns (terminam em sílaba tônica)
+const OXITONAS_COMUNS = [
+  "amor", "calor", "você", "café", "sofá", "avó", "avô", "paletó", "jiló", "cipó",
+  "vatapá", "acarajé", "rapaz", "feliz", "capaz",
 ]
 
-// Tritongos (1 sílaba cada)
-const TRITONGOS = ["uai", "uei", "uoi", "uou", "uéi"]
-
-function countSyllablesInWord(word: string): number {
-  if (!word) return 0
-
-  // Normaliza: remove apóstrofos (pra → pra, d'água → dagua)
-  const w = word.toLowerCase().replace(/'/g, "")
-
-  // Palavras especiais (prioritário)
-  if (SPECIAL_WORDS.hasOwnProperty(w)) {
-    return SPECIAL_WORDS[w]
-  }
-
-  // Remove consoantes no início/fim que não formam sílaba sozinhas
-  // (não necessário para contagem por núcleo vocálico)
-
-  // Substitui tritongos e ditongos por marcador único 'X'
-  let processed = w
-  for (const t of TRITONGOS) {
-    processed = processed.replace(new RegExp(t, "g"), "X")
-  }
-  for (const d of DITONGOS) {
-    processed = processed.replace(new RegExp(d, "g"), "X")
-  }
-
-  // Conta núcleos vocálicos restantes (vogais isoladas = 1 sílaba cada)
-  const vowelMatches = processed.match(/[aeiouãõ]/g)
-  const vowelCount = vowelMatches ? vowelMatches.length : 0
-  const xCount = (processed.match(/X/g) || []).length
-
-  let syllables = vowelCount + xCount
-
-  // Garante pelo menos 1 sílaba
-  syllables = Math.max(1, syllables)
-
-  // Ajuste: palavras terminadas em "-am", "-em" (ex: cantam, tem) → 1 sílaba final
-  // Já coberto por SPECIAL_WORDS, mas caso escape:
-  if (/^[bcdfghjklmnpqrstvwxz]*[aeiouãõ]*[aeiouãõ][mn]$/i.test(w)) {
-    // Ex: "cantam" → can-tam (2), não 3
-    // Nossa lógica já trata bem, então não ajustamos aqui
-  }
-
-  return syllables
-}
+// Palavras proparoxítonas comuns (antepenúltima sílaba tônica)
+const PROPAROXITONAS_COMUNS = [
+  "música", "público", "lâmpada", "pássaro", "árvore", "número", "último", "único",
+  "mágico", "prático", "simpático",
+]
 
 /**
- * Conta sílabas poéticas em um verso (linha de letra)
+ * Identifica se uma palavra é oxítona (aguda), paroxítona (grave) ou proparoxítona (esdrúxula)
  */
-export function countPoeticSyllables(line: string): number {
-  if (!line || line.trim().length === 0) return 0
+function identificarTonicidade(palavra: string): "oxitona" | "paroxitona" | "proparoxitona" {
+  const palavraLower = palavra.toLowerCase().replace(/[.,!?;:]/g, "")
 
-  // Remove apenas caracteres especiais que não afetam pronúncia
-  const clean = line
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // remove acentos
-    .replace(/[^a-z\s',!?]/gi, " ") // mantém letras, espaços, vírgulas e pontuação básica
-    .replace(/\s+/g, " ")
-    .trim()
-    .toLowerCase()
-
-  if (!clean) return 0
-
-  // Remove pontuação apenas para separar palavras, mas mantém estrutura
-  const words = clean
-    .replace(/[,!?]/g, " ") // substitui pontuação por espaço
-    .split(" ")
-    .filter((w) => w.length > 0)
-
-  return words.reduce((total, word) => total + countSyllablesInWord(word), 0)
+  if (OXITONAS_COMUNS.includes(palavraLower)) return "oxitona"
+  if (PROPAROXITONAS_COMUNS.includes(palavraLower)) return "proparoxitona"
+  if (palavraLower.match(/[áéíóú]$/)) return "oxitona"
+  if (palavraLower.match(/[áéíóú][a-z]{2,}$/)) return "proparoxitona"
+  
+  return "paroxitona"
 }
 
 /**
- * Conta sílabas gramaticais (compatibilidade)
+ * Aplica sinalefa/elisão: junta vogais adjacentes
+ */
+function aplicarSinalefa(texto: string): string {
+  let resultado = texto
+  resultado = resultado.replace(/([aeiouáéíóúâêôãõ])\s+([aeiouáéíóúâêôãõ])/gi, "$1$2")
+  return resultado
+}
+
+/**
+ * Conta sílabas poéticas seguindo as regras brasileiras
+ */
+export function countPoeticSyllables(verso: string): number {
+  if (!verso || verso.trim().length === 0) return 0
+
+  const versoLimpo = verso.trim().replace(/[.,!?;:]+$/, "")
+  const versoComSinalefa = aplicarSinalefa(versoLimpo)
+  const palavras = versoComSinalefa.split(/\s+/).filter((p) => p.length > 0)
+  
+  if (palavras.length === 0) return 0
+
+  const ultimaPalavra = palavras[palavras.length - 1]
+  const tonicidade = identificarTonicidade(ultimaPalavra)
+
+  let silabasGramaticais = 0
+  for (const palavra of palavras) {
+    const vogaisNaPalavra = palavra.match(/[aeiouáéíóúâêôãõ]/gi)
+    silabasGramaticais += vogaisNaPalavra ? vogaisNaPalavra.length : 0
+  }
+
+  let silabasPoeticas = silabasGramaticais
+
+  if (tonicidade === "paroxitona") {
+    silabasPoeticas = Math.max(1, silabasGramaticais - 1)
+  } else if (tonicidade === "proparoxitona") {
+    silabasPoeticas = Math.max(1, silabasGramaticais - 2)
+  }
+
+  return silabasPoeticas
+}
+
+/**
+ * Conta sílabas gramaticais (todas as sílabas)
  */
 export function countPortugueseSyllables(text: string): number {
   return countPoeticSyllables(text)
 }
 
 /**
- * Valida um verso individual
+ * Verifica se um verso tem enjambement (continua no próximo)
  */
-export function validateSyllableLimit(
-  line: string,
-  maxSyllables = 11,
-): {
-  isValid: boolean
-  currentSyllables: number
-  suggestions: string[]
-} {
-  const syllables = countPoeticSyllables(line)
-  const suggestions: string[] = []
-
-  if (syllables > maxSyllables) {
-    suggestions.push(
-      `Remova ${syllables - maxSyllables} sílaba(s) — tente encurtar palavras`,
-      `Use contrações: "está" → "tá", "para" → "pra"`,
-      `Remova artigos/preposições desnecessárias`,
-    )
-  } else if (syllables < 7) {
-    suggestions.push(
-      `Verso curto (${syllables} sílabas). Considere expandir para 7–11.`,
-      `Adicione adjetivos ou detalhes descritivos`,
-    )
-  }
-
-  // Considera válido se estiver entre 7 e 12 (máximo absoluto)
-  const isValid = syllables >= 7 && syllables <= 12
-
-  return { isValid, currentSyllables: syllables, suggestions }
+export function hasEnjambement(verso: string): boolean {
+  const versoTrimmed = verso.trim()
+  return /[,;:]$/.test(versoTrimmed) || /\.\.\.$/.test(versoTrimmed)
 }
 
 /**
- * Valida uma letra completa
+ * Valida um verso considerando enjambement
  */
+export function validateVerseWithEnjambement(
+  verso: string,
+  proximoVerso: string | null,
+  maxSilabas: number,
+): {
+  syllables: number
+  valid: boolean
+  hasEnjambement: boolean
+  message: string
+} {
+  const silabas = countPoeticSyllables(verso)
+  const temEnj = hasEnjambement(verso)
+
+  if (temEnj && proximoVerso) {
+    return {
+      syllables: silabas,
+      valid: true,
+      hasEnjambement: true,
+      message: `${silabas} sílabas (continua no próximo verso)`,
+    }
+  }
+
+  const valido = silabas <= maxSilabas
+
+  return {
+    syllables: silabas,
+    valid: valido,
+    hasEnjambement: temEnj,
+    message: valido ? `${silabas} sílabas ✓` : `${silabas} sílabas (máximo: ${maxSilabas})`,
+  }
+}
+
+// Mantenha as funções de validação que você já tinha
 export interface SyllableValidationResult {
   valid: boolean
   violations: Array<{
@@ -208,31 +138,60 @@ export interface SyllableValidationResult {
   }>
 }
 
-export function validateLyricsSyllables(lyrics: string, maxSyllables = 11): SyllableValidationResult {
+export function validateSyllableLimit(
+  line: string, 
+  maxSyllables: number = 11
+): {
+  isValid: boolean
+  currentSyllables: number
+  suggestions: string[]
+} {
+  const syllables = countPoeticSyllables(line)
+  const suggestions: string[] = []
+  
+  if (syllables > maxSyllables) {
+    suggestions.push(
+      `Remova ${syllables - maxSyllables} sílaba(s) - tente encurtar palavras`,
+      `Use contrações: "está" → "tá", "para" → "pra"`,
+      `Remova artigos ou preposições desnecessárias`
+    )
+  } else if (syllables < maxSyllables) {
+    suggestions.push(
+      `Adicione ${maxSyllables - syllables} sílaba(s) - expanda palavras ou adicione artigos`,
+      `Use palavras mais descritivas`,
+      `Adicione advérbios ou adjetivos`
+    )
+  }
+  
+  return {
+    isValid: syllables === maxSyllables,
+    currentSyllables: syllables,
+    suggestions
+  }
+}
+
+export function validateLyricsSyllables(
+  lyrics: string,
+  maxSyllables: number = 11,
+): SyllableValidationResult {
   const lines = lyrics.split("\n")
-  const violations: Array<{
-    line: string
-    syllables: number
-    lineNumber: number
-    suggestions: string[]
-  }> = []
+  const violations: Array<{ line: string; syllables: number; lineNumber: number; suggestions: string[] }> = []
 
   lines.forEach((line, index) => {
-    const trimmed = line.trim()
     if (
-      trimmed &&
-      !trimmed.startsWith("[") &&
-      !trimmed.startsWith("(") &&
-      !trimmed.startsWith("Title:") &&
-      !trimmed.startsWith("Instrumentos:")
+      line.trim() &&
+      !line.startsWith("[") &&
+      !line.startsWith("(") &&
+      !line.startsWith("Title:") &&
+      !line.startsWith("Instrumentos:")
     ) {
-      const validation = validateSyllableLimit(trimmed, maxSyllables)
+      const validation = validateSyllableLimit(line, maxSyllables)
       if (!validation.isValid) {
         violations.push({
-          line: trimmed,
+          line: line.trim(),
           syllables: validation.currentSyllables,
           lineNumber: index + 1,
-          suggestions: validation.suggestions,
+          suggestions: validation.suggestions
         })
       }
     }
@@ -242,4 +201,27 @@ export function validateLyricsSyllables(lyrics: string, maxSyllables = 11): Syll
     valid: violations.length === 0,
     violations,
   }
+}
+
+/**
+ * Exemplos de teste
+ */
+export const SCANSION_EXAMPLES = {
+  enjambement: {
+    line1: "Saí da sua sombra, que tentava me apagar,",
+    line2: "E voltei a ver a vida, voltei a respirar!",
+    explanation: "Primeiro verso termina com vírgula (enjambement) e continua no segundo. Isso é CORRETO.",
+  },
+  countToTonic: {
+    line: "Minha terra tem palmeiras",
+    syllables: "Mi-nha-ter-ra-tem-pal-MEI(ras)",
+    count: 7,
+    explanation: "Conta até 'MEI' (última tônica), descarta 'ras'",
+  },
+  sinalefa: {
+    line: "Que estou amando",
+    syllables: "que-es-tou-a-man-do",
+    count: 5,
+    explanation: "Sinalefa: 'que+es' = 1 sílaba, 'tou+a' = 1 sílaba",
+  },
 }

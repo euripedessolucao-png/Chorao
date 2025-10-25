@@ -1,6 +1,6 @@
 import type { ParsedSection } from "./parser"
 import { SERTANEJO_RULES, countSyllables, hasForbiddenElement, hasVisualElement } from "./sertanejoRules"
-import { countPoeticSyllables as countPortugueseSyllables } from "./syllable-counter-brasileiro"
+import { countPortugueseSyllables } from "./syllable-counter"
 
 export interface ValidationResult {
   isValid: boolean

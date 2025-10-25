@@ -1,5 +1,5 @@
 // lib/genre-config.ts
-import { countPoeticSyllables } from "./validation/syllable-counter-brasileiro"
+import { countPoeticSyllables } from "./validation/syllable-counter"
 
 export const GENRE_CONFIGS = {
   "Sertanejo Moderno Feminino": {
@@ -1047,34 +1047,4 @@ export const GENRE_RHYTHMS = {
 
 export function getGenreRhythm(genre: string): string {
   return GENRE_RHYTHMS[genre as keyof typeof GENRE_RHYTHMS] || genre
-}
-
-export function getSyllableLimitsForGenre(genre: string) {
-  const config = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS]
-
-  if (!config) {
-    // Fallback seguro
-    return { min: 5, max: 12, ideal: 9 }
-  }
-
-  const rules = config.prosody_rules.syllable_count
-
-  if ("absolute_max" in rules) {
-    return {
-      min: Math.max(4, rules.absolute_max - 5),
-      max: rules.absolute_max,
-      ideal: Math.min(11, Math.floor((Math.max(4, rules.absolute_max - 5) + rules.absolute_max) / 2)),
-    }
-  }
-
-  if ("without_comma" in rules) {
-    return {
-      min: rules.without_comma.min,
-      max: rules.without_comma.acceptable_up_to,
-      ideal: Math.floor((rules.without_comma.min + rules.without_comma.max) / 2),
-    }
-  }
-
-  // Fallback para regras com vírgula
-  return { min: 5, max: 12, ideal: 9 }
 }

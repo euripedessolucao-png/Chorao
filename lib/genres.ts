@@ -1,214 +1,59 @@
-// lib/genres/genre-system.ts
-
-/**
- * Definição de um gênero musical com metadados
- */
-export interface GenreMetadata {
-  /** Nome exibido na UI */
-  label: string
-  /** Subgêneros com metadados próprios */
-  subgenres: SubgenreMetadata[]
-  /** Características estilísticas (opcional) */
-  stylisticTraits?: string[]
-}
-
-export interface SubgenreMetadata {
-  /** Nome do subgênero */
-  name: string
-  /** Rótulo amigável */
-  label: string
-  /** Descrição curta (para IA ou tooltips) */
-  description?: string
-  /** Palavras-chave associadas */
-  keywords?: string[]
-}
-
-/**
- * Hierarquia de gêneros com metadados completos
- */
 export const GENRE_HIERARCHY = {
   Sertanejo: {
     label: "Sertanejo",
-    stylisticTraits: ["narrativa romântica", "rima rica", "voz em dueto"],
     subgenres: [
-      { name: "Sertanejo Moderno Feminino", label: "Moderno (Feminino)" },
-      { name: "Sertanejo Moderno Masculino", label: "Moderno (Masculino)" },
-      { name: "Sertanejo Universitário", label: "Universitário" },
-      { name: "Sertanejo Raiz", label: "Raiz", keywords: ["viola", "roça", "tradição"] },
-      {
-        name: "Sertanejo Sofrência",
-        label: "Sofrência",
-        keywords: ["dor de cotovelo", "choro", "fim de relacionamento"],
-      },
-      { name: "Sertanejo Romântico", label: "Romântico", keywords: ["declaração", "paixão", "lua"] },
+      "Sertanejo Moderno Feminino",
+      "Sertanejo Moderno Masculino",
+      "Sertanejo Universitário",
+      "Sertanejo Raiz",
+      "Sertanejo Sofrência",
+      "Sertanejo Romântico",
     ],
   },
   Forró: {
     label: "Forró",
-    stylisticTraits: ["ritmo dançante", "sanfona", "temas de festa"],
-    subgenres: [
-      { name: "Forró Pé de Serra", label: "Pé de Serra" },
-      { name: "Forró Eletrônico", label: "Eletrônico" },
-      { name: "Forró Universitário", label: "Universitário" },
-    ],
+    subgenres: ["Forró Pé de Serra", "Forró Eletrônico", "Forró Universitário"],
   },
   Funk: {
     label: "Funk",
-    stylisticTraits: ["batida repetitiva", "flow rítmico", "temas urbanos"],
-    subgenres: [
-      { name: "Funk Carioca", label: "Carioca" },
-      { name: "Funk Melody", label: "Melody" },
-      { name: "Funk Ostentação", label: "Ostentação" },
-      { name: "Funk Consciente", label: "Consciente", keywords: ["crítica social", "reflexão"] },
-    ],
+    subgenres: ["Funk Carioca", "Funk Melody", "Funk Ostentação", "Funk Consciente"],
   },
   Pagode: {
     label: "Pagode",
-    stylisticTraits: ["pandeiro", "temas de amor e cotidiano", "swing suave"],
-    subgenres: [
-      { name: "Pagode Romântico", label: "Romântico" },
-      { name: "Pagode 90", label: "Anos 90" },
-      { name: "Pagode Baiano", label: "Baiano" },
-    ],
+    subgenres: ["Pagode Romântico", "Pagode 90", "Pagode Baiano"],
   },
   MPB: {
     label: "MPB",
-    stylisticTraits: ["letra poética", "harmonia complexa", "experimentação"],
-    subgenres: [
-      { name: "MPB Clássica", label: "Clássica (60–80)" },
-      { name: "MPB Moderna", label: "Moderna (90–atual)" },
-    ],
+    subgenres: ["MPB Clássica", "MPB Moderna"],
   },
   Samba: {
     label: "Samba",
-    stylisticTraits: ["percussão marcante", "rima interna", "temas sociais"],
-    subgenres: [
-      { name: "Samba de Raiz", label: "de Raiz" },
-      { name: "Samba Pagode", label: "Pagode" },
-      { name: "Samba Enredo", label: "Enredo" },
-      { name: "Samba Rock", label: "Rock" },
-    ],
+    subgenres: ["Samba de Raiz", "Samba Pagode", "Samba Enredo", "Samba Rock"],
   },
   Gospel: {
     label: "Gospel",
-    stylisticTraits: ["mensagens de fé", "coros poderosos", "temas de superação"],
-    subgenres: [
-      { name: "Gospel Contemporâneo", label: "Contemporâneo" },
-      { name: "Gospel Tradicional", label: "Tradicional" },
-      { name: "Gospel Sertanejo", label: "Sertanejo Gospel" },
-    ],
+    subgenres: ["Gospel Contemporâneo", "Gospel Tradicional", "Gospel Sertanejo"],
   },
   Pop: {
     label: "Pop",
-    stylisticTraits: ["gancho marcante", "produção polida", "apelo comercial"],
-    subgenres: [
-      { name: "Pop Brasileiro", label: "Brasileiro" },
-      { name: "Pop Internacional", label: "Internacional" },
-      { name: "Pop Rock", label: "Rock" },
-    ],
+    subgenres: ["Pop Brasileiro", "Pop Internacional", "Pop Rock"],
   },
   Rock: {
     label: "Rock",
-    stylisticTraits: ["guitarra distorcida", "energia crua", "atitude"],
-    subgenres: [
-      { name: "Rock Nacional", label: "Nacional" },
-      { name: "Rock Alternativo", label: "Alternativo" },
-      { name: "Rock Clássico", label: "Clássico" },
-    ],
+    subgenres: ["Rock Nacional", "Rock Alternativo", "Rock Clássico"],
   },
   Bachata: {
     label: "Bachata",
-    stylisticTraits: ["ritmo sensual", "guiro", "temas de amor e desamor"],
-    subgenres: [
-      { name: "Bachata Tradicional", label: "Tradicional" },
-      { name: "Bachata Moderna", label: "Moderna" },
-    ],
+    subgenres: ["Bachata Tradicional", "Bachata Moderna"],
   },
   "Outros Gêneros": {
     label: "Outros Gêneros",
-    subgenres: [
-      { name: "Axé", label: "Axé" },
-      { name: "Bossa Nova", label: "Bossa Nova" },
-      { name: "Reggae", label: "Reggae" },
-      { name: "Hip Hop", label: "Hip Hop" },
-      { name: "Trap", label: "Trap" },
-      { name: "R&B", label: "R&B" },
-    ],
+    subgenres: ["Axé", "Bossa Nova", "Reggae", "Hip Hop", "Trap", "R&B"],
   },
 } as const
 
-// ✅ Inferência de tipos
-export type MainGenre = keyof typeof GENRE_HIERARCHY
-export type Subgenre = (typeof GENRE_HIERARCHY)[MainGenre]["subgenres"][number]["name"]
-export type AnyGenre = MainGenre | Subgenre
+export const FLAT_GENRES = Object.entries(GENRE_HIERARCHY).flatMap(([parent, data]) => [parent, ...data.subgenres])
 
-/**
- * Lista plana de todos os gêneros (principais + subgêneros)
- */
-export const FLAT_GENRES = Object.entries(GENRE_HIERARCHY).flatMap(([mainGenre, data]) => [
-  mainGenre,
-  ...data.subgenres.map((sg) => sg.name),
-]) as readonly AnyGenre[]
-
-/**
- * Mapeamento reverso: subgênero → gênero principal
- */
-export const SUBGENRE_TO_MAIN_GENRE = Object.entries(GENRE_HIERARCHY).reduce(
-  (acc, [mainGenre, data]) => {
-    data.subgenres.forEach((sub) => {
-      acc[sub.name as Subgenre] = mainGenre as MainGenre
-    })
-    return acc
-  },
-  {} as Record<Subgenre, MainGenre>,
-)
-
-/**
- * Normaliza um nome de gênero para comparação (case-insensitive, remove acentos)
- */
-function normalizeGenre(genre: string): string {
-  return genre
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim()
-}
-
-/**
- * Encontra o gênero principal a partir de qualquer string (flexível)
- */
-export function findMainGenre(input: string): MainGenre | null {
-  if (!input) return null
-
-  const normalizedInput = normalizeGenre(input)
-
-  // Verifica se é um gênero principal
-  for (const mainGenre of Object.keys(GENRE_HIERARCHY) as MainGenre[]) {
-    if (normalizeGenre(mainGenre) === normalizedInput) {
-      return mainGenre
-    }
-  }
-
-  // Verifica se é um subgênero
-  for (const [subgenre, mainGenre] of Object.entries(SUBGENRE_TO_MAIN_GENRE)) {
-    if (normalizeGenre(subgenre) === normalizedInput) {
-      return mainGenre as MainGenre
-    }
-  }
-
-  // Busca parcial (útil para inputs de IA)
-  for (const mainGenre of Object.keys(GENRE_HIERARCHY) as MainGenre[]) {
-    if (normalizedInput.includes(normalizeGenre(mainGenre))) {
-      return mainGenre
-    }
-  }
-
-  return null
-}
-
-/**
- * Humores e emoções (agora com tipagem segura)
- */
 export const MOODS = [
   "Feliz",
   "Triste",
@@ -221,8 +66,6 @@ export const MOODS = [
   "Reflexivo",
   "Confiante",
 ] as const
-
-export type Mood = (typeof MOODS)[number]
 
 export const EMOTIONS = [
   "Alegria",
@@ -258,5 +101,3 @@ export const EMOTIONS = [
   "Tristeza",
   "Vergonha",
 ] as const
-
-export type Emotion = (typeof EMOTIONS)[number]

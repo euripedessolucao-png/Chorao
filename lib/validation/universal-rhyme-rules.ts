@@ -1,210 +1,127 @@
-// lib/validation/universal-rhyme-rules.ts
-
 export interface UniversalRhymeRules {
-  genre: string;
-  minRichRhymePercentage: number;
-  maxFalseRhymePercentage: number;
-  allowAssonantRhymes: boolean;
-  requirePerfectRhymes: boolean;
+  genre: string
+  minRichRhymePercentage: number
+  maxFalseRhymePercentage: number
+  allowAssonantRhymes: boolean
+  requirePerfectRhymes: boolean
   examples: {
-    rich: string[];
-    poor: string[];
-    false: string[];
-  };
-  instructions: string;
+    rich: string[]
+    poor: string[]
+    false: string[]
+  }
+  instructions: string
 }
 
-// ✨ CORREÇÃO POÉTICA FUNDAMENTAL:
-// - Rima RICA = palavras de **classes gramaticais diferentes** (ex: substantivo + verbo)
-// - Rima POBRE = mesma classe gramatical (ex: substantivo + substantivo)
-// - Rima FALSA = sons finais **não coincidem** (ex: "amor" / "calor" → /ɔɾ/ vs /oɾ/ → falso em PT-BR!)
+export function getUniversalRhymeRules(genre: string): UniversalRhymeRules {
+  const lowerGenre = genre.toLowerCase()
 
-const RHYME_RULES_DATABASE: Record<string, Omit<UniversalRhymeRules, 'genre'>> = {
-  'sertanejo raiz': {
-    minRichRhymePercentage: 50,
-    maxFalseRhymePercentage: 0,
-    allowAssonantRhymes: false,
-    requirePerfectRhymes: true,
-    examples: {
-      rich: [
-        'viola (substantivo) / consola (verbo)',
-        'flor (substantivo) / melhor (adjetivo)',
-        'sertão (substantivo) / canção (substantivo)', // ⚠️ Nota: mesmo sendo substantivos, "ão" cria rima rica por derivação
-        'amor (substantivo) / fulgor (substantivo)' // rima rica por raridade/estilo
-      ],
-      poor: [
-        'coração / razão',
-        'paixão / ilusão',
-        'amor / dor'
-      ],
-      false: [
-        'amor / calor', // /ɔɾ/ ≠ /oɾ/ em PT-BR
-        'paixão / coração' // /sɐ̃w̃/ ≠ /sɐ̃w̃/? Na verdade rimam — então NÃO é falsa! Corrigido abaixo.
-      ]
-    },
-    instructions: `RIMAS RICAS OBRIGATÓRIAS (Sertanejo Raiz):
-- Mínimo 50% de rimas ricas (classes gramaticais diferentes ou derivações criativas)
-- ZERO rimas falsas (sons finais devem coincidir exatamente)
-- Rimas devem ser consoantes (vogal + consoante final)
-- Evite clichês como "amor/dor"
-- Exemplos válidos: "viola/consola", "flor/melhor"`
-  },
+  if (lowerGenre.includes("sertanejo raiz") || lowerGenre.includes("sertanejo de raiz")) {
+    return {
+      genre,
+      minRichRhymePercentage: 50,
+      maxFalseRhymePercentage: 0,
+      allowAssonantRhymes: false,
+      requirePerfectRhymes: true,
+      examples: {
+        rich: [
+          "porteira (substantivo) / bananeira (substantivo de tipo diferente)",
+          "viola (substantivo) / sacola (substantivo de tipo diferente)",
+          "sertão (substantivo) / canção (substantivo de tipo diferente)",
+          "amor (substantivo) / cantar (verbo)",
+          "flor (substantivo) / melhor (adjetivo)",
+          "coração (substantivo) / perdão (substantivo abstrato)",
+        ],
+        poor: [
+          "coração / razão (ambos substantivos abstratos)",
+          "amando / cantando (ambos gerúndios)",
+          "amor / dor (ambos substantivos)",
+        ],
+        false: ["paixão / coração (terminam diferente)", "amor / calor (som diferente)"],
+      },
+      instructions: `RIMAS RICAS OBRIGATÓRIAS (Sertanejo Raiz):
+- Mínimo 50% de rimas ricas (classes gramaticais DIFERENTES)
+- ZERO rimas falsas permitidas
+- Todas as rimas devem ser perfeitas (consoantes)
+- Exemplos de rimas ricas: "porteira/bananeira", "viola/sacola", "sertão/coração"
+- Exemplos de rimas pobres (evitar): "coração/razão", "amando/cantando"
+- A rima deve soar natural e autêntica, não forçada`,
+    }
+  }
 
-  'sertanejo moderno': {
-    minRichRhymePercentage: 30,
-    maxFalseRhymePercentage: 10,
-    allowAssonantRhymes: true,
-    requirePerfectRhymes: false,
-    examples: {
-      rich: [
-        'biquíni (substantivo) / vim (verbo)',
-        'cidade (substantivo) / saudade (substantivo)' // rima rica por contraste semântico
-      ],
-      poor: [
-        'coração / razão',
-        'noite / leite'
-      ],
-      false: [
-        'amor / calor' // ainda falsa em PT-BR
-      ]
-    },
-    instructions: `RIMAS FLEXÍVEIS (Sertanejo Moderno):
-- 30% de rimas ricas recomendadas
-- Aceita rimas toantes (assonantes) em frases emocionais
-- Até 10% de rimas aproximadas se naturais
-- Foco em fluidez e apelo comercial`
-  },
+  if (lowerGenre.includes("sertanejo moderno") || lowerGenre.includes("sertanejo universitário")) {
+    return {
+      genre,
+      minRichRhymePercentage: 30,
+      maxFalseRhymePercentage: 20,
+      allowAssonantRhymes: true,
+      requirePerfectRhymes: false,
+      examples: {
+        rich: ["amor (substantivo) / melhor (adjetivo)", "biquíni (substantivo) / vim (verbo)"],
+        poor: ["coração / razão", "paixão / ilusão"],
+        false: ["amor / calor (aceitável se natural)"],
+      },
+      instructions: `RIMAS FLEXÍVEIS (Sertanejo Moderno):
+- Prefira rimas ricas (30% mínimo)
+- Aceita rimas pobres se naturais
+- Aceita até 20% de rimas falsas se servirem à narrativa
+- Foco na naturalidade e comercialidade`,
+    }
+  }
 
-  'mpb': {
-    minRichRhymePercentage: 60,
-    maxFalseRhymePercentage: 5,
-    allowAssonantRhymes: true,
-    requirePerfectRhymes: false,
-    examples: {
-      rich: [
-        'lua (substantivo) / flutua (verbo)',
-        'mar (substantivo) / sonhar (verbo)',
-        'tempo (substantivo) / exemplo (substantivo)' // rima rica por contraste
-      ],
-      poor: [
-        'amor / dor',
-        'paixão / ilusão'
-      ],
-      false: []
-    },
-    instructions: `RIMAS POÉTICAS (MPB):
-- Alta exigência: 60% de rimas ricas
-- Rimas toantes aceitáveis se criativas ("céu / seu")
-- Evite rimas pobres clichês
-- Valorize surpresa e profundidade`
-  },
+  if (lowerGenre.includes("mpb")) {
+    return {
+      genre,
+      minRichRhymePercentage: 60,
+      maxFalseRhymePercentage: 10,
+      allowAssonantRhymes: true,
+      requirePerfectRhymes: false,
+      examples: {
+        rich: ["lua (substantivo) / flutua (verbo)", "mar (substantivo) / amar (verbo)"],
+        poor: ["amor / dor (clichê)", "paixão / ilusão (clichê)"],
+        false: [],
+      },
+      instructions: `RIMAS POÉTICAS (MPB):
+- Alta qualidade: 60% de rimas ricas
+- Evite clichês ("amor/dor", "paixão/ilusão")
+- Rimas criativas e surpreendentes
+- Rimas toantes aceitáveis se bem usadas`,
+    }
+  }
 
-  'pagode': {
-    minRichRhymePercentage: 40,
-    maxFalseRhymePercentage: 15,
-    allowAssonantRhymes: true,
-    requirePerfectRhymes: false,
-    examples: {
-      rich: [
-        'samba (substantivo) / ginga (verbo)',
-        'pandeiro (substantivo) / inteiro (adjetivo)'
-      ],
-      poor: [
-        'coração / razão',
-        'amor / dor'
-      ],
-      false: [
-        'festa / testa' // /ɛstɐ/ ≠ /istɐ/ → falsa
-      ]
-    },
-    instructions: `RIMAS NATURAIS (Pagode/Samba):
-- 40% de rimas ricas para evitar monotonia
-- Rimas devem facilitar o swing rítmico
-- Aceita rimas toantes em refrões
-- Priorize cantabilidade e gingado`
-  },
+  if (lowerGenre.includes("pagode") || lowerGenre.includes("samba")) {
+    return {
+      genre,
+      minRichRhymePercentage: 40,
+      maxFalseRhymePercentage: 15,
+      allowAssonantRhymes: true,
+      requirePerfectRhymes: false,
+      examples: {
+        rich: ["samba (substantivo) / ginga (verbo)", "pandeiro (substantivo) / inteiro (adjetivo)"],
+        poor: ["amor / dor", "paixão / coração"],
+        false: [],
+      },
+      instructions: `RIMAS NATURAIS (Pagode/Samba):
+- 40% de rimas ricas
+- Rimas devem facilitar o swing, não dificultar
+- Varie entre ricas e pobres para evitar monotonia
+- Foco na cantabilidade`,
+    }
+  }
 
-  'funk': {
-    minRichRhymePercentage: 20,
-    maxFalseRhymePercentage: 25,
-    allowAssonantRhymes: true,
-    requirePerfectRhymes: false,
-    examples: {
-      rich: [
-        'festa (substantivo) / molesta (verbo)'
-      ],
-      poor: [
-        'tchan / chão',
-        'bonita / deslumbrante'
-      ],
-      false: [
-        'amor / calor'
-      ]
-    },
-    instructions: `RIMAS RÍTMICAS (Funk):
-- Foco no flow e repetição, não na riqueza
-- Rimas pobres são comuns e aceitáveis
-- Sons finais podem ser aproximados se o ritmo sustentar
-- Gírias e neologismos permitidos`
-  },
-
-  'default': {
+  return {
+    genre,
     minRichRhymePercentage: 35,
-    maxFalseRhymePercentage: 15,
+    maxFalseRhymePercentage: 20,
     allowAssonantRhymes: true,
     requirePerfectRhymes: false,
     examples: {
-      rich: [
-        'amor (substantivo) / cantar (verbo)',
-        'flor (substantivo) / melhor (adjetivo)'
-      ],
-      poor: [
-        'coração / razão',
-        'paixão / ilusão'
-      ],
-      false: [
-        'amor / calor'
-      ]
+      rich: ["amor (substantivo) / cantar (verbo)", "flor (substantivo) / melhor (adjetivo)"],
+      poor: ["coração / razão", "paixão / ilusão"],
+      false: [],
     },
     instructions: `RIMAS NATURAIS:
-- 35% de rimas ricas recomendadas
-- Evite rimas forçadas
-- Priorize naturalidade ao cantar`
+- Prefira rimas ricas (35% mínimo)
+- Evite rimas forçadas ou artificiais
+- Foco na naturalidade ao cantar`,
   }
-};
-
-/**
- * Mapeia subgêneros para regras principais
- */
-const GENRE_MAPPING: Record<string, string> = {
-  'sertanejo de raiz': 'sertanejo raiz',
-  'sertanejo universitário': 'sertanejo moderno',
-  'samba': 'pagode',
-  'bossa nova': 'mpb',
-  'pop brasileiro': 'default',
-  'forró': 'default',
-  'axé': 'default',
-  'rock brasileiro': 'mpb',
-};
-
-export function getUniversalRhymeRules(genre: string): UniversalRhymeRules {
-  const cleanGenre = genre.toLowerCase().trim();
-
-  // Tenta mapear subgêneros
-  for (const [key, target] of Object.entries(GENRE_MAPPING)) {
-    if (cleanGenre.includes(key)) {
-      const rule = RHYME_RULES_DATABASE[target];
-      return { ...rule, genre };
-    }
-  }
-
-  // Tenta match exato
-  for (const [key, rule] of Object.entries(RHYME_RULES_DATABASE)) {
-    if (cleanGenre === key || cleanGenre.includes(key)) {
-      return { ...rule, genre };
-    }
-  }
-
-  // Retorna padrão
-  return { ...RHYME_RULES_DATABASE['default'], genre };
 }

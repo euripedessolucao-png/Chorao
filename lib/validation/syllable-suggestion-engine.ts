@@ -1,6 +1,11 @@
-// lib/validation/syllable-suggestion-engine.ts
+/**
+ * Motor de Sugestões Inteligentes para Correção de Sílabas
+ *
+ * Analisa versos com problemas e sugere correções automáticas
+ * mantendo o contexto e a narrativa
+ */
 
-import { countPoeticSyllables } from "./syllable-counter-brasileiro"
+import { countPoeticSyllables } from "./syllable-counter"
 
 export interface SyllableSuggestion {
   original: string
@@ -14,203 +19,188 @@ export interface SyllableSuggestion {
 }
 
 export class SyllableSuggestionEngine {
-  // Contrações naturais e musicalmente aceitáveis (evita gírias informais como "pq")
-  private static readonly CONTRACTIONS: Array<{ pattern: RegExp; replacement: string }> = [
-    { pattern: /\bpara\b/gi, replacement: "pra" },
-    { pattern: /\bestou\b/gi, replacement: "tô" },
-    { pattern: /\bestá\b/gi, replacement: "tá" },
-    { pattern: /\bvocê\b/gi, replacement: "cê" },
-    { pattern: /\bdele\b/gi, replacement: "dele" }, // mantém, mas evita "d'ele"
-    { pattern: /\bcomigo\b/gi, replacement: "comigo" },
-    // Evita: "porque" → "pq", "também" → "tbm" (não soam bem em música)
-  ]
-
-  // Sinônimos curtos com equivalência poética (testados em contexto musical)
-  private static readonly SHORT_SYNONYMS: Record<string, string[]> = {
-    iluminou: ["acendeu", "clareou"],
-    caminho: ["rumo", "trilha", "rota"],
-    tempestade: ["chuva", "tormenta"],
-    organiza: ["ajeita", "arruma"],
-    bagunça: ["caos", "confusão"],
-    instante: ["momento", "segundo"],
-    castelo: ["lar", "abrigo"],
-    tesouro: ["segredo", "encanto"],
-    dispara: ["bate", "pula"],
-    acelerado: ["rápido", "alucinado"],
-    detalhe: ["toque", "gesto"],
+  // Contrações comuns do português brasileiro
+  private static readonly CONTRACTIONS: Record<string, string> = {
+    você: "cê",
+    está: "tá",
+    estava: "tava",
+    estou: "tô",
+    para: "pra",
+    porque: "pq",
+    também: "tbm",
+    vamos: "vamo",
+    estavam: "tavam",
   }
 
-  // Palavras frequentemente removíveis sem perder sentido
-  private static readonly OPTIONAL_WORDS = [
-    "muito",
-    "bem",
-    "tão",
-    "mesmo",
-    "realmente",
-    "sempre",
-    "nunca",
-    "quase",
-    "totalmente",
-  ]
+  // Sinônimos mais curtos mantendo impacto
+  private static readonly SHORT_SYNONYMS: Record<string, string[]> = {
+    libertei: ["soltei", "larguei"],
+    caminho: ["rumo", "trilha"],
+    tentava: ["quis", "tentou"],
+    consegui: ["pude", "fiz"],
+    acredito: ["creio", "sei"],
+    sozinho: ["só", "sem ninguém"],
+    ninguém: ["nada", "zero"],
+  }
 
   /**
    * Gera sugestão inteligente para um verso com excesso de sílabas
    */
   static generateSuggestion(verse: string, targetSyllables = 11): SyllableSuggestion | null {
     const currentSyllables = countPoeticSyllables(verse)
-    if (currentSyllables <= targetSyllables) return null
+
+    if (currentSyllables <= targetSyllables) {
+      return null // Verso já está correto
+    }
 
     const excess = currentSyllables - targetSyllables
 
-    // Estratégia 1: Contrações naturais
-    const contractionSuggestion = this.tryStrategy(
-      verse,
-      () => this.applyContractions(verse),
-      "contraction",
-      "Aplicadas contrações naturais do português falado/cantado",
-    )
-    if (contractionSuggestion && contractionSuggestion.syllables.after <= targetSyllables) {
-      return contractionSuggestion
-    }
-
-    // Estratégia 2: Sinônimos poéticos mais curtos
-    if (excess <= 3) {
-      const synonymSuggestion = this.tryStrategy(
-        verse,
-        () => this.applySynonyms(verse),
-        "synonym",
-        "Substituído por sinônimo mais curto, mantendo tom e emoção",
-      )
-      if (synonymSuggestion && synonymSuggestion.syllables.after <= targetSyllables) {
-        return synonymSuggestion
+    // Estratégia 1: Contrações (mais natural)
+    if (excess <= 2) {
+      const contractionResult = this.applyContractions(verse)
+      if (contractionResult && countPoeticSyllables(contractionResult) <= targetSyllables) {
+        return {
+          original: verse,
+          suggestion: contractionResult,
+          syllables: {
+            before: currentSyllables,
+            after: countPoeticSyllables(contractionResult),
+          },
+          strategy: "contraction",
+          explanation: "Aplicadas contrações naturais do português brasileiro",
+        }
       }
     }
 
-    // Estratégia 3: Reformulação suave
-    const reformulationSuggestion = this.tryStrategy(
-      verse,
-      () => this.reformulateVerse(verse, targetSyllables),
-      "reformulation",
-      "Reescrito com estrutura mais econômica, preservando a ideia central",
-    )
-    if (reformulationSuggestion && reformulationSuggestion.syllables.after <= targetSyllables) {
-      return reformulationSuggestion
+    // Estratégia 2: Sinônimos mais curtos
+    if (excess <= 3) {
+      const synonymResult = this.applySynonyms(verse)
+      if (synonymResult && countPoeticSyllables(synonymResult) <= targetSyllables) {
+        return {
+          original: verse,
+          suggestion: synonymResult,
+          syllables: {
+            before: currentSyllables,
+            after: countPoeticSyllables(synonymResult),
+          },
+          strategy: "synonym",
+          explanation: "Substituídos por sinônimos mais curtos mantendo o sentido",
+        }
+      }
     }
 
-    // Estratégia 4: Simplificação (remove palavras acessórias)
+    // Estratégia 3: Reformulação inteligente
+    const reformulation = this.reformulateVerse(verse, targetSyllables)
+    if (reformulation) {
+      return {
+        original: verse,
+        suggestion: reformulation,
+        syllables: {
+          before: currentSyllables,
+          after: countPoeticSyllables(reformulation),
+        },
+        strategy: "reformulation",
+        explanation: "Reformulado mantendo contexto e narrativa",
+      }
+    }
+
+    // Estratégia 4: Simplificação (último recurso)
     const simplified = this.simplifyVerse(verse, targetSyllables)
-    const finalSyllables = countPoeticSyllables(simplified)
     return {
       original: verse,
       suggestion: simplified,
       syllables: {
         before: currentSyllables,
-        after: finalSyllables,
+        after: countPoeticSyllables(simplified),
       },
       strategy: "simplification",
-      explanation: "Palavras menos essenciais foram removidas para ajustar o ritmo",
+      explanation: "Simplificado removendo palavras menos essenciais",
     }
   }
 
-  private static tryStrategy(
-    original: string,
-    transform: () => string | null,
-    strategy: SyllableSuggestion["strategy"],
-    explanation: string,
-  ): SyllableSuggestion | null {
-    const result = transform()
-    if (!result || result === original) return null
-
-    const after = countPoeticSyllables(result)
-    const before = countPoeticSyllables(original)
-
-    if (after < before) {
-      return {
-        original,
-        suggestion: result,
-        syllables: { before, after },
-        strategy,
-        explanation,
-      }
-    }
-    return null
-  }
-
-  private static applyContractions(verse: string): string | null {
+  /**
+   * Aplica contrações naturais do português brasileiro
+   */
+  private static applyContractions(verse: string): string {
     let result = verse
-    for (const { pattern, replacement } of this.CONTRACTIONS) {
-      result = result.replace(pattern, replacement)
+
+    for (const [full, contracted] of Object.entries(this.CONTRACTIONS)) {
+      const regex = new RegExp(`\\b${full}\\b`, "gi")
+      result = result.replace(regex, contracted)
     }
-    return result !== verse ? result : null
+
+    return result
   }
 
+  /**
+   * Substitui palavras por sinônimos mais curtos
+   */
   private static applySynonyms(verse: string): string | null {
-    const result = verse
-    for (const [word, options] of Object.entries(this.SHORT_SYNONYMS)) {
+    let result = verse
+    let changed = false
+
+    for (const [word, synonyms] of Object.entries(this.SHORT_SYNONYMS)) {
       const regex = new RegExp(`\\b${word}\\b`, "gi")
       if (regex.test(result)) {
-        // Tenta cada sinônimo até encontrar um que reduza sílabas
-        for (const synonym of options) {
-          const candidate = result.replace(regex, synonym)
-          if (countPoeticSyllables(candidate) < countPoeticSyllables(result)) {
-            return candidate
-          }
-        }
+        // Usa o primeiro sinônimo disponível
+        result = result.replace(regex, synonyms[0])
+        changed = true
+        break // Aplica uma mudança por vez
       }
     }
-    return null
+
+    return changed ? result : null
   }
 
+  /**
+   * Reformula o verso mantendo contexto
+   */
   private static reformulateVerse(verse: string, targetSyllables: number): string | null {
+    // Padrões comuns de reformulação
     const patterns = [
-      // Remove artigos antes de pronomes possessivos ("o meu" → "meu")
-      {
-        regex: /\b(o|a)\s+(meu|seu|nosso|teu)\b/gi,
-        replacer: (_: string, __: string, possessive: string) => possessive,
-      },
-      // Remove "muito" antes de adjetivos ("muito lindo" → "lindo")
-      { regex: /\bmuito\s+([a-záàâãéèêíìîóòôõúùû]+)/gi, replacer: (_: string, adj: string) => adj },
-      // Simplifica "vai ver" → "vê", "vou te ver" → "te vejo"
-      { regex: /\bvou\s+te\s+ver\b/gi, replacer: () => "te vejo" },
-      { regex: /\bvai\s+ver\b/gi, replacer: () => "vê" },
+      // Remove artigos desnecessários
+      { from: /\b(o|a|os|as)\s+/gi, to: "" },
+      // Simplifica expressões verbais
+      { from: /\bestou\s+a\s+/gi, to: "tô " },
+      { from: /\bvou\s+estar\s+/gi, to: "vou " },
+      // Remove advérbios redundantes
+      { from: /\bmuito\s+/gi, to: "" },
+      { from: /\bbem\s+/gi, to: "" },
+      { from: /\btão\s+/gi, to: "" },
     ]
 
-    for (const { regex, replacer } of patterns) {
-      if (regex.test(verse)) {
-        const candidate = verse.replace(regex, replacer as any)
-        if (countPoeticSyllables(candidate) <= targetSyllables) {
-          return candidate
-        }
+    const result = verse
+    for (const pattern of patterns) {
+      const temp = result.replace(pattern.from, pattern.to)
+      if (countPoeticSyllables(temp) <= targetSyllables) {
+        return temp.trim()
       }
     }
+
     return null
   }
 
+  /**
+   * Simplifica o verso removendo palavras menos essenciais
+   */
   private static simplifyVerse(verse: string, targetSyllables: number): string {
     const words = verse.split(/\s+/)
-    let current = verse
 
-    // Remove palavras opcionais
-    for (const word of this.OPTIONAL_WORDS) {
-      const regex = new RegExp(`\\b${word}\\b`, "gi")
-      if (regex.test(current)) {
-        const candidate = current.replace(regex, "").replace(/\s+/g, " ").trim()
-        if (countPoeticSyllables(candidate) <= targetSyllables) {
-          return candidate
-        }
-        current = candidate
-      }
+    // Remove palavras menos essenciais até atingir o target
+    const lessEssential = ["muito", "bem", "tão", "sempre", "nunca", "talvez", "quase"]
+
+    let result = words
+      .filter((word) => {
+        const lower = word.toLowerCase()
+        return !lessEssential.includes(lower)
+      })
+      .join(" ")
+
+    // Se ainda está longo, remove artigos
+    if (countPoeticSyllables(result) > targetSyllables) {
+      result = result.replace(/\b(o|a|os|as)\s+/gi, "")
     }
 
-    // Se ainda estiver longo, remove artigos
-    const withArticlesRemoved = current
-      .replace(/\b(o|a|os|as)\s+/gi, "")
-      .replace(/\s+/g, " ")
-      .trim()
-    if (countPoeticSyllables(withArticlesRemoved) <= targetSyllables) {
-      return withArticlesRemoved
-    }
-
-    return current // retorna o melhor possível
+    return result.trim()
   }
 }

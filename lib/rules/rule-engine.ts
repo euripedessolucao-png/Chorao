@@ -1,10 +1,13 @@
-// lib/rules/rule-engine.ts
+/**
+ * MOTOR DE APLICAÇÃO DE REGRAS
+ *
+ * Centraliza a aplicação de todas as regras em ordem de prioridade
+ */
 
 import { UNIVERSAL_RULES, getRhymeRulesForGenre, buildUniversalRulesPrompt } from "./universal-rules"
 import { getGenreConfig } from "../genre-config"
 import { validateFullLyricAgainstForcing } from "../validation/anti-forcing-validator"
 import { validateRhymesForGenre } from "../validation/rhyme-validator"
-import { countPoeticSyllables } from "../validation/syllable-counter-brasileiro" // ✅ CORRIGIDO
 
 export interface RuleValidationResult {
   valid: boolean
@@ -21,6 +24,9 @@ export interface RuleValidationResult {
   }
 }
 
+/**
+ * Valida uma letra contra TODAS as regras (universais + gênero)
+ */
 export async function validateWithAllRules(
   lyrics: string,
   genre: string,
@@ -74,10 +80,10 @@ export async function validateWithAllRules(
     )
   }
 
-  // 3. Validar Sílabas - USANDO O CONTADOR CORRETO
+  // 3. Validar Sílabas
   const lines = lyrics.split("\n").filter((line) => line.trim() && !line.startsWith("["))
   lines.forEach((line, index) => {
-    const syllables = countPoeticSyllables(line) // ✅ AGORA CORRETO
+    const syllables = countSyllables(line)
     if (syllables > UNIVERSAL_RULES.syllables.max_syllables) {
       details.syllable_check = false
       errors.push(`Linha ${index + 1}: ${syllables} sílabas (máximo ${UNIVERSAL_RULES.syllables.max_syllables})`)
@@ -90,7 +96,7 @@ export async function validateWithAllRules(
 
   if (genreConfig.language_rules.forbidden) {
     Object.entries(genreConfig.language_rules.forbidden).forEach(([category, words]) => {
-      (words as string[]).forEach((word: string) => {
+      ;(words as string[]).forEach((word: string) => {
         if (lyricsLower.includes(word.toLowerCase())) {
           details.language_check = false
           warnings.push(`Palavra proibida (${category}): "${word}"`)
@@ -113,6 +119,23 @@ export async function validateWithAllRules(
   }
 }
 
-// REMOVIDO: function countSyllables() - não é mais necessário
+/**
+ * Conta sílabas de uma linha
+ */
+function countSyllables(text: string): number {
+  const cleaned = text.replace(/[^\wáàâãéèêíìîóòôõúùûç\s]/gi, "").toLowerCase()
+  const words = cleaned.split(/\s+/).filter(Boolean)
 
+  let total = 0
+  words.forEach((word) => {
+    const vowels = word.match(/[aeiouáàâãéèêíìîóòôõúùû]/gi)
+    total += vowels ? vowels.length : 1
+  })
+
+  return total
+}
+
+/**
+ * Exporta funções auxiliares
+ */
 export { buildUniversalRulesPrompt, getRhymeRulesForGenre, UNIVERSAL_RULES }
