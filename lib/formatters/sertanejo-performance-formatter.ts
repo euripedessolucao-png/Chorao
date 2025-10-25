@@ -6,7 +6,6 @@
 
 interface PerformanceInstruction {
   section: string
-  instrumentation: string
   dynamics: string
   vocalStyle: string
 }
@@ -14,43 +13,36 @@ interface PerformanceInstruction {
 const PERFORMANCE_INSTRUCTIONS: Record<string, PerformanceInstruction> = {
   verse1: {
     section: "PART A - Verse 1",
-    instrumentation: "Solo voice with firm confidence; acoustic guitar and bass marking the vaneira rhythm",
     dynamics: "moderate",
     vocalStyle: "confident, storytelling",
   },
   verse2: {
     section: "PART A2 - Verse 2",
-    instrumentation: "Music softens slightly, letting the lyrics cut through with attitude",
     dynamics: "moderate with attitude",
     vocalStyle: "direct, with edge",
   },
   chorus1: {
     section: "PART B - Chorus",
-    instrumentation: "All instruments enter with full force; drums drive a danceable beat, accordion leads",
     dynamics: "full energy",
     vocalStyle: "passionate, powerful",
   },
   chorus2: {
     section: "PART B - Chorus",
-    instrumentation: "Music explodes back with even more energy; vocalist sings with passion and defiance",
     dynamics: "maximum energy",
     vocalStyle: "defiant, celebratory",
   },
   chorusFinal: {
     section: "PART B - Final Chorus",
-    instrumentation: "Maximum energy, vocalist ad-libs over the top, crowd sings along loudly",
     dynamics: "explosive",
     vocalStyle: "triumphant, interactive",
   },
   bridge: {
     section: "PART C - Bridge",
-    instrumentation: "Dramatic pause; just a soft acoustic guitar arpeggio and a sustained accordion note remain",
     dynamics: "minimal, building tension",
     vocalStyle: "emotional, building",
   },
   outro: {
     section: "OUTRO",
-    instrumentation: "Instruments begin to fade, leaving the accordion and the hook echoing",
     dynamics: "fading",
     vocalStyle: "soft, reflective",
   },
@@ -65,6 +57,20 @@ const PERFORMANCE_ACTIONS = [
   "Vocalist claps hands, encouraging participation",
   "Vocalist closes eyes, feeling the emotion",
 ]
+
+const getInstrumentation = (sectionType: string, genre: string): string => {
+  const lowerGenre = genre.toLowerCase()
+  if (lowerGenre.includes("raiz")) {
+    return sectionType === 'chorus'
+      ? "viola caipira, acoustic guitar, sanfona"
+      : "viola caipira, acoustic guitar, light bass"
+  }
+
+  // Padrão para outros subgêneros (universitário, moderno etc.)
+  return sectionType === 'chorus'
+    ? "electric guitar, drums, bass, accordion"
+    : "acoustic guitar, bass, light percussion"
+}
 
 function selectStructure(): string[] {
   const structures = [
@@ -106,7 +112,11 @@ function detectStructure(lyrics: string): string[] {
   return structure.length > 0 ? structure : ["A", "B", "A", "B", "C", "B"]
 }
 
-export function formatSertanejoPerformance(lyrics: string, useRandomStructure = false): string {
+export function formatSertanejoPerformance(
+  lyrics: string,
+  genre: string,
+  useRandomStructure = false
+): string {
   const lines = lyrics.split("\n")
   const formatted: string[] = []
 
@@ -121,43 +131,36 @@ export function formatSertanejoPerformance(lyrics: string, useRandomStructure = 
 
     if (line.match(/\[verse\s*1?\]/i) || line.match(/\[verso\s*1?\]/i)) {
       partACount++
-      const instruction = PERFORMANCE_INSTRUCTIONS.verse1
-      formatted.push(`[PART A - Verse 1 - ${instruction.instrumentation}]`)
+      const instrumentation = getInstrumentation('verse', genre)
+      formatted.push(`[PART A - Verse 1 - ${instrumentation}]`)
       continue
     }
 
     if (line.match(/\[verse\s*2\]/i) || line.match(/\[verso\s*2\]/i)) {
       partACount++
-      const instruction = PERFORMANCE_INSTRUCTIONS.verse2
-      formatted.push(`[PART A2 - Verse 2 - ${instruction.instrumentation}]`)
+      const instrumentation = getInstrumentation('verse', genre)
+      formatted.push(`[PART A2 - Verse 2 - ${instrumentation}]`)
       continue
     }
 
     if (line.match(/\[chorus\]/i) || line.match(/\[refrão\]/i)) {
       partBCount++
-
-      if (partBCount === 1) {
-        const instruction = PERFORMANCE_INSTRUCTIONS.chorus1
-        formatted.push(`[PART B - Chorus - ${instruction.instrumentation}]`)
-      } else if (partBCount === 2) {
-        const instruction = PERFORMANCE_INSTRUCTIONS.chorus2
-        formatted.push(`[PART B - Chorus - ${instruction.instrumentation}]`)
-      } else {
-        const instruction = PERFORMANCE_INSTRUCTIONS.chorusFinal
-        formatted.push(`[PART B - Final Chorus - ${instruction.instrumentation}]`)
-      }
+      const instrumentation = getInstrumentation('chorus', genre)
+      let label = "PART B - Chorus"
+      if (partBCount >= 3) label = "PART B - Final Chorus"
+      formatted.push(`[${label} - ${instrumentation}]`)
       continue
     }
 
     if (line.match(/\[bridge\]/i) || line.match(/\[ponte\]/i)) {
-      const instruction = PERFORMANCE_INSTRUCTIONS.bridge
-      formatted.push(`[PART C - Bridge - ${instruction.instrumentation}]`)
+      const instrumentation = getInstrumentation('bridge', genre)
+      formatted.push(`[PART C - Bridge - ${instrumentation}]`)
       continue
     }
 
     if (line.match(/\[outro\]/i) || line.match(/\[final\]/i)) {
-      const instruction = PERFORMANCE_INSTRUCTIONS.outro
-      formatted.push(`[${instruction.section} - ${instruction.instrumentation}]`)
+      const instrumentation = getInstrumentation('outro', genre)
+      formatted.push(`[OUTRO - ${instrumentation}]`)
       continue
     }
 
@@ -215,7 +218,6 @@ export function formatSertanejoPerformance(lyrics: string, useRandomStructure = 
  * Verifica se deve usar formato de performance (expandido para múltiplos gêneros)
  */
 export function shouldUsePerformanceFormat(genre: string, performanceMode?: string): boolean {
-  // Sertanejo Raiz, Universitário e Romântico usam formato padrão
   const performaticGenres = [
     "sertanejo moderno feminino",
     "sertanejo moderno masculino",
