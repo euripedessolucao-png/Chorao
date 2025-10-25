@@ -1,7 +1,4 @@
-/**
- * SISTEMA DE EMPILHAMENTO INTELIGENTE DE VERSOS
- * Transforma letras em formato humano profissional
- */
+import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro"
 
 export interface StackingResult {
   stackedLyrics: string
@@ -10,155 +7,110 @@ export interface StackingResult {
 }
 
 export class LineStacker {
+  private static readonly MAX_SYLLABLES = 12
+
   /**
-   * Transforma letra em formato empilhado profissional
+   * Formata letra no padrão profissional brasileiro: UM VERSO POR LINHA
+   * QUEBRA VERSOS LONGOS (>12 sílabas) EM MÚLTIPLAS LINHAS
    */
   static stackLines(lyrics: string): StackingResult {
-    const lines = lyrics.split('\n')
-    const stackedLines: string[] = []
+    const lines = lyrics.split("\n")
+    const formattedLines: string[] = []
     const improvements: string[] = []
-    let currentSection: string[] = []
-    
-    lines.forEach((line, index) => {
+
+    for (const line of lines) {
       const trimmed = line.trim()
-      
-      // Mantém marcadores de seção
-      if (trimmed.startsWith('[') || trimmed.startsWith('(') || !trimmed) {
-        // Processa seção acumulada antes do marcador
-        if (currentSection.length > 0) {
-          const stackedSection = this.stackSection(currentSection, improvements)
-          stackedLines.push(...stackedSection)
-          currentSection = []
+
+      // Mantém tags, linhas vazias e instruções
+      if (!trimmed || trimmed.startsWith("[") || trimmed.startsWith("(")) {
+        formattedLines.push(line)
+        continue
+      }
+
+      const syllables = countPoeticSyllables(trimmed)
+
+      if (syllables > this.MAX_SYLLABLES) {
+        const broken = this.breakLongLine(trimmed)
+        formattedLines.push(...broken)
+        improvements.push(`✓ Quebrado verso longo (${syllables}s): "${trimmed.substring(0, 40)}..."`)
+        continue
+      }
+
+      // Divide versos com vírgula em duas linhas (regra do empilhamento brasileiro)
+      if (trimmed.includes(",")) {
+        const parts = trimmed.split(",")
+        if (parts.length === 2) {
+          const cleanPart1 = parts[0].trim()
+          const cleanPart2 = parts[1].trim()
+
+          if (cleanPart1 && cleanPart2) {
+            const syllables1 = countPoeticSyllables(cleanPart1)
+            const syllables2 = countPoeticSyllables(cleanPart2)
+
+            // Só divide se ambas as partes ficarem dentro do limite
+            if (syllables1 <= this.MAX_SYLLABLES && syllables2 <= this.MAX_SYLLABLES) {
+              formattedLines.push(cleanPart1 + ",")
+              formattedLines.push(cleanPart2)
+              improvements.push(`✓ Dividido em duas linhas: "${cleanPart1}, / ${cleanPart2}"`)
+              continue
+            }
+          }
         }
-        stackedLines.push(line)
-        return
       }
-      
-      // Acumula linhas de letra para empilhar
-      currentSection.push(line)
-    })
-    
-    // Processa última seção
-    if (currentSection.length > 0) {
-      const stackedSection = this.stackSection(currentSection, improvements)
-      stackedLines.push(...stackedSection)
+
+      // Mantém verso inteiro
+      formattedLines.push(trimmed)
     }
-    
-    const stackingScore = this.calculateStackingScore(stackedLines)
-    
+
     return {
-      stackedLyrics: stackedLines.join('\n'),
-      stackingScore,
-      improvements
+      stackedLyrics: formattedLines.join("\n"),
+      stackingScore: this.calculateStackingScore(formattedLines),
+      improvements,
     }
   }
-  
+
   /**
-   * Empilha uma seção de versos de forma inteligente
+   * QUEBRA LINHA LONGA EM MÚLTIPLAS LINHAS
    */
-  private static stackSection(lines: string[], improvements: string[]): string[] {
-    if (lines.length <= 1) return lines
-    
-    const stacked: string[] = []
-    let i = 0
-    
-    while (i < lines.length) {
-      const currentLine = lines[i]
-      const nextLine = lines[i + 1]
-      
-      // Verifica se as linhas se complementam
-      if (nextLine && this.linesShouldStack(currentLine, nextLine)) {
-        // Empilha linhas complementares
-        stacked.push(currentLine)
-        stacked.push(nextLine)
-        improvements.push(`✓ Empilhadas: "${currentLine}" + "${nextLine}"`)
-        i += 2
+  private static breakLongLine(line: string): string[] {
+    const words = line.split(" ")
+    const result: string[] = []
+    let currentLine = ""
+
+    for (const word of words) {
+      const testLine = currentLine ? `${currentLine} ${word}` : word
+      const syllables = countPoeticSyllables(testLine)
+
+      if (syllables <= this.MAX_SYLLABLES) {
+        currentLine = testLine
       } else {
-        // Mantém linha solta se não complementa
-        stacked.push(currentLine)
-        i += 1
+        // Linha atual está cheia, salva e começa nova
+        if (currentLine) {
+          result.push(currentLine)
+        }
+        currentLine = word
       }
     }
-    
-    return stacked
+
+    // Adiciona última linha
+    if (currentLine) {
+      result.push(currentLine)
+    }
+
+    return result.length > 0 ? result : [line]
   }
-  
-  /**
-   * Decide se duas linhas devem ser empilhadas
-   */
-  private static linesShouldStack(line1: string, line2: string): boolean {
-    const l1 = line1.toLowerCase()
-    const l2 = line2.toLowerCase()
-    
-    // REGRAS DE EMPILHAMENTO:
-    
-    // 1. Diálogo e resposta
-    if ((l1.includes('?') && !l2.includes('?')) || 
-        (l2.includes('?') && !l1.includes('?'))) {
-      return true
-    }
-    
-    // 2. Continuação lógica da frase
-    const connectors = ['e', 'mas', 'porém', 'então', 'quando', 'onde', 'que', 'pra']
-    if (connectors.some(connector => l2.startsWith(connector))) {
-      return true
-    }
-    
-    // 3. Mesmo sujeito/contexto
-    const subjectOverlap = this.calculateSubjectOverlap(l1, l2)
-    if (subjectOverlap > 0.3) {
-      return true
-    }
-    
-    // 4. Padrão rítmico similar
-    const syllableDiff = Math.abs(
-      this.countSyllables(l1) - this.countSyllables(l2)
-    )
-    if (syllableDiff <= 2) {
-      return true
-    }
-    
-    // 5. Citações consecutivas
-    if ((l1.includes('"') || l1.includes("'")) && (l2.includes('"') || l2.includes("'"))) {
-      return true
-    }
-    
-    return false
-  }
-  
-  private static calculateSubjectOverlap(line1: string, line2: string): number {
-    const words1 = new Set(line1.split(/\s+/).filter(w => w.length > 2))
-    const words2 = new Set(line2.split(/\s+/).filter(w => w.length > 2))
-    
-    if (words1.size === 0 || words2.size === 0) return 0
-    
-    const intersection = [...words1].filter(word => words2.has(word)).length
-    const union = new Set([...words1, ...words2]).size
-    
-    return union > 0 ? intersection / union : 0
-  }
-  
-  private static countSyllables(text: string): number {
-    // Simplificado - conta palavras como proxy de sílabas
-    return text.split(/\s+/).length
-  }
-  
+
   private static calculateStackingScore(lines: string[]): number {
-    const totalLines = lines.filter(l => l.trim() && !l.startsWith('[') && !l.startsWith('(')).length
-    if (totalLines === 0) return 0
-    
-    let stackedPairs = 0
-    
-    for (let i = 0; i < lines.length - 1; i++) {
-      const current = lines[i]
-      const next = lines[i + 1]
-      
-      if (current.trim() && !current.startsWith('[') && !current.startsWith('(') &&
-          next.trim() && !next.startsWith('[') && !next.startsWith('(')) {
-        stackedPairs++
-      }
-    }
-    
-    return Math.min(1, stackedPairs / totalLines)
+    const contentLines = lines.filter((l) => l.trim() && !l.startsWith("[") && !l.startsWith("("))
+
+    if (contentLines.length === 0) return 1
+
+    // Pontuação: quanto mais versos dentro do limite ideal (6-12 sílabas), melhor
+    const validLines = contentLines.filter((line) => {
+      const syllables = countPoeticSyllables(line.replace(/,$/, ""))
+      return syllables >= 6 && syllables <= this.MAX_SYLLABLES
+    })
+
+    return validLines.length / contentLines.length
   }
 }

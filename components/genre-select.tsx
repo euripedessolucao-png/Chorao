@@ -29,8 +29,8 @@ export function GenreSelect({ value, onValueChange, placeholder = "Selecione o g
           <SelectGroup key={parent}>
             <SelectLabel className="font-semibold text-primary">{data.label}</SelectLabel>
             {data.subgenres.map((subgenre) => (
-              <SelectItem key={subgenre} value={subgenre} className="pl-6">
-                {subgenre}
+              <SelectItem key={subgenre.name} value={subgenre.name} className="pl-6">
+                {subgenre.label}
               </SelectItem>
             ))}
           </SelectGroup>

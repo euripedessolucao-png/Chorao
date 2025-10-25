@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Sparkles, Copy, Save, Loader2, AlertCircle } from "lucide-react"
-import { countPoeticSyllables } from "@/lib/validation/syllable-counter"
+import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro"
 
 interface GenreMetrics {
   syllablesPerLine: number

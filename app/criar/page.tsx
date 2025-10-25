@@ -1,23 +1,19 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
-import { RefreshCw, Save, Copy, Search, Loader2, Star, Trophy, Trash2, Zap, Wand2 } from "lucide-react"
+import { Sparkles, Save, Search, Loader2, Zap, Copy, Trash2, Wand2, Star, Trophy } from "lucide-react"
 import { toast } from "sonner"
-import { EMOTIONS } from "@/lib/genres"
-import { GenreSelect } from "@/components/genre-select"
-import { HookGenerator } from "@/components/hook-generator"
-import { SyllableValidatorEditable } from "@/components/syllable-validator-editable" // ✅ IMPORT CORRETA
-import { InspirationManager } from "@/components/inspiration-manager"
 import {
   Dialog,
   DialogContent,
@@ -26,25 +22,32 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { EMOTIONS } from "@/lib/genres"
+import { GenreSelect } from "@/components/genre-select"
+import { HookGenerator } from "@/components/hook-generator"
+import { SyllableValidator } from "@/components/syllable-validator"
+import { RhymeAnalyzer } from "@/components/rhyme-analyzer"
+import { getGenreMetrics } from "@/lib/metrics/brazilian-metrics"
+import { ProcessingStatus } from "@/components/processing-status"
 
-const BRAZILIAN_GENRE_METRICS = {
-  "Sertanejo Moderno": { syllablesPerLine: 6, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
-  Sertanejo: { syllablesPerLine: 7, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
-  "Sertanejo Universitário": { syllablesPerLine: 6, bpm: 95, structure: "VERSO-REFRAO" },
-  "Sertanejo Sofrência": { syllablesPerLine: 8, bpm: 75, structure: "VERSO-REFRAO-PONTE" },
-  "Sertanejo Raiz": { syllablesPerLine: 10, bpm: 80, structure: "VERSO-REFRAO" },
-  Pagode: { syllablesPerLine: 7, bpm: 100, structure: "VERSO-REFRAO" },
-  Samba: { syllablesPerLine: 7, bpm: 105, structure: "VERSO-REFRAO-PONTE" },
-  Forró: { syllablesPerLine: 8, bpm: 120, structure: "VERSO-REFRAO" },
-  Axé: { syllablesPerLine: 6, bpm: 130, structure: "VERSO-REFRAO" },
-  MPB: { syllablesPerLine: 9, bpm: 90, structure: "VERSO-REFRAO-PONTE" },
-  "Bossa Nova": { syllablesPerLine: 8, bpm: 70, structure: "VERSO-REFRAO" },
-  Rock: { syllablesPerLine: 8, bpm: 115, structure: "VERSO-REFRAO-SOLO" },
-  Pop: { syllablesPerLine: 7, bpm: 110, structure: "VERSO-REFRAO-PONTE" },
-  Funk: { syllablesPerLine: 6, bpm: 125, structure: "REFRAO-VERSO" },
-  Gospel: { syllablesPerLine: 8, bpm: 85, structure: "VERSO-REFRAO-PONTE" },
-  default: { syllablesPerLine: 8, bpm: 100, structure: "VERSO-REFRAO" },
-} as const
+const GENRE_QUALITY_CONFIG = {
+  Sertanejo: { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
+  "Sertanejo Moderno": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
+  "Sertanejo Universitário": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
+  "Sertanejo Sofrência": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
+  "Sertanejo Raiz": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
+  MPB: { min: 7, max: 12, ideal: 9, rhymeQuality: 0.6 },
+  "Bossa Nova": { min: 7, max: 12, ideal: 9, rhymeQuality: 0.6 },
+  Funk: { min: 6, max: 10, ideal: 8, rhymeQuality: 0.3 },
+  Pagode: { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
+  Samba: { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
+  Forró: { min: 8, max: 11, ideal: 9, rhymeQuality: 0.4 },
+  Axé: { min: 6, max: 10, ideal: 8, rhymeQuality: 0.3 },
+  Rock: { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
+  Pop: { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
+  Gospel: { min: 8, max: 11, ideal: 9, rhymeQuality: 0.5 },
+  default: { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
+}
 
 type ChorusVariation = {
   chorus: string
@@ -66,7 +69,7 @@ export default function CriarPage() {
   const [additionalReqs, setAdditionalReqs] = useState("")
   const [useDiary, setUseDiary] = useState(true)
   const [advancedMode, setAdvancedMode] = useState(false)
-  const [creativity, setCreativity] = useState([50])
+  const [creativity, setCreativity] = useState([85]) // Default 85 = 0.85 temperature
   const [inspirationText, setInspirationText] = useState("")
   const [literaryGenre, setLiteraryGenre] = useState("")
   const [literaryEmotion, setLiteraryEmotion] = useState("")
@@ -83,15 +86,104 @@ export default function CriarPage() {
   const [showHookDialog, setShowHookDialog] = useState(false)
   const [selectedHook, setSelectedHook] = useState<string | null>(null)
   const [formattingStyle, setFormattingStyle] = useState("performatico")
-  const [savedInspirations, setSavedInspirations] = useState<any[]>([])
+  const [universalPolish, setUniversalPolish] = useState(true)
 
-  // ✅ DEBUG: Monitorar estado do gênero
-  useEffect(() => {
-    console.log("🎵 Genre state updated:", genre)
-  }, [genre])
+  const processingSteps = [
+    { id: "validate", label: "Validando parâmetros", duration: 500 },
+    { id: "generate", label: "Gerando letra com IA", duration: 8000 },
+    { id: "capitalize", label: "Capitalizando linhas", duration: 300 },
+    { id: "enforce", label: "Corrigindo sílabas (AbsoluteSyllableEnforcer)", duration: 1500 },
+    { id: "stack", label: "Empilhando versos (LineStacker)", duration: 1000 },
+    { id: "performance", label: "Formatando performance", duration: 800 },
+    { id: "instrumentation", label: "Adicionando instrumentação", duration: 500 },
+    { id: "validate-final", label: "Validação final de métrica", duration: 400 },
+  ]
+
+  const getSyllableConfig = (selectedGenre: string) => {
+    const config =
+      GENRE_QUALITY_CONFIG[selectedGenre as keyof typeof GENRE_QUALITY_CONFIG] || GENRE_QUALITY_CONFIG.default
+    return {
+      min: config.min,
+      max: config.max,
+      ideal: config.ideal,
+    }
+  }
 
   const toggleEmotion = (emotion: string) => {
     setSelectedEmotions((prev) => (prev.includes(emotion) ? prev.filter((e) => e !== emotion) : [...prev, emotion]))
+  }
+
+  const handleGenerateLyrics = async () => {
+    if (!genre) {
+      toast.error("Por favor, selecione um gênero musical")
+      return
+    }
+
+    setIsGenerating(true)
+
+    try {
+      const genreMetrics = getGenreMetrics(genre)
+      const syllableConfig = getSyllableConfig(genre)
+
+      const response = await fetch("/api/generate-lyrics", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          genre: genre,
+          mood: mood,
+          theme: theme,
+          title: title,
+          additionalRequirements: additionalReqs,
+          performanceMode: formattingStyle === "performatico" ? "performance" : "standard",
+          temperature: Number.parseFloat(getTemperatureValue(creativity[0])),
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao gerar letra")
+      }
+
+      setLyrics(data.letra || data.lyrics)
+      if (data.titulo && !title) {
+        setTitle(data.titulo)
+      }
+
+      if (data.metadata?.polishingApplied) {
+        toast.success("Letra gerada com Sistema Universal de Qualidade!", {
+          description: `Polimento específico para ${genre} aplicado com sucesso`,
+        })
+      } else {
+        toast.success("Letra gerada com sucesso!")
+      }
+    } catch (error) {
+      console.error("[v0] Error generating lyrics:", error)
+      toast.error(error instanceof Error ? error.message : "Erro ao gerar letra")
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  const handleSaveProject = () => {
+    if (!title || !lyrics) {
+      toast.error("Adicione um título e letra antes de salvar")
+      return
+    }
+
+    const projects = JSON.parse(localStorage.getItem("projects") || "[]")
+    const newProject = {
+      id: Date.now(),
+      title,
+      genre,
+      lyrics,
+      chords,
+      date: new Date().toISOString(),
+    }
+    projects.push(newProject)
+    localStorage.setItem("projects", JSON.stringify(projects))
+
+    toast.success("Projeto salvo com sucesso!")
   }
 
   const handleGenerateChorus = async () => {
@@ -113,7 +205,6 @@ export default function CriarPage() {
           genre,
           theme,
           mood,
-          additionalRequirements: additionalReqs,
           advancedMode: advancedMode,
         }),
       })
@@ -169,138 +260,6 @@ export default function CriarPage() {
     toast.success("Refrão(ões) adicionado(s) aos requisitos!")
   }
 
-  const renderStars = (score: number) => {
-    return (
-      <div className="flex items-center gap-0.5">
-        {Array.from({ length: 10 }).map((_, i) => (
-          <Star
-            key={i}
-            className={`h-3 w-3 ${i < score ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground"}`}
-          />
-        ))}
-      </div>
-    )
-  }
-
-  // ✅ FUNÇÃO DE CRIAÇÃO
-  const handleGenerateLyrics = async () => {
-    console.log("=== 🚀 INICIANDO CRIAÇÃO ===")
-    console.log("1. genre:", genre)
-    console.log("2. theme:", theme)
-    console.log("3. mood:", mood)
-
-    // ✅ VALIDAÇÃO ROBUSTA
-    if (!genre) {
-      toast.error("Por favor, selecione um gênero")
-      return
-    }
-
-    if (!theme) {
-      toast.error("Por favor, informe um tema")
-      return
-    }
-
-    setIsGenerating(true)
-
-    try {
-      const syllableConfig = { min: 7, max: 11, ideal: 9 }
-
-      console.log("📤 Enviando para API - Genre:", genre)
-
-      // ✅ PREPARA O CORPO DA REQUISIÇÃO
-      const inspirationsText = savedInspirations.map((i) => i.text).join("\n\n")
-
-      const requestBody = {
-        genero: genre,
-        humor: mood || "Romântico",
-        tema: theme || "Amor",
-        criatividade: "equilibrado",
-        formattingStyle: formattingStyle,
-        additionalRequirements: additionalReqs,
-        advancedMode: advancedMode,
-        universalPolish: true,
-        syllableTarget: syllableConfig,
-        metrics:
-          BRAZILIAN_GENRE_METRICS[genre as keyof typeof BRAZILIAN_GENRE_METRICS] || BRAZILIAN_GENRE_METRICS.default,
-        emocoes: selectedEmotions,
-        inspiracao: inspirationsText || inspirationText,
-        metaforas: metaphorSearch,
-        titulo: title,
-        performanceMode: formattingStyle === "performatico" ? "performance" : "standard",
-      }
-
-      console.log("📤 Request body preparado:", requestBody)
-
-      const response = await fetch("/api/generate-lyrics", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-      })
-
-      console.log("📥 Status da resposta:", response.status)
-      console.log("📥 OK?", response.ok)
-
-      const responseText = await response.text()
-      console.log("📥 Response text:", responseText)
-
-      let data
-      try {
-        data = JSON.parse(responseText)
-        console.log("✅ JSON parseado com sucesso:", data)
-      } catch (parseError) {
-        console.error("❌ ERRO PARSE JSON:", parseError)
-        console.log("📥 Texto original que falhou:", responseText)
-        toast.error("Resposta inválida da API")
-        return
-      }
-
-      if (!response.ok) {
-        throw new Error(data.error || `Erro ${response.status} na API`)
-      }
-
-      if (!data.letra) {
-        throw new Error("Resposta da API não contém letra")
-      }
-
-      setLyrics(data.letra)
-      if (data.titulo && !title) {
-        setTitle(data.titulo)
-      }
-
-      toast.success("Letra criada com sucesso!", {
-        description: `Modo: ${data.metadata?.performanceMode || "padrão"} | Score: ${data.metadata?.score || "N/A"}`,
-      })
-    } catch (error) {
-      console.error("💥 ERRO COMPLETO na criação:", error)
-      toast.error(error instanceof Error ? error.message : "Erro ao criar letra")
-    } finally {
-      setIsGenerating(false)
-    }
-  }
-
-  const handleSaveProject = () => {
-    if (!title || !lyrics) {
-      toast.error("Adicione um título e letra antes de salvar")
-      return
-    }
-
-    const projects = JSON.parse(localStorage.getItem("projects") || "[]")
-    const newProject = {
-      id: Date.now(),
-      title,
-      genre,
-      lyrics,
-      chords,
-      date: new Date().toISOString(),
-    }
-    projects.push(newProject)
-    localStorage.setItem("projects", JSON.stringify(projects))
-
-    toast.success("Projeto salvo com sucesso!")
-  }
-
   const handleSelectHook = (hook: string) => {
     setSelectedHook(hook)
   }
@@ -316,59 +275,46 @@ export default function CriarPage() {
 
     setAdditionalReqs(updatedReqs)
     setShowHookDialog(false)
-    setSelectedHook(null)
 
     toast.success("Hook adicionado aos requisitos!")
   }
 
-  const handleClearOutput = () => {
+  const handleClearLyrics = () => {
     if (
-      window.confirm(
-        "Limpar resultado? Esta ação irá limpar o título, letra e acordes criados. Esta ação não pode ser desfeita.",
-      )
+      window.confirm("Limpar letra? Esta ação irá limpar o título, letra e acordes. Esta ação não pode ser desfeita.")
     ) {
       setLyrics("")
       setTitle("")
       setChords("")
-      toast.success("Resultado limpo!")
+      toast.success("Letra limpa com sucesso!")
     }
   }
 
-  const handleLyricsChange = (newLyrics: string) => {
-    setLyrics(newLyrics)
-    toast.success("Letra atualizada após edição manual")
+  const renderStars = (score: number) => {
+    return (
+      <div className="flex items-center gap-0.5">
+        {Array.from({ length: 10 }).map((_, i) => (
+          <Star
+            key={i}
+            className={`h-3 w-3 ${i < score ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground"}`}
+          />
+        ))}
+      </div>
+    )
   }
 
-  const handleSearchLiteraryInspiration = async () => {
-    if (!literaryGenre) {
-      toast.error("Digite um gênero para buscar inspiração")
-      return
-    }
+  const currentSyllableConfig = genre ? getSyllableConfig(genre) : null
 
-    toast.info("Buscando inspiração literária...", {
-      description: `Gênero: ${literaryGenre}${literaryEmotion ? `, Emoção: ${literaryEmotion}` : ""}`,
-    })
-
-    const inspirationText = `Inspiração Literária: ${literaryGenre}${literaryEmotion ? ` - ${literaryEmotion}` : ""}`
-    setInspirationText((prev) => (prev ? `${prev}\n\n${inspirationText}` : inspirationText))
-
-    toast.success("Inspiração literária adicionada!")
+  const getTemperatureValue = (sliderValue: number) => {
+    return (sliderValue / 100).toFixed(2)
   }
 
-  const handleSearchMetaphors = async () => {
-    if (!metaphorSearch) {
-      toast.error("Digite um tema para buscar metáforas")
-      return
-    }
-
-    toast.info("Buscando metáforas...", {
-      description: `Tema: ${metaphorSearch}`,
-    })
-
-    const metaphorText = `Metáforas sobre: ${metaphorSearch}`
-    setInspirationText((prev) => (prev ? `${prev}\n\n${metaphorText}` : metaphorText))
-
-    toast.success("Metáforas adicionadas ao contexto!")
+  const getTemperatureLabel = (temp: number) => {
+    if (temp < 0.5) return "Muito Conservador"
+    if (temp < 0.7) return "Conservador"
+    if (temp < 0.85) return "Equilibrado"
+    if (temp < 0.95) return "Criativo"
+    return "Muito Criativo"
   }
 
   return (
@@ -376,19 +322,37 @@ export default function CriarPage() {
       <Navigation />
 
       <div className="container mx-auto px-4 py-4 pt-20">
-        <h1 className="text-2xl font-bold text-left mb-4">Criar Letras</h1>
+        <h1 className="text-2xl font-bold text-left mb-4">Criar Nova Letra</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* ✅ COLUNA 1: PARÂMETROS DE CRIAÇÃO */}
+          {/* Coluna 1: Parâmetros da Letra */}
           <Card className="order-1 h-fit">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Parâmetros de Criação</CardTitle>
+              <CardTitle className="text-base">Parâmetros da Letra</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
+              <Button variant="ghost" size="sm" className="w-full text-xs">
+                Mostrar informações dos gêneros
+              </Button>
+
               <div className="space-y-2">
-                <Label className="text-xs">Gênero Musical</Label>
+                <Label className="text-xs">Gênero</Label>
                 <GenreSelect value={genre} onValueChange={setGenre} className="h-9" />
-                {genre && <div className="text-xs text-green-600 font-medium">✅ Gênero selecionado: {genre}</div>}
+
+                {currentSyllableConfig && (
+                  <div className="bg-blue-50 border border-blue-200 rounded p-2 text-xs">
+                    <div className="font-semibold text-blue-800">Configuração {genre}:</div>
+                    <div className="text-blue-700">
+                      Sílabas: {currentSyllableConfig.min}-{currentSyllableConfig.max} (ideal:{" "}
+                      {currentSyllableConfig.ideal})
+                    </div>
+                    <div className="text-blue-700">
+                      Rimas:{" "}
+                      {GENRE_QUALITY_CONFIG[genre as keyof typeof GENRE_QUALITY_CONFIG]?.rhymeQuality * 100 || 40}%
+                      mínimas
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -399,7 +363,7 @@ export default function CriarPage() {
                   onChange={(e) => setMood(e.target.value)}
                   className="h-9"
                 />
-                <p className="text-xs text-muted-foreground">Descreva o humor/sentimento desejado para a letra</p>
+                <p className="text-xs text-muted-foreground">Descreva o humor/sentimento desejado para a composição</p>
               </div>
 
               <div className="space-y-2">
@@ -410,6 +374,9 @@ export default function CriarPage() {
                   onChange={(e) => setTheme(e.target.value)}
                   className="h-9"
                 />
+                <Button variant="link" size="sm" className="h-auto p-0 text-xs">
+                  Buscar ideias de Tema
+                </Button>
                 <p className="text-xs text-muted-foreground">
                   Use Tema para definir "o quê" da sua música (a história) e Sensações & Emoções para definir "como" a
                   história é contada (o sentimento).
@@ -432,14 +399,15 @@ export default function CriarPage() {
               <div className="space-y-2">
                 <Label className="text-xs">Requisitos Adicionais</Label>
                 <Textarea
-                  placeholder="Quaisquer elementos específicos..."
+                  placeholder="Quaisquer elementos específicos que você queira incluir..."
                   value={additionalReqs}
                   onChange={(e) => setAdditionalReqs(e.target.value)}
                   rows={2}
                   className="text-xs"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Forneça referências de artistas, compositores ou estilos específicos para a IA emular.
+                  Forneça referências de artistas, compositores ou estilos específicos para a IA emular durante a
+                  escrita.
                 </p>
               </div>
 
@@ -454,7 +422,7 @@ export default function CriarPage() {
                     Usar inspirações do Diário
                   </Label>
                   <p className="text-xs text-muted-foreground">
-                    Inclui automaticamente todas as inspirações salvas no seu diário na criação.
+                    Inclui automaticamente todas as inspirações salvas no seu diário na geração da letra.
                   </p>
                 </div>
               </div>
@@ -470,22 +438,85 @@ export default function CriarPage() {
                     Modo Avançado
                   </Label>
                   <p className="text-xs text-muted-foreground">
-                    Rimas perfeitas, métrica rigorosa de 7-11 sílabas, ganchos premium em PT-BR, linguagem limpa e
-                    fidelidade de estilo.
+                    Rimas perfeitas, métrica rigorosa, ganchos premium em PT-BR, linguagem limpa e fidelidade de estilo.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-2">
+                <Checkbox
+                  id="universalPolish"
+                  checked={universalPolish}
+                  onCheckedChange={(checked) => setUniversalPolish(checked as boolean)}
+                />
+                <div>
+                  <Label htmlFor="universalPolish" className="text-xs cursor-pointer font-semibold text-green-600">
+                    Sistema Universal de Polimento
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Aplica polimento específico por gênero, correção automática de rimas e instrumentos em inglês.
                   </p>
                 </div>
               </div>
 
               <div className="space-y-3 border rounded-lg p-3">
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center mb-2">
+                    <Label className="text-xs font-semibold">Temperatura da IA</Label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-mono font-bold text-primary">
+                        {getTemperatureValue(creativity[0])}
+                      </span>
+                      <Badge variant="outline" className="text-xs">
+                        {getTemperatureLabel(Number.parseFloat(getTemperatureValue(creativity[0])))}
+                      </Badge>
+                    </div>
+                  </div>
+                  <Slider
+                    value={creativity}
+                    onValueChange={setCreativity}
+                    min={50}
+                    max={100}
+                    step={1}
+                    className="cursor-pointer"
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>0.50</span>
+                    <span>0.70</span>
+                    <span className="font-semibold text-primary">0.85 (padrão)</span>
+                    <span>1.00</span>
+                  </div>
+                  <div className="bg-amber-50 border border-amber-200 rounded p-2 text-xs text-amber-800">
+                    <div className="font-semibold flex items-center gap-1">⚠️ Controle Sensível</div>
+                    <div className="mt-1">
+                      {Number.parseFloat(getTemperatureValue(creativity[0])) < 0.7 &&
+                        "Respostas mais previsíveis e conservadoras. Ideal para manter padrões estabelecidos."}
+                      {Number.parseFloat(getTemperatureValue(creativity[0])) >= 0.7 &&
+                        Number.parseFloat(getTemperatureValue(creativity[0])) < 0.85 &&
+                        "Equilíbrio entre criatividade e consistência. Bom para a maioria dos casos."}
+                      {Number.parseFloat(getTemperatureValue(creativity[0])) >= 0.85 &&
+                        Number.parseFloat(getTemperatureValue(creativity[0])) < 0.95 &&
+                        "Alta criatividade e originalidade. Recomendado para letras comerciais e inovadoras."}
+                      {Number.parseFloat(getTemperatureValue(creativity[0])) >= 0.95 &&
+                        "Máxima criatividade e experimentação. Pode gerar resultados inesperados e únicos."}
+                    </div>
+                  </div>
+                </div>
+
                 <div>
                   <div className="flex justify-between mb-1">
-                    <Label className="text-xs">Nível de Criatividade</Label>
-                    <span className="text-xs text-muted-foreground">Equilibrado</span>
+                    <Label className="text-xs">Qualidade do Modelo</Label>
+                    <span className="text-xs text-muted-foreground">Equilíbrio (padrão)</span>
                   </div>
-                  <Slider value={creativity} onValueChange={setCreativity} max={100} step={1} />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Equilíbrio entre tradição e originalidade com alta qualidade
-                  </p>
+                  <Select defaultValue="standard">
+                    <SelectTrigger className="h-8">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="standard">Equilíbrio (padrão)</SelectItem>
+                      <SelectItem value="high">Alta Qualidade</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
@@ -495,17 +526,18 @@ export default function CriarPage() {
                       {formattingStyle === "padrao" ? "Padrão" : "Performático"}
                     </span>
                   </div>
-                  <select
-                    value={formattingStyle}
-                    onChange={(e) => setFormattingStyle(e.target.value)}
-                    className="w-full h-8 rounded-md border border-input bg-background px-3 py-1 text-xs"
-                  >
-                    <option value="padrao">Padrão</option>
-                    <option value="performatico">Performático</option>
-                  </select>
+                  <Select value={formattingStyle} onValueChange={setFormattingStyle}>
+                    <SelectTrigger className="h-8">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="padrao">Padrão</SelectItem>
+                      <SelectItem value="performatico">Performático</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <p className="text-xs text-muted-foreground mt-1">
                     {formattingStyle === "performatico"
-                      ? "✅ FORMATO PROFISSIONAL: Instruções em inglês, letras empilhadas, backing vocals, estrutura A-B-C"
+                      ? "FORMATO PROFISSIONAL: Instruções em inglês, letras empilhadas, backing vocals, estrutura A-B-C"
                       : "Formato simples com marcadores básicos"}
                   </p>
                 </div>
@@ -513,7 +545,7 @@ export default function CriarPage() {
             </CardContent>
           </Card>
 
-          {/* ✅ COLUNA 2: INSPIRAÇÃO & SENSAÇÕES */}
+          {/* Coluna 2: Inspiração & Sensações */}
           <Card className="order-2 h-fit">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Inspiração & Sensações</CardTitle>
@@ -540,7 +572,17 @@ export default function CriarPage() {
                     </TabsTrigger>
                   </TabsList>
                   <TabsContent value="text" className="space-y-2">
-                    <InspirationManager onInspirationsChange={setSavedInspirations} />
+                    <Textarea
+                      placeholder="Adicione uma inspiração textual..."
+                      value={inspirationText}
+                      onChange={(e) => setInspirationText(e.target.value)}
+                      rows={3}
+                      className="text-xs"
+                    />
+                    <Button size="sm" variant="secondary" className="w-full">
+                      Adicionar Inspiração
+                    </Button>
+                    <p className="text-xs text-muted-foreground text-center">Nenhuma inspiração salva ainda.</p>
                   </TabsContent>
                 </Tabs>
               </div>
@@ -563,7 +605,7 @@ export default function CriarPage() {
                     onChange={(e) => setLiteraryEmotion(e.target.value)}
                     className="h-8 text-xs"
                   />
-                  <Button size="sm" className="h-8" onClick={handleSearchLiteraryInspiration}>
+                  <Button size="sm" className="h-8">
                     Buscar
                   </Button>
                 </div>
@@ -580,7 +622,7 @@ export default function CriarPage() {
                     onChange={(e) => setMetaphorSearch(e.target.value)}
                     className="h-8 text-xs"
                   />
-                  <Button size="sm" variant="secondary" className="h-8" onClick={handleSearchMetaphors}>
+                  <Button size="sm" variant="secondary" className="h-8">
                     <Search className="h-3 w-3" />
                   </Button>
                 </div>
@@ -605,13 +647,13 @@ export default function CriarPage() {
                   ))}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Dica: A letra será criada com base no conteúdo que você colar, mas o Tema será inferido pela IA.
+                  Dica: A letra será reescrita com base no conteúdo que você colar, mas o Tema será inferido pela IA.
                 </p>
               </div>
             </CardContent>
           </Card>
 
-          {/* ✅ COLUNA 3: FERRAMENTAS E RESULTADO */}
+          {/* Coluna 3: Ferramentas e Resultado */}
           <div className="order-3 space-y-4">
             <Card>
               <CardHeader className="pb-3">
@@ -644,20 +686,35 @@ export default function CriarPage() {
                   className="w-full justify-start"
                   size="sm"
                   onClick={handleGenerateLyrics}
-                  disabled={isGenerating || !genre || !theme}
+                  disabled={isGenerating || !genre}
                 >
                   {isGenerating ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Criando...
+                      Gerando...
                     </>
                   ) : (
                     <>
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      Criar Letra
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      {universalPolish ? "Gerar com Polimento Universal" : "Gerar Letra"}
                     </>
                   )}
                 </Button>
+
+                {isGenerating && (
+                  <ProcessingStatus
+                    isProcessing={isGenerating}
+                    steps={processingSteps}
+                    onComplete={() => console.log("[v0] Processing completed")}
+                  />
+                )}
+
+                {universalPolish && genre && (
+                  <div className="bg-green-50 border border-green-200 rounded p-2 text-xs text-green-700">
+                    <div className="font-semibold">Sistema Universal Ativo</div>
+                    <div>Polimento específico para {genre} habilitado</div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -676,7 +733,7 @@ export default function CriarPage() {
                 <div className="space-y-2">
                   <Label className="text-xs">Acordes</Label>
                   <Textarea
-                    placeholder="Os acordes criados aparecerão aqui..."
+                    placeholder="Os acordes gerados aparecerão aqui..."
                     value={chords}
                     onChange={(e) => setChords(e.target.value)}
                     rows={3}
@@ -687,17 +744,45 @@ export default function CriarPage() {
                 <div className="space-y-2">
                   <Label className="text-xs">Letra</Label>
                   <Textarea
-                    placeholder="Sua letra criada aparecerá aqui..."
+                    placeholder="Sua letra aparecerá aqui..."
                     value={lyrics}
                     onChange={(e) => setLyrics(e.target.value)}
                     rows={12}
                     className="font-mono text-xs"
                   />
 
-                  {/* ✅ VALIDADOR CORRIGIDO */}
-                  {lyrics.trim() && (
-                    <SyllableValidatorEditable lyrics={lyrics} maxSyllables={11} onLyricsChange={handleLyricsChange} />
-                  )}
+                  <SyllableValidator
+                    lyrics={lyrics}
+                    maxSyllables={currentSyllableConfig?.max || 11}
+                    onValidate={(result) => {
+                      if (!result.valid) {
+                        console.log(`⚠️ ${result.linesWithIssues} versos com problemas:`)
+                        result.violations.forEach((v) => {
+                          console.log(`  Linha ${v.line}: "${v.text}" → ${v.syllables} sílabas`)
+                        })
+
+                        const minSyllables = currentSyllableConfig?.min || 7
+                        const maxSyllables = currentSyllableConfig?.max || 11
+
+                        toast.warning(`${result.linesWithIssues} versos fora do padrão ${genre}`, {
+                          description: `Use ${minSyllables}-${maxSyllables} sílabas`,
+                          duration: 5000,
+                        })
+                      } else if (result.totalLines > 0) {
+                        toast.success(`Letra validada: ${result.totalLines} versos dentro do padrão ${genre}`)
+                      }
+                    }}
+                  />
+
+                  <RhymeAnalyzer
+                    lyrics={lyrics}
+                    genre={genre}
+                    onAnalysis={(report) => {
+                      if (report.overallScore < 60) {
+                        toast.warning(`Rimas precisam de melhoria (Score: ${report.overallScore})`)
+                      }
+                    }}
+                  />
                 </div>
 
                 <div className="flex gap-2">
@@ -724,7 +809,7 @@ export default function CriarPage() {
                     size="sm"
                     variant="outline"
                     className="flex-1 bg-transparent"
-                    onClick={handleClearOutput}
+                    onClick={handleClearLyrics}
                     disabled={!lyrics && !title && !chords}
                   >
                     <Trash2 className="h-3 w-3 mr-1" />
@@ -741,7 +826,26 @@ export default function CriarPage() {
         </div>
       </div>
 
-      {/* ✅ DIALOGS */}
+      <Dialog open={showHookDialog} onOpenChange={setShowHookDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Gerador de Hook & Ganchômetro</DialogTitle>
+            <DialogDescription>
+              Analise sua letra e escolha o melhor hook entre 3 variações geradas pela Terceira Via
+            </DialogDescription>
+          </DialogHeader>
+          <HookGenerator onSelectHook={handleSelectHook} showSelectionMode={true} />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowHookDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleApplyHook} disabled={!selectedHook}>
+              Adicionar aos Requisitos
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={showChorusDialog} onOpenChange={setShowChorusDialog}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
@@ -804,31 +908,6 @@ export default function CriarPage() {
             </Button>
             <Button onClick={handleApplyChoruses} disabled={selectedChoruses.length === 0}>
               Adicionar aos Requisitos ({selectedChoruses.length})
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showHookDialog} onOpenChange={setShowHookDialog}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Gerador de Hook & Ganchômetro</DialogTitle>
-            <DialogDescription>
-              Analise sua letra e escolha o melhor hook entre 3 variações geradas pela Terceira Via
-            </DialogDescription>
-          </DialogHeader>
-          <HookGenerator
-            onSelectHook={handleSelectHook}
-            showSelectionMode={true}
-            initialGenre={genre}
-            initialTheme={theme}
-          />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowHookDialog(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleApplyHook} disabled={!selectedHook}>
-              Adicionar aos Requisitos
             </Button>
           </DialogFooter>
         </DialogContent>

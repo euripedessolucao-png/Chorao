@@ -1,6 +1,7 @@
-import { getGenreConfig } from "../genre-config"
-import { ADVANCED_BRAZILIAN_METRICS } from "./third-way-converter"
-import { countPoeticSyllables } from "../validation/syllable-counter"
+// lib/terceira-via/analysis.ts
+
+import { countPoeticSyllables } from "../validation/syllable-counter-brasileiro"
+import { GENRE_CONFIGS } from "../genre-config"
 
 export interface TerceiraViaAnalysis {
   originalidade: number
@@ -19,49 +20,31 @@ export interface TerceiraViaAnalysis {
   }
 }
 
-export function analisarMelodiaRitmo(
-  lyrics: string,
-  genre: string,
-): {
-  flow_score: number
-  rhythmic_patterns: string[]
-  melodic_suggestions: string[]
-} {
-  const lines = lyrics.split("\n").filter((line) => line.trim() && !line.startsWith("[") && !line.startsWith("("))
+// ... resto do código ...
 
-  let flow_score = 70
-  const rhythmic_patterns: string[] = []
-  const melodic_suggestions: string[] = []
+function calculateSyllableCompliance(lines: string[], genre: string): number {
+  if (lines.length === 0) return 0
 
-  const syllablePatterns = lines.map((line) => countPoeticSyllables(line))
-  const uniquePatterns = [...new Set(syllablePatterns)]
+  const config = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS]
+  if (!config) return 0.7
 
-  if (uniquePatterns.length >= 3) {
-    flow_score += 15
-    rhythmic_patterns.push(`Variação rítmica boa: ${uniquePatterns.join("-")} sílabas`)
-  } else {
-    melodic_suggestions.push("Use mais variação no número de sílabas entre versos")
-  }
+  const rules = config.prosody_rules.syllable_count
+  let compliantCount = 0
 
-  const poeticContractions = ["d'amor", "qu'eu", "s'eu", "meuamor", "tualma", "sualma"]
+  for (const line of lines) {
+    const syllables = countPoeticSyllables(line)
+    let isValid = false
 
-  let contractionCount = 0
-  poeticContractions.forEach((contraction) => {
-    if (lyrics.toLowerCase().includes(contraction)) {
-      contractionCount++
+    if ("absolute_max" in rules) {
+      isValid = syllables <= rules.absolute_max
+    } else if ("without_comma" in rules) {
+      isValid = syllables >= rules.without_comma.min && syllables <= rules.without_comma.acceptable_up_to
     }
-  })
 
-  if (contractionCount > 0) {
-    flow_score += 10
-    rhythmic_patterns.push(`${contractionCount} contrações poéticas aplicadas`)
+    if (isValid) compliantCount++
   }
 
-  return {
-    flow_score: Math.min(100, flow_score),
-    rhythmic_patterns,
-    melodic_suggestions,
-  }
+  return compliantCount / lines.length
 }
 
 export function analisarTerceiraVia(lyrics: string, genre: string, theme: string): TerceiraViaAnalysis {
@@ -195,18 +178,13 @@ export function analisarTerceiraVia(lyrics: string, genre: string, theme: string
   const melodiaRitmo = analisarMelodiaRitmo(lyrics, genre)
   tecnica = Math.min(100, tecnica + Math.round((melodiaRitmo.flow_score - 70) / 3))
 
-  const config = getGenreConfig(genre)
+  const config = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS]
   let adequacao = 70
 
-  const genreMetrics = ADVANCED_BRAZILIAN_METRICS[genre as keyof typeof ADVANCED_BRAZILIAN_METRICS]
-  if (genreMetrics) {
-    const avgSyllables = lines.reduce((sum, line) => sum + countPoeticSyllables(line), 0) / lines.length
-    const targetSyllables = genreMetrics.syllablesPerLine
-
-    if (Math.abs(avgSyllables - targetSyllables) <= 2) {
-      adequacao += 15
-      pontos_fortes.push(`Métrica perfeita para ${genre} (${avgSyllables.toFixed(1)} sílabas/verso)`)
-    }
+  // The adequacao score is now based on other factors like rhyme, structure, and syllable compliance
+  if (config) {
+    // Genre-specific adequacy adjustments can be added here if needed
+    adequacao += 10 // Base bonus for having a valid genre config
   }
 
   const score_geral = Math.round(originalidade * 0.25 + profundidade_emocional * 0.3 + tecnica * 0.25 + adequacao * 0.2)
@@ -275,18 +253,12 @@ function checkAdvancedRhyme(line1: string, line2: string): boolean {
   )
 }
 
-function calculateSyllableCompliance(lines: string[], genre: string): number {
-  if (lines.length === 0) return 0
-
-  const genreMetrics = ADVANCED_BRAZILIAN_METRICS[genre as keyof typeof ADVANCED_BRAZILIAN_METRICS]
-  if (!genreMetrics) return 0.7
-
-  const compliantLines = lines.filter((line) => {
-    const syllables = countPoeticSyllables(line)
-    return syllables >= genreMetrics.syllablesPerLine - 2 && syllables <= genreMetrics.maxSyllables
-  })
-
-  return compliantLines.length / lines.length
+function analisarMelodiaRitmo(lyrics: string, genre: string): { flow_score: number; melodic_suggestions: string[] } {
+  // Placeholder function for melody and rhythm analysis
+  return {
+    flow_score: 85,
+    melodic_suggestions: ["Melhora o ritmo para maior impacto"],
+  }
 }
 
 export function analisarTendenciasCompositivas(

@@ -1,395 +1,176 @@
-import { NextResponse } from "next/server"
-import { MetaComposer, type CompositionRequest } from "@/lib/orchestrator/meta-composer"
+import { type NextRequest, NextResponse } from "next/server"
+import { generateText } from "ai"
+import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
+import { buildGenreRulesPrompt } from "@/lib/validation/genre-rules-builder"
+import { getGenreMetrics } from "@/lib/metrics/brazilian-metrics"
+import { getUniversalRhymeRules } from "@/lib/validation/universal-rhyme-rules"
+import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro"
+import {
+  formatSertanejoPerformance,
+  shouldUsePerformanceFormat,
+} from "@/lib/formatters/sertanejo-performance-formatter"
+import { formatInstrumentationForAI } from "@/lib/normalized-genre"
+import { AbsoluteSyllableEnforcer } from "@/lib/validation/absolute-syllable-enforcer"
+import { LineStacker } from "@/lib/utils/line-stacker"
 
-// ✅ INTERFACES PARA TIPAGEM
-interface ChorusVariation {
-  chorus: string
-  style: string
-  score: number
-}
-
-interface HookVariation {
-  hook: string
-  style: string
-  score: number
-}
-
-interface ChorusData {
-  variations: ChorusVariation[]
-  bestOptionIndex: number
-}
-
-interface HookData {
-  variations: HookVariation[]
-  bestOptionIndex: number
-}
-
-export const maxDuration = 60 // 60 segundos para geração completa
-
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const {
+      genre,
+      mood,
+      theme,
+      additionalRequirements = "",
+      performanceMode = "standard",
+      title,
+    } = await request.json()
 
-    console.log("[v0] 🎵 [Generate-Lyrics] Parâmetros recebidos:", {
-      genero: body.genero,
-      tema: body.tema,
-      humor: body.humor,
+    if (!genre || typeof genre !== "string" || !genre.trim()) {
+      return NextResponse.json({ error: "Gênero é obrigatório" }, { status: 400 })
+    }
+    if (!theme || typeof theme !== "string" || !theme.trim()) {
+      return NextResponse.json({ error: "Tema é obrigatório" }, { status: 400 })
+    }
+
+    console.log(`[API] 🎵 Criando letra para: ${genre} | Tema: ${theme}`)
+
+    const genreMetrics = getGenreMetrics(genre)
+    const maxSyllables = Math.min(genreMetrics.syllableRange.max, 12)
+    const minSyllables = genreMetrics.syllableRange.min
+    const rhymeRules = getUniversalRhymeRules(genre)
+
+    const genreRules = buildGenreRulesPrompt(genre)
+    const prompt = `Você é um compositor brasileiro especializado em ${genre}.
+
+TAREFA: Criar uma música completa com estrutura profissional.
+
+TEMA: ${theme}
+HUMOR: ${mood || "Adaptado ao tema"}
+${additionalRequirements ? `REQUISITOS: ${additionalRequirements}` : ""}
+
+REGRAS DE MÉTRICA:
+- Versos: ${minSyllables}–${maxSyllables} sílabas
+- Use contrações naturais ("cê", "pra", "tô")
+- Evite versos com mais de ${maxSyllables} sílabas
+
+REGRAS DE RIMA:
+- ${rhymeRules.requirePerfectRhymes ? "Rimas perfeitas obrigatórias" : "Rimas naturais aceitáveis"}
+- ${rhymeRules.minRichRhymePercentage > 0 ? `Mínimo ${rhymeRules.minRichRhymePercentage}% rimas ricas` : ""}
+
+${genreRules.fullPrompt}
+
+ESTRUTURA:
+${
+  performanceMode === "performance"
+    ? "[INTRO]\n[VERSE 1]\n[PRE-CHORUS]\n[CHORUS]\n[VERSE 2]\n[CHORUS]\n[BRIDGE]\n[CHORUS]\n[OUTRO]"
+    : "[Intro]\n[Verso 1]\n[Pré-Refrão]\n[Refrão]\n[Verso 2]\n[Refrão]\n[Ponte]\n[Refrão]\n[Outro]"
+}
+
+REGRAS:
+- Refrão memorável e repetível
+- Linguagem brasileira autêntica
+- Evite clichês ("coraçãozinho", "lágrimas no rosto")
+- ${performanceMode === "performance" ? "Tags em inglês, versos em português" : "Tags em português"}
+
+Retorne APENAS a letra, sem explicações.`
+
+    console.log(`[API] 🎵 Gerando com métrica ${minSyllables}-${maxSyllables} sílabas...`)
+
+    const { text } = await generateText({
+      model: "openai/gpt-4o-mini",
+      prompt,
+      temperature: 0.85,
     })
 
-    const { genero, humor, tema, additionalRequirements = "" } = body
+    let finalLyrics = capitalizeLines(text)
 
-    if (!genero || typeof genero !== "string" || !genero.trim()) {
-      console.error("[v0] ❌ Gênero inválido:", genero)
-      return NextResponse.json({ error: "Gênero é obrigatório e deve ser uma string válida" }, { status: 400 })
+    // Remove explicações da IA
+    finalLyrics = finalLyrics
+      .split("\n")
+      .filter(
+        (line) =>
+          !line.trim().startsWith("Retorne") && !line.trim().startsWith("REGRAS") && !line.includes("Explicação"),
+      )
+      .join("\n")
+      .trim()
+
+    console.log("[API] 🔧 Aplicando correção automática de sílabas...")
+    const enforcementResult = AbsoluteSyllableEnforcer.validateAndFix(finalLyrics)
+    if (enforcementResult.corrections > 0) {
+      console.log(`[API] ✅ ${enforcementResult.corrections} verso(s) corrigido(s) automaticamente`)
+      finalLyrics = enforcementResult.correctedLyrics
     }
 
-    if (!tema || typeof tema !== "string" || !tema.trim()) {
-      console.error("[v0] ❌ Tema inválido:", tema)
-      return NextResponse.json({ error: "Tema é obrigatório e deve ser uma string válida" }, { status: 400 })
+    console.log("[API] 📚 Empilhando versos...")
+    const stackResult = LineStacker.stackLines(finalLyrics)
+    finalLyrics = stackResult.stackedLyrics
+    if (stackResult.improvements.length > 0) {
+      console.log(`[API] ✅ ${stackResult.improvements.length} melhoria(s) de empilhamento aplicadas`)
     }
 
-    const compositionRequest: CompositionRequest = {
-      genre: genero,
-      theme: tema,
-      mood: humor || "adaptável",
-      additionalRequirements,
-      creativity: "equilibrado",
-      applyFinalPolish: true,
-      performanceMode: "standard",
-      useTerceiraVia: false,
+    // 🔁 PÓS-GERAÇÃO: Validação e correção para Sertanejo Raiz
+    if (genre.toLowerCase().includes("raiz")) {
+      const forbiddenInstruments = ["electric guitar", "808", "synth", "drum machine", "bateria eletrônica"]
+      const lowerLyrics = finalLyrics.toLowerCase()
+      if (forbiddenInstruments.some((inst) => lowerLyrics.includes(inst))) {
+        // Substitui termos proibidos por alternativas acústicas
+        finalLyrics = finalLyrics
+          .replace(/electric guitar/gi, "acoustic guitar")
+          .replace(/808|drum machine|bateria eletrônica/gi, "light percussion")
+          .replace(/synth/gi, "sanfona")
+      }
     }
 
-    console.log("[v0] 🎵 Gerando letra com MetaComposer...")
+    // Aplica formatação de performance se necessário
+    if (shouldUsePerformanceFormat(genre, performanceMode)) {
+      finalLyrics = formatSertanejoPerformance(finalLyrics, genre)
+    }
 
-    const result = await MetaComposer.compose(compositionRequest)
+    const instrumentation = formatInstrumentationForAI(genre, finalLyrics)
+    finalLyrics = `${finalLyrics}\n\n${instrumentation}`
 
-    console.log("[v0] ✅ Letra gerada com sucesso!")
+    // Validação de métrica
+    const lines = finalLyrics.split("\n")
+    let validLines = 0
+    let totalLines = 0
+
+    for (const line of lines) {
+      if (line.trim() && !line.startsWith("[") && !line.startsWith("(")) {
+        totalLines++
+        const syllables = countPoeticSyllables(line)
+        if (syllables >= minSyllables && syllables <= maxSyllables) {
+          validLines++
+        }
+      }
+    }
+
+    const validityRatio = totalLines > 0 ? validLines / totalLines : 1
+    const finalScore = Math.round(validityRatio * 100)
+
+    console.log(`[API] ✅ Validação: ${finalScore}% dentro da métrica`)
 
     return NextResponse.json({
-      letra: result.lyrics,
-      titulo: result.title,
-      metadata: result.metadata,
+      lyrics: finalLyrics,
+      title: title || `${theme} - ${genre}`,
+      meta: {
+        finalScore,
+        genre,
+        performanceMode,
+        syllableRange: { min: minSyllables, max: maxSyllables },
+        syllableCorrections: enforcementResult.corrections,
+      },
     })
   } catch (error) {
-    console.error("[v0] ❌ Erro ao criar música:", error)
+    console.error("[API] ❌ Erro na criação:", error)
     return NextResponse.json(
       {
-        error: "Erro ao criar música",
-        details: error instanceof Error ? error.message : "Erro desconhecido",
-        stack: error instanceof Error ? error.stack : undefined,
+        error: error instanceof Error ? error.message : "Erro interno",
+        details: process.env.NODE_ENV === "development" ? (error as any)?.stack : undefined,
       },
       { status: 500 },
     )
   }
 }
 
-// ✅ EXTRAI LINHAS DO REFRÃO
-function extractChorusLines(lyrics: string): string {
-  const lines = lyrics.split("\n")
-  const verseLines: string[] = []
-
-  for (const line of lines) {
-    const trimmed = line.trim()
-    if (trimmed && !trimmed.startsWith("[") && !trimmed.startsWith("(") && !trimmed.includes("Instruments:")) {
-      verseLines.push(trimmed)
-      if (verseLines.length >= 4) break // Pega até 4 linhas
-    }
-  }
-
-  return verseLines.slice(0, 4).join("\n")
-}
-
-// ✅ EXTRAI PRIMEIRA LINHA (PARA HOOK)
-function extractFirstLine(lyrics: string): string {
-  const lines = lyrics.split("\n")
-  for (const line of lines) {
-    const trimmed = line.trim()
-    if (trimmed && !trimmed.startsWith("[") && !trimmed.startsWith("(") && !trimmed.includes("Instruments:")) {
-      return trimmed
-    }
-  }
-  return "Hook impactante"
-}
-
-// ✅ PEGA MELHOR REFRÃO
-function getBestChorus(chorusData: ChorusData): string {
-  if (!chorusData?.variations?.[0]?.chorus) return ""
-  return chorusData.variations[0].chorus
-}
-
-// ✅ FORMATAÇÃO PERFORMÁTICA (TAGS EM INGLÊS, VERSOS EM PORTUGUÊS)
-function applyPerformanceFormatting(lyrics: string, genre: string, rhythm: string): string {
-  const lines = lyrics.split("\n")
-  const formattedLines: string[] = []
-
-  let currentSection = ""
-  let hasInstruments = false
-
-  for (const line of lines) {
-    const trimmed = line.trim()
-
-    if (!trimmed) {
-      formattedLines.push("")
-      continue
-    }
-
-    // ✅ Remove símbolos indesejados (**, ##, etc)
-    let cleanedLine = trimmed
-      .replace(/\*\*/g, "") // Remove **
-      .replace(/##/g, "") // Remove ##
-      .replace(/\[\/\//g, "[") // Remove [//
-      .replace(/\/\/\]/g, "]") // Remove //]
-      .trim()
-
-    // ✅ Detecta se já tem instrumentos (evita duplicação)
-    if (cleanedLine.includes("(Instruments:") || cleanedLine.includes("(Instrumentos:")) {
-      hasInstruments = true
-      // ✅ Garante que instrumentos estão em inglês
-      cleanedLine = cleanedLine
-        .replace(/\(Instrumentos:/gi, "(Instruments:")
-        .replace(/Ritmo:/gi, "Rhythm:")
-        .replace(/Estilo:/gi, "Style:")
-      formattedLines.push(cleanedLine)
-      continue
-    }
-
-    // ✅ TAGS DE SEÇÃO EM INGLÊS
-    if (cleanedLine.startsWith("[") && cleanedLine.endsWith("]")) {
-      currentSection = cleanedLine
-      const performanceTag = convertToPerformanceTag(cleanedLine, genre)
-      formattedLines.push(performanceTag)
-      continue
-    }
-
-    // ✅ INSTRUÇÕES MUSICAIS EM INGLÊS (Backing vocals, etc)
-    if (cleanedLine.startsWith("(") && cleanedLine.endsWith(")")) {
-      // ✅ Garante formato correto de backing vocals
-      if (cleanedLine.toLowerCase().includes("backing")) {
-        cleanedLine = cleanedLine.replace(/backing:/gi, "Backing:")
-      }
-      formattedLines.push(cleanedLine)
-      continue
-    }
-
-    // ✅ VERSOS CANTADOS EM PORTUGUÊS (limpos de símbolos)
-    formattedLines.push(cleanedLine)
-  }
-
-  let formattedLyrics = formattedLines.join("\n")
-
-  // ✅ Adiciona instrumentos APENAS se não existir (evita duplicação)
-  if (!hasInstruments) {
-    const instruments = getGenreInstruments(genre)
-    const bpm = getGenreBPM(genre)
-    const style = getPerformanceStyle(genre)
-
-    formattedLyrics += `\n\n(Instruments: ${instruments} | BPM: ${bpm} | Rhythm: ${rhythm} | Style: ${style})`
-  }
-
-  return formattedLyrics
-}
-
-// ✅ CONVERSÃO PARA TAGS PERFORMÁTICAS EM INGLÊS
-function convertToPerformanceTag(tag: string, genre: string): string {
-  const tagLower = tag.toLowerCase()
-
-  // ✅ CONVERTE TAGS PARA INGLÊS
-  const englishTag = tag
-    .replace(/\[INTRO\]/gi, "[INTRO]")
-    .replace(/\[VERSO\]/gi, "[VERSE]")
-    .replace(/\[VERSO\s+\d+\]/gi, "[VERSE]")
-    .replace(/\[REFRÃO\]/gi, "[CHORUS]")
-    .replace(/\[PRÉ-REFRÃO\]/gi, "[PRE-CHORUS]")
-    .replace(/\[PONTE\]/gi, "[BRIDGE]")
-    .replace(/\[SOLO\]/gi, "[SOLO]")
-    .replace(/\[FINAL\]/gi, "[OUTRO]")
-    .replace(/\[OUTRO\]/gi, "[OUTRO]")
-
-  // ✅ ADICIONA INSTRUMENTOS PERFORMÁTICOS
-  if (englishTag === "[INTRO]") {
-    return `[INTRO - ${getIntroInstruments(genre)}]`
-  }
-  if (englishTag === "[VERSE]") {
-    return `[VERSE 1 - ${getVerseInstruments(genre)}]`
-  }
-  if (englishTag === "[PRE-CHORUS]") {
-    return `[PRE-CHORUS - ${getPreChorusInstruments(genre)}]`
-  }
-  if (englishTag === "[CHORUS]") {
-    return `[CHORUS - ${getChorusInstruments(genre)}]`
-  }
-  if (englishTag === "[BRIDGE]") {
-    return `[BRIDGE - ${getBridgeInstruments(genre)}]`
-  }
-  if (englishTag === "[SOLO]") {
-    return `[SOLO - ${getSoloInstruments(genre)}]`
-  }
-  if (englishTag === "[OUTRO]") {
-    return `[OUTRO - ${getOutroInstruments(genre)}]`
-  }
-
-  return englishTag
-}
-
-// ✅ FUNÇÕES DE INSTRUMENTOS (mantidas da versão anterior)
-function getIntroInstruments(genre: string): string {
-  const instruments: { [key: string]: string } = {
-    Sertanejo: "Slow acoustic guitar, harmonica",
-    "Sertanejo Moderno": "Acoustic guitar, synth pads",
-    MPB: "Nylon guitar, light percussion",
-    Funk: "Synth intro, drum machine",
-    Rock: "Electric guitar riff, drums",
-    Pop: "Synth intro, electronic beats",
-  }
-  return instruments[genre] || "Acoustic guitar, pads"
-}
-
-function getVerseInstruments(genre: string): string {
-  const instruments: { [key: string]: string } = {
-    Sertanejo: "Acoustic guitar, soft drums",
-    "Sertanejo Moderno": "Acoustic guitar, electric bass, drums",
-    MPB: "Nylon guitar, bass, light drums",
-    Funk: "Drum machine, synth bass",
-    Rock: "Electric guitar, bass, drums",
-    Pop: "Piano, synth, drums",
-  }
-  return instruments[genre] || "Guitar, bass, drums"
-}
-
-function getPreChorusInstruments(genre: string): string {
-  const instruments: { [key: string]: string } = {
-    Sertanejo: "Rhodes keyboard, soft percussion",
-    "Sertanejo Moderno": "Synth pads, percussion",
-    MPB: "Piano, percussion",
-    Funk: "Synth build-up, hi-hats",
-    Rock: "Guitar arpeggios, cymbals",
-    Pop: "Synth layers, drum fills",
-  }
-  return instruments[genre] || "Keys, percussion"
-}
-
-function getChorusInstruments(genre: string): string {
-  const instruments: { [key: string]: string } = {
-    Sertanejo: "Accordion, handclaps offbeat",
-    "Sertanejo Moderno": "Full band, handclaps",
-    MPB: "Full arrangement, percussion",
-    Funk: "Full synth, heavy drums",
-    Rock: "Full band, power chords",
-    Pop: "Full production, backing vocals",
-  }
-  return instruments[genre] || "Full band"
-}
-
-function getBridgeInstruments(genre: string): string {
-  const instruments: { [key: string]: string } = {
-    Sertanejo: "Hammond organ, slide guitar",
-    "Sertanejo Moderno": "Strings, electric guitar",
-    MPB: "Strings, flute",
-    Funk: "Synth breakdown, bass solo",
-    Rock: "Guitar solo, organ",
-    Pop: "Synth breakdown, vocal effects",
-  }
-  return instruments[genre] || "Strings, guitar"
-}
-
-function getSoloInstruments(genre: string): string {
-  const instruments: { [key: string]: string } = {
-    Sertanejo: "Tenor saxophone, blue note",
-    "Sertanejo Moderno": "Electric guitar solo",
-    MPB: "Nylon guitar solo",
-    Funk: "Synth solo",
-    Rock: "Electric guitar solo",
-    Pop: "Synth solo",
-  }
-  return instruments[genre] || "Guitar solo"
-}
-
-function getOutroInstruments(genre: string): string {
-  const instruments: { [key: string]: string } = {
-    Sertanejo: "Fingerstyle viola caipira, synth pads",
-    "Sertanejo Moderno": "Acoustic guitar, synth pads",
-    MPB: "Nylon guitar, light strings",
-    Funk: "Synth fade out",
-    Rock: "Guitar feedback fade",
-    Pop: "Synth fade, vocal echoes",
-  }
-  return instruments[genre] || "Guitar, pads"
-}
-
-// ✅ FORMATAÇÃO PADRÃO
-function applyStandardFormatting(lyrics: string, genre: string): string {
-  let formatted = lyrics
-
-  // ✅ CORRIGE TAGS PARA INGLÊS
-  formatted = formatted
-    .replace(/\[INTRO\]/gi, "[INTRO]")
-    .replace(/\[VERSO\]/gi, "[VERSE]")
-    .replace(/\[REFRÃO\]/gi, "[CHORUS]")
-    .replace(/\[PONTE\]/gi, "[BRIDGE]")
-    .replace(/\[FINAL\]/gi, "[OUTRO]")
-
-  // ✅ GARANTE INSTRUMENTOS EM INGLÊS
-  if (!formatted.includes("(Instruments:")) {
-    const instruments = getGenreInstruments(genre)
-    formatted += `\n\n(Instruments: ${instruments})`
-  }
-
-  return formatted
-}
-
-// ✅ FUNÇÕES AUXILIARES
-function getSyllableConfig(genre: string): { min: number; max: number; ideal: number } {
-  const configs: { [key: string]: { min: number; max: number; ideal: number } } = {
-    Sertanejo: { min: 9, max: 11, ideal: 10 },
-    "Sertanejo Moderno": { min: 9, max: 11, ideal: 10 },
-    MPB: { min: 7, max: 12, ideal: 9 },
-    Funk: { min: 6, max: 10, ideal: 8 },
-    Forró: { min: 8, max: 11, ideal: 9 },
-    Rock: { min: 7, max: 11, ideal: 9 },
-    Pop: { min: 7, max: 11, ideal: 9 },
-    default: { min: 7, max: 11, ideal: 9 },
-  }
-  return configs[genre] || configs.default
-}
-
-function getGenreInstruments(genre: string): string {
-  const instruments: { [key: string]: string } = {
-    Sertanejo: "acoustic guitar, viola, bass, drums, accordion",
-    "Sertanejo Moderno": "acoustic guitar, electric guitar, synth, bass, drums, accordion",
-    MPB: "nylon guitar, piano, bass, light percussion",
-    Funk: "drum machine, synth bass, samples, electronic beats",
-    Forró: "accordion, triangle, zabumba, bass",
-    Rock: "electric guitar, bass, drums, keyboard",
-    Pop: "synth, drum machine, bass, piano, electronic elements",
-    default: "guitar, bass, drums, keyboard",
-  }
-  return instruments[genre] || instruments.default
-}
-
-function getGenreBPM(genre: string): string {
-  const bpms: { [key: string]: string } = {
-    Sertanejo: "72",
-    "Sertanejo Moderno": "85",
-    MPB: "90",
-    Funk: "110",
-    Forró: "120",
-    Rock: "130",
-    Pop: "100",
-    default: "100",
-  }
-  return bpms[genre] || bpms.default
-}
-
-function getPerformanceStyle(genre: string): string {
-  const styles: { [key: string]: string } = {
-    Sertanejo: "Sertanejo Raiz",
-    "Sertanejo Moderno": "Modern Sertanejo",
-    MPB: "MPB Classic",
-    Funk: "Brazilian Funk",
-    Forró: "Forró Pé-de-Serra",
-    Rock: "Rock Nacional",
-    Pop: "Brazilian Pop",
-    default: "Original",
-  }
-  return styles[genre] || styles.default
+export async function GET() {
+  return NextResponse.json({ error: "Método não permitido" }, { status: 405 })
 }

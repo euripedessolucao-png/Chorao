@@ -127,3 +127,42 @@ export function extractHook(lines: string[]): string | null {
   }
   return null
 }
+
+export function getSertanejoRulesBySubgenre(subgenre: string) {
+  // Base rules for all sertanejo subgenres
+  const baseRules = {
+    ...SERTANEJO_RULES,
+    chorusStructure: {
+      minLines: 2,
+      maxLines: 4,
+      minSyllablesPerLine: 5,
+      maxSyllablesPerLine: 12,
+      requiresHook: true,
+      requiresVisual: true,
+    },
+  }
+
+  // Adjust rules based on subgenre
+  if (subgenre.includes("raiz")) {
+    return {
+      ...baseRules,
+      chorusStructure: {
+        ...baseRules.chorusStructure,
+        requiresVisual: false, // Sertanejo raiz doesn't require visual elements
+      },
+    }
+  }
+
+  if (subgenre.includes("universitário") || subgenre.includes("moderno")) {
+    return {
+      ...baseRules,
+      chorusStructure: {
+        ...baseRules.chorusStructure,
+        maxLines: 4, // Modern sertanejo prefers 4-line choruses
+        requiresVisual: true,
+      },
+    }
+  }
+
+  return baseRules
+}

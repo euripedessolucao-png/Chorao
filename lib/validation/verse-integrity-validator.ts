@@ -7,7 +7,7 @@
  * - Versos com mais de 11 sílabas (LIMITE ABSOLUTO)
  */
 
-import { countPoeticSyllables } from "./syllable-counter"
+import { countPoeticSyllables } from "./syllable-counter-brasileiro"
 
 export interface VerseIssue {
   line: number

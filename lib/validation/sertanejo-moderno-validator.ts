@@ -11,7 +11,7 @@
  * - Refrão final deve ter variação emocional
  */
 
-import { countPoeticSyllables } from "@/lib/validation/syllable-counter"
+import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro"
 
 export interface SertanejoValidationResult {
   isValid: boolean

@@ -1,23 +1,22 @@
 // lib/orchestrator/mega-aggressive-corrector.ts - VERSÃO CORRIGIDA
 
-import { countPortugueseSyllables } from "@/lib/validation/syllable-counter"
+import { countPoeticSyllables as countPortugueseSyllables } from "@/lib/validation/syllable-counter-brasileiro"
 
 export class MegaAggressiveCorrector {
-  
   /**
    * CORREÇÃO QUE REALMENTE FUNCIONA - FOCADA NOS PROBLEMAS REAIS
    */
   static async correctAllProblems(lyrics: string): Promise<string> {
     console.log("🔧 [MegaAggressiveCorrector] Aplicando correção real...")
-    
+
     let corrected = lyrics
 
     // ✅ CORREÇÕES ESPECÍFICAS DOS PROBLEMAS QUE VOCÊ VIU
     corrected = this.fixCriticalErrors(corrected)
-    
+
     // ✅ CORREÇÃO DE SÍLABAS NAS LINHAS PROBLEMÁTICAS
     corrected = this.fixSpecificLines(corrected)
-    
+
     // ✅ LIMPEZA BÁSICA
     corrected = this.basicCleanup(corrected)
 
@@ -40,15 +39,15 @@ export class MegaAggressiveCorrector {
       { regex: /nãvaleu/g, replacement: "não valeu" },
       { regex: /guitarra daço/g, replacement: "guitarra de aço" },
       { regex: /paixãfoi/g, replacement: "paixão foi" },
-      
+
       // Placeholders
-      { regex: /\(Backing Vocal: \$1\)/g, replacement: '(Backing Vocal: Ai-ai-ai!)' },
-      { regex: /\(Público: \$1\)/g, replacement: '(Público: Aôôô sofrência!)' },
-      { regex: /\(Audience: \$1\)/g, replacement: '(Público: Tá ligado!)' },
-      
+      { regex: /$$Backing Vocal: \$1$$/g, replacement: "(Backing Vocal: Ai-ai-ai!)" },
+      { regex: /$$Público: \$1$$/g, replacement: "(Público: Aôôô sofrência!)" },
+      { regex: /$$Audience: \$1$$/g, replacement: "(Público: Tá ligado!)" },
+
       // Estrutura incompleta
-      { regex: /drums and bass lock into a tight \]/g, replacement: 'drums and bass lock into a tight groove]' },
-      { regex: /banda pra\./g, replacement: 'banda para.' },
+      { regex: /drums and bass lock into a tight \]/g, replacement: "drums and bass lock into a tight groove]" },
+      { regex: /banda pra\./g, replacement: "banda para." },
     ]
 
     criticalFixes.forEach(({ regex, replacement }) => {
@@ -62,7 +61,7 @@ export class MegaAggressiveCorrector {
    * CORREÇÃO DE LINHAS ESPECÍFICAS PROBLEMÁTICAS
    */
   private static fixSpecificLines(lyrics: string): string {
-    const lines = lyrics.split('\n')
+    const lines = lyrics.split("\n")
     const correctedLines: string[] = []
 
     for (let i = 0; i < lines.length; i++) {
@@ -73,12 +72,12 @@ export class MegaAggressiveCorrector {
         // CORREÇÕES POR CONTEÚDO
         if (line.includes("lembrançnãsai")) {
           line = line.replace("lembrançnãsai", "lembrança não sai")
-          console.log(`✅ Linha ${i+1}: Corrigido "lembrançnãsai"`)
+          console.log(`✅ Linha ${i + 1}: Corrigido "lembrançnãsai"`)
         }
-        
+
         if (line.includes("preçda")) {
           line = line.replace("preçda", "preço da")
-          console.log(`✅ Linha ${i+1}: Corrigido "preçda"`)
+          console.log(`✅ Linha ${i + 1}: Corrigido "preçda"`)
         }
 
         // CORREÇÃO DE SÍLABAS APENAS SE MUITO LONGA
@@ -86,14 +85,14 @@ export class MegaAggressiveCorrector {
         if (syllables > 13) {
           const original = line
           line = this.simplifyLine(line)
-          console.log(`✅ Linha ${i+1}: Reduzida de ${syllables} para ${countPortugueseSyllables(line)} sílabas`)
+          console.log(`✅ Linha ${i + 1}: Reduzida de ${syllables} para ${countPortugueseSyllables(line)} sílabas`)
         }
       }
 
       correctedLines.push(line)
     }
 
-    return correctedLines.join('\n')
+    return correctedLines.join("\n")
   }
 
   /**
@@ -105,17 +104,17 @@ export class MegaAggressiveCorrector {
 
     const skipPatterns = [
       /^\[.*\]$/, // [SEÇÃO]
-      /^\(.*\)$/, // (instruções)
+      /^$$.*$$$/, // (instruções)
       /^[A-Z][A-Z\s]*:$/, // RÓTULOS:
       /Instrumentos?:/i,
       /BPM:/i,
       /Ritmo:/i,
       /Estilo:/i,
       /Estrutura:/i,
-      /^[\s\*\-]*$/, // Vazias
+      /^[\s*-]*$/, // Vazias
     ]
-    
-    return !skipPatterns.some(pattern => pattern.test(trimmedLine))
+
+    return !skipPatterns.some((pattern) => pattern.test(trimmedLine))
   }
 
   /**
@@ -125,21 +124,18 @@ export class MegaAggressiveCorrector {
     let simple = line
 
     // Remove palavras menos importantes
-    const removals = [
-      /\b(ainda|só|já|até|mesmo|assim|então|pois)\b/gi,
-      /\b(o |a |os |as |um |uma )/gi,
-    ]
+    const removals = [/\b(ainda|só|já|até|mesmo|assim|então|pois)\b/gi, /\b(o |a |os |as |um |uma )/gi]
 
     for (const pattern of removals) {
-      simple = simple.replace(pattern, ' ')
+      simple = simple.replace(pattern, " ")
     }
 
     // Contrações básicas
-    simple = simple.replace(/\b(para)\b/gi, 'pra')
-    simple = simple.replace(/\b(você)\b/gi, 'cê')
+    simple = simple.replace(/\b(para)\b/gi, "pra")
+    simple = simple.replace(/\b(você)\b/gi, "cê")
     simple = simple.replace(/\b(comigo)\b/gi, "c'migo") // ✅ Aspas corrigidas
 
-    return simple.replace(/\s+/g, ' ').trim()
+    return simple.replace(/\s+/g, " ").trim()
   }
 
   /**
@@ -149,13 +145,13 @@ export class MegaAggressiveCorrector {
     let cleaned = lyrics
 
     // Espaçamento
-    cleaned = cleaned.replace(/  +/g, ' ')
-    
+    cleaned = cleaned.replace(/ {2,}/g, " ")
+
     // Reticências
-    cleaned = cleaned.replace(/\. \. \./g, '...')
-    
+    cleaned = cleaned.replace(/\. \. \./g, "...")
+
     // Quebras de linha
-    cleaned = cleaned.replace(/\n\s*\n\s*\n/g, '\n\n')
+    cleaned = cleaned.replace(/\n\s*\n\s*\n/g, "\n\n")
 
     return cleaned
   }
@@ -165,7 +161,7 @@ export class MegaAggressiveCorrector {
    */
   static analyzeAllProblems(lyrics: string): void {
     console.log("🔍 ANALISANDO PROBLEMAS:")
-    
+
     const problems = [
       { pattern: /lembrançnãsai/, description: "lembrançnãsai → lembrança não sai" },
       { pattern: /Acordeãem/, description: "Acordeãem → Acordeon em" },
@@ -178,7 +174,7 @@ export class MegaAggressiveCorrector {
     ]
 
     let foundCount = 0
-    const lines = lyrics.split('\n')
+    const lines = lyrics.split("\n")
 
     lines.forEach((line, index) => {
       problems.forEach(({ pattern, description }) => {
