@@ -16,6 +16,52 @@ import { validateSyllablesByGenre } from "@/lib/validation/absolute-syllable-enf
 import { LineStacker } from "@/lib/utils/line-stacker"
 import { MetaComposer } from "@/lib/orchestrator/meta-composer"
 
+// Função auxiliar para correção rápida de sílabas
+function applyQuickSyllableFix(line: string, maxSyllables: number): string {
+  let fixedLine = line
+  const syllables = countPoeticSyllables(line)
+  
+  if (syllables <= maxSyllables) return fixedLine
+
+  // Aplica contrações comuns
+  const contractions = [
+    { regex: /\bvocê\b/gi, replacement: "cê" },
+    { regex: /\bpara\b/gi, replacement: "pra" },
+    { regex: /\bestou\b/gi, replacement: "tô" },
+    { regex: /\bcomigo\b/gi, replacement: "c'migo" },
+    { regex: /\bde\s+(\w)/gi, replacement: "d'$1" },
+    { regex: /\b(\w+)ão\b/gi, replacement: "$1ão" }, // Mantém mas remove artigo se necessário
+  ]
+
+  for (const contraction of contractions) {
+    const testLine = fixedLine.replace(contraction.regex, contraction.replacement)
+    const testSyllables = countPoeticSyllables(testLine)
+    
+    if (testSyllables <= maxSyllables) {
+      fixedLine = testLine
+      break
+    }
+  }
+
+  // Se ainda estiver longo, remove palavras desnecessárias
+  if (countPoeticSyllables(fixedLine) > maxSyllables) {
+    const words = fixedLine.split(' ')
+    const removals = ['o', 'a', 'um', 'uma', 'de', 'em', 'por']
+    
+    for (let i = words.length - 1; i >= 0; i--) {
+      if (removals.includes(words[i].toLowerCase())) {
+        const testLine = words.filter((_, index) => index !== i).join(' ')
+        if (countPoeticSyllables(testLine) <= maxSyllables) {
+          fixedLine = testLine
+          break
+        }
+      }
+    }
+  }
+
+  return fixedLine
+}
+
 export async function POST(request: NextRequest) {
   try {
     const {
@@ -73,7 +119,7 @@ export async function POST(request: NextRequest) {
         if (line.trim() && !line.startsWith("[") && !line.startsWith("(") && !line.includes("Instruments:")) {
           const syllables = countPoeticSyllables(line)
           if (syllables > syllableValidation.maxSyllables) {
-            return this.applyQuickSyllableFix(line, syllableValidation.maxSyllables)
+            return applyQuickSyllableFix(line, syllableValidation.maxSyllables)
           }
         }
         return line
@@ -120,52 +166,6 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
-
-// Método auxiliar para correção rápida de sílabas
-private static applyQuickSyllableFix(line: string, maxSyllables: number): string {
-  let fixedLine = line
-  const syllables = countPoeticSyllables(line)
-  
-  if (syllables <= maxSyllables) return fixedLine
-
-  // Aplica contrações comuns
-  const contractions = [
-    { regex: /\bvocê\b/gi, replacement: "cê" },
-    { regex: /\bpara\b/gi, replacement: "pra" },
-    { regex: /\bestou\b/gi, replacement: "tô" },
-    { regex: /\bcomigo\b/gi, replacement: "c'migo" },
-    { regex: /\bde\s+(\w)/gi, replacement: "d'$1" },
-    { regex: /\b(\w+)ão\b/gi, replacement: "$1ão" }, // Mantém mas remove artigo se necessário
-  ]
-
-  for (const contraction of contractions) {
-    const testLine = fixedLine.replace(contraction.regex, contraction.replacement)
-    const testSyllables = countPoeticSyllables(testLine)
-    
-    if (testSyllables <= maxSyllables) {
-      fixedLine = testLine
-      break
-    }
-  }
-
-  // Se ainda estiver longo, remove palavras desnecessárias
-  if (countPoeticSyllables(fixedLine) > maxSyllables) {
-    const words = fixedLine.split(' ')
-    const removals = ['o', 'a', 'um', 'uma', 'de', 'em', 'por']
-    
-    for (let i = words.length - 1; i >= 0; i--) {
-      if (removals.includes(words[i].toLowerCase())) {
-        const testLine = words.filter((_, index) => index !== i).join(' ')
-        if (countPoeticSyllables(testLine) <= maxSyllables) {
-          fixedLine = testLine
-          break
-        }
-      }
-    }
-  }
-
-  return fixedLine
 }
 
 export async function GET() {
