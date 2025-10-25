@@ -14,6 +14,49 @@ export interface ValidationResult {
   }[]
 }
 
+/**
+ * Reconstrói versos quebrados por quebra de linha manual (ex: "no meu\ntravesseiro")
+ * para contagem silábica precisa.
+ */
+function reconstructVerses(lines: string[]): string[] {
+  const reconstructed: string[] = []
+  let currentVerse = ""
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim()
+
+    // Ignora linhas de metadados
+    if (
+      !line ||
+      line.startsWith("[") ||
+      line.startsWith("(") ||
+      line.startsWith("Title:") ||
+      line.startsWith("Instrumentos:")
+    ) {
+      if (currentVerse) {
+        reconstructed.push(currentVerse)
+        currentVerse = ""
+      }
+      continue
+    }
+
+    // Se a linha anterior termina com pontuação forte, inicia novo verso
+    if (currentVerse && /[.!?…]$/.test(currentVerse.trim())) {
+      reconstructed.push(currentVerse)
+      currentVerse = line
+    } else {
+      // Concatena com espaço (remove quebra artificial)
+      currentVerse = currentVerse ? `${currentVerse} ${line}` : line
+    }
+  }
+
+  if (currentVerse) {
+    reconstructed.push(currentVerse)
+  }
+
+  return reconstructed
+}
+
 export function validateLyricsSyllables(
   lyrics: string,
   maxSyllables = 11,
@@ -21,32 +64,27 @@ export function validateLyricsSyllables(
   valid: boolean
   violations: Array<{ line: string; syllables: number; lineNumber: number; suggestions: string[] }>
 } {
-  const lines = lyrics.split("\n")
+  const rawLines = lyrics.split("\n")
+  const reconstructedLines = reconstructVerses(rawLines)
   const violations: Array<{ line: string; syllables: number; lineNumber: number; suggestions: string[] }> = []
 
-  lines.forEach((line, index) => {
-    if (
-      line.trim() &&
-      !line.startsWith("[") &&
-      !line.startsWith("(") &&
-      !line.startsWith("Title:") &&
-      !line.startsWith("Instrumentos:")
-    ) {
-      if (line.trim().endsWith(",")) {
-        return // Enjambement é válido
-      }
-
-      const syllables = countPortugueseSyllables(line)
-      if (syllables > maxSyllables) {
-        violations.push({
-          line: line.trim(),
-          syllables: syllables,
-          lineNumber: index + 1,
-          suggestions: [],
-        })
-      }
+  // Mapeia linha reconstruída para número original (aproximado)
+  let originalLineIndex = 0
+  for (const verse of reconstructedLines) {
+    const syllables = countPortugueseSyllables(verse)
+    if (syllables > maxSyllables) {
+      // Encontra a primeira linha original que compõe este verso
+      let lineNumber = originalLineIndex + 1
+      violations.push({
+        line: verse,
+        syllables,
+        lineNumber,
+        suggestions: [],
+      })
     }
-  })
+    // Avança índice original (simplificado)
+    originalLineIndex += verse.split(" ").length > 8 ? 2 : 1
+  }
 
   return {
     valid: violations.length === 0,
@@ -79,7 +117,10 @@ export function validateSertanejoLyrics(sections: ParsedSection[]): ValidationRe
     const sectionIssues: string[] = []
     let sectionValid = true
 
-    // Verifica elementos proibidos
+    // Reconstrói versos para validação silábica precisa
+    const reconstructedLines = reconstructVerses(section.lines)
+
+    // Verifica elementos proibidos (linha por linha original)
     for (const line of section.lines) {
       if (hasForbiddenElement(line)) {
         sectionIssues.push(`Linha com clichê ultrapassado: "${line}"`)
@@ -88,9 +129,9 @@ export function validateSertanejoLyrics(sections: ParsedSection[]): ValidationRe
       }
     }
 
-    // Verifica prosódia no refrão
+    // Validação específica por tipo de seção
     if (section.type === "chorus") {
-      const lineCount = section.lines.length
+      const lineCount = reconstructedLines.length
 
       if (lineCount !== 2 && lineCount !== 4) {
         sectionIssues.push(`Refrão deve ter 2 ou 4 linhas (tem ${lineCount})`)
@@ -98,19 +139,38 @@ export function validateSertanejoLyrics(sections: ParsedSection[]): ValidationRe
         score -= 15
       }
 
-      // Verifica se tem elemento visual
-      const hasVisual = section.lines.some((line) => hasVisualElement(line))
+      // Elemento visual obrigatório
+      const hasVisual = reconstructedLines.some((line) => hasVisualElement(line))
       if (!hasVisual) {
         warnings.push("Refrão sem elemento visual para clipe")
         score -= 10
       }
 
-      // Verifica métrica
-      for (const line of section.lines) {
-        const syllables = countSyllables(line)
-        if (syllables > SERTANEJO_RULES.chorusStructure.maxSyllablesPerLine) {
-          sectionIssues.push(`Linha muito longa (${syllables} sílabas): "${line}"`)
-          score -= 5
+      // Métrica: máximo 10 sílabas ideal, 11 aceitável, 12 erro
+      for (const line of reconstructedLines) {
+        const syllables = countPortugueseSyllables(line)
+        if (syllables > 12) {
+          sectionIssues.push(`Linha excede limite humano (${syllables} sílabas): "${line}"`)
+          score -= 10
+        } else if (syllables > 11) {
+          warnings.push(`Linha acima do recomendado (${syllables} sílabas): "${line}"`)
+          score -= 3
+        } else if (syllables < 8 || syllables > 10) {
+          warnings.push(`Linha fora da faixa ideal (${syllables} sílabas; ideal: 8–10): "${line}"`)
+        }
+      }
+    } else if (section.type === "verse" || section.type === "bridge") {
+      // Versos e pontes: ideal 8–10, aceitável até 11
+      for (const line of reconstructedLines) {
+        const syllables = countPortugueseSyllables(line)
+        if (syllables > 12) {
+          sectionIssues.push(`Linha inviável para canto (${syllables} sílabas): "${line}"`)
+          score -= 8
+        } else if (syllables > 11) {
+          warnings.push(`Linha longa demais (${syllables} sílabas): "${line}"`)
+          score -= 2
+        } else if (syllables < 8 || syllables > 10) {
+          warnings.push(`Linha fora da faixa ideal (${syllables} sílabas; ideal: 8–10): "${line}"`)
         }
       }
     }
