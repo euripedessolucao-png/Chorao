@@ -5,6 +5,7 @@ import { validateAllLayers } from "./multi-layer-validator"
 import { WordIntegrityValidator } from "./word-integrity-validator"
 import { GENRE_CONFIGS } from "@/lib/genre-config"
 import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro"
+import { AbsoluteSyllableEnforcer } from "@/lib/validation/absolute-syllable-enforcer"
 
 // ✅ INTERFACES NO TOPO (obrigatório para TypeScript)
 export interface AuditResult {
