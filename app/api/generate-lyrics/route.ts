@@ -100,14 +100,7 @@ Retorne APENAS a letra, sem explicações.`
       finalLyrics = enforcementResult.correctedLyrics
     }
 
-    console.log("[API] 📚 Empilhando versos...")
-    const stackResult = LineStacker.stackLines(finalLyrics)
-    finalLyrics = stackResult.stackedLyrics
-    if (stackResult.improvements.length > 0) {
-      console.log(`[API] ✅ ${stackResult.improvements.length} melhoria(s) de empilhamento aplicadas`)
-    }
-
-    // 🔁 PÓS-GERAÇÃO: Validação e correção para Sertanejo Raiz
+        // 🔁 PÓS-GERAÇÃO: Validação e correção para Sertanejo Raiz
     if (genre.toLowerCase().includes("raiz")) {
       const forbiddenInstruments = ["electric guitar", "808", "synth", "drum machine", "bateria eletrônica"]
       const lowerLyrics = finalLyrics.toLowerCase()
