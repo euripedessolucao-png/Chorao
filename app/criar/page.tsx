@@ -28,6 +28,7 @@ import { HookGenerator } from "@/components/hook-generator"
 import { SyllableValidator } from "@/components/syllable-validator"
 import { RhymeAnalyzer } from "@/components/rhyme-analyzer"
 import { getGenreMetrics } from "@/lib/metrics/brazilian-metrics"
+import { ProcessingStatus } from "@/components/processing-status"
 
 const GENRE_QUALITY_CONFIG = {
   Sertanejo: { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
@@ -86,6 +87,17 @@ export default function CriarPage() {
   const [selectedHook, setSelectedHook] = useState<string | null>(null)
   const [formattingStyle, setFormattingStyle] = useState("performatico")
   const [universalPolish, setUniversalPolish] = useState(true)
+
+  const processingSteps = [
+    { id: "validate", label: "Validando parâmetros", duration: 500 },
+    { id: "generate", label: "Gerando letra com IA", duration: 8000 },
+    { id: "capitalize", label: "Capitalizando linhas", duration: 300 },
+    { id: "enforce", label: "Corrigindo sílabas (AbsoluteSyllableEnforcer)", duration: 1500 },
+    { id: "stack", label: "Empilhando versos (LineStacker)", duration: 1000 },
+    { id: "performance", label: "Formatando performance", duration: 800 },
+    { id: "instrumentation", label: "Adicionando instrumentação", duration: 500 },
+    { id: "validate-final", label: "Validação final de métrica", duration: 400 },
+  ]
 
   const getSyllableConfig = (selectedGenre: string) => {
     const config =
@@ -688,6 +700,14 @@ export default function CriarPage() {
                     </>
                   )}
                 </Button>
+
+                {isGenerating && (
+                  <ProcessingStatus
+                    isProcessing={isGenerating}
+                    steps={processingSteps}
+                    onComplete={() => console.log("[v0] Processing completed")}
+                  />
+                )}
 
                 {universalPolish && genre && (
                   <div className="bg-green-50 border border-green-200 rounded p-2 text-xs text-green-700">
