@@ -225,7 +225,7 @@ RETORNE APENAS A LETRA REESCRITA, SEM EXPLICAÇÕES.`
 
     // Formatação de performance
     if (shouldUsePerformanceFormat(request.genre, request.performanceMode || "standard")) {
-      polished = formatSertanejoPerformance(polished)
+      polished = formatSertanejoPerformance(polished, request.genre)
     }
 
     // Validação de pontuação
