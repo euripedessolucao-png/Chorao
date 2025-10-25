@@ -1,5 +1,6 @@
 // lib/genre-config.ts
 import { countPoeticSyllables } from "./validation/syllable-counter-brasileiro"
+
 export const GENRE_CONFIGS = {
   "Sertanejo Moderno Feminino": {
     year_range: "2024-2025",
@@ -12,31 +13,18 @@ export const GENRE_CONFIGS = {
     language_rules: {
       allowed: {
         concrete_objects: [
-          "biquíni",
-          "PIX",
-          "salário",
-          "chapéu",
-          "praia",
-          "conta",
-          "decote",
-          "carro",
-          "espelho",
-          "anéis",
+          "biquíni", "PIX", "salário", "chapéu", "praia", "conta", "decote", "carro", "espelho", "anéis",
+          "gaveta", "chave", "travesseiro", "quadro", "moldura", "acordeão", "guitarra de aço"
         ],
-        actions: ["cortei", "paguei", "saí", "rasguei", "usei", "dancei", "voei", "quebrei", "aprendi", "sorri"],
-        phrases: ["meu troco", "você não previu", "faço em dobro", "minha lei", "tô em outra vibe", "dona de mim"],
+        actions: ["cortei", "paguei", "saí", "rasguei", "usei", "dancei", "voei", "quebrei", "aprendi", "sorri", "guardei", "joguei"],
+        phrases: ["meu troco", "você não previu", "faço em dobro", "minha lei", "tô em outra vibe", "dona de mim", "foi só um embuste", "juros da saudade"]
       },
       forbidden: {
         abstract_metaphors: [
-          "floresço",
-          "alma perdida",
-          "mar de dor",
-          "bonança",
-          "brisa me inflama",
-          "castelo de areia",
+          "floresço", "alma perdida", "mar de dor", "bonança", "brisa me inflama", "castelo de areia", "poeira (como metáfora abstrata)"
         ],
-        ex_saudade: ["falta da sua voz", "meu coração chora", "volta pra mim", "não consigo viver sem você"],
-        aggressive_tone: ["odeio você", "se fuder", "vou te destruir"],
+        ex_saudade: ["falta da sua voz", "meu coração chora", "volta pra mim", "não consigo viver sem você", "dor profunda", "crença"],
+        aggressive_tone: ["odeio você", "se fuder", "vou te destruir"]
       },
       style: "Coloquial, direto, como conversa real entre amigas. Evite poesia rebuscada.",
     },
@@ -71,11 +59,7 @@ export const GENRE_CONFIGS = {
   "Sertanejo Moderno Masculino": {
     year_range: "2024-2025",
     reference_artists: [
-      "Gusttavo Lima",
-      "Luan Santana",
-      "Zé Neto & Cristiano",
-      "Henrique & Juliano",
-      "Israel & Rodolffo",
+      "Gusttavo Lima", "Luan Santana", "Zé Neto & Cristiano", "Henrique & Juliano", "Israel & Rodolffo"
     ],
     core_principles: {
       theme: "Superação com leveza, celebração da vida simples, vulnerabilidade com atitude, novas chances",
@@ -85,28 +69,18 @@ export const GENRE_CONFIGS = {
     language_rules: {
       allowed: {
         concrete_objects: [
-          "cerveja",
-          "violão",
-          "boteco",
-          "estrada",
-          "caminhonete",
-          "chapéu",
-          "mala",
-          "varanda",
-          "canudinho",
+          "cerveja", "violão", "boteco", "estrada", "caminhonete", "chapéu", "mala", "varanda", "canudinho",
+          "travesseiro", "foto", "porta", "chave"
         ],
-        actions: ["errei", "aprendi", "segui", "curei", "bebi", "cantei", "perdoei", "cresci", "superei"],
+        actions: ["errei", "aprendi", "segui", "curei", "bebi", "cantei", "perdoei", "cresci", "superei", "voltei", "guardei"],
         phrases: [
-          "tô em paz comigo",
-          "errei mas cresci",
-          "amor que prende não é amor",
-          "meu refúgio é o boteco",
-          "vida que segue",
+          "tô em paz comigo", "errei mas cresci", "amor que prende não é amor", "meu refúgio é o boteco", "vida que segue",
+          "foi só um embuste", "juros da saudade"
         ],
       },
       forbidden: {
         toxic_masculinity: ["ela me traiu vou destruir", "mulher é tudo igual", "não choro sou homem"],
-        excessive_drama: ["não vivo sem você", "meu mundo desabou", "só penso em você", "morro sem você"],
+        excessive_drama: ["não vivo sem você", "meu mundo desabou", "só penso em você", "morro sem você", "dor profunda"],
         generic_cliches: ["lágrimas no travesseiro", "noite sem luar", "coração partido em mil", "solidão me mata"],
       },
       style: "Direto, honesto, com toque de poesia cotidiana. Pode ser romântico, mas nunca possessivo ou dramático.",
@@ -117,10 +91,7 @@ export const GENRE_CONFIGS = {
         lines_options: [4],
         forbidden_lines: [2, 3],
         required_elements: [
-          "Gancho emocional ou celebratório",
-          "Referência concreta",
-          "Mensagem de superação",
-          "MUITO REPETITIVO",
+          "Gancho emocional ou celebratório", "Referência concreta", "Mensagem de superação", "MUITO REPETITIVO"
         ],
       },
       bridge: { lines_min: 4, lines_max: 4, purpose: "Momento de reflexão ou virada emocional" },
@@ -199,44 +170,15 @@ export const GENRE_CONFIGS = {
     language_rules: {
       allowed: {
         concrete_objects: [
-          "viola caipira",
-          "sanfona",
-          "sertão",
-          "roça",
-          "enxada",
-          "boiadeiro",
-          "porteira",
-          "curral",
-          "lua",
-          "estrela",
-          "rio",
-          "mata",
-          "cavalo",
-          "carroça",
-          "chaleira",
-          "fogão de lenha",
+          "viola caipira", "sanfona", "sertão", "roça", "enxada", "boiadeiro", "porteira", "curral", "lua", "estrela",
+          "rio", "mata", "cavalo", "carroça", "chaleira", "fogão de lenha"
         ],
         actions: [
-          "plantar",
-          "colher",
-          "tocar viola",
-          "cantar",
-          "lembrar",
-          "saudade",
-          "trabalhar",
-          "amanhecer",
-          "anoitecer",
-          "cavalgar",
+          "plantar", "colher", "tocar viola", "cantar", "lembrar", "saudade", "trabalhar", "amanhecer", "anoitecer", "cavalgar"
         ],
         phrases: [
-          "modão das antigas",
-          "raiz sertaneja",
-          "viola caipira",
-          "saudade do sertão",
-          "terra querida",
-          "vida simples",
-          "tradição que não se perde",
-          "alma caipira",
+          "modão das antigas", "raiz sertaneja", "viola caipira", "saudade do sertão", "terra querida", "vida simples",
+          "tradição que não se perde", "alma caipira"
         ],
       },
       forbidden: {
@@ -256,9 +198,7 @@ export const GENRE_CONFIGS = {
         lines_options: [2, 4],
         forbidden_lines: 3,
         required_elements: [
-          "Melodia tradicional marcante",
-          "Fácil de cantar em dupla (harmonias)",
-          "Mensagem de preservação ou saudade",
+          "Melodia tradicional marcante", "Fácil de cantar em dupla (harmonias)", "Mensagem de preservação ou saudade",
         ],
       },
       bridge: {
@@ -338,49 +278,20 @@ export const GENRE_CONFIGS = {
     language_rules: {
       allowed: {
         concrete_objects: [
-          "paredão",
-          "rolê",
-          "zap",
-          "story",
-          "look",
-          "beat",
-          "flow",
-          "baile",
-          "favela",
-          "quebrada",
-          "nave",
-          "grife",
+          "paredão", "rolê", "zap", "story", "look", "beat", "flow", "baile", "favela", "quebrada", "nave", "grife"
         ],
         actions: [
-          "mandar ver",
-          "chamar pra dançar",
-          "brilhar",
-          "mandar o flow",
-          "jogar o cabelo",
-          "rebolar",
-          "dominar a pista",
-          "conquistar",
-          "evoluir",
+          "mandar ver", "chamar pra dançar", "brilhar", "mandar o flow", "jogar o cabelo", "rebolar", "dominar a pista",
+          "conquistar", "evoluir"
         ],
         phrases: [
-          "Tô no meu flow",
-          "Meu beat é pesado",
-          "Respeita meu espaço",
-          "Sou dona de mim",
-          "Vim pra brilhar",
-          "Tô no comando",
-          "Da quebrada pro mundo",
-          "Evoluí",
+          "Tô no meu flow", "Meu beat é pesado", "Respeita meu espaço", "Sou dona de mim", "Vim pra brilhar", "Tô no comando",
+          "Da quebrada pro mundo", "Evoluí"
         ],
       },
       forbidden: {
         toxic_content: [
-          "mulher objeto",
-          "violência explícita",
-          "drogas explícitas",
-          "machismo",
-          "apologia ao crime",
-          "objetificação sexual",
+          "mulher objeto", "violência explícita", "drogas explícitas", "machismo", "apologia ao crime", "objetificação sexual"
         ],
         generic_cliches: ["põe a mão no alto", "vamos curtir a noite", "a festa tá bombando", "todo mundo junto"],
       },
@@ -421,31 +332,15 @@ export const GENRE_CONFIGS = {
       allowed: {
         concrete_objects: ["paredão", "rolê", "zap", "story", "look", "beat", "flow", "baile", "favela", "quebrada"],
         actions: [
-          "mandar ver",
-          "chamar pra dançar",
-          "brilhar",
-          "mandar o flow",
-          "jogar o cabelo",
-          "rebolar",
-          "dominar a pista",
+          "mandar ver", "chamar pra dançar", "brilhar", "mandar o flow", "jogar o cabelo", "rebolar", "dominar a pista"
         ],
         phrases: [
-          "Tô no meu flow",
-          "Meu beat é pesado",
-          "Respeita meu espaço",
-          "Sou dona de mim",
-          "Vim pra brilhar",
-          "Tô no comando",
+          "Tô no meu flow", "Meu beat é pesado", "Respeita meu espaço", "Sou dona de mim", "Vim pra brilhar", "Tô no comando"
         ],
       },
       forbidden: {
         toxic_content: [
-          "mulher objeto",
-          "violência",
-          "drogas explícitas",
-          "machismo",
-          "apologia ao crime",
-          "objetificação",
+          "mulher objeto", "violência", "drogas explícitas", "machismo", "apologia ao crime", "objetificação"
         ],
         generic_cliches: ["põe a mão no alto", "vamos curtir a noite", "a festa tá bombando", "todo mundo junto"],
       },
@@ -487,11 +382,7 @@ export const GENRE_CONFIGS = {
         concrete_objects: ["quebrada", "favela", "comunidade", "luta", "sonho", "conquista", "respeito"],
         actions: ["lutar", "vencer", "resistir", "conquistar", "evoluir", "respeitar", "representar"],
         phrases: [
-          "Da quebrada pro mundo",
-          "Respeita a origem",
-          "Evoluí sem esquecer",
-          "Consciência é poder",
-          "Quebrada unida",
+          "Da quebrada pro mundo", "Respeita a origem", "Evoluí sem esquecer", "Consciência é poder", "Quebrada unida"
         ],
       },
       forbidden: {
@@ -577,11 +468,7 @@ export const GENRE_CONFIGS = {
         concrete_objects: ["cruz", "altar", "céu", "luz", "caminho", "promessa", "milagre"],
         actions: ["louvar", "adorar", "crer", "confiar", "vencer", "testemunhar", "agradecer"],
         phrases: [
-          "Deus é fiel",
-          "milagre aconteceu",
-          "fé que move montanhas",
-          "Ele cuida dos detalhes",
-          "não há o que temer",
+          "Deus é fiel", "milagre aconteceu", "fé que move montanhas", "Ele cuida dos detalhes", "não há o que temer"
         ],
       },
       forbidden: {
@@ -783,7 +670,9 @@ export const GENRE_CONFIGS = {
     },
   },
 } as const
+
 export type GenreConfig = (typeof GENRE_CONFIGS)[keyof typeof GENRE_CONFIGS]
+
 export function getGenreConfig(genre: string): GenreConfig & { name: string } {
   const config = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS]
   if (!config) {
@@ -835,6 +724,7 @@ export function getGenreConfig(genre: string): GenreConfig & { name: string } {
     ...config,
   }
 }
+
 export function validateLyrics(
   lyrics: string,
   genre: string,
@@ -849,6 +739,7 @@ export function validateLyrics(
   if (!config) {
     return { valid: true, errors: [], warnings: ["Gênero não encontrado nas configurações"] }
   }
+
   // Validar palavras proibidas
   const lyricsLower = lyrics.toLowerCase()
   if (config.language_rules.forbidden) {
@@ -860,15 +751,17 @@ export function validateLyrics(
       })
     })
   }
-  // Validar contagem de sílabas - USANDO O NOVO SISTEMA
+
+  // Validar contagem de sílabas
   const lines = lyrics.split("\n").filter((line) => line.trim() && !line.startsWith("["))
   lines.forEach((line, index) => {
-    const syllables = countPoeticSyllables(line) // ← CORRIGIDO: usa o novo sistema
+    const syllables = countPoeticSyllables(line)
     const rules = config.prosody_rules.syllable_count
+
     if ("with_comma" in rules && line.includes(",")) {
-      const [before, after] = line.split(",")
-      const beforeCount = countPoeticSyllables(before) // ← CORRIGIDO
-      const afterCount = countPoeticSyllables(after) // ← CORRIGIDO
+      const [before, after] = line.split(",", 2)
+      const beforeCount = countPoeticSyllables(before.trim())
+      const afterCount = countPoeticSyllables(after.trim())
       if (beforeCount > rules.with_comma.max_before_comma) {
         warnings.push(`Linha ${index + 1}: Muitas sílabas antes da vírgula (${beforeCount})`)
       }
@@ -876,7 +769,6 @@ export function validateLyrics(
         warnings.push(`Linha ${index + 1}: Muitas sílabas depois da vírgula (${afterCount})`)
       }
     } else if ("absolute_max" in rules) {
-      // For Sertanejo Moderno genres with absolute_max rule
       if (syllables > rules.absolute_max) {
         errors.push(`Linha ${index + 1}: Excede o limite de ${rules.absolute_max} sílabas (${syllables})`)
       } else if ("ideal_range" in rules && "acceptable_up_to" in rules) {
@@ -887,18 +779,19 @@ export function validateLyrics(
         }
       }
     } else if ("without_comma" in rules) {
-      // For genres with without_comma rules
       if (syllables < rules.without_comma.min || syllables > rules.without_comma.acceptable_up_to) {
         warnings.push(`Linha ${index + 1}: Contagem de sílabas fora do ideal (${syllables})`)
       }
     }
   })
+
   return {
     valid: errors.length === 0,
     errors,
     warnings,
   }
 }
+
 export const INSTRUMENTATION_RULES = {
   "Sertanejo Moderno Feminino": {
     required: "(Instrumental: acoustic guitar, electric guitar, drums, bass)",
@@ -946,8 +839,8 @@ export const INSTRUMENTATION_RULES = {
     format: "Sempre entre parênteses, em inglês, após o nome da seção",
   },
 } as const
+
 export const SUB_GENRE_INSTRUMENTS = {
-  // Sertanejo sub-genres
   arrocha: {
     instruments: "keyboard, acoustic guitar, bass, light percussion",
     bpm_range: { min: 70, max: 85, ideal: 75 },
@@ -966,7 +859,6 @@ export const SUB_GENRE_INSTRUMENTS = {
     rhythm: "Modão",
     style_note: "Modão tradicional",
   },
-  // Forró sub-genres
   xote: {
     instruments: "zabumba, triangle, accordion",
     bpm_range: { min: 100, max: 120, ideal: 110 },
@@ -979,7 +871,6 @@ export const SUB_GENRE_INSTRUMENTS = {
     rhythm: "Baião",
     style_note: "Baião animado",
   },
-  // Pagode sub-genres
   "pagode 90": {
     instruments: "cavaquinho, pandeiro, tantã, surdo, acoustic guitar",
     bpm_range: { min: 95, max: 110, ideal: 100 },
@@ -993,6 +884,7 @@ export const SUB_GENRE_INSTRUMENTS = {
     style_note: "Pagode romântico",
   },
 } as const
+
 export function detectSubGenre(additionalRequirements: string | undefined): {
   subGenre: string | null
   instruments: string | null
@@ -1017,6 +909,7 @@ export function detectSubGenre(additionalRequirements: string | undefined): {
   }
   return { subGenre: null, instruments: null, bpm: null, rhythm: null, styleNote: null }
 }
+
 export const GENRE_RHYTHMS = {
   "Sertanejo Moderno Feminino": "Sertanejo Moderno",
   "Sertanejo Moderno Masculino": "Sertanejo Moderno",
@@ -1033,13 +926,14 @@ export const GENRE_RHYTHMS = {
   Arrocha: "Arrocha",
   Samba: "Samba de Raiz",
 } as const
+
 export function getGenreRhythm(genre: string): string {
   return GENRE_RHYTHMS[genre as keyof typeof GENRE_RHYTHMS] || genre
 }
+
 export function getSyllableLimitsForGenre(genre: string) {
   const config = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS]
   if (!config) {
-    // Fallback seguro
     return { min: 5, max: 12, ideal: 9 }
   }
   const rules = config.prosody_rules.syllable_count
@@ -1047,7 +941,9 @@ export function getSyllableLimitsForGenre(genre: string) {
     return {
       min: rules.ideal_range?.min ?? Math.max(4, rules.absolute_max - 5),
       max: rules.absolute_max,
-      ideal: rules.ideal_range ? Math.floor((rules.ideal_range.min + rules.ideal_range.max) / 2) : Math.min(11, Math.floor((Math.max(4, rules.absolute_max - 5) + rules.absolute_max) / 2)),
+      ideal: rules.ideal_range
+        ? Math.floor((rules.ideal_range.min + rules.ideal_range.max) / 2)
+        : Math.min(11, Math.floor((Math.max(4, rules.absolute_max - 5) + rules.absolute_max) / 2)),
     }
   }
   if ("without_comma" in rules) {
@@ -1057,6 +953,5 @@ export function getSyllableLimitsForGenre(genre: string) {
       ideal: Math.floor((rules.without_comma.min + rules.without_comma.max) / 2),
     }
   }
-  // Fallback para regras com vírgula
   return { min: 5, max: 12, ideal: 9 }
 }
