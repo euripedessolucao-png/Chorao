@@ -12,20 +12,22 @@ import {
   shouldUsePerformanceFormat,
 } from "@/lib/formatters/sertanejo-performance-formatter"
 import { formatInstrumentationForAI } from "@/lib/normalized-genre"
-import { AbsoluteSyllableEnforcer } from "@/lib/validation/absolute-syllable-enforcer"
+import { validateSyllablesByGenre } from "@/lib/validation/absolute-syllable-enforcer"
 import { LineStacker } from "@/lib/utils/line-stacker"
+import { MetaComposer } from "@/lib/orchestrator/meta-composer"
 
 export async function POST(request: NextRequest) {
   try {
     const {
-      originalLyrics, // nome correto
-      genre, // nome correto
+      originalLyrics,
+      genre,
       mood,
       theme,
       additionalRequirements,
       title,
-      syllableTarget,
+      creativity = "conservador",
       performanceMode = "standard",
+      useIntelligentElisions = true,
     } = await request.json()
 
     // Validação robusta
@@ -39,131 +41,131 @@ export async function POST(request: NextRequest) {
 
     console.log(`[API] 🎵 Reescrevendo para gênero: ${genre}`)
 
-    // Obtém métricas reais do gênero
-    const genreMetrics = getGenreMetrics(genre)
-
-    const maxSyllables = Math.min(genreMetrics.syllableRange.max, 12)
-    const minSyllables = genreMetrics.syllableRange.min
-
-    // Obtém regras de rima
-    const rhymeRules = getUniversalRhymeRules(genre)
-
-    // Constrói prompt com métrica realista
-    const genreRules = buildGenreRulesPrompt(genre)
-    const prompt = `Você é um compositor brasileiro especializado em ${genre}.
-
-TAREFA: Reescrever e melhorar a letra abaixo mantendo a essência.
-
-LETRA ORIGINAL:
-${originalLyrics}
-
-TEMA: ${theme || "Manter tema original"}
-HUMOR: ${mood || "Manter humor original"}
-${additionalRequirements ? `REQUISITOS: ${additionalRequirements}` : ""}
-
-REGRAS DE MÉTRICA:
-- Cada verso deve ter ENTRE ${minSyllables} E ${maxSyllables} SÍLABAS
-- Use contrações naturais: "você" → "cê", "para" → "pra", "estou" → "tô"
-- Evite versos com mais de ${maxSyllables} sílabas
-
-REGRAS DE RIMA:
-- ${rhymeRules.requirePerfectRhymes ? "Rimas devem ser perfeitas (consoantes)" : "Rimas naturais são aceitáveis"}
-- ${rhymeRules.minRichRhymePercentage > 0 ? `Mínimo de ${rhymeRules.minRichRhymePercentage}% de rimas ricas` : "Rimas pobres aceitáveis"}
-
-${genreRules.fullPrompt}
-
-INSTRUÇÕES:
-- Melhore a qualidade mantendo o tema e estrutura original
-- Corrija problemas de métrica e rima naturalmente  
-- Use linguagem brasileira autêntica
-- Evite clichês ("coraçãozinho", "lágrimas no rosto")
-- ${performanceMode === "performance" ? "Formate com tags em inglês: [Verse], [Chorus], [Bridge]" : "Use tags em português: [Verso], [Refrão], [Ponte]"}
-
-Retorne APENAS a letra reescrita, sem explicações.`
-
-    console.log(`[API] 🎵 Gerando com métrica ${minSyllables}-${maxSyllables} sílabas...`)
-
-    const { text } = await generateText({
-      model: "openai/gpt-4o-mini", // mais rápido e barato
-      prompt,
-      temperature: 0.85, // Aumentado para melhor variação mantendo essência
+    // Usa o MetaComposer para reescrita avançada
+    const compositionResult = await MetaComposer.compose({
+      originalLyrics,
+      genre,
+      theme: theme || "Manter tema original",
+      mood: mood || "Manter humor original",
+      additionalRequirements,
+      creativity,
+      performanceMode,
+      useIntelligentElisions,
+      applyFinalPolish: true,
+      syllableTarget: {
+        min: 7,
+        max: 11,
+        ideal: 9,
+      },
     })
 
-    // Validação pós-geração
-    let finalLyrics = capitalizeLines(text)
+    let finalLyrics = compositionResult.lyrics
 
-    // Remove explicações da IA
-    finalLyrics = finalLyrics
-      .split("\n")
-      .filter(
-        (line) =>
-          !line.trim().startsWith("Retorne") && !line.trim().startsWith("INSTRUÇÕES") && !line.includes("Explicação"),
-      )
-      .join("\n")
-      .trim()
-
-    console.log("[API] 🔧 Aplicando correção automática de sílabas...")
-    const enforcementResult = AbsoluteSyllableEnforcer.validateAndFix(finalLyrics)
-    if (enforcementResult.corrections > 0) {
-      console.log(`[API] ✅ ${enforcementResult.corrections} verso(s) corrigido(s) automaticamente`)
-      finalLyrics = enforcementResult.correctedLyrics
+    // Validação final de sílabas
+    const syllableValidation = validateSyllablesByGenre(finalLyrics, genre)
+    
+    if (!syllableValidation.isValid) {
+      console.warn("⚠️ Validação de sílabas falhou:", syllableValidation.message)
+      
+      // Aplica correções manuais para linhas problemáticas
+      const lines = finalLyrics.split('\n')
+      const correctedLines = lines.map(line => {
+        if (line.trim() && !line.startsWith("[") && !line.startsWith("(") && !line.includes("Instruments:")) {
+          const syllables = countPoeticSyllables(line)
+          if (syllables > syllableValidation.maxSyllables) {
+            return this.applyQuickSyllableFix(line, syllableValidation.maxSyllables)
+          }
+        }
+        return line
+      })
+      
+      finalLyrics = correctedLines.join('\n')
     }
 
-    console.log("[API] 📚 Empilhando versos...")
-    const stackResult = LineStacker.stackLines(finalLyrics)
-    finalLyrics = stackResult.stackedLyrics
-    if (stackResult.improvements.length > 0) {
-      console.log(`[API] ✅ ${stackResult.improvements.length} melhoria(s) de empilhamento aplicadas`)
-    }
-
+    // Aplica formatação de performance se necessário
     if (shouldUsePerformanceFormat(genre, performanceMode)) {
-      finalLyrics = formatSertanejoPerformance(finalLyrics, genre)
+      finalLyrics = formatSertanejoPerformance(finalLyrics)
     }
 
-    const instrumentation = formatInstrumentationForAI(genre, finalLyrics)
-    finalLyrics = `${finalLyrics}\n\n${instrumentation}`
+    // Stack de linhas para melhor legibilidade
+    const stackingResult = LineStacker.stackLines(finalLyrics)
+    finalLyrics = stackingResult.stackedLyrics
 
-    const lines = finalLyrics.split("\n")
-    let validLines = 0
-    let totalLines = 0
+    console.log("✅ Reescrita finalizada com sucesso!")
+    console.log(`📊 Métricas: Score ${compositionResult.metadata.finalScore.toFixed(1)}`)
 
-    for (const line of lines) {
-      if (line.trim() && !line.startsWith("[") && !line.startsWith("(")) {
-        totalLines++
-        const syllables = countPoeticSyllables(line)
-        if (syllables >= minSyllables && syllables <= maxSyllables) {
-          validLines++
+    return NextResponse.json({
+      success: true,
+      lyrics: finalLyrics,
+      title: title || compositionResult.title,
+      metadata: {
+        ...compositionResult.metadata,
+        syllableValidation: {
+          isValid: syllableValidation.isValid,
+          message: syllableValidation.message,
+          maxSyllables: syllableValidation.maxSyllables,
+        },
+        rewritingApplied: true,
+      },
+    })
+
+  } catch (error) {
+    console.error("❌ Erro na reescrita:", error)
+    
+    return NextResponse.json(
+      { 
+        error: "Erro interno do servidor",
+        details: error instanceof Error ? error.message : "Erro desconhecido"
+      },
+      { status: 500 }
+    )
+  }
+}
+
+// Método auxiliar para correção rápida de sílabas
+private static applyQuickSyllableFix(line: string, maxSyllables: number): string {
+  let fixedLine = line
+  const syllables = countPoeticSyllables(line)
+  
+  if (syllables <= maxSyllables) return fixedLine
+
+  // Aplica contrações comuns
+  const contractions = [
+    { regex: /\bvocê\b/gi, replacement: "cê" },
+    { regex: /\bpara\b/gi, replacement: "pra" },
+    { regex: /\bestou\b/gi, replacement: "tô" },
+    { regex: /\bcomigo\b/gi, replacement: "c'migo" },
+    { regex: /\bde\s+(\w)/gi, replacement: "d'$1" },
+    { regex: /\b(\w+)ão\b/gi, replacement: "$1ão" }, // Mantém mas remove artigo se necessário
+  ]
+
+  for (const contraction of contractions) {
+    const testLine = fixedLine.replace(contraction.regex, contraction.replacement)
+    const testSyllables = countPoeticSyllables(testLine)
+    
+    if (testSyllables <= maxSyllables) {
+      fixedLine = testLine
+      break
+    }
+  }
+
+  // Se ainda estiver longo, remove palavras desnecessárias
+  if (countPoeticSyllables(fixedLine) > maxSyllables) {
+    const words = fixedLine.split(' ')
+    const removals = ['o', 'a', 'um', 'uma', 'de', 'em', 'por']
+    
+    for (let i = words.length - 1; i >= 0; i--) {
+      if (removals.includes(words[i].toLowerCase())) {
+        const testLine = words.filter((_, index) => index !== i).join(' ')
+        if (countPoeticSyllables(testLine) <= maxSyllables) {
+          fixedLine = testLine
+          break
         }
       }
     }
-
-    const validityRatio = totalLines > 0 ? validLines / totalLines : 1
-    const finalScore = Math.round(validityRatio * 100)
-
-    console.log(`[API] ✅ Validação: ${finalScore}% das linhas dentro da métrica`)
-
-    return NextResponse.json({
-      lyrics: finalLyrics, // nome consistente
-      title: title || "Letra Reescrita",
-      metadata: {
-        finalScore,
-        polishingApplied: true,
-        performanceMode,
-        syllableRange: { min: minSyllables, max: maxSyllables },
-        genre: genre,
-        syllableCorrections: enforcementResult.corrections,
-      },
-    })
-  } catch (error) {
-    console.error("[API] ❌ Erro na reescrita:", error)
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : "Erro interno",
-        details: process.env.NODE_ENV === "development" ? (error as any)?.stack : undefined,
-      },
-      { status: 500 },
-    )
   }
+
+  return fixedLine
 }
 
 export async function GET() {
