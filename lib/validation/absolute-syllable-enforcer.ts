@@ -7,7 +7,7 @@ import { fixLineToMaxSyllables } from "./local-syllable-fixer"
 // ✅ CLASSE ATUALIZADA — agora usa correção inteligente e limite por gênero
 export class AbsoluteSyllableEnforcer {
   // Mantido para compatibilidade, mas NÃO usado nas novas funções
-  private static readonly ABSOLUTE_MAX_SYLLABLES = 11
+  private static readonly ABSOLUTE_MAX_SYLLABLES = 12
 
   /**
    * Validação simples (mantida para compatibilidade)

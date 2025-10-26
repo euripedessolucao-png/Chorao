@@ -42,8 +42,7 @@ export async function POST(request: NextRequest) {
     const maxSyllables = Math.min(genreMetrics.syllableRange.max, 12)
     const minSyllables = genreMetrics.syllableRange.min
     const rhymeRules = getUniversalRhymeRules(genre)
-    const count = countPoeticSyllables(line)
-
+    
     const genreRules = buildGenreRulesPrompt(genre)
     const prompt = `Você é um compositor brasileiro especializado em ${genre}.
 
