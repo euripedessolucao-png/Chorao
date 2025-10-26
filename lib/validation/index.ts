@@ -8,14 +8,13 @@
 
 // ========== VALIDAÇÃO DE SÍLABAS ==========
 export {
-  countPoeticSyllables, // Contagem até última sílaba tônica
-  countPortugueseSyllables, // Contagem gramatical completa
-  validateSyllableLimit, // Valida limite por verso
-  validateLyricsSyllables, // Valida sílabas da letra inteira
+  countPoeticSyllables, // Contagem fonética musical (recomendada)
+  countPortugueseSyllables, // Alias para compatibilidade
+  validateLyricsSyllables, // Valida toda a letra com limite de sílabas (8–12 por padrão)
   type SyllableValidationResult,
 } from "./syllable-counter-brasileiro"
 
-export { SyllableEnforcer } from "./syllableEnforcer"
+// NOTA: validateSyllableLimit foi removido — use validateLyricsSyllables com parâmetros
 
 // ========== VALIDAÇÃO DE NARRATIVA ==========
 export {
@@ -38,9 +37,6 @@ export {
   suggestRhymingWords, // Sugestões de palavras que rimam
   type RhymeEnhancementResult,
 } from "./rhyme-enhancer"
-
-// ========== VALIDAÇÃO ANTI-FORÇAÇÃO ==========
-// Funções anti-forcing não implementadas ainda
 
 // ========== VALIDAÇÃO DE ESTRUTURA ==========
 export { validateSertanejoLyrics } from "./validateLyrics"
