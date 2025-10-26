@@ -12,6 +12,8 @@ import { LineStacker } from "@/lib/utils/line-stacker"
 import { LyricsAuditor } from "@/lib/validation/lyrics-auditor"
 import { getGenreMetrics } from "@/lib/metrics/brazilian-metrics"
 import { AbsoluteSyllableEnforcer } from "@/lib/validation/absolute-syllable-enforcer"
+import { enhanceLyricsRhymes } from "@/lib/validation/rhyme-enhancer"
+import { validateRhymesForGenre } from "@/lib/validation/rhyme-validator"
 
 export interface CompositionRequest {
   genre: string
@@ -222,6 +224,23 @@ RETORNE APENAS A LETRA REESCRITA, SEM EXPLICAÇÕES.`
    */
   private static async applyPolish(lyrics: string, request: CompositionRequest): Promise<string> {
     let polished = lyrics
+
+    console.log("[MetaComposer] 🎵 Validando e melhorando rimas...")
+    const rhymeValidation = validateRhymesForGenre(polished, request.genre)
+
+    if (!rhymeValidation.valid || rhymeValidation.warnings.length > 0) {
+      const rhymeEnhancement = await enhanceLyricsRhymes(
+        polished,
+        request.genre,
+        request.theme,
+        request.creativity === "ousado" ? 0.8 : 0.7,
+      )
+
+      if (rhymeEnhancement.improvements.length > 0) {
+        console.log(`[MetaComposer] ✅ ${rhymeEnhancement.improvements.length} rima(s) melhorada(s)`)
+        polished = rhymeEnhancement.enhancedLyrics
+      }
+    }
 
     // Formatação de performance
     if (shouldUsePerformanceFormat(request.genre, request.performanceMode || "standard")) {
