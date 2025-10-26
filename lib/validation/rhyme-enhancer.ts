@@ -396,5 +396,4 @@ function simpleRhymeImprovement(
   return null
 }
 
-export type { RhymeEnhancementResult }
 export { enhanceLyricsRhymes, generateRhymeReport, quickRhymeCheck, suggestRhymingWords }
