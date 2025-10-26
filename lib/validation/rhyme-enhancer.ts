@@ -396,12 +396,5 @@ function simpleRhymeImprovement(
   return null
 }
 
-// ✅ EXPORTAÇÕES EXPLÍCITAS — obrigatórias para o build do Next.js
 export type { RhymeEnhancementResult }
-
-export {
-  enhanceLyricsRhymes,
-  generateRhymeReport,
-  quickRhymeCheck,
-  suggestRhymingWords,
-}
+export { enhanceLyricsRhymes, generateRhymeReport, quickRhymeCheck, suggestRhymingWords }
