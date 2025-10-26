@@ -28,14 +28,6 @@ try {
   }
 }
 
-export interface RhymeEnhancementResult {
-  enhancedLyrics: string
-  originalScore: number
-  enhancedScore: number
-  improvements: string[]
-  rhymeAnalysis: any
-}
-
 /**
  * Aprimora as rimas de uma letra mantendo o significado original
  */
@@ -396,4 +388,9 @@ function simpleRhymeImprovement(
   return null
 }
 
-export { enhanceLyricsRhymes, generateRhymeReport, quickRhymeCheck, suggestRhymingWords }
+export {
+  enhanceLyricsRhymes,
+  generateRhymeReport,
+  quickRhymeCheck,
+  suggestRhymingWords,
+}
