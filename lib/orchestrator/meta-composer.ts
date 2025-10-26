@@ -57,7 +57,7 @@ export class MetaComposer {
     // 2. Aplica Terceira Via se necessário
     let terceiraViaApplied = false
     const analysis = analisarTerceiraVia(lyrics, request.genre, request.theme)
-    if (analysis.score_geral < 75) {
+    if (analysis.score_geral < 75 && request.useTerceiraVia) {
       lyrics = await this.applyTerceiraVia(lyrics, request, analysis)
       terceiraViaApplied = true
     }
