@@ -56,7 +56,7 @@ export class SyllableSuggestionEngine {
   /**
    * Gera sugestão inteligente para um verso com excesso de sílabas
    */
-  static generateSuggestion(verse: string, targetSyllables = 11): SyllableSuggestion | null {
+  static generateSuggestion(verse: string, targetSyllables = 12): SyllableSuggestion | null {
     const currentSyllables = countPoeticSyllables(verse)
     if (currentSyllables <= targetSyllables) return null
 
