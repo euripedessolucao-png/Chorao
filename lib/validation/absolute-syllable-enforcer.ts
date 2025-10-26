@@ -2,11 +2,16 @@
 
 import { countPoeticSyllables } from "./syllable-counter-brasileiro"
 import { GENRE_CONFIGS } from "@/lib/genre-config"
+import { fixLineToMaxSyllables } from "./local-syllable-fixer"
 
-// ✅ MANTENHA A CLASSE ANTIGA (para compatibilidade)
+// ✅ CLASSE ATUALIZADA — agora usa correção inteligente e limite por gênero
 export class AbsoluteSyllableEnforcer {
+  // Mantido para compatibilidade, mas NÃO usado nas novas funções
   private static readonly ABSOLUTE_MAX_SYLLABLES = 11
 
+  /**
+   * Validação simples (mantida para compatibilidade)
+   */
   static validate(lyrics: string) {
     const lines = lyrics.split("\n")
     const violations = []
@@ -14,7 +19,7 @@ export class AbsoluteSyllableEnforcer {
       const trimmed = line.trim()
       if (!trimmed || trimmed.startsWith("[") || trimmed.startsWith("(")) continue
       const syllables = countPoeticSyllables(trimmed)
-      if (syllables > this.ABSOLUTE_MAX_SYLLABLES) {
+      if (syllables > 12) { // ✅ Atualizado para 12
         violations.push({ line: trimmed, syllables, lineNumber: lines.indexOf(line) + 1 })
       }
     }
@@ -23,11 +28,14 @@ export class AbsoluteSyllableEnforcer {
       violations,
       message:
         violations.length === 0
-          ? "✅ APROVADO: Todos os versos têm no máximo 11 sílabas"
-          : `❌ BLOQUEADO: ${violations.length} verso(s) com mais de 11 sílabas`,
+          ? "✅ APROVADO: Todos os versos têm no máximo 12 sílabas"
+          : `❌ BLOQUEADO: ${violations.length} verso(s) com mais de 12 sílabas`,
     }
   }
 
+  /**
+   * Correção automática com correção local inteligente
+   */
   static validateAndFix(lyrics: string): {
     correctedLyrics: string
     corrections: number
@@ -40,71 +48,29 @@ export class AbsoluteSyllableEnforcer {
 
     for (const line of lines) {
       const trimmed = line.trim()
-
-      // Skip empty lines, tags, and metadata
       if (!trimmed || trimmed.startsWith("[") || trimmed.startsWith("(")) {
         correctedLines.push(line)
         continue
       }
 
-      const syllables = countPoeticSyllables(trimmed)
-
-      if (syllables <= this.ABSOLUTE_MAX_SYLLABLES) {
+      const originalSyllables = countPoeticSyllables(trimmed)
+      if (originalSyllables <= 12) {
         correctedLines.push(line)
         continue
       }
 
-      // Apply automatic corrections
-      let fixed = trimmed
-      const originalSyllables = syllables
-
-      // Try contractions first
-      const contractions = [
-        [/você/gi, "cê"],
-        [/para o/gi, "pro"],
-        [/para a/gi, "pra"],
-        [/para/gi, "pra"],
-        [/está/gi, "tá"],
-        [/estou/gi, "tô"],
-        [/estava/gi, "tava"],
-        [/estavam/gi, "tavam"],
-        [/porque/gi, "pq"],
-        [/agora/gi, "agora"],
-      ]
-
-      for (const [regex, replacement] of contractions) {
-        const test = fixed.replace(regex, replacement as string)
-        const testSyllables = countPoeticSyllables(test)
-        if (testSyllables <= this.ABSOLUTE_MAX_SYLLABLES) {
-          fixed = test
-          break
-        }
-      }
-
-      // If still too long, try splitting at comma
-      if (countPoeticSyllables(fixed) > this.ABSOLUTE_MAX_SYLLABLES && fixed.includes(",")) {
-        const parts = fixed.split(",").map((p) => p.trim())
-        if (parts.length === 2) {
-          const part1Syllables = countPoeticSyllables(parts[0])
-          const part2Syllables = countPoeticSyllables(parts[1])
-
-          if (part1Syllables <= this.ABSOLUTE_MAX_SYLLABLES && part2Syllables <= this.ABSOLUTE_MAX_SYLLABLES) {
-            correctedLines.push(parts[0])
-            correctedLines.push(parts[1])
-            corrections++
-            details.push(`Dividido: "${trimmed}" → "${parts[0]}" + "${parts[1]}"`)
-            continue
-          }
-        }
-      }
-
+      // Correção inteligente com limite de 12
+      const fixed = fixLineToMaxSyllables(trimmed, 12)
       const finalSyllables = countPoeticSyllables(fixed)
-      if (finalSyllables < originalSyllables) {
-        corrections++
-        details.push(`Corrigido: ${originalSyllables}→${finalSyllables} sílabas: "${trimmed}"`)
-      }
 
-      correctedLines.push(fixed)
+      if (finalSyllables <= 12 && finalSyllables < originalSyllables) {
+        correctedLines.push(fixed)
+        corrections++
+        details.push(`Corrigido: ${originalSyllables} → ${finalSyllables} sílabas`)
+      } else {
+        correctedLines.push(trimmed)
+        details.push(`⚠️ Não foi possível corrigir (${originalSyllables}s)`)
+      }
     }
 
     return {
@@ -115,7 +81,9 @@ export class AbsoluteSyllableEnforcer {
   }
 }
 
-// ✅ ADICIONE A FUNÇÃO NOVA (com suporte a gênero)
+/**
+ * Validação por gênero — agora usa o limite absoluto de cada gênero
+ */
 export function validateSyllablesByGenre(
   lyrics: string,
   genre: string,
@@ -126,13 +94,13 @@ export function validateSyllablesByGenre(
   maxSyllables: number
 } {
   const config = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS]
-  let maxSyllables = 11
+  let maxSyllables = 12 // padrão seguro
 
-  if (config) {
+  if (config?.prosody_rules?.syllable_count) {
     const rules = config.prosody_rules.syllable_count
     if ("absolute_max" in rules) {
       maxSyllables = rules.absolute_max
-    } else if ("without_comma" in rules) {
+    } else if ("without_comma" in rules && rules.without_comma.acceptable_up_to) {
       maxSyllables = rules.without_comma.acceptable_up_to
     }
   }
