@@ -12,6 +12,8 @@ import {
 import { formatInstrumentationForAI } from "@/lib/normalized-genre"
 import { AbsoluteSyllableEnforcer } from "@/lib/validation/absolute-syllable-enforcer"
 import { LineStacker } from "@/lib/utils/line-stacker"
+import { enhanceLyricsRhymes } from "@/lib/validation/rhyme-enhancer"
+import { validateRhymesForGenre } from "@/lib/validation/rhyme-validator"
 
 export async function POST(request: NextRequest) {
   try {
@@ -105,6 +107,19 @@ Retorne APENAS a letra reescrita, sem explicações.`
     if (enforcementResult.corrections > 0) {
       console.log(`[API] ✅ ${enforcementResult.corrections} verso(s) corrigido(s) automaticamente`)
       finalLyrics = enforcementResult.correctedLyrics
+    }
+
+    console.log("[API] 🎵 Validando qualidade das rimas...")
+    const rhymeValidation = validateRhymesForGenre(finalLyrics, genre)
+
+    if (!rhymeValidation.valid || rhymeValidation.warnings.length > 0) {
+      console.log("[API] 🔧 Melhorando rimas automaticamente...")
+      const rhymeEnhancement = await enhanceLyricsRhymes(finalLyrics, genre, theme || "reescrita", 0.7)
+
+      if (rhymeEnhancement.improvements.length > 0) {
+        console.log(`[API] ✅ ${rhymeEnhancement.improvements.length} rima(s) melhorada(s)`)
+        finalLyrics = rhymeEnhancement.enhancedLyrics
+      }
     }
 
     console.log("[API] 📚 Empilhando versos...")
