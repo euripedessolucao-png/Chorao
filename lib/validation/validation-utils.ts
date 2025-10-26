@@ -1,7 +1,15 @@
+// lib/validation/validation-utils.ts
+
 /**
  * Utilitários para validação de letras
+ * 
+ * NOTA: estas funções detectam APENAS cabeçalhos de seção (ex: "[Chorus]"),
+ * não classificam versos dentro de seções.
  */
 
+/**
+ * Verifica se a linha é um cabeçalho de REFRÃO
+ */
 export function isChorusLine(line: string): boolean {
   const trimmed = line.trim().toLowerCase()
   return (
@@ -12,6 +20,9 @@ export function isChorusLine(line: string): boolean {
   )
 }
 
+/**
+ * Verifica se a linha é um cabeçalho de VERSO
+ */
 export function isVerseLine(line: string): boolean {
   const trimmed = line.trim().toLowerCase()
   return (
@@ -22,6 +33,9 @@ export function isVerseLine(line: string): boolean {
   )
 }
 
+/**
+ * Verifica se a linha é um cabeçalho de PONTE
+ */
 export function isBridgeLine(line: string): boolean {
   const trimmed = line.trim().toLowerCase()
   return (
@@ -32,26 +46,31 @@ export function isBridgeLine(line: string): boolean {
   )
 }
 
+/**
+ * Verifica se a linha deve ser ignorada na validação métrica
+ */
 export function shouldSkipValidation(line: string): boolean {
   const trimmed = line.trim()
 
-  // Pula linhas vazias
   if (!trimmed) return true
 
-  // Pula marcadores de seção
+  // Cabeçalhos de seção: [Verse], [Chorus], etc.
   if (trimmed.startsWith("[") && trimmed.endsWith("]")) return true
 
-  // Pula instruções
+  // Instruções de performance: (Audience: "..."), (Performance: ...)
   if (trimmed.startsWith("(") && trimmed.endsWith(")")) return true
 
-  // Pula metadados
+  // Metadados técnicos
   if (
     trimmed.startsWith("Title:") ||
     trimmed.startsWith("Instrumentos:") ||
     trimmed.startsWith("BPM:") ||
-    trimmed.startsWith("Key:")
-  )
+    trimmed.startsWith("Key:") ||
+    trimmed.startsWith("Genre:") ||
+    trimmed.startsWith("Style:")
+  ) {
     return true
+  }
 
   return false
 }
