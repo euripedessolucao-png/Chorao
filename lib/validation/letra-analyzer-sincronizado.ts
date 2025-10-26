@@ -1,4 +1,4 @@
-import { countPoeticSyllables } from "./syllable-counter"
+import { countPoeticSyllables } from "./syllable-counter-brasileiro"
 
 /**
  * Analisador de Letras Sincronizado com o Contador do Aplicativo

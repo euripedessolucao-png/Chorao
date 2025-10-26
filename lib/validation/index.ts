@@ -12,8 +12,6 @@ export {
   countPortugueseSyllables, // Contagem gramatical completa
   validateSyllableLimit, // Valida limite por verso
   validateLyricsSyllables, // Valida sílabas da letra inteira
-  hasEnjambement, // Detecta enjambement
-  validateVerseWithEnjambement, // Valida verso com continuação
   type SyllableValidationResult,
 } from "./syllable-counter-brasileiro"
 
