@@ -1,5 +1,6 @@
 // lib/genre-config.ts
 import { countPoeticSyllables } from "./validation/syllable-counter-brasileiro"
+import { countPoeticSyllables } from "./syllable-counter-brasileiro" // ✅ mesmo diretório
 
 export const GENRE_CONFIGS = {
   "Sertanejo Moderno Feminino": {

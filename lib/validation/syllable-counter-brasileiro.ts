@@ -3,39 +3,34 @@
 /**
  * PoeticSyllableEngine — Motor definitivo de sílabas poéticas para música brasileira.
  * 
- * Projetado para sertanejo moderno, MPB e pop com foco em:
- * - Naturalidade da fala cantada
- * - Contrações reais ("cê", "tá", "pra")
- * - Sinérese em verbos ("esvaiu", "ajoelhou")
- * - Elisão interpalavras ("tá aqui" → 2 sílabas)
- * - Tolerância contextual a versos curtos (interjeições, chamadas)
+ * Projetado para sertanejo moderno, MPB, funk, pagode e outros gêneros brasileiros.
+ * Usa regras fonéticas reais da fala cantada em PT-BR.
  */
 
-// === Dicionário fonético musical (valor = sílabas na música) ===
 const MUSICAL_SYLLABLES: Record<string, number> = {
   // Monossílabos tônicos
   tá: 1,   // está
   dá: 1,   // ele dá
   pô: 1,   // pôr
   vê: 1,   // ver
-  pé: 1,   // pé
-  pá: 1,   // pá
-  dó: 1,   // dó
-  sou: 1,  // sou
-  vou: 1,  // vou
-  sei: 1,  // sei
-  dei: 1,  // dei
-  rei: 1,  // rei
-  lei: 1,  // lei
-  céu: 1,  // céu
-  pão: 1,  // pão
-  mãe: 1,  // mãe
-  cão: 1,  // cão
-  põe: 1,  // põe
-  vêm: 1,  // vêm
-  têm: 1,  // têm
-  lêem: 1, // lêem
-  dão: 1,  // dão
+  pé: 1,
+  pá: 1,
+  dó: 1,
+  sou: 1,
+  vou: 1,
+  sei: 1,
+  dei: 1,
+  rei: 1,
+  lei: 1,
+  céu: 1,
+  pão: 1,
+  mãe: 1,
+  cão: 1,
+  põe: 1,
+  vêm: 1,
+  têm: 1,
+  lêem: 1,
+  dão: 1,
 
   // Contrações naturais
   pra: 1,    // para
@@ -48,14 +43,14 @@ const MUSICAL_SYLLABLES: Record<string, number> = {
   tão: 1,    // estão
   da: 1,     // de + a
   do: 1,     // de + o
-  das: 1,    // de + as
-  dos: 1,    // de + os
+  das: 1,
+  dos: 1,
   na: 1,     // em + a
   no: 1,     // em + o
-  nas: 1,    // em + as
-  nos: 1,    // em + os
+  nas: 1,
+  nos: 1,
 
-  // Palavras com sinérese forçada em música
+  // Palavras com sinérese forçada
   ninguém: 2,
   alguém: 2,
   também: 2,
@@ -79,49 +74,13 @@ const MUSICAL_SYLLABLES: Record<string, number> = {
   partiu: 2,
   sumiu: 2,
   fugiu: 2,
-  ajoelhou: 3, // a-jo-lhou (não a-jo-e-lhou)
-  conquistou: 3, // con-quis-tou
-  acordou: 3, // a-cor-dou
-  reclamou: 3, // re-cla-mou
-  agradecendo: 5, // a-gra-de-cen-do
+  ajoelhou: 3,
+  conquistou: 3,
+  acordou: 3,
+  reclamou: 3,
+  agradecendo: 5,
 }
 
-// === Função principal de contagem ===
-export function countPoeticSyllables(line: string): number {
-  if (!line?.trim()) return 0
-
-  // Normaliza para análise fonética
-  let clean = line
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // Remove acentos
-    .replace(/[^a-z\s']/g, " ")       // Mantém letras e apóstrofo
-    .replace(/\s+/g, " ")
-    .trim()
-
-  if (!clean) return 0
-
-  // Aplica contrações léxicas antes de dividir
-  clean = applyLexicalContractions(clean)
-
-  // Divide em palavras
-  const words = clean.split(/\s+/).filter(Boolean)
-  if (words.length === 0) return 0
-
-  // Conta sílabas palavra a palavra
-  let total = 0
-  for (let i = 0; i < words.length; i++) {
-    const word = words[i]
-    total += countWordSyllables(word)
-  }
-
-  // Aplica elisão interpalavras
-  total = applyInterwordElision(line, total)
-
-  return Math.max(1, total)
-}
-
-// === Aplica contrações comuns em música ===
 function applyLexicalContractions(text: string): string {
   return text
     .replace(/\bpara\b/g, "pra")
@@ -132,33 +91,29 @@ function applyLexicalContractions(text: string): string {
     .replace(/\bestão\b/g, "tão")
     .replace(/\bde\s+a\b/g, "da")
     .replace(/\bde\s+o\b/g, "do")
-    .replace(/\bde\s+as\b/g, "das")
-    .replace(/\bde\s+os\b/g, "dos")
     .replace(/\bem\s+a\b/g, "na")
     .replace(/\bem\s+o\b/g, "no")
-    .replace(/\bem\s+as\b/g, "nas")
-    .replace(/\bem\s+os\b/g, "nos")
     .replace(/\s+/g, " ")
     .trim()
 }
 
-// === Conta sílabas em uma palavra ===
 function countWordSyllables(word: string): number {
-  const key = word.replace(/'/g, "")
+  const key = word.replace(/'/g, "").toLowerCase()
   if (MUSICAL_SYLLABLES[key] !== undefined) {
     return MUSICAL_SYLLABLES[key]
   }
 
-  if (!/[aeiou]/.test(key)) return 1 // só consoantes → 1 sílaba
+  if (!/[aeiou]/.test(key)) return 1
 
-  // Tritongos → 1 sílaba
   let s = key
+
+  // Tritongos
   const tritongos = ["uai", "uei", "uoi"]
   for (const t of tritongos) {
     s = s.replace(new RegExp(t, "g"), "X")
   }
 
-  // Ditongos → 1 sílaba
+  // Ditongos
   const ditongos = [
     "ai", "ei", "oi", "au", "eu", "ou", "ui",
     "ia", "ie", "io", "ua", "ue", "uo", "iu",
@@ -172,18 +127,13 @@ function countWordSyllables(word: string): number {
   const x = (s.match(/X/g) || []).length
   let count = vowels + x
 
-  // Ajuste para verbos em -ou, -ou, -iu
-  if (/(ou|ei|iu)$/i.test(key)) {
-    // Na música, quase sempre reduzido
-    if (key.endsWith("ou") || key.endsWith("iu")) {
-      count = Math.min(count, 3)
-    }
+  if (/(ou|iu)$/i.test(key)) {
+    count = Math.min(count, 3)
   }
 
   return Math.max(1, count)
 }
 
-// === Elisão interpalavras (crucial para precisão) ===
 function applyInterwordElision(originalLine: string, baseCount: number): number {
   const line = originalLine.toLowerCase()
   const patterns = [
@@ -197,7 +147,7 @@ function applyInterwordElision(originalLine: string, baseCount: number): number 
     /pra\s+quê/,
     /se\s+esvaiu$/,
     /foi\s+embora$/,
-    /tô\s+só$/,
+    /tô\s+só/,
     /cê\s+já/,
     /olha\s+pro/,
   ]
@@ -212,21 +162,40 @@ function applyInterwordElision(originalLine: string, baseCount: number): number 
   return Math.max(1, baseCount - reduction)
 }
 
-// === Validação com suporte a versos curtos contextuais ===
-export interface SyllableValidationResult {
-  valid: boolean
-  violations: Array<{
-    lineNumber: number
-    line: string
-    syllables: number
-    reason: string
-  }>
+export function countPoeticSyllables(line: string): number {
+  if (!line?.trim()) return 0
+
+  let clean = line
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z\s']/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+
+  if (!clean) return 0
+
+  clean = applyLexicalContractions(clean)
+  const words = clean.split(/\s+/).filter(Boolean)
+  if (words.length === 0) return 0
+
+  let total = 0
+  for (const word of words) {
+    total += countWordSyllables(word)
+  }
+
+  total = applyInterwordElision(line, total)
+  return Math.max(1, total)
 }
 
-/**
- * Valida letra com regras flexíveis para sertanejo moderno.
- * Permite versos curtos (4–7 sílabas) se forem interjeições, chamadas ou perguntas.
- */
+// Exportações para compatibilidade
+export const countPortugueseSyllables = countPoeticSyllables
+
+export interface SyllableValidationResult {
+  valid: boolean
+  violations: Array<{ lineNumber: number; line: string; syllables: number }>
+}
+
 export function validateLyricsSyllables(
   lyrics: string,
   minIdeal = 8,
@@ -249,17 +218,8 @@ export function validateLyricsSyllables(
         lineNumber: i + 1,
         line,
         syllables,
-        reason: `Excede limite absoluto (${absoluteMax})`
-      })
-    } else if (syllables < minIdeal && !isContextualShortLine(line)) {
-      violations.push({
-        lineNumber: i + 1,
-        line,
-        syllables,
-        reason: `Abaixo do mínimo ideal (${minIdeal}) e não é chamada/interjeição`
       })
     }
-    // Aceita 8–12 sem aviso; 7 ou menos só se for contextual
   }
 
   return {
@@ -267,25 +227,3 @@ export function validateLyricsSyllables(
     violations,
   }
 }
-
-// === Detecta versos curtos permitidos ===
-function isContextualShortLine(line: string): boolean {
-  const shortPatterns = [
-    /escuta aí/i,
-    /olha /i,
-    /cê já/i,
-    /já pensou/i,
-    /né\?$/i,
-    /\?$/,
-    /^(oh|ei|ai|ui|psiu)/i,
-    /oh-oh/i,
-    /acorda/i,
-    /acorde/i,
-    /ei, /i,
-  ]
-  const syllables = countPoeticSyllables(line)
-  return syllables >= 4 && syllables <= 7 && shortPatterns.some(p => p.test(line))
-}
-
-// === Exportações para compatibilidade ===
-export const countPortugueseSyllables = countPoeticSyllables
