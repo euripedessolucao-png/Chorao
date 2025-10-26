@@ -12,7 +12,7 @@ export default function Home() {
 
       <section className="relative overflow-hidden bg-gradient-to-br from-purple-100 via-purple-50 to-background dark:from-purple-950/20 dark:via-purple-900/10 dark:to-background pt-32 pb-20 px-4">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 text-foreground">Chorão - Compositor</h1>
+          <h1 className="text-5xl md:text-6xl font-bold mb-6 text-foreground">Perfect - Composer</h1>
           <p className="text-xl md:text-2xl text-muted-foreground mb-4 max-w-3xl mx-auto">
             Seu assistente de composição que cria letras originais em qualquer gênero, humor ou estilo. Edite, analise e
             aperfeiçoe suas letras em minutos.
