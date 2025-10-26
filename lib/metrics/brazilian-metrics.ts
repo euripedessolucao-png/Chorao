@@ -29,7 +29,7 @@ function extractSyllableRange(config: (typeof GENRE_CONFIGS)[keyof typeof GENRE_
     // Ex: Sertanejo Moderno (máx 12, mas ideal é menor)
     const max = rules.absolute_max;
     const min = Math.max(5, max - 5); // Garante mínimo razoável
-    const ideal = Math.min(11, Math.floor((min + max) / 2));
+    const ideal = Math.min(12, Math.floor((min + max) / 2));
     return { min, max, ideal };
   }
 
