@@ -395,6 +395,3 @@ function simpleRhymeImprovement(
 
   return null
 }
-
-// ✅ REMOVA ESTA LINHA (causa duplicação de export):
-// export { enhanceLyricsRhymes, generateRhymeReport, quickRhymeCheck, suggestRhymingWords }
