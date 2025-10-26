@@ -389,4 +389,3 @@ function simpleRhymeImprovement(
 }
 
 export type { RhymeEnhancementResult }
-export { enhanceLyricsRhymes, generateRhymeReport, quickRhymeCheck, suggestRhymingWords }
