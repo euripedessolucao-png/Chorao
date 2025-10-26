@@ -155,11 +155,13 @@ async function enhanceRhymePair(
   
   return null
 }
-// ✅ EXPORTAÇÕES PÚBLICAS (obrigatório para o build funcionar)
+// Tipos devem ser exportados com "type"
+export type { RhymeEnhancementResult }
+
+// Funções são exportadas normalmente
 export {
   enhanceLyricsRhymes,
   generateRhymeReport,
   quickRhymeCheck,
   suggestRhymingWords,
-  type RhymeEnhancementResult,
 }
