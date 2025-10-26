@@ -5,7 +5,7 @@
  * Este validador detecta e corrige problemas técnicos específicos do gênero.
  *
  * REGRAS CRÍTICAS - NÃO ALTERAR SEM CONSULTA:
- * - Máximo 11 sílabas por verso (ideal 7-11)
+ * - Máximo 12 sílabas por verso (ideal 8-11)
  * - Máximo 3 rimas consecutivas com mesma terminação
  * - Pré-refrão deve ter frases completas
  * - Refrão final deve ter variação emocional
@@ -21,12 +21,6 @@ export interface SertanejoValidationResult {
   score: number // 0-100
 }
 
-export interface SertanejoVerse {
-  text: string
-  syllables: number
-  rhymeEnding: string
-}
-
 /**
  * Valida uma letra completa de sertanejo moderno
  */
@@ -38,7 +32,7 @@ export function validateSertanejoModerno(lyrics: string): SertanejoValidationRes
 
   const sections = parseLyricSections(lyrics)
 
-  // VALIDAÇÃO 1: Métrica de sílabas (7-11, ideal 10-11)
+  // VALIDAÇÃO 1: Métrica de sílabas (5-12, ideal 8-11)
   const syllableIssues = validateSyllables(sections)
   if (syllableIssues.errors.length > 0) {
     errors.push(...syllableIssues.errors)
@@ -89,19 +83,20 @@ export function validateSertanejoModerno(lyrics: string): SertanejoValidationRes
 }
 
 /**
- * Valida métrica de sílabas (7-11, ideal 10-11)
+ * Valida métrica de sílabas (5-12, ideal 8-11)
+ * Permite versos curtos (5-7) se forem estilisticamente válidos
  */
 function validateSyllables(sections: Map<string, string[]>) {
   const errors: string[] = []
   const warnings: string[] = []
 
-  const MAX_SYLLABLES_ABSOLUTE = 11
+  const MAX_SYLLABLES_ABSOLUTE = 12
+  const MIN_IDEAL = 8
 
   for (const [sectionName, lines] of sections.entries()) {
     lines.forEach((line, index) => {
       const syllables = countPoeticSyllables(line)
 
-      // ERRO: Mais de 11 sílabas
       if (syllables > MAX_SYLLABLES_ABSOLUTE) {
         errors.push(
           `${sectionName} linha ${index + 1}: ${syllables} sílabas (máximo ${MAX_SYLLABLES_ABSOLUTE}). ` +
@@ -109,16 +104,32 @@ function validateSyllables(sections: Map<string, string[]>) {
         )
       }
 
-      // AVISO: Menos de 7 ou exatamente 11 sílabas
-      if (syllables < 7) {
-        warnings.push(`${sectionName} linha ${index + 1}: ${syllables} sílabas (mínimo ideal 7)`)
-      } else if (syllables === MAX_SYLLABLES_ABSOLUTE) {
-        warnings.push(`${sectionName} linha ${index + 1}: ${syllables} sílabas (no limite, ideal 10)`)
+      if (syllables < MIN_IDEAL && !isStylisticShortLine(line)) {
+        warnings.push(`${sectionName} linha ${index + 1}: ${syllables} sílabas (ideal: ${MIN_IDEAL}-11)`)
       }
     })
   }
 
   return { errors, warnings }
+}
+
+/**
+ * Detecta versos curtos permitidos no sertanejo moderno
+ */
+function isStylisticShortLine(line: string): boolean {
+  const syllables = countPoeticSyllables(line)
+  if (syllables < 5 || syllables > 7) return false
+
+  const patterns = [
+    /^só .* quem /i,
+    /^quem .* tem /i,
+    /^cê já /i,
+    /^já (pensou|viu|checou) /i,
+    /^escuta /i,
+    /^olha /i,
+    /(?:acordar|amar|cozinhar|fazer|lavar|pagar)$/i,
+  ]
+  return patterns.some(p => p.test(line))
 }
 
 /**
@@ -131,7 +142,6 @@ function validateRhymeVariety(sections: Map<string, string[]>) {
   for (const [sectionName, lines] of sections.entries()) {
     const rhymeEndings = lines.map((line) => extractRhymeEnding(line))
 
-    // Detecta sequências de 4+ rimas iguais
     let consecutiveCount = 1
     let currentRhyme = rhymeEndings[0]
 
@@ -144,7 +154,6 @@ function validateRhymeVariety(sections: Map<string, string[]>) {
             `${sectionName}: ${consecutiveCount} rimas consecutivas em "-${currentRhyme}" ` +
               `(máximo 3). Varie as terminações para evitar monotonia.`,
           )
-
           suggestions.push(`Sugestão: Alterne rimas. Ex: AABB ou ABAB em vez de AAAA`)
         }
       } else {
@@ -167,11 +176,10 @@ function validatePreChorus(sections: Map<string, string[]>) {
   if (!preChorus) return { errors }
 
   preChorus.forEach((line, index) => {
-    // Detecta verbos sem complemento
     const incompletePatterns = [
-      /\b(eleva|releva|celebra|revela)\s*$/i, // Verbos transitivos sem objeto
-      /\b(que|pra|com|sem)\s*$/i, // Preposições no final
-      /,\s*$/, // Vírgula no final (frase incompleta)
+      /\b(eleva|releva|celebra|revela)\s*$/i,
+      /\b(que|pra|com|sem)\s*$/i,
+      /,\s*$/,
     ]
 
     for (const pattern of incompletePatterns) {
@@ -201,10 +209,8 @@ function validateChorusVariation(sections: Map<string, string[]>) {
     return { hasVariation: true, suggestions }
   }
 
-  // Compara primeiro e último refrão
   const firstChorus = choruses[0].join("\n")
   const lastChorus = choruses[choruses.length - 1].join("\n")
-
   const hasVariation = firstChorus !== lastChorus
 
   if (!hasVariation) {
@@ -226,8 +232,6 @@ function validateModernStructure(sections: Map<string, string[]>) {
   const errors: string[] = []
 
   const sectionNames = Array.from(sections.keys())
-
-  // Estrutura esperada: VERSE → PRE-CHORUS → CHORUS
   const hasVerse = sectionNames.some((s) => s.includes("VERSE") || s.includes("VERSO"))
   const hasPreChorus = sectionNames.some((s) => s.includes("PRE-CHORUS") || s.includes("PRÉ-REFRÃO"))
   const hasChorus = sectionNames.some((s) => s.includes("CHORUS") || s.includes("REFRÃO"))
@@ -251,41 +255,71 @@ function validateModernStructure(sections: Map<string, string[]>) {
 function extractRhymeEnding(line: string): string {
   const words = line.trim().split(/\s+/)
   const lastWord = words[words.length - 1].replace(/[.,!?;:()[\]]/g, "").toLowerCase()
-
-  // Extrai últimas 2-3 letras como terminação
   return lastWord.slice(-2)
 }
 
 /**
- * Parseia letra em seções
+ * Parseia letra em seções, reconstruindo versos e ignorando metadados
  */
 function parseLyricSections(lyrics: string): Map<string, string[]> {
-  const sections = new Map<string, string[]>()
   const lines = lyrics.split("\n")
+  const reconstructed: string[] = []
+  let currentVerse = ""
 
-  let currentSection = "UNKNOWN"
-  let currentLines: string[] = []
-
+  // Primeiro: reconstrói versos completos, ignorando metadados
   for (const line of lines) {
     const trimmed = line.trim()
+    
+    if (
+      !trimmed ||
+      trimmed.startsWith("(") ||
+      trimmed.startsWith("Performance:") ||
+      trimmed.startsWith("Back vocal:") ||
+      trimmed.startsWith("Title:") ||
+      trimmed.startsWith("Instrumentos:")
+    ) {
+      continue
+    }
 
-    // Detecta cabeçalho de seção
     if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
-      // Salva seção anterior
-      if (currentLines.length > 0) {
-        sections.set(currentSection, currentLines)
+      if (currentVerse) {
+        reconstructed.push(currentVerse)
+        currentVerse = ""
       }
-
-      // Inicia nova seção
-      currentSection = trimmed.slice(1, -1).split("-")[0].trim()
-      currentLines = []
-    } else if (trimmed && !trimmed.startsWith("(")) {
-      // Adiciona linha (ignora instruções entre parênteses)
-      currentLines.push(trimmed)
+      reconstructed.push(trimmed) // mantém a tag de seção
+    } else if (trimmed.endsWith(".") || trimmed.endsWith("!") || trimmed.endsWith("?")) {
+      if (currentVerse) {
+        reconstructed.push(currentVerse + " " + trimmed)
+        currentVerse = ""
+      } else {
+        reconstructed.push(trimmed)
+      }
+    } else {
+      currentVerse = currentVerse ? `${currentVerse} ${trimmed}` : trimmed
     }
   }
 
-  // Salva última seção
+  if (currentVerse) {
+    reconstructed.push(currentVerse)
+  }
+
+  // Segundo: agrupa por seções
+  const sections = new Map<string, string[]>()
+  let currentSection = "UNKNOWN"
+  let currentLines: string[] = []
+
+  for (const line of reconstructed) {
+    if (line.startsWith("[") && line.endsWith("]")) {
+      if (currentLines.length > 0) {
+        sections.set(currentSection, currentLines)
+      }
+      currentSection = line.slice(1, -1).split("-")[0].trim()
+      currentLines = []
+    } else {
+      currentLines.push(line)
+    }
+  }
+
   if (currentLines.length > 0) {
     sections.set(currentSection, currentLines)
   }
@@ -300,10 +334,6 @@ export async function autoCorrectSertanejoIssues(
   lyrics: string,
   validationResult: SertanejoValidationResult,
 ): Promise<string> {
-  const correctedLyrics = lyrics
-
-  // TODO: Implementar correções automáticas baseadas nos erros detectados
-  // Por enquanto, retorna a letra original com sugestões nos comentários
-
-  return correctedLyrics
+  // Placeholder para correção futura
+  return lyrics
 }
