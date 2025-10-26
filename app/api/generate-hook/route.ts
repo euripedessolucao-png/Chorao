@@ -4,7 +4,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro" // ✅ CORRETO
-import { BRAZILIAN_GENRE_METRICS } from "@/lib/metrics/brazilian-metrics"
+import { getGenreMetrics } from "@/lib/metrics/brazilian-metrics"
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,14 +14,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Letra é obrigatória" }, { status: 400 })
     }
 
-    // ✅ Obtém métricas reais do gênero
-    const genreMetrics = genre 
-      ? BRAZILIAN_GENRE_METRICS[genre as keyof typeof BRAZILIAN_GENRE_METRICS] 
-      : BRAZILIAN_GENRE_METRICS.default;
-    
-    const maxSyllables = Math.min(genreMetrics.syllableRange.max, 10); // Hooks são mais curtos
-    const minSyllables = Math.max(4, genreMetrics.syllableRange.min - 2);
-    
+    const genreMetrics = getGenreMetrics(genre)
+
+    const maxSyllables = Math.min(genreMetrics.syllableRange.max, 10) // Hooks são mais curtos
+    const minSyllables = Math.max(4, genreMetrics.syllableRange.min - 2)
+
     const prompt = `Você é um especialista em criar hooks comerciais para música brasileira.
 
 TAREFA: Analise a letra abaixo e crie 3 variações de hooks ultra-memoráveis.
@@ -87,14 +84,14 @@ Retorne APENAS o JSON, sem markdown.`
     let parsedResult: any = null
     let allValid = false
 
-    while (attempts < 2 && !allValid) { // ✅ Reduzido para 2 tentativas
+    while (attempts < 2 && !allValid) {
+      // ✅ Reduzido para 2 tentativas
       attempts++
-      
+
       const { text } = await generateText({
         model: "openai/gpt-4o-mini", // ✅ Mais rápido e barato
         prompt,
-        temperature: 0.8,
-        maxTokens: 400,
+        temperature: 0.85, // Aumentado para máxima criatividade em hooks
       })
 
       try {
@@ -168,9 +165,6 @@ Retorne APENAS o JSON, sem markdown.`
     return NextResponse.json(safeResult)
   } catch (error) {
     console.error("[Hook] ❌ Erro:", error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Erro ao gerar hook" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Erro ao gerar hook" }, { status: 500 })
   }
 }

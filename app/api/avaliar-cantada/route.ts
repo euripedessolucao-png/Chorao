@@ -128,7 +128,7 @@ TESTE TIKTOK (5s):
       generateText({
         model: "openai/gpt-4o-mini",
         prompt: promptHook,
-        temperature: 0.8,
+        temperature: 0.85,
       }),
     ])
 

@@ -1,25 +1,29 @@
-// app/api/generate-lyrics/route.ts
-
 import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 import { buildGenreRulesPrompt } from "@/lib/validation/genre-rules-builder"
-import { BRAZILIAN_GENRE_METRICS } from "@/lib/metrics/brazilian-metrics"
+import { getGenreMetrics } from "@/lib/metrics/brazilian-metrics"
 import { getUniversalRhymeRules } from "@/lib/validation/universal-rhyme-rules"
 import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro"
+import {
+  formatSertanejoPerformance,
+  shouldUsePerformanceFormat,
+} from "@/lib/formatters/sertanejo-performance-formatter"
+import { formatInstrumentationForAI } from "@/lib/normalized-genre"
+import { AbsoluteSyllableEnforcer } from "@/lib/validation/absolute-syllable-enforcer"
+import { LineStacker } from "@/lib/utils/line-stacker"
 
 export async function POST(request: NextRequest) {
   try {
     const {
-      genre,          // ✅ nomes consistentes
+      genre,
       mood,
       theme,
       additionalRequirements = "",
       performanceMode = "standard",
-      title
+      title,
     } = await request.json()
 
-    // ✅ Validação robusta
     if (!genre || typeof genre !== "string" || !genre.trim()) {
       return NextResponse.json({ error: "Gênero é obrigatório" }, { status: 400 })
     }
@@ -29,15 +33,11 @@ export async function POST(request: NextRequest) {
 
     console.log(`[API] 🎵 Criando letra para: ${genre} | Tema: ${theme}`)
 
-    // ✅ Obtém métricas reais
-    const genreMetrics = BRAZILIAN_GENRE_METRICS[genre as keyof typeof BRAZILIAN_GENRE_METRICS] 
-      || BRAZILIAN_GENRE_METRICS.default;
-    
-    const maxSyllables = Math.min(genreMetrics.syllableRange.max, 12);
-    const minSyllables = genreMetrics.syllableRange.min;
-    const rhymeRules = getUniversalRhymeRules(genre);
+    const genreMetrics = getGenreMetrics(genre)
+    const maxSyllables = Math.min(genreMetrics.syllableRange.max, 12)
+    const minSyllables = genreMetrics.syllableRange.min
+    const rhymeRules = getUniversalRhymeRules(genre)
 
-    // ✅ Constrói prompt com métrica realista
     const genreRules = buildGenreRulesPrompt(genre)
     const prompt = `Você é um compositor brasileiro especializado em ${genre}.
 
@@ -59,54 +59,82 @@ REGRAS DE RIMA:
 ${genreRules.fullPrompt}
 
 ESTRUTURA:
-${performanceMode === "performance" 
-  ? "[INTRO]\n[VERSE 1]\n[PRE-CHORUS]\n[CHORUS]\n[VERSE 2]\n[CHORUS]\n[BRIDGE]\n[CHORUS]\n[OUTRO]" 
-  : "[Intro]\n[Verso 1]\n[Pré-Refrão]\n[Refrão]\n[Verso 2]\n[Refrão]\n[Ponte]\n[Refrão]\n[Outro]"
+${
+  performanceMode === "performance"
+    ? "[INTRO]\n[VERSE 1]\n[PRE-CHORUS]\n[CHORUS]\n[VERSE 2]\n[CHORUS]\n[BRIDGE]\n[CHORUS]\n[OUTRO]"
+    : "[Intro]\n[Verso 1]\n[Pré-Refrão]\n[Refrão]\n[Verso 2]\n[Refrão]\n[Ponte]\n[Refrão]\n[Outro]"
 }
 
 REGRAS:
 - Refrão memorável e repetível
 - Linguagem brasileira autêntica
 - Evite clichês ("coraçãozinho", "lágrimas no rosto")
-- ${performanceMode === "performance" 
-    ? "Tags em inglês, versos em português" 
-    : "Tags em português"}
+- ${performanceMode === "performance" ? "Tags em inglês, versos em português" : "Tags em português"}
 
 Retorne APENAS a letra, sem explicações.`
 
     console.log(`[API] 🎵 Gerando com métrica ${minSyllables}-${maxSyllables} sílabas...`)
 
     const { text } = await generateText({
-      model: "openai/gpt-4o-mini", // ✅ mais rápido e barato
+      model: "openai/gpt-4o-mini",
       prompt,
-      temperature: 0.7,
-      maxTokens: 800,
+      temperature: 0.85,
     })
 
-    // ✅ Processamento pós-geração
     let finalLyrics = capitalizeLines(text)
-    
+
     // Remove explicações da IA
     finalLyrics = finalLyrics
-      .split('\n')
-      .filter(line => !line.trim().startsWith('Retorne') && 
-                     !line.trim().startsWith('REGRAS') &&
-                     !line.includes('Explicação'))
-      .join('\n')
+      .split("\n")
+      .filter(
+        (line) =>
+          !line.trim().startsWith("Retorne") && !line.trim().startsWith("REGRAS") && !line.includes("Explicação"),
+      )
+      .join("\n")
       .trim()
 
-    // ✅ Aplica formatação performática se necessário
-    if (performanceMode === "performance") {
-      finalLyrics = this.applyPerformanceFormatting(finalLyrics, genre)
+    console.log("[API] 🔧 Aplicando correção automática de sílabas...")
+    const enforcementResult = AbsoluteSyllableEnforcer.validateAndFix(finalLyrics)
+    if (enforcementResult.corrections > 0) {
+      console.log(`[API] ✅ ${enforcementResult.corrections} verso(s) corrigido(s) automaticamente`)
+      finalLyrics = enforcementResult.correctedLyrics
     }
 
-    // ✅ Validação de métrica
-    const lines = finalLyrics.split('\n')
+    console.log("[API] 📚 Empilhando versos...")
+    const stackResult = LineStacker.stackLines(finalLyrics)
+    finalLyrics = stackResult.stackedLyrics
+    if (stackResult.improvements.length > 0) {
+      console.log(`[API] ✅ ${stackResult.improvements.length} melhoria(s) de empilhamento aplicadas`)
+    }
+
+    // 🔁 PÓS-GERAÇÃO: Validação e correção para Sertanejo Raiz
+    if (genre.toLowerCase().includes("raiz")) {
+      const forbiddenInstruments = ["electric guitar", "808", "synth", "drum machine", "bateria eletrônica"]
+      const lowerLyrics = finalLyrics.toLowerCase()
+      if (forbiddenInstruments.some((inst) => lowerLyrics.includes(inst))) {
+        // Substitui termos proibidos por alternativas acústicas
+        finalLyrics = finalLyrics
+          .replace(/electric guitar/gi, "acoustic guitar")
+          .replace(/808|drum machine|bateria eletrônica/gi, "light percussion")
+          .replace(/synth/gi, "sanfona")
+      }
+    }
+
+    // Aplica formatação de performance se necessário
+    if (shouldUsePerformanceFormat(genre, performanceMode)) {
+      finalLyrics = formatSertanejoPerformance(finalLyrics, genre)
+    }
+
+    const instrumentation = formatInstrumentationForAI(genre, finalLyrics)
+    finalLyrics = `${finalLyrics}\n\n${instrumentation}`
+
+    // Validação de métrica
+    const lines = finalLyrics.split("\n")
     let validLines = 0
     let totalLines = 0
-    
+
     for (const line of lines) {
-      if (line.trim() && !line.startsWith('[') && !line.startsWith('(')) {
+      if (line.trim() && !line.startsWith("[") && !line.startsWith("(")) {
         totalLines++
         const syllables = countPoeticSyllables(line)
         if (syllables >= minSyllables && syllables <= maxSyllables) {
@@ -114,7 +142,7 @@ Retorne APENAS a letra, sem explicações.`
         }
       }
     }
-    
+
     const validityRatio = totalLines > 0 ? validLines / totalLines : 1
     const finalScore = Math.round(validityRatio * 100)
 
@@ -123,11 +151,12 @@ Retorne APENAS a letra, sem explicações.`
     return NextResponse.json({
       lyrics: finalLyrics,
       title: title || `${theme} - ${genre}`,
-      meta {
+      meta: {
         finalScore,
         genre,
         performanceMode,
         syllableRange: { min: minSyllables, max: maxSyllables },
+        syllableCorrections: enforcementResult.corrections,
       },
     })
   } catch (error) {
@@ -135,62 +164,11 @@ Retorne APENAS a letra, sem explicações.`
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : "Erro interno",
-        details: process.env.NODE_ENV === 'development' ? (error as any)?.stack : undefined
+        details: process.env.NODE_ENV === "development" ? (error as any)?.stack : undefined,
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
-}
-
-// ✅ FORMATAÇÃO PERFORMÁTICA (simplificada e robusta)
-private static applyPerformanceFormatting(lyrics: string, genre: string): string {
-  // Converte tags para inglês
-  let formatted = lyrics
-    .replace(/\[Intro\]/gi, "[INTRO]")
-    .replace(/\[Verso\s*\d*\]/gi, "[VERSE]")
-    .replace(/\[Refrão\]/gi, "[CHORUS]")
-    .replace(/\[Pré-Refrão\]/gi, "[PRE-CHORUS]")
-    .replace(/\[Ponte\]/gi, "[BRIDGE]")
-    .replace(/\[Final\]|\[Outro\]/gi, "[OUTRO]")
-    .replace(/\[Solo\]/gi, "[SOLO]")
-
-  // Adiciona instrumentos se não existir
-  if (!formatted.includes("(Instruments:")) {
-    const instruments = this.getGenreInstruments(genre)
-    const bpm = this.getGenreBPM(genre)
-    formatted += `\n\n(Instruments: ${instruments} | BPM: ${bpm})`
-  }
-
-  return formatted
-}
-
-// ✅ FUNÇÕES AUXILIARES (mantidas do seu código original)
-private static getGenreInstruments(genre: string): string {
-  const instruments: Record<string, string> = {
-    Sertanejo: "acoustic guitar, viola, bass, drums, accordion",
-    "Sertanejo Moderno": "acoustic guitar, electric guitar, synth, bass, drums",
-    MPB: "nylon guitar, piano, bass, light percussion",
-    Funk: "drum machine, synth bass, samples",
-    Forró: "accordion, triangle, zabumba, bass",
-    Rock: "electric guitar, bass, drums, keyboard",
-    Pop: "synth, drum machine, bass, piano",
-    default: "guitar, bass, drums, keyboard",
-  }
-  return instruments[genre] || instruments.default
-}
-
-private static getGenreBPM(genre: string): string {
-  const bpms: Record<string, string> = {
-    Sertanejo: "72",
-    "Sertanejo Moderno": "85",
-    MPB: "90",
-    Funk: "110",
-    Forró: "120",
-    Rock: "130",
-    Pop: "100",
-    default: "100",
-  }
-  return bpms[genre] || bpms.default
 }
 
 export async function GET() {
