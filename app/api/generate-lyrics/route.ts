@@ -2,7 +2,6 @@ import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 import { buildGenreRulesPrompt } from "@/lib/validation/genre-rules-builder"
-import { getGenreMetrics } from "@/lib/metrics/brazilian-metrics"
 import { getUniversalRhymeRules } from "@/lib/validation/universal-rhyme-rules"
 import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro"
 import {
@@ -14,6 +13,7 @@ import { AbsoluteSyllableEnforcer } from "@/lib/validation/absolute-syllable-enf
 import { LineStacker } from "@/lib/utils/line-stacker"
 import { enhanceLyricsRhymes } from "@/lib/validation/rhyme-enhancer"
 import { validateRhymesForGenre } from "@/lib/validation/rhyme-validator"
+import { validateSyllablesByGenre } from "@/lib/validation/absolute-syllable-enforcer" // ✅
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,12 +35,14 @@ export async function POST(request: NextRequest) {
 
     console.log(`[API] 🎵 Criando letra para: ${genre} | Tema: ${theme}`)
 
-    const genreMetrics = getGenreMetrics(genre)
-    const maxSyllables = Math.min(genreMetrics.syllableRange.max, 12)
-    const minSyllables = genreMetrics.syllableRange.min
-    const rhymeRules = getUniversalRhymeRules(genre)
+    // ✅ Obtém métrica DIRETAMENTE do genre-config.ts
+    const syllableValidation = validateSyllablesByGenre("", genre)
+    const maxSyllables = syllableValidation.maxSyllables
+    const minSyllables = 8 // padrão seguro; pode ser refinado se necessário
 
+    const rhymeRules = getUniversalRhymeRules(genre)
     const genreRules = buildGenreRulesPrompt(genre)
+
     const prompt = `Você é um compositor brasileiro especializado em ${genre}.
 
 TAREFA: Criar uma música completa com estrutura profissional.
@@ -52,7 +54,7 @@ ${additionalRequirements ? `REQUISITOS: ${additionalRequirements}` : ""}
 REGRAS DE MÉTRICA:
 - Versos: ${minSyllables}–${maxSyllables} sílabas
 - Use contrações naturais ("cê", "pra", "tô")
-- Evite versos com mais de ${maxSyllables} sílabas
+- NUNCA exceda ${maxSyllables} sílabas (limite humano de canto)
 
 REGRAS DE RIMA:
 - ${rhymeRules.requirePerfectRhymes ? "Rimas perfeitas obrigatórias" : "Rimas naturais aceitáveis"}
@@ -90,24 +92,26 @@ Retorne APENAS a letra, sem explicações.`
       .split("\n")
       .filter(
         (line) =>
-          !line.trim().startsWith("Retorne") && !line.trim().startsWith("REGRAS") && !line.includes("Explicação"),
+          !line.trim().startsWith("Retorne") &&
+          !line.trim().startsWith("REGRAS") &&
+          !line.includes("Explicação"),
       )
       .join("\n")
       .trim()
 
+    // Validação e melhoria de rimas
     console.log("[API] 🎵 Validando qualidade das rimas...")
     const rhymeValidation = validateRhymesForGenre(finalLyrics, genre)
-
     if (!rhymeValidation.valid || rhymeValidation.warnings.length > 0) {
       console.log("[API] 🔧 Melhorando rimas automaticamente...")
       const rhymeEnhancement = await enhanceLyricsRhymes(finalLyrics, genre, theme, 0.7)
-
       if (rhymeEnhancement.improvements.length > 0) {
         console.log(`[API] ✅ ${rhymeEnhancement.improvements.length} rima(s) melhorada(s)`)
         finalLyrics = rhymeEnhancement.enhancedLyrics
       }
     }
 
+    // Correção de sílabas
     console.log("[API] 🔧 Aplicando correção automática de sílabas...")
     const enforcementResult = AbsoluteSyllableEnforcer.validateAndFix(finalLyrics)
     if (enforcementResult.corrections > 0) {
@@ -115,6 +119,7 @@ Retorne APENAS a letra, sem explicações.`
       finalLyrics = enforcementResult.correctedLyrics
     }
 
+    // Empilhamento
     console.log("[API] 📚 Empilhando versos...")
     const stackResult = LineStacker.stackLines(finalLyrics)
     if (stackResult.improvements.length > 0) {
@@ -122,12 +127,11 @@ Retorne APENAS a letra, sem explicações.`
     }
     finalLyrics = stackResult.stackedLyrics
 
-    // 🔁 PÓS-GERAÇÃO: Validação e correção para Sertanejo Raiz
+    // Pós-geração: Sertanejo Raiz
     if (genre.toLowerCase().includes("raiz")) {
       const forbiddenInstruments = ["electric guitar", "808", "synth", "drum machine", "bateria eletrônica"]
       const lowerLyrics = finalLyrics.toLowerCase()
       if (forbiddenInstruments.some((inst) => lowerLyrics.includes(inst))) {
-        // Substitui termos proibidos por alternativas acústicas
         finalLyrics = finalLyrics
           .replace(/electric guitar/gi, "acoustic guitar")
           .replace(/808|drum machine|bateria eletrônica/gi, "light percussion")
@@ -135,7 +139,7 @@ Retorne APENAS a letra, sem explicações.`
       }
     }
 
-    // Aplica formatação de performance se necessário
+    // Formatação de performance
     if (shouldUsePerformanceFormat(genre, performanceMode)) {
       console.log("[API] 🎭 Aplicando formatação de performance...")
       finalLyrics = formatSertanejoPerformance(finalLyrics, genre)
@@ -144,25 +148,12 @@ Retorne APENAS a letra, sem explicações.`
     const instrumentation = formatInstrumentationForAI(genre, finalLyrics)
     finalLyrics = `${finalLyrics}\n\n${instrumentation}`
 
-    // Validação de métrica
-    const lines = finalLyrics.split("\n")
-    let validLines = 0
-    let totalLines = 0
-
-    for (const line of lines) {
-      if (line.trim() && !line.startsWith("[") && !line.startsWith("(")) {
-        totalLines++
-        const syllables = countPoeticSyllables(line)
-        if (syllables >= minSyllables && syllables <= maxSyllables) {
-          validLines++
-        }
-      }
-    }
-
-    const validityRatio = totalLines > 0 ? validLines / totalLines : 1
+    // ✅ Validação final usando o mesmo limite do gênero
+    const finalValidation = validateSyllablesByGenre(finalLyrics, genre)
+    const validityRatio = finalValidation.violations.length === 0 ? 1 : 0
     const finalScore = Math.round(validityRatio * 100)
 
-    console.log(`[API] ✅ Validação: ${finalScore}% dentro da métrica`)
+    console.log(`[API] ✅ Validação final: ${finalScore}% dentro da métrica (${genre})`)
 
     return NextResponse.json({
       lyrics: finalLyrics,
@@ -173,6 +164,7 @@ Retorne APENAS a letra, sem explicações.`
         performanceMode,
         syllableRange: { min: minSyllables, max: maxSyllables },
         syllableCorrections: enforcementResult.corrections,
+        syllableViolations: finalValidation.violations.length,
       },
     })
   } catch (error) {
