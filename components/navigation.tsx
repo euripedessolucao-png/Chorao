@@ -49,7 +49,7 @@ export function Navigation() {
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 group">
           <Music className="h-6 w-6 text-primary" />
-          <span className="text-lg font-bold">Chorão - Compositor</span>
+          <span className="text-lg font-bold">Gênio - Compositor</span>
         </Link>
 
         {/* Menu desktop */}
