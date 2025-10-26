@@ -95,13 +95,6 @@ Retorne APENAS a letra, sem explicações.`
       .join("\n")
       .trim()
 
-    console.log("[API] 🔧 Aplicando correção automática de sílabas...")
-    const enforcementResult = AbsoluteSyllableEnforcer.validateAndFix(finalLyrics)
-    if (enforcementResult.corrections > 0) {
-      console.log(`[API] ✅ ${enforcementResult.corrections} verso(s) corrigido(s) automaticamente`)
-      finalLyrics = enforcementResult.correctedLyrics
-    }
-
     console.log("[API] 🎵 Validando qualidade das rimas...")
     const rhymeValidation = validateRhymesForGenre(finalLyrics, genre)
 
@@ -114,6 +107,20 @@ Retorne APENAS a letra, sem explicações.`
         finalLyrics = rhymeEnhancement.enhancedLyrics
       }
     }
+
+    console.log("[API] 🔧 Aplicando correção automática de sílabas...")
+    const enforcementResult = AbsoluteSyllableEnforcer.validateAndFix(finalLyrics)
+    if (enforcementResult.corrections > 0) {
+      console.log(`[API] ✅ ${enforcementResult.corrections} verso(s) corrigido(s) automaticamente`)
+      finalLyrics = enforcementResult.correctedLyrics
+    }
+
+    console.log("[API] 📚 Empilhando versos...")
+    const stackResult = LineStacker.stackLines(finalLyrics)
+    if (stackResult.improvements.length > 0) {
+      console.log(`[API] ✅ ${stackResult.improvements.length} verso(s) empilhado(s)`)
+    }
+    finalLyrics = stackResult.stackedLyrics
 
     // 🔁 PÓS-GERAÇÃO: Validação e correção para Sertanejo Raiz
     if (genre.toLowerCase().includes("raiz")) {
@@ -130,12 +137,9 @@ Retorne APENAS a letra, sem explicações.`
 
     // Aplica formatação de performance se necessário
     if (shouldUsePerformanceFormat(genre, performanceMode)) {
+      console.log("[API] 🎭 Aplicando formatação de performance...")
       finalLyrics = formatSertanejoPerformance(finalLyrics, genre)
     }
-
-    console.log("[API] 📚 Empilhando versos...")
-    const stackResult = LineStacker.stackLines(finalLyrics)
-    finalLyrics = stackResult.stackedLyrics
 
     const instrumentation = formatInstrumentationForAI(genre, finalLyrics)
     finalLyrics = `${finalLyrics}\n\n${instrumentation}`

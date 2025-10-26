@@ -30,35 +30,35 @@ export class LineStacker {
       const syllables = countPoeticSyllables(trimmed)
 
       if (syllables > this.MAX_SYLLABLES) {
+        // Tenta dividir em vírgula primeiro
+        if (trimmed.includes(",")) {
+          const parts = trimmed.split(",")
+          if (parts.length === 2) {
+            const cleanPart1 = parts[0].trim()
+            const cleanPart2 = parts[1].trim()
+
+            if (cleanPart1 && cleanPart2) {
+              const syllables1 = countPoeticSyllables(cleanPart1)
+              const syllables2 = countPoeticSyllables(cleanPart2)
+
+              // Só divide se ambas as partes ficarem dentro do limite
+              if (syllables1 <= this.MAX_SYLLABLES && syllables2 <= this.MAX_SYLLABLES) {
+                formattedLines.push(cleanPart1 + ",")
+                formattedLines.push(cleanPart2)
+                improvements.push(`✓ Dividido em vírgula (${syllables}s): "${cleanPart1}, / ${cleanPart2}"`)
+                continue
+              }
+            }
+          }
+        }
+
+        // Se não conseguiu dividir em vírgula, quebra por palavras
         const broken = this.breakLongLine(trimmed)
         formattedLines.push(...broken)
         improvements.push(`✓ Quebrado verso longo (${syllables}s): "${trimmed.substring(0, 40)}..."`)
         continue
       }
 
-      // Divide versos com vírgula em duas linhas (regra do empilhamento brasileiro)
-      if (trimmed.includes(",")) {
-        const parts = trimmed.split(",")
-        if (parts.length === 2) {
-          const cleanPart1 = parts[0].trim()
-          const cleanPart2 = parts[1].trim()
-
-          if (cleanPart1 && cleanPart2) {
-            const syllables1 = countPoeticSyllables(cleanPart1)
-            const syllables2 = countPoeticSyllables(cleanPart2)
-
-            // Só divide se ambas as partes ficarem dentro do limite
-            if (syllables1 <= this.MAX_SYLLABLES && syllables2 <= this.MAX_SYLLABLES) {
-              formattedLines.push(cleanPart1 + ",")
-              formattedLines.push(cleanPart2)
-              improvements.push(`✓ Dividido em duas linhas: "${cleanPart1}, / ${cleanPart2}"`)
-              continue
-            }
-          }
-        }
-      }
-
-      // Mantém verso inteiro
       formattedLines.push(trimmed)
     }
 

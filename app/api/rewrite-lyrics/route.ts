@@ -102,13 +102,6 @@ Retorne APENAS a letra reescrita, sem explicações.`
       .join("\n")
       .trim()
 
-    console.log("[API] 🔧 Aplicando correção automática de sílabas...")
-    const enforcementResult = AbsoluteSyllableEnforcer.validateAndFix(finalLyrics)
-    if (enforcementResult.corrections > 0) {
-      console.log(`[API] ✅ ${enforcementResult.corrections} verso(s) corrigido(s) automaticamente`)
-      finalLyrics = enforcementResult.correctedLyrics
-    }
-
     console.log("[API] 🎵 Validando qualidade das rimas...")
     const rhymeValidation = validateRhymesForGenre(finalLyrics, genre)
 
@@ -122,10 +115,19 @@ Retorne APENAS a letra reescrita, sem explicações.`
       }
     }
 
+    console.log("[API] 🔧 Aplicando correção automática de sílabas...")
+    const enforcementResult = AbsoluteSyllableEnforcer.validateAndFix(finalLyrics)
+    if (enforcementResult.corrections > 0) {
+      console.log(`[API] ✅ ${enforcementResult.corrections} verso(s) corrigido(s) automaticamente`)
+      finalLyrics = enforcementResult.correctedLyrics
+    }
+
     console.log("[API] 📚 Empilhando versos...")
     const stackingResult = LineStacker.stackLines(finalLyrics)
+    if (stackingResult.improvements.length > 0) {
+      console.log(`[API] ✅ ${stackingResult.improvements.length} verso(s) empilhado(s)`)
+    }
     finalLyrics = stackingResult.stackedLyrics
-    console.log(`[API] ✅ Empilhamento concluído (score: ${stackingResult.stackingScore})`)
 
     // Aplica formatação de performance se necessário
     if (shouldUsePerformanceFormat(genre, performanceMode)) {
