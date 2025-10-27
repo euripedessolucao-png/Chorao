@@ -155,8 +155,9 @@ export default function EditarPage() {
     setIsEditing(true)
 
     try {
-      const genreMetrics = getGenreMetrics(genre)
-      const syllableConfig = getSyllableConfig(genre)
+
+      const syllableValidation = validateSyllablesByGenre("", genre)
+      const maxSyllables = syllableValidation.maxSyllables
 
       const requestBody = {
         originalLyrics: lyrics,
