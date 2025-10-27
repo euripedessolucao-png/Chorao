@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { CheckCircle, AlertTriangle, XCircle, Edit2, Check, X } from "lucide-react"
-import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro"; // ✅ CORRETO
+import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro" // ✅ CORRETO
 import { toast } from "sonner"
 
 interface LineValidation {
@@ -26,7 +26,7 @@ interface SyllableValidatorEditableProps {
 
 export function SyllableValidatorEditable({
   lyrics,
-  maxSyllables = 11,
+  maxSyllables = 12,
   onLyricsChange,
 }: SyllableValidatorEditableProps) {
   const [editingLines, setEditingLines] = useState<Set<number>>(new Set())
@@ -77,10 +77,22 @@ export function SyllableValidatorEditable({
   const validations: LineValidation[] = []
 
   lines.forEach((line, index) => {
-    if (line.trim() && !line.startsWith("[") && !line.startsWith("(") && !line.includes("Instruments:")) {
-      // ✅ VERSÃO CORRIGIDA: Contagem direta sem validateSyllableLimit
+    const trimmedLine = line.trim()
+    const shouldSkip =
+      !trimmedLine ||
+      trimmedLine.startsWith("[") ||
+      trimmedLine.startsWith("(") ||
+      trimmedLine.toLowerCase().includes("instrumental") ||
+      trimmedLine.toLowerCase().includes("instruments:") ||
+      trimmedLine.toLowerCase().includes("backing vocals") ||
+      trimmedLine.toLowerCase().includes("backvocal") ||
+      /^$$[^)]*$$$/.test(trimmedLine) // Ignora linhas que são apenas parênteses
+
+    if (!shouldSkip) {
+      // ✅ Arquitetura correta: countPoeticSyllables() do syllable-counter-brasileiro.ts
       const syllables = countPoeticSyllables(line)
 
+      // ✅ Validação usa absolute_max: 12 do genre-config.ts
       if (syllables > maxSyllables) {
         // Gerar sugestões básicas
         const suggestions = generateBasicSuggestions(line, maxSyllables)
