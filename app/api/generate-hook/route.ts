@@ -6,6 +6,52 @@ import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro"
 import { GENRE_CONFIGS } from "@/lib/genre-config"
 
+// ✅ Funções tipo-seguras para acessar configurações de sílabas
+function getMaxSyllables(genreConfig: any): number {
+  const syllableCount = genreConfig?.prosody_rules?.syllable_count
+  
+  if (!syllableCount) return 10 // fallback padrão para hooks
+
+  // Verifica se é do tipo com absolute_max
+  if ('absolute_max' in syllableCount) {
+    return Math.min(syllableCount.absolute_max as number, 10)
+  }
+
+  // Verifica se é do tipo com without_comma
+  if ('without_comma' in syllableCount) {
+    const withoutComma = syllableCount.without_comma as { acceptable_up_to?: number, max?: number }
+    return Math.min(withoutComma.acceptable_up_to || withoutComma.max || 10, 10)
+  }
+
+  // Verifica se é do tipo com with_comma
+  if ('with_comma' in syllableCount) {
+    const withComma = syllableCount.with_comma as { total_max?: number }
+    return Math.min(withComma.total_max || 10, 10)
+  }
+
+  return 10 // fallback
+}
+
+function getMinSyllables(genreConfig: any): number {
+  const syllableCount = genreConfig?.prosody_rules?.syllable_count
+  
+  if (!syllableCount) return 4 // fallback padrão para hooks
+
+  // Verifica se é do tipo com without_comma
+  if ('without_comma' in syllableCount) {
+    const withoutComma = syllableCount.without_comma as { min?: number, acceptable_from?: number }
+    return Math.max(4, withoutComma.min || withoutComma.acceptable_from || 6)
+  }
+
+  // Para outros tipos, usa cálculo base
+  if ('absolute_max' in syllableCount) {
+    const absoluteMax = syllableCount.absolute_max as number
+    return Math.max(4, absoluteMax - 6)
+  }
+
+  return 4 // fallback
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { lyrics, genre, additionalRequirements, advancedMode } = await request.json()
@@ -15,11 +61,10 @@ export async function POST(request: NextRequest) {
     }
 
     const genreConfig = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS]
-    const maxSyllables = Math.min(genreConfig?.prosody_rules?.syllable_count?.absolute_max || 12, 10)
-    const minSyllables = Math.max(
-      4,
-      (genreConfig?.prosody_rules?.syllable_count?.without_comma?.acceptable_from || 6) - 2,
-    )
+    
+    // ✅ USANDO AS FUNÇÕES TIPO-SEGURAS
+    const maxSyllables = getMaxSyllables(genreConfig)
+    const minSyllables = getMinSyllables(genreConfig)
 
     const prompt = `Você é um especialista em criar hooks comerciais para música brasileira.
 
