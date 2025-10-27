@@ -52,6 +52,11 @@ PRIORIDADE ABSOLUTA:
 4. LINGUAGEM COLOQUIAL BRASILEIRA
 5. FÁCIL DE CANTAR JUNTO
 `
+} catch (error) {
+    console.error("[Chorus] ❌ Erro:", error)
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Erro desconhecido" }, { status: 500 })
+  }
+}
 
     const advancedModeRules = advancedMode
       ? `
