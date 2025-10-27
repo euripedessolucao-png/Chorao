@@ -3,8 +3,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
-import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro" // ✅ CORRETO
-import { getGenreMetrics } from "@/lib/metrics/brazilian-metrics"
+import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro"
+import { validateSyllablesByGenre } from "@/lib/validation/absolute-syllable-enforcer" // ✅ Substitui getGenreMetrics
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,10 +14,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Letra é obrigatória" }, { status: 400 })
     }
 
-    const genreMetrics = getGenreMetrics(genre)
-
-    const maxSyllables = Math.min(genreMetrics.syllableRange.max, 10) // Hooks são mais curtos
-    const minSyllables = Math.max(4, genreMetrics.syllableRange.min - 2)
+    // ✅ Obtém métrica diretamente do sistema atual
+    const syllableValidation = validateSyllablesByGenre("", genre || "Sertanejo Moderno")
+    const maxSyllables = Math.min(syllableValidation.maxSyllables, 10) // Hooks são mais curtos
+    const minSyllables = Math.max(4, 6) // Hooks curtos: mínimo seguro
 
     const prompt = `Você é um especialista em criar hooks comerciais para música brasileira.
 
@@ -85,13 +85,12 @@ Retorne APENAS o JSON, sem markdown.`
     let allValid = false
 
     while (attempts < 2 && !allValid) {
-      // ✅ Reduzido para 2 tentativas
       attempts++
 
       const { text } = await generateText({
-        model: "openai/gpt-4o-mini", // ✅ Mais rápido e barato
+        model: "openai/gpt-4o-mini",
         prompt,
-        temperature: 0.85, // Aumentado para máxima criatividade em hooks
+        temperature: 0.85,
       })
 
       try {
@@ -117,7 +116,6 @@ Retorne APENAS o JSON, sem markdown.`
       allValid = true
       const violations: string[] = []
 
-      // ✅ Validação com contador preciso e métrica por gênero
       const mainHookSyllables = countPoeticSyllables(parsedResult.hook)
       if (mainHookSyllables < minSyllables || mainHookSyllables > maxSyllables) {
         allValid = false
@@ -137,7 +135,6 @@ Retorne APENAS o JSON, sem markdown.`
       }
     }
 
-    // ✅ Processamento final
     if (parsedResult.hook) {
       parsedResult.hook = capitalizeLines(parsedResult.hook)
     }
