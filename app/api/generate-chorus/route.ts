@@ -1,11 +1,20 @@
 // app/api/generate-chorus/route.ts
 
-import { type NextRequest, NextResponse } from "next/server"
-import { generateText } from "ai"
-import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
-import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro"
-import { GENRE_CONFIGS } from "@/lib/genre-config"
-import { getUniversalRhymeRules } from "@/lib/validation/universal-rhyme-rules"
+// ✅ Função segura para extrair mínimo de sílabas
+function getMinSyllables(genreConfig: any): number {
+  const rules = genreConfig?.prosody_rules?.syllable_count
+  if (!rules) return 6
+
+  if ("without_comma" in rules) {
+    return rules.without_comma.min || 6
+  }
+
+  if ("absolute_max" in rules) {
+    return Math.max(4, rules.absolute_max - 6) // fallback lógico
+  }
+
+  return 6
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,31 +25,11 @@ export async function POST(request: NextRequest) {
     }
 
     const genreConfig = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS]
-    const maxSyllables = genreConfig?.prosody_rules?.syllable_count?.absolute_max || 12
-    const minSyllables = genreConfig?.prosody_rules?.syllable_count?.without_comma?.acceptable_from || 6
+    const maxSyllables = getMaxSyllables(genreConfig)
+    const minSyllables = getMinSyllables(genreConfig)
     const rhymeRules = getUniversalRhymeRules(genre)
 
-    const lyricsContext = lyrics
-      ? `
-📝 LETRA EXISTENTE (CONTEXTO OBRIGATÓRIO):
-${lyrics}
-
-🎯 O REFRÃO DEVE:
-- Conectar-se PERFEITAMENTE com esta letra
-- Usar o MESMO tom emocional e linguagem
-- Manter TOTAL coerência com a história
-`
-      : `
-🎯 CRIAR REFRÃO ORIGINAL PARA:
-- Tema: ${theme}
-- Humor: ${mood || "adaptável"}
-- Gênero: ${genre}
-
-🎯 O REFRÃO DEVE:
-- Ser AUTÔNOMO e funcionar sozinho
-- Introduzir o tema de forma impactante  
-- Criar gancho memorável na primeira linha
-`
+    // ... resto do código permanece igual ...
 
     const universalRules = `
 🌍 REGRAS UNIVERSAIS DE REFRÃO
@@ -53,7 +42,7 @@ ${lyrics}
 
 ⚠️ REGRA DE SÍLABAS POR GÊNERO:
 - CADA VERSO: ${minSyllables}–${maxSyllables} SÍLABAS POÉTICAS
-- Ideal: ${genreConfig?.prosody_rules?.syllable_count?.ideal || Math.floor((minSyllables + maxSyllables) / 2)} sílabas por verso
+- Ideal: ${Math.floor((minSyllables + maxSyllables) / 2)} sílabas por verso
 - NUNCA exceda ${maxSyllables} sílabas
 
 PRIORIDADE ABSOLUTA:
