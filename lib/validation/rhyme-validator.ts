@@ -1,7 +1,4 @@
-/**
- * Sistema de validação de rimas para música brasileira
- * Baseado em regras de poesia e composição musical brasileira
- */
+// lib/validation/rhyme-validator.ts
 
 export type RhymeType = "rica" | "pobre" | "perfeita" | "toante" | "consoante" | "falsa"
 
@@ -11,147 +8,46 @@ export type RhymeQuality = {
   explanation: string
 }
 
+// ✅ LISTAS EXPANDIDAS: concreto vs. abstrato
+const CONCRETE_NOUNS = new Set([
+  // Objetos físicos
+  "riacho", "viola", "ouro", "terno", "terra", "chuva", "café", "xícara", "cavalo", "porteira",
+  "cidade", "estrada", "carro", "boteco", "cerveja", "prato", "pedágio", "garagem", "choro",
+  "amanhecer", "batida", "espelho", "futuro", "noite", "dia", "sol", "lua", "mar", "céu", "lar",
+  "trabalho", "violão", "sanfona", "boiadeiro", "curral", "chaleira", "fogão", "roda", "pandeiro",
+  "cama", "foto", "celular", "bebida", "bar", "madrugada", "paredão", "zap", "story", "look",
+  "baile", "favela", "quebrada", "nave", "grife", "cruz", "altar", "luz", "caminho", "milagre",
+  "violão", "samba", "bossa", "gente", "Brasil", "corazón", "besos", "noche", "luna", "baile",
+  "pandeiro", "cavaquinho", "feijoada", "zabumba", "triângulo"
+])
+
+const ABSTRACT_NOUNS = new Set([
+  // Conceitos, emoções, estados
+  "liberdade", "paz", "saudade", "alma", "amor", "dor", "coração", "paixão", "solidão", "razão",
+  "ilusão", "emoção", "flor", "valor", "sabor", "temor", "clamor", "fervor", "ardor", "esplendor",
+  "fulgor", "primor", "pudor", "rubor", "torpor", "vigor", "amargor", "candor", "horror", "labor",
+  "licor", "louvor", "motor", "pavor", "rancor", "rigor", "rumor", "suor", "tambor", "tenor",
+  "terror", "traidor", "tremor", "vapor", "verdor", "gratidão", "vida", "luta", "estrada", "presente",
+  "chance", "batida", "futuro", "sonho", "felicidade", "tristeza", "alegria", "esperança", "fé",
+  "confiança", "vitória", "paz", "adoração", "testemunho", "cultura", "identidade", "resistência",
+  "sofrimento", "arrependimento", "perdão", "vingança", "ódio", "ciúmes", "inveja", "vergonha",
+  "orgulho", "humildade", "coragem", "medo", "ansiedade", "depressão", "euforia", "nostalgia"
+])
+
 /**
- * Classes gramaticais para análise de rima rica
+ * Verifica se uma palavra é CONCRETA (objeto físico, ação, lugar)
  */
-const GRAMMATICAL_CLASSES = {
-  substantivos: [
-    "amor",
-    "dor",
-    "coração",
-    "paixão",
-    "solidão",
-    "razão",
-    "ilusão",
-    "canção",
-    "emoção",
-    "flor",
-    "calor",
-    "valor",
-    "sabor",
-    "temor",
-    "clamor",
-    "fervor",
-    "ardor",
-    "esplendor",
-    "fulgor",
-    "primor",
-    "pudor",
-    "rubor",
-    "torpor",
-    "tumor",
-    "vigor",
-    "amargor",
-    "candor",
-    "clamor",
-    "esplendor",
-    "fulgor",
-    "horror",
-    "labor",
-    "licor",
-    "louvor",
-    "motor",
-    "pavor",
-    "rancor",
-    "rigor",
-    "rumor",
-    "suor",
-    "tambor",
-    "temor",
-    "tenor",
-    "terror",
-    "torpor",
-    "traidor",
-    "tremor",
-    "tumor",
-    "vapor",
-    "verdor",
-    "vigor",
-  ],
-  verbos: [
-    "amar",
-    "cantar",
-    "dançar",
-    "sonhar",
-    "chorar",
-    "sofrer",
-    "viver",
-    "morrer",
-    "partir",
-    "sentir",
-    "sorrir",
-    "fugir",
-    "seguir",
-    "pedir",
-    "cair",
-    "sair",
-    "vir",
-    "ir",
-    "dar",
-    "estar",
-    "ficar",
-    "olhar",
-    "falar",
-    "andar",
-    "voltar",
-    "deixar",
-    "passar",
-    "chegar",
-    "levar",
-    "trazer",
-    "fazer",
-    "dizer",
-    "querer",
-    "poder",
-    "saber",
-    "ver",
-    "crer",
-    "ler",
-    "ter",
-    "ser",
-  ],
-  adjetivos: [
-    "belo",
-    "triste",
-    "feliz",
-    "sozinho",
-    "perdido",
-    "amado",
-    "querido",
-    "sofrido",
-    "partido",
-    "ferido",
-    "sentido",
-    "vivido",
-    "morrido",
-    "nascido",
-    "crescido",
-    "conhecido",
-    "desconhecido",
-    "esquecido",
-    "lembrado",
-    "amargo",
-    "doce",
-    "suave",
-    "forte",
-    "fraco",
-    "grande",
-    "pequeno",
-    "novo",
-    "velho",
-    "jovem",
-    "antigo",
-    "moderno",
-    "eterno",
-    "passageiro",
-    "verdadeiro",
-    "falso",
-    "sincero",
-    "puro",
-    "impuro",
-    "claro",
-    "escuro",
-  ],
+function isConcrete(word: string): boolean {
+  const normalized = word.toLowerCase()
+  return CONCRETE_NOUNS.has(normalized)
+}
+
+/**
+ * Verifica se uma palavra é ABSTRATA (conceito, emoção, estado)
+ */
+function isAbstract(word: string): boolean {
+  const normalized = word.toLowerCase()
+  return ABSTRACT_NOUNS.has(normalized)
 }
 
 /**
@@ -172,25 +68,24 @@ function normalizeWord(word: string): string {
 function getGrammaticalClass(word: string): "substantivo" | "verbo" | "adjetivo" | "desconhecido" {
   const normalized = normalizeWord(word)
 
-  if (GRAMMATICAL_CLASSES.substantivos.some((s) => normalized.includes(s) || s.includes(normalized))) {
-    return "substantivo"
-  }
-  if (GRAMMATICAL_CLASSES.verbos.some((v) => normalized.includes(v) || v.includes(normalized))) {
-    return "verbo"
-  }
-  if (GRAMMATICAL_CLASSES.adjetivos.some((a) => normalized.includes(a) || a.includes(normalized))) {
-    return "adjetivo"
-  }
-
-  // Heurísticas adicionais
+  // Sufixos verbais
   if (normalized.endsWith("ar") || normalized.endsWith("er") || normalized.endsWith("ir")) {
     return "verbo"
   }
-  if (normalized.endsWith("mente") || normalized.endsWith("oso") || normalized.endsWith("osa")) {
+
+  // Sufixos de substantivos abstratos
+  const abstractSuffixes = ["ção", "são", "dade", "tude", "agem", "ência", "ância", "ez", "ice"]
+  if (abstractSuffixes.some(suffix => normalized.endsWith(suffix))) {
+    return "substantivo"
+  }
+
+  // Sufixos de adjetivos
+  const adjSuffixes = ["oso", "osa", "ável", "ível", "ente", "ante", "ico", "ica", "ino", "ina"]
+  if (adjSuffixes.some(suffix => normalized.endsWith(suffix))) {
     return "adjetivo"
   }
 
-  return "desconhecido"
+  return "substantivo" // fallback seguro para substantivos
 }
 
 /**
@@ -208,8 +103,6 @@ function getLastWord(line: string): string {
 function getEndingSound(word: string): string {
   const normalized = normalizeWord(word)
   const vowels = "aeiou"
-
-  // Encontra a última vogal
   let lastVowelIndex = -1
   for (let i = normalized.length - 1; i >= 0; i--) {
     if (vowels.includes(normalized[i])) {
@@ -217,11 +110,7 @@ function getEndingSound(word: string): string {
       break
     }
   }
-
-  if (lastVowelIndex === -1) return normalized
-
-  // Retorna do início da última vogal até o final
-  return normalized.slice(lastVowelIndex)
+  return lastVowelIndex !== -1 ? normalized.slice(lastVowelIndex) : normalized
 }
 
 /**
@@ -247,12 +136,25 @@ export function analyzeRhyme(word1: string, word2: string): RhymeQuality {
 
   // Rima Perfeita (Consoante): vogais E consoantes iguais
   if (ending1 === ending2) {
-    // Rima Rica: classes gramaticais diferentes
-    if (class1 !== class2 && class1 !== "desconhecido" && class2 !== "desconhecido") {
+    // ✅ RIMA RICA POR CONTRASTE SEMÂNTICO
+    const isSemanticContrast = 
+      (isConcrete(w1) && isAbstract(w2)) || 
+      (isAbstract(w1) && isConcrete(w2))
+    
+    if (isSemanticContrast) {
       return {
         type: "rica",
         score: 100,
-        explanation: `Rima rica perfeita: ${class1} + ${class2} com som idêntico (${ending1})`,
+        explanation: `Rima rica por contraste: concreto ("${w1}") + abstrato ("${w2}")`
+      }
+    }
+
+    // Rima Rica por classe gramatical diferente
+    if (class1 !== class2 && class1 !== "desconhecido" && class2 !== "desconhecido") {
+      return {
+        type: "rica",
+        score: 90,
+        explanation: `Rima rica: ${class1} + ${class2}`
       }
     }
 
@@ -261,7 +163,7 @@ export function analyzeRhyme(word1: string, word2: string): RhymeQuality {
       return {
         type: "pobre",
         score: 60,
-        explanation: `Rima pobre: ambas são ${class1} com som idêntico (${ending1})`,
+        explanation: `Rima pobre: ambas são ${class1}`
       }
     }
 
@@ -269,77 +171,27 @@ export function analyzeRhyme(word1: string, word2: string): RhymeQuality {
     return {
       type: "perfeita",
       score: 80,
-      explanation: `Rima perfeita: som idêntico (${ending1})`,
+      explanation: `Rima perfeita: som idêntico (${ending1})`
     }
   }
 
   // Rima Toante (Assonante): apenas vogais iguais
   const vowels1 = ending1.replace(/[^aeiou]/g, "")
   const vowels2 = ending2.replace(/[^aeiou]/g, "")
-
   if (vowels1 === vowels2 && vowels1.length > 0) {
     return {
       type: "toante",
       score: 50,
-      explanation: `Rima toante: vogais iguais (${vowels1}) mas consoantes diferentes`,
+      explanation: `Rima toante: vogais iguais (${vowels1})`
     }
   }
 
-  // Rima Falsa: sons muito diferentes
-  const similarity = calculateSimilarity(ending1, ending2)
-  if (similarity < 0.3) {
-    return {
-      type: "falsa",
-      score: 0,
-      explanation: "Não há rima: sons finais muito diferentes",
-    }
-  }
-
-  // Rima Imperfeita
+  // Rima Falsa
   return {
     type: "falsa",
-    score: 20,
-    explanation: "Rima imperfeita: semelhança sonora fraca",
+    score: 0,
+    explanation: "Não há rima: sons finais muito diferentes"
   }
-}
-
-/**
- * Calcula similaridade entre duas strings (0-1)
- */
-function calculateSimilarity(s1: string, s2: string): number {
-  const longer = s1.length > s2.length ? s1 : s2
-  const shorter = s1.length > s2.length ? s2 : s1
-
-  if (longer.length === 0) return 1.0
-
-  const editDistance = levenshteinDistance(longer, shorter)
-  return (longer.length - editDistance) / longer.length
-}
-
-/**
- * Calcula distância de Levenshtein entre duas strings
- */
-function levenshteinDistance(s1: string, s2: string): number {
-  const costs: number[] = []
-  for (let i = 0; i <= s1.length; i++) {
-    let lastValue = i
-    for (let j = 0; j <= s2.length; j++) {
-      if (i === 0) {
-        costs[j] = j
-      } else if (j > 0) {
-        let newValue = costs[j - 1]
-        if (s1.charAt(i - 1) !== s2.charAt(j - 1)) {
-          newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1
-        }
-        costs[j - 1] = lastValue
-        lastValue = newValue
-      }
-    }
-    if (i > 0) {
-      costs[s2.length] = lastValue
-    }
-  }
-  return costs[s2.length]
 }
 
 /**
@@ -359,18 +211,15 @@ export function analyzeLyricsRhymeScheme(lyrics: string): {
   const quality: RhymeQuality[] = []
   let currentLetter = "A"
 
-  // Analisa esquema de rimas
   for (let i = 0; i < lastWords.length; i++) {
     const word = lastWords[i]
     let foundRhyme = false
 
-    // Verifica se rima com alguma palavra anterior
     for (let j = 0; j < i; j++) {
       const prevWord = lastWords[j]
       const rhymeAnalysis = analyzeRhyme(word, prevWord)
 
       if (rhymeAnalysis.score >= 50) {
-        // Rima encontrada
         const letter = scheme[j]
         scheme.push(letter)
         quality.push(rhymeAnalysis)
@@ -380,7 +229,6 @@ export function analyzeLyricsRhymeScheme(lyrics: string): {
     }
 
     if (!foundRhyme) {
-      // Nova rima
       scheme.push(currentLetter)
       currentLetter = String.fromCharCode(currentLetter.charCodeAt(0) + 1)
       quality.push({
@@ -391,23 +239,17 @@ export function analyzeLyricsRhymeScheme(lyrics: string): {
     }
   }
 
-  // Calcula score geral
   const totalScore = quality.reduce((sum, q) => sum + q.score, 0) / quality.length
 
-  // Gera sugestões
   const suggestions: string[] = []
   const richRhymes = quality.filter((q) => q.type === "rica").length
   const poorRhymes = quality.filter((q) => q.type === "pobre").length
-  const falseRhymes = quality.filter((q) => q.type === "falsa").length
 
   if (richRhymes < lines.length * 0.3) {
-    suggestions.push("Aumente o uso de rimas ricas (palavras de classes gramaticais diferentes)")
+    suggestions.push("Aumente o uso de rimas ricas (contraste concreto/abstrato ou classes diferentes)")
   }
   if (poorRhymes > lines.length * 0.5) {
-    suggestions.push("Reduza rimas pobres (mesma classe gramatical) e varie mais")
-  }
-  if (falseRhymes > lines.length * 0.2) {
-    suggestions.push("Corrija rimas falsas ou fracas para melhorar a musicalidade")
+    suggestions.push("Reduza rimas pobres e varie mais com contrastes semânticos")
   }
 
   return {
@@ -434,45 +276,17 @@ export function validateRhymesForGenre(
   const errors: string[] = []
   const warnings: string[] = []
 
-  // Regras específicas por gênero
-  if (genre.toLowerCase().includes("sertanejo raiz")) {
-    // Sertanejo Raiz: EXIGE rimas ricas
-    const richRhymePercentage = analysis.quality.filter((q) => q.type === "rica").length / analysis.quality.length
+  const genreLower = genre.toLowerCase()
 
+  if (genreLower.includes("raiz")) {
+    const richRhymePercentage = analysis.quality.filter((q) => q.type === "rica").length / analysis.quality.length
     if (richRhymePercentage < 0.5) {
-      errors.push(
-        `Sertanejo Raiz exige pelo menos 50% de rimas ricas. Atual: ${(richRhymePercentage * 100).toFixed(0)}%`,
-      )
+      errors.push(`Sertanejo Raiz exige ≥50% rimas ricas. Atual: ${(richRhymePercentage * 100).toFixed(0)}%`)
     }
-
-    const falseRhymes = analysis.quality.filter((q) => q.type === "falsa" && q.score === 0)
-    if (falseRhymes.length > 0) {
-      errors.push(`Sertanejo Raiz não aceita rimas falsas. Encontradas: ${falseRhymes.length}`)
-    }
-  } else if (genre.toLowerCase().includes("sertanejo moderno")) {
-    // Sertanejo Moderno: permite algumas rimas falsas, mas prefere ricas
+  } else if (genreLower.includes("sertanejo")) {
     const richRhymePercentage = analysis.quality.filter((q) => q.type === "rica").length / analysis.quality.length
-
     if (richRhymePercentage < 0.3) {
-      warnings.push(
-        `Sertanejo Moderno prefere pelo menos 30% de rimas ricas. Atual: ${(richRhymePercentage * 100).toFixed(0)}%`,
-      )
-    }
-
-    const falseRhymes = analysis.quality.filter((q) => q.type === "falsa" && q.score === 0)
-    if (falseRhymes.length > analysis.quality.length * 0.2) {
-      warnings.push(`Muitas rimas falsas para Sertanejo Moderno: ${falseRhymes.length}`)
-    }
-  } else if (genre.toLowerCase().includes("mpb")) {
-    // MPB: exige alta qualidade de rimas
-    if (analysis.score < 70) {
-      warnings.push(`MPB exige rimas de alta qualidade. Score atual: ${analysis.score.toFixed(0)}`)
-    }
-  } else if (genre.toLowerCase().includes("pagode") || genre.toLowerCase().includes("samba")) {
-    // Pagode/Samba: rimas devem ser naturais e fluidas
-    const poorRhymes = analysis.quality.filter((q) => q.type === "pobre")
-    if (poorRhymes.length > analysis.quality.length * 0.6) {
-      warnings.push("Pagode/Samba: varie mais as rimas para evitar monotonia")
+      warnings.push(`Sertanejo prefere ≥30% rimas ricas. Atual: ${(richRhymePercentage * 100).toFixed(0)}%`)
     }
   }
 
