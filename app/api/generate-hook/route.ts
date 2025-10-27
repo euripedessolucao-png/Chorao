@@ -63,10 +63,8 @@ export async function POST(request: NextRequest) {
     const genreConfig = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS]
     
     // ✅ USANDO AS FUNÇÕES TIPO-SEGURAS
-    const maxSyllables = getMaxSyllables(genreConfig)
-    const minSyllables = getMinSyllables(genreConfig)
-
-    const prompt = `Você é um especialista em criar hooks comerciais para música brasileira.
+    
+        const prompt = `Você é um especialista em criar hooks comerciais para música brasileira.
 
 TAREFA: Analise a letra abaixo e crie 3 variações de hooks ultra-memoráveis.
 
