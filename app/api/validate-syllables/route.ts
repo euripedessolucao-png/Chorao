@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { validateLyricsSyllables } from "@/lib/validation/syllable-counter-brasileiro"
+import { AbsoluteSyllableEnforcer } from "@/lib/validation/absolute-syllable-enforcer"
 
 export async function POST(request: Request) {
   try {

@@ -13,6 +13,7 @@ import { LineStacker } from "@/lib/utils/line-stacker"
 import { enhanceLyricsRhymes } from "@/lib/validation/rhyme-enhancer"
 import { validateRhymesForGenre } from "@/lib/validation/rhyme-validator"
 import { validateSyllablesByGenre } from "@/lib/validation/absolute-syllable-enforcer" // ✅
+import { AbsoluteSyllableEnforcer } from "@/lib/validation/absolute-syllable-enforcer"
 
 export async function POST(request: NextRequest) {
   try {
