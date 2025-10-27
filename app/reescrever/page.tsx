@@ -27,7 +27,7 @@ import { GenreSelect } from "@/components/genre-select"
 import { HookGenerator } from "@/components/hook-generator"
 import { SyllableValidator } from "@/components/syllable-validator"
 import { RhymeAnalyzer } from "@/components/rhyme-analyzer"
-import { getGenreMetrics } from "@/lib/metrics/brazilian-metrics"
+
 
 const GENRE_QUALITY_CONFIG = {
   Sertanejo: { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
