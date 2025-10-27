@@ -1,6 +1,35 @@
 // app/api/generate-chorus/route.ts
+import { type NextRequest, NextResponse } from "next/server"
+import { generateText } from "ai"
+import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
+import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro"
+import { GENRE_CONFIGS } from "@/lib/genre-config"
+import { getUniversalRhymeRules } from "@/lib/validation/universal-rhyme-rules"
 
-// ✅ Função segura para extrair mínimo de sílabas
+// ✅ Função segura para extrair limite de sílabas (NOVA)
+function getMaxSyllables(genreConfig: any): number {
+  const rules = genreConfig?.prosody_rules?.syllable_count
+  if (!rules) return 12
+
+  // Caso 1: absolute_max existe (Sertanejo Moderno, Raiz, etc.)
+  if ("absolute_max" in rules) {
+    return rules.absolute_max
+  }
+
+  // Caso 2: without_comma existe (Sertanejo Universitário, Forró, etc.)
+  if ("without_comma" in rules) {
+    return rules.without_comma.acceptable_up_to || 12
+  }
+
+  // Caso 3: with_comma existe
+  if ("with_comma" in rules) {
+    return rules.with_comma.total_max || 12
+  }
+
+  return 12
+}
+
+// ✅ Função segura para extrair mínimo de sílabas (NOVA)
 function getMinSyllables(genreConfig: any): number {
   const rules = genreConfig?.prosody_rules?.syllable_count
   if (!rules) return 6
@@ -25,12 +54,35 @@ export async function POST(request: NextRequest) {
     }
 
     const genreConfig = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS]
+    
+    // ✅ USANDO AS NOVAS FUNÇÕES MELHORADAS
     const maxSyllables = getMaxSyllables(genreConfig)
     const minSyllables = getMinSyllables(genreConfig)
     const rhymeRules = getUniversalRhymeRules(genre)
 
-    // ... resto do código permanece igual ...
+    const lyricsContext = lyrics
+      ? `
+📝 LETRA EXISTENTE (CONTEXTO OBRIGATÓRIO):
+${lyrics}
 
+🎯 O REFRÃO DEVE:
+- Conectar-se PERFEITAMENTE com esta letra
+- Usar o MESMO tom emocional e linguagem
+- Manter TOTAL coerência com a história
+`
+      : `
+🎯 CRIAR REFRÃO ORIGINAL PARA:
+- Tema: ${theme}
+- Humor: ${mood || "adaptável"}
+- Gênero: ${genre}
+
+🎯 O REFRÃO DEVE:
+- Ser AUTÔNOMO e funcionar sozinho
+- Introduzir o tema de forma impactante  
+- Criar gancho memorável na primeira linha
+`
+
+    // ✅ ATUALIZANDO AS REGRAS UNIVERSAIS COM AS NOVAS FUNÇÕES
     const universalRules = `
 🌍 REGRAS UNIVERSAIS DE REFRÃO
 
@@ -52,11 +104,6 @@ PRIORIDADE ABSOLUTA:
 4. LINGUAGEM COLOQUIAL BRASILEIRA
 5. FÁCIL DE CANTAR JUNTO
 `
-} catch (error) {
-    console.error("[Chorus] ❌ Erro:", error)
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Erro desconhecido" }, { status: 500 })
-  }
-}
 
     const advancedModeRules = advancedMode
       ? `
