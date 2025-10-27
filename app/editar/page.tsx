@@ -1,5 +1,7 @@
 "use client"
 
+import React from "react" // ✅ ADICIONE ESTA LINHA
+import { useState, useEffect } from "react"
 import { useState, useEffect } from "react"
 import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
