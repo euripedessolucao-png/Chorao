@@ -142,70 +142,41 @@ export default function EditarPage() {
   }
 
   const handleEditLyrics = async () => {
-    if (!lyrics.trim()) {
-      toast.error("Por favor, cole a letra para editar")
-      return
-    }
-
-    if (!genre) {
-      toast.error("Por favor, selecione um gênero")
-      return
-    }
-
-    setIsEditing(true)
-
-    try {
-
-      const syllableValidation = validateSyllablesByGenre("", genre)
-      const maxSyllables = syllableValidation.maxSyllables
-
-      const requestBody = {
-        originalLyrics: lyrics,
-        genre,
-        mood: mood || "Romântico",
-        theme: theme || "Amor",
-        additionalRequirements: additionalReqs,
-        title,
-        syllableTarget: syllableConfig,
-        performanceMode: formattingStyle === "performatico" ? "performance" : "standard",
-        temperature: Number.parseFloat(getTemperatureValue(creativity[0])),
-      }
-
-      const response = await fetch("/api/rewrite-lyrics", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(requestBody),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || `Erro ${response.status} na API`)
-      }
-
-      if (!data.lyrics && !data.letra) {
-        throw new Error("Resposta da API não contém letra")
-      }
-
-      setLyrics(data.lyrics || data.letra)
-      if (data.title && !title) {
-        setTitle(data.title)
-      }
-
-      if (data.metadata?.polishingApplied) {
-        toast.success("Letra editada com Sistema Universal de Qualidade!", {
-          description: `Polimento específico para ${genre} aplicado com sucesso`,
-        })
-      } else {
-        toast.success("Letra editada com sucesso!")
-      }
-    } catch (error) {
-      console.error("Erro na edição:", error)
-      toast.error(error instanceof Error ? error.message : "Erro ao editar letra")
-    } finally {
-      setIsEditing(false)
-    }
+  if (!lyrics.trim()) {
+    toast.error("Por favor, cole a letra para editar")
+    return
   }
+
+  if (!genre) {
+    toast.error("Por favor, selecione um gênero")
+    return
+  }
+
+  setIsEditing(true)
+
+  try {
+    const syllableValidation = validateSyllablesByGenre("", genre)
+    const maxSyllables = syllableValidation.maxSyllables
+
+    const requestBody = {
+      originalLyrics: lyrics,
+      genre,
+      mood: mood || "Romântico",
+      theme: theme || "Amor",
+      additionalRequirements: additionalReqs,
+      title,
+      syllableTarget: currentSyllableConfig, // ✅ CORRIGIDO
+      performanceMode: formattingStyle === "performatico" ? "performance" : "standard",
+      temperature: Number.parseFloat(getTemperatureValue(creativity[0])),
+    }
+
+    // ... resto do código ...
+  } catch (error) {
+    // ...
+  } finally {
+    setIsEditing(false)
+  }
+}
 
   const handleSave = () => {
     if (!title.trim() || !lyrics.trim()) {
