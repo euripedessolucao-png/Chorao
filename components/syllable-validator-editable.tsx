@@ -11,6 +11,14 @@ import { CheckCircle, AlertTriangle, XCircle, Edit2, Check, X } from "lucide-rea
 import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro" // ✅ CORRETO
 import { toast } from "sonner"
 
+// ✅ NOVO
+interface SyllableValidatorEditableProps {
+  lyrics: string
+  onLyricsChange: (lyrics: string) => void
+  maxSyllables: number
+  genre: string // ✅ Adicione esta linha
+}
+
 interface LineValidation {
   line: string
   syllables: number
