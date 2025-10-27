@@ -15,7 +15,6 @@ import { Slider } from "@/components/ui/slider"
 import { RefreshCw, Sparkles, Trash2, Search, Save, Copy } from "lucide-react"
 import { toast } from "sonner"
 import { GenreSelect } from "@/components/genre-select"
-import { getGenreMetrics } from "@/lib/metrics/brazilian-metrics"
 import { SyllableValidator } from "@/components/syllable-validator"
 import { RhymeAnalyzer } from "@/components/rhyme-analyzer"
 
