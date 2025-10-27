@@ -28,6 +28,7 @@ import { HookGenerator } from "@/components/hook-generator"
 import { SyllableValidatorEditable } from "@/components/syllable-validator-editable"
 import { RhymeAnalyzer } from "@/components/rhyme-analyzer"
 import { ProcessingStatus } from "@/components/processing-status"
+import { validateSyllablesByGenre } from "@/lib/validation/absolute-syllable-enforcer"
 
 const GENRE_QUALITY_CONFIG = {
   Sertanejo: { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },

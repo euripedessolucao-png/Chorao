@@ -17,6 +17,7 @@ import { toast } from "sonner"
 import { GenreSelect } from "@/components/genre-select"
 import { SyllableValidator } from "@/components/syllable-validator"
 import { RhymeAnalyzer } from "@/components/rhyme-analyzer"
+import { validateSyllablesByGenre } from "@/lib/validation/absolute-syllable-enforcer"
 
 const MOODS = ["Feliz", "Triste", "Nostálgico", "Romântico", "Animado", "Melancólico"]
 const EMOTIONS = [
