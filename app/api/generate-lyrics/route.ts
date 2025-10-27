@@ -9,7 +9,6 @@ import {
   shouldUsePerformanceFormat,
 } from "@/lib/formatters/sertanejo-performance-formatter"
 import { formatInstrumentationForAI } from "@/lib/normalized-genre"
-import { AbsoluteSyllableEnforcer } from "@/lib/validation/absolute-syllable-enforcer"
 import { LineStacker } from "@/lib/utils/line-stacker"
 import { enhanceLyricsRhymes } from "@/lib/validation/rhyme-enhancer"
 import { validateRhymesForGenre } from "@/lib/validation/rhyme-validator"
