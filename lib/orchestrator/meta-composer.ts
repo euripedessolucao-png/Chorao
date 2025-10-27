@@ -10,7 +10,7 @@ import {
 import { PunctuationValidator } from "@/lib/validation/punctuation-validator"
 import { LineStacker } from "@/lib/utils/line-stacker"
 import { LyricsAuditor } from "@/lib/validation/lyrics-auditor"
-import { getGenreMetrics } from "@/lib/metrics/brazilian-metrics"
+import { GENRE_CONFIGS } from "@/lib/genre-config"
 import { AbsoluteSyllableEnforcer } from "@/lib/validation/absolute-syllable-enforcer"
 import { enhanceLyricsRhymes } from "@/lib/validation/rhyme-enhancer"
 import { validateRhymesForGenre } from "@/lib/validation/rhyme-validator"
@@ -91,13 +91,14 @@ export class MetaComposer {
    * GERA LETRA COM PROMPT ESTRUTURADO E CLARO
    */
   private static async generateLyrics(request: CompositionRequest): Promise<string> {
-    const metrics = getGenreMetrics(request.genre)
-    const maxSyllables = Math.min(metrics.syllableRange.max, this.MAX_SYLLABLES)
+    const genreConfig = GENRE_CONFIGS[request.genre as keyof typeof GENRE_CONFIGS]
+    const maxSyllables = Math.min(genreConfig?.prosody_rules?.syllable_count?.absolute_max || 12, this.MAX_SYLLABLES)
+    const minSyllables = genreConfig?.prosody_rules?.syllable_count?.without_comma?.acceptable_from || 6
 
     const prompt = `Você é um compositor profissional de hits brasileiros.
 
 REGRAS ABSOLUTAS:
-- Cada verso deve ter ENTRE ${metrics.syllableRange.min} E ${maxSyllables} SÍLABAS
+- Cada verso deve ter ENTRE ${minSyllables} E ${maxSyllables} SÍLABAS
 - Use contrações naturais: "você" → "cê", "para" → "pra", "estou" → "tô"
 - Evite clichês: "coraçãozinho", "lágrimas no rosto", "viola caipira"
 - Mantenha a naturalidade da fala cantada
@@ -136,13 +137,14 @@ RETORNE APENAS A LETRA, SEM EXPLICAÇÕES.`
   private static async rewriteLyrics(request: CompositionRequest): Promise<string> {
     if (!request.originalLyrics) throw new Error("Original lyrics required")
 
-    const metrics = getGenreMetrics(request.genre)
-    const maxSyllables = Math.min(metrics.syllableRange.max, this.MAX_SYLLABLES)
+    const genreConfig = GENRE_CONFIGS[request.genre as keyof typeof GENRE_CONFIGS]
+    const maxSyllables = Math.min(genreConfig?.prosody_rules?.syllable_count?.absolute_max || 12, this.MAX_SYLLABLES)
+    const minSyllables = genreConfig?.prosody_rules?.syllable_count?.without_comma?.acceptable_from || 6
 
     const prompt = `Reescreva esta letra musical para o gênero "${request.genre}", mantendo o significado mas:
 
 REGRAS:
-- Cada verso: ${metrics.syllableRange.min}–${maxSyllables} sílabas
+- Cada verso: ${minSyllables}–${maxSyllables} sílabas
 - Use contrações naturais ("cê", "pra", "tô")
 - Remova clichês e torne mais natural
 - Adicione elementos visuais se possível
@@ -189,6 +191,8 @@ RETORNE APENAS A LETRA REESCRITA, SEM EXPLICAÇÕES.`
     const lines = lyrics.split("\n")
     const correctedLines: string[] = []
 
+    const genreConfig = GENRE_CONFIGS[request.genre as keyof typeof GENRE_CONFIGS]
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]
       if (this.shouldSkipLine(line)) {
@@ -198,21 +202,14 @@ RETORNE APENAS A LETRA REESCRITA, SEM EXPLICAÇÕES.`
 
       try {
         const context = this.buildContext(lines, i, request.theme)
-        const corrected = await applyTerceiraViaToLine(
-          line,
-          i,
-          context,
-          request.genre,
-          getGenreMetrics(request.genre),
-          {
-            isPerformanceMode: request.performanceMode === "performance",
-            additionalRequirements: request.additionalRequirements || "",
-          },
-        )
+        const corrected = await applyTerceiraViaToLine(line, i, context, request.genre, genreConfig, {
+          isPerformanceMode: request.performanceMode === "performance",
+          additionalRequirements: request.additionalRequirements || "",
+        })
         correctedLines.push(corrected)
       } catch (error) {
         console.warn(`[TerceiraVia] Fallback na linha ${i}`)
-        correctedLines.push(line) // mantém original em erro
+        correctedLines.push(line)
       }
     }
 
@@ -269,8 +266,8 @@ RETORNE APENAS A LETRA REESCRITA, SEM EXPLICAÇÕES.`
    * GARANTIA FINAL DE SÍLABAS (sem IA, só lógica local)
    */
   private static enforceSyllableLimits(lyrics: string, genre: string): string {
-    const metrics = getGenreMetrics(genre)
-    const maxSyllables = Math.min(metrics.syllableRange.max, this.MAX_SYLLABLES)
+    const genreConfig = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS]
+    const maxSyllables = Math.min(genreConfig?.prosody_rules?.syllable_count?.absolute_max || 12, this.MAX_SYLLABLES)
 
     return lyrics
       .split("\n")

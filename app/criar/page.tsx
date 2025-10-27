@@ -25,9 +25,8 @@ import {
 import { EMOTIONS } from "@/lib/genres"
 import { GenreSelect } from "@/components/genre-select"
 import { HookGenerator } from "@/components/hook-generator"
-import { SyllableValidator } from "@/components/syllable-validator"
+import { SyllableValidatorEditable } from "@/components/syllable-validator-editable"
 import { RhymeAnalyzer } from "@/components/rhyme-analyzer"
-import { getGenreMetrics } from "@/lib/metrics/brazilian-metrics"
 import { ProcessingStatus } from "@/components/processing-status"
 
 const GENRE_QUALITY_CONFIG = {
@@ -122,7 +121,6 @@ export default function CriarPage() {
     setIsGenerating(true)
 
     try {
-      const genreMetrics = getGenreMetrics(genre)
       const syllableConfig = getSyllableConfig(genre)
 
       const response = await fetch("/api/generate-lyrics", {
@@ -751,27 +749,11 @@ export default function CriarPage() {
                     className="font-mono text-xs"
                   />
 
-                  <SyllableValidator
+                  <SyllableValidatorEditable
                     lyrics={lyrics}
-                    maxSyllables={currentSyllableConfig?.max || 11}
-                    onValidate={(result) => {
-                      if (!result.valid) {
-                        console.log(`⚠️ ${result.linesWithIssues} versos com problemas:`)
-                        result.violations.forEach((v) => {
-                          console.log(`  Linha ${v.line}: "${v.text}" → ${v.syllables} sílabas`)
-                        })
-
-                        const minSyllables = currentSyllableConfig?.min || 7
-                        const maxSyllables = currentSyllableConfig?.max || 11
-
-                        toast.warning(`${result.linesWithIssues} versos fora do padrão ${genre}`, {
-                          description: `Use ${minSyllables}-${maxSyllables} sílabas`,
-                          duration: 5000,
-                        })
-                      } else if (result.totalLines > 0) {
-                        toast.success(`Letra validada: ${result.totalLines} versos dentro do padrão ${genre}`)
-                      }
-                    }}
+                    onLyricsChange={setLyrics}
+                    maxSyllables={currentSyllableConfig?.max || 12}
+                    genre={genre}
                   />
 
                   <RhymeAnalyzer

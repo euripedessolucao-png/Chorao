@@ -3,8 +3,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
-import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro" // ✅ CORRETO
-import { getGenreMetrics } from "@/lib/metrics/brazilian-metrics"
+import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro"
+import { GENRE_CONFIGS } from "@/lib/genre-config"
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,10 +14,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Letra é obrigatória" }, { status: 400 })
     }
 
-    const genreMetrics = getGenreMetrics(genre)
-
-    const maxSyllables = Math.min(genreMetrics.syllableRange.max, 10) // Hooks são mais curtos
-    const minSyllables = Math.max(4, genreMetrics.syllableRange.min - 2)
+    const genreConfig = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS]
+    const maxSyllables = Math.min(genreConfig?.prosody_rules?.syllable_count?.absolute_max || 12, 10)
+    const minSyllables = Math.max(
+      4,
+      (genreConfig?.prosody_rules?.syllable_count?.without_comma?.acceptable_from || 6) - 2,
+    )
 
     const prompt = `Você é um especialista em criar hooks comerciais para música brasileira.
 

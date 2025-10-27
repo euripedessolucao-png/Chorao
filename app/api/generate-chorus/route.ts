@@ -3,8 +3,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
-import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro" // ✅ CORRETO
-import { getGenreMetrics } from "@/lib/metrics/brazilian-metrics"
+import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro"
+import { GENRE_CONFIGS } from "@/lib/genre-config"
 import { getUniversalRhymeRules } from "@/lib/validation/universal-rhyme-rules"
 
 export async function POST(request: NextRequest) {
@@ -15,13 +15,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Gênero e tema são obrigatórios" }, { status: 400 })
     }
 
-    const genreMetrics = getGenreMetrics(genre)
-
-    const maxSyllables = Math.min(genreMetrics.syllableRange.max, 12)
-    const minSyllables = genreMetrics.syllableRange.min
+    const genreConfig = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS]
+    const maxSyllables = genreConfig?.prosody_rules?.syllable_count?.absolute_max || 12
+    const minSyllables = genreConfig?.prosody_rules?.syllable_count?.without_comma?.acceptable_from || 6
     const rhymeRules = getUniversalRhymeRules(genre)
 
-    // ✅ Contexto flexível
     const lyricsContext = lyrics
       ? `
 📝 LETRA EXISTENTE (CONTEXTO OBRIGATÓRIO):
@@ -55,7 +53,7 @@ ${lyrics}
 
 ⚠️ REGRA DE SÍLABAS POR GÊNERO:
 - CADA VERSO: ${minSyllables}–${maxSyllables} SÍLABAS POÉTICAS
-- Ideal: ${genreMetrics.syllableRange.ideal || Math.floor((minSyllables + maxSyllables) / 2)} sílabas por verso
+- Ideal: ${genreConfig?.prosody_rules?.syllable_count?.ideal || Math.floor((minSyllables + maxSyllables) / 2)} sílabas por verso
 - NUNCA exceda ${maxSyllables} sílabas
 
 PRIORIDADE ABSOLUTA:
@@ -121,11 +119,10 @@ Gere as 5 variações de REFRÃO DE HIT agora:`
     let allValid = false
 
     while (attempts < 2 && !allValid) {
-      // ✅ Reduzido para 2 tentativas
       attempts++
 
       const { text } = await generateText({
-        model: "openai/gpt-4o-mini", // ✅ Mais rápido e barato
+        model: "openai/gpt-4o-mini",
         prompt,
         temperature: 0.85,
       })
@@ -166,7 +163,6 @@ Gere as 5 variações de REFRÃO DE HIT agora:`
       }
     }
 
-    // ✅ Processamento final
     if (result?.variations) {
       result.variations = result.variations.map((v: any) => ({
         ...v,
