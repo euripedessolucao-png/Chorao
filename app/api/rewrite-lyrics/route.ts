@@ -13,7 +13,7 @@ import { AbsoluteSyllableEnforcer } from "@/lib/validation/absolute-syllable-enf
 import { LineStacker } from "@/lib/utils/line-stacker"
 import { enhanceLyricsRhymes } from "@/lib/validation/rhyme-enhancer"
 import { validateRhymesForGenre } from "@/lib/validation/rhyme-validator"
-import { validateSyllablesByGenre } from "@/lib/validation/absolute-syllable-enforcer" // ✅ Import da validação por gênero
+import { validateSyllablesByGenre } from "@/lib/validation/absolute-syllable-enforcer"
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,7 +27,6 @@ export async function POST(request: NextRequest) {
       performanceMode = "standard",
     } = await request.json()
 
-    // Validação robusta
     if (!originalLyrics?.trim()) {
       return NextResponse.json({ error: "Letra original é obrigatória" }, { status: 400 })
     }
@@ -37,10 +36,10 @@ export async function POST(request: NextRequest) {
 
     console.log(`[API] 🎵 Reescrevendo letra para: ${genre}`)
 
-    // ✅ Obtém métrica DIRETAMENTE do genre-config.ts
+    // ✅ Usa validateSyllablesByGenre como fonte única da verdade
     const syllableValidation = validateSyllablesByGenre("", genre)
     const maxSyllables = syllableValidation.maxSyllables
-    const minSyllables = 8 // padrão seguro; pode ser refinado se necessário
+    const minSyllables = 8
 
     const rhymeRules = getUniversalRhymeRules(genre)
     const genreRules = buildGenreRulesPrompt(genre)
@@ -93,7 +92,6 @@ Retorne APENAS a letra reescrita, sem explicações.`
 
     let finalLyrics = capitalizeLines(text)
 
-    // Remove explicações da IA
     finalLyrics = finalLyrics
       .split("\n")
       .filter(
@@ -105,7 +103,6 @@ Retorne APENAS a letra reescrita, sem explicações.`
       .join("\n")
       .trim()
 
-    // Validação e melhoria de rimas
     console.log("[API] 🎵 Validando qualidade das rimas...")
     const rhymeValidation = validateRhymesForGenre(finalLyrics, genre)
     if (!rhymeValidation.valid || rhymeValidation.warnings.length > 0) {
@@ -117,7 +114,6 @@ Retorne APENAS a letra reescrita, sem explicações.`
       }
     }
 
-    // ✅ Correção de sílabas com limite por gênero
     console.log("[API] 🔧 Aplicando correção automática de sílabas...")
     const enforcementResult = AbsoluteSyllableEnforcer.validateAndFix(finalLyrics)
     if (enforcementResult.corrections > 0) {
@@ -125,7 +121,6 @@ Retorne APENAS a letra reescrita, sem explicações.`
       finalLyrics = enforcementResult.correctedLyrics
     }
 
-    // Empilhamento e formatação
     console.log("[API] 📚 Empilhando versos...")
     const stackingResult = LineStacker.stackLines(finalLyrics)
     if (stackingResult.improvements.length > 0) {
@@ -142,7 +137,7 @@ Retorne APENAS a letra reescrita, sem explicações.`
     const instrumentation = formatInstrumentationForAI(genre, finalLyrics)
     finalLyrics = `${finalLyrics}\n\n${instrumentation}`
 
-    // ✅ Validação final usando o mesmo limite do gênero
+    // ✅ Validação final com o mesmo sistema usado no front-end
     const finalValidation = validateSyllablesByGenre(finalLyrics, genre)
     const validityRatio = finalValidation.violations.length === 0 ? 1 : 0
     const finalScore = Math.round(validityRatio * 100)
