@@ -1,6 +1,7 @@
 /**
  * VALIDADOR DE INTEGRIDADE DE VERSOS
- *
+ * 
+ * AGORA COM AS MESMAS REGRAS INTELIGENTES DO REWRITER
  * Detecta problemas além da contagem de sílabas:
  * - Versos incompletos (sem verbo, muito curtos)
  * - Versos quebrados (aspas abertas, vírgulas soltas)
@@ -28,28 +29,43 @@ export interface VerseValidationResult {
 const ABSOLUTE_MAX_SYLLABLES = 11
 
 /**
- * Detecta se um verso está incompleto ou quebrado
+ * ✅ DETECTA VERSOS INCOMPLETOS COM AS MESMAS REGRAS DO REWRITER
  */
 function detectBrokenVerse(text: string): string[] {
   const issues: string[] = []
   const trimmed = text.trim()
 
-  // Verso muito curto (menos de 3 palavras)
-  const words = trimmed.split(/\s+/).filter((w) => w.length > 0)
-  if (words.length < 3) {
-    issues.push("Verso muito curto (menos de 3 palavras)")
+  // Remove tags inline e aspas para análise (mesma lógica do rewriter)
+  const cleanLine = trimmed
+    .replace(/\[.*?\]/g, "")
+    .replace(/\(.*?\)/g, "")
+    .replace(/^"|"$/g, "")
+    .trim()
+
+  if (!cleanLine) return issues
+
+  const words = cleanLine.split(/\s+/).filter(w => w.length > 0)
+  
+  // ✅ REGRAS IDÊNTICAS AO REWRITER
+  const isIncomplete = 
+    words.length < 3 || // Menos de 3 palavras
+    /[,-]$/.test(cleanLine) || // Termina com vírgula ou traço
+    /\b(e|do|por|me|te|em|a|o|de|da|no|na|com|se|tão|que|um|uma|uns|umas)\s*$/i.test(cleanLine) // Termina com preposição
+
+  if (isIncomplete) {
+    if (words.length < 3) {
+      issues.push("Verso muito curto (menos de 3 palavras)")
+    } else if (/[,-]$/.test(cleanLine)) {
+      issues.push("Termina com pontuação incompleta")
+    } else {
+      const match = cleanLine.match(/\b(e|do|por|me|te|em|a|o|de|da|no|na|com|se|tão|que|um|uma)\s*$/i)
+      issues.push(`Termina com preposição/artigo: "${match?.[0]}"`)
+    }
   }
 
-  // Versos como "Vou medo, sem falha!" ou "Você decote um charme"
-  const hasInvalidStructure = /\b(vou|vai|você|ele|ela)\s+(sem|com|de|da|do)\s+\w+\b/i.test(trimmed)
-  if (hasInvalidStructure && !hasValidVerb(trimmed)) {
-    issues.push("Estrutura gramatical inválida (falta verbo principal)")
-  }
-
-  // "Vou um dia calou..." ou "Mas um desastre alarde!"
-  const hasIncompletePhrase = /\b(vou|vai|mas|e|ou)\s+\w+\s+(calou|alarde|decote)\b/i.test(trimmed)
-  if (hasIncompletePhrase) {
-    issues.push("Frase incompleta ou sem sentido")
+  // Verifica palavras cortadas (terminam com hífen)
+  if (cleanLine.match(/\w+-$/)) {
+    issues.push("Palavra cortada no final do verso")
   }
 
   // Aspas abertas sem fechar
@@ -58,73 +74,36 @@ function detectBrokenVerse(text: string): string[] {
     issues.push("Aspas não fechadas")
   }
 
-  // Vírgula no final sem continuação
-  if (trimmed.endsWith(",")) {
-    issues.push("Vírgula no final sugere verso incompleto")
-  }
-
   // Começa com letra minúscula (pode indicar continuação de verso anterior)
-  if (trimmed.length > 0 && trimmed[0] === trimmed[0].toLowerCase() && !/^[0-9]/.test(trimmed)) {
+  if (cleanLine.length > 0 && cleanLine[0] === cleanLine[0].toLowerCase() && !/^[0-9]/.test(cleanLine)) {
     issues.push("Começa com minúscula (possível continuação)")
   }
 
-  // Termina com preposição ou artigo (verso incompleto)
-  const lastWord = words[words.length - 1]?.toLowerCase()
-  const incompletEndings = [
-    "de",
-    "da",
-    "do",
-    "das",
-    "dos",
-    "em",
-    "na",
-    "no",
-    "nas",
-    "nos",
-    "a",
-    "o",
-    "as",
-    "os",
-    "um",
-    "uma",
-    "uns",
-    "umas",
-    "para",
-    "por",
-    "com",
-    "sem",
-  ]
-  if (lastWord && incompletEndings.includes(lastWord)) {
-    issues.push(`Termina com "${lastWord}" (verso incompleto)`)
-  }
-
-  if (!hasValidVerb(trimmed) && words.length >= 3) {
-    issues.push("Sem verbo identificável ou verbo mal conjugado")
+  // Verifica estrutura gramatical básica (apenas para versos mais longos)
+  if (words.length >= 4 && !hasValidStructure(cleanLine)) {
+    issues.push("Estrutura gramatical fraca ou sem verbo claro")
   }
 
   return issues
 }
 
-function hasValidVerb(text: string): boolean {
-  // Verbos comuns em português (presente, passado, futuro, gerúndio, infinitivo)
-  const verbPatterns = [
-    // Verbos ser/estar
-    /\b(sou|é|são|era|eram|foi|foram|será|serão|sendo|ser|estou|está|estão|estava|estavam|esteve|estiveram|estará|estarão|estando|estar)\b/i,
-    // Verbos ter/haver
-    /\b(tenho|tem|têm|tinha|tinham|teve|tiveram|terá|terão|tendo|ter|há|havia|houve|haverá|havendo|haver)\b/i,
-    // Verbos fazer/ir/vir
-    /\b(faço|faz|fazem|fazia|faziam|fez|fizeram|fará|farão|fazendo|fazer|vou|vai|vão|ia|iam|foi|foram|irá|irão|indo|ir|venho|vem|vêm|vinha|vinham|veio|vieram|virá|virão|vindo|vir)\b/i,
-    // Verbos querer/poder/dever
-    /\b(quero|quer|querem|queria|queriam|quis|quiseram|quererá|quererão|querendo|querer|posso|pode|podem|podia|podiam|pôde|puderam|poderá|poderão|podendo|poder|devo|deve|devem|devia|deviam|deveu|deveram|deverá|deverão|devendo|dever)\b/i,
-    // Verbos regulares -ar
-    /\b\w+(ando|ar|ava|avam|ou|aram|ará|arão|aria|ariam)\b/i,
-    // Verbos regulares -er
-    /\b\w+(endo|er|ia|iam|eu|eram|erá|erão|eria|eriam)\b/i,
-    // Verbos regulares -ir
-    /\b\w+(indo|ir|ia|iam|iu|iram|irá|irão|iria|iriam)\b/i,
+/**
+ * Verifica se o verso tem estrutura válida (versão simplificada)
+ */
+function hasValidStructure(text: string): boolean {
+  // Padrões de frases completas comuns em música brasileira
+  const validPatterns = [
+    // Padrão sujeito + verbo + complemento
+    /\b(eu|você|ele|ela|nós|eles|a gente|o coração|a vida|o amor|a fé)\s+\w+[aei](\s+\w+){1,3}/i,
+    // Padrão verbo + complemento
+    /\b(sinto|vejo|creio|acho|quero|posso|devo|vou|sei|amo|adoro|agradeço)\s+\w+(\s+\w+){1,3}/i,
+    // Frases com "que" completas
+    /\b(que)\s+\w+\s+\w+(\s+\w+){1,2}/i,
+    // Expressões completas comuns
+    /\b(é|são|era|foi|está|fica|vai|tem|houve)\s+\w+(\s+\w+){1,3}/i
   ]
 
-  return verbPatterns.some((pattern) => pattern.test(text))
+  return validPatterns.some(pattern => pattern.test(text))
 }
 
 /**
@@ -140,8 +119,12 @@ export function validateVerseIntegrity(lyrics: string): VerseValidationResult {
   lines.forEach((line, index) => {
     const trimmed = line.trim()
 
-    // Ignora linhas vazias, tags e instruções
-    if (!trimmed || trimmed.startsWith("[") || trimmed.startsWith("(") || trimmed.includes("Instrumental")) {
+    // ✅ MESMA LÓGICA DE IGNORAR TAGS DO REWRITER
+    if (!trimmed || 
+        trimmed.startsWith("### [") || 
+        trimmed.startsWith("(Instrumentation)") || 
+        trimmed.startsWith("(Genre)") ||
+        trimmed.includes("Instrumental")) {
       return
     }
 
@@ -161,7 +144,7 @@ export function validateVerseIntegrity(lyrics: string): VerseValidationResult {
       })
     }
 
-    // AVISO: Verso quebrado/incompleto
+    // AVISO: Verso quebrado/incompleto (usando regras do rewriter)
     if (verseIssues.length > 0) {
       brokenVerses++
       issues.push({
@@ -169,7 +152,7 @@ export function validateVerseIntegrity(lyrics: string): VerseValidationResult {
         text: trimmed,
         issues: verseIssues,
         syllables,
-        severity: "warning",
+        severity: verseIssues.some(issue => issue.includes("❌")) ? "error" : "warning",
       })
     }
   })
@@ -181,6 +164,117 @@ export function validateVerseIntegrity(lyrics: string): VerseValidationResult {
     brokenVerses,
     longVerses,
   }
+}
+
+/**
+ * ✅ CORRETOR INTELIGENTE - REPLICA EXATAMENTE A LÓGICA DO REWRITER
+ */
+export function smartFixIncompleteLines(lyrics: string): string {
+  console.log("[VerseIntegrity] 🔧 Aplicando correção inteligente")
+  
+  const lines = lyrics.split('\n')
+  const fixedLines: string[] = []
+  
+  let corrections = 0
+
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i].trim()
+    
+    // Ignora tags e metadata - MESMA LÓGICA DO REWRITER
+    if (!line || line.startsWith('### [') || line.startsWith('(Instrumentation)') || line.startsWith('(Genre)')) {
+      fixedLines.push(line)
+      continue
+    }
+
+    // Remove aspas se existirem - MESMA LÓGICA
+    line = line.replace(/^"|"$/g, '').trim()
+    
+    const cleanLine = line.replace(/\[.*?\]/g, "").replace(/\(.*?\)/g, "").trim()
+    if (!cleanLine) {
+      fixedLines.push(line)
+      continue
+    }
+
+    const words = cleanLine.split(/\s+/).filter(w => w.length > 0)
+    
+    // ✅ DETECTA VERSOS INCOMPLETOS COM MESMAS REGRAS
+    const isIncomplete = 
+      words.length < 3 || // Menos de 3 palavras
+      /[,-]$/.test(cleanLine) || // Termina com vírgula ou traço
+      /\b(e|do|por|me|te|em|a|o|de|da|no|na|com|se|tão|que|um|uma|uns|umas)\s*$/i.test(cleanLine) // Termina com preposição
+
+    if (isIncomplete && words.length > 0) {
+      console.log(`[VerseIntegrity] 📝 Ajustando verso: "${cleanLine}"`)
+      
+      let fixedLine = line
+      
+      // Remove pontuação problemática - MESMA LÓGICA
+      fixedLine = fixedLine.replace(/[,-]\s*$/, '').trim()
+      
+      // ✅ COMPLETAMENTO INTELIGENTE BASEADO NO CONTEXTO - MESMA LÓGICA
+      const lastWord = words[words.length - 1].toLowerCase()
+      
+      // Completamentos contextuais para música brasileira - MESMA TABELA
+      const completions: Record<string, string> = {
+        'coração': 'aberto e grato',
+        'vida': 'que recebo de Ti',
+        'gratidão': 'transbordando em mim',
+        'amor': 'que nunca falha',
+        'fé': 'que me sustenta',
+        'alegria': 'que inunda minha alma',
+        'paz': 'que acalma o coração',
+        'força': 'para seguir em frente',
+        'luz': 'que ilumina meu caminho',
+        'esperança': 'que renova meus dias',
+        'sorriso': 'no rosto iluminado',
+        'caminho': 'abençoado por Deus',
+        'dom': 'divino que recebi',
+        'alma': 'que se renova em paz',
+        'essência': 'divina do amor',
+        'canção': 'que canto com fervor',
+        'mão': 'amiga que me guia',
+        'razão': 'do meu viver aqui',
+        'lar': 'eterno nos céus',
+        'lição': 'que levo pra vida'
+      }
+      
+      if (completions[lastWord]) {
+        fixedLine += ' ' + completions[lastWord]
+      } else {
+        // Completamento genérico natural para música brasileira - MESMA LÓGICA
+        const genericCompletions = [
+          'com muito amor',
+          'e gratidão',
+          'pra sempre vou lembrar',
+          'nunca vou esquecer',
+          'é o que sinto agora',
+          'me faz feliz demais',
+          'que Deus me concedeu'
+        ]
+        const randomCompletion = genericCompletions[Math.floor(Math.random() * genericCompletions.length)]
+        fixedLine += ' ' + randomCompletion
+      }
+      
+      // Garante pontuação final adequada - MESMA LÓGICA
+      if (!/[.!?]$/.test(fixedLine)) {
+        fixedLine = fixedLine.replace(/[.,;:]$/, '') + '.'
+      }
+      
+      // Restaura aspas se necessário - MESMA LÓGICA
+      if (lines[i].trim().startsWith('"')) {
+        fixedLine = `"${fixedLine}"`
+      }
+      
+      console.log(`[VerseIntegrity] ✅ CORRIGIDO: "${fixedLine}"`)
+      fixedLines.push(fixedLine)
+      corrections++
+    } else {
+      fixedLines.push(line)
+    }
+  }
+
+  console.log(`[VerseIntegrity] 🎉 CORREÇÃO CONCLUÍDA: ${corrections} versos corrigidos`)
+  return fixedLines.join('\n')
 }
 
 /**
@@ -203,10 +297,25 @@ export function formatValidationReport(result: VerseValidationResult): string {
 
   report += `\nDetalhes:\n`
   result.issues.forEach((issue) => {
-    report += `\nLinha ${issue.line}: "${issue.text}"\n`
+    const icon = issue.severity === "error" ? "❌" : "⚠️"
+    report += `\n${icon} Linha ${issue.line}: "${issue.text}"\n`
     report += `  Sílabas: ${issue.syllables}\n`
     issue.issues.forEach((i) => (report += `  • ${i}\n`))
   })
 
   return report
+}
+
+/**
+ * Função auxiliar para correção rápida
+ */
+export function quickFixLyrics(lyrics: string): { fixed: string; corrections: number } {
+  const originalLines = lyrics.split('\n').filter(line => line.trim()).length
+  const fixed = smartFixIncompleteLines(lyrics)
+  const fixedLines = fixed.split('\n').filter(line => line.trim()).length
+  
+  return {
+    fixed,
+    corrections: Math.max(0, fixedLines - originalLines)
+  }
 }
