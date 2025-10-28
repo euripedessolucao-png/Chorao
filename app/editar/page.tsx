@@ -14,6 +14,16 @@ import { Slider } from "@/components/ui/slider"
 import { toast } from "sonner"
 import { GenreSelect } from "@/components/genre-select"
 import { validateSyllablesByGenre } from "@/lib/validation/absolute-syllable-enforcer"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { ChorusGenerator } from "@/components/chorus-generator"
+import { Wand2 } from "lucide-react"
 
 const MOODS = ["Feliz", "Triste", "Nostálgico", "Romântico", "Animado", "Melancólico"]
 const EMOTIONS = [
@@ -91,6 +101,8 @@ export default function EditarPage() {
   const [universalPolish, setUniversalPolish] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
   const [savedInspirations, setSavedInspirations] = useState<Array<{ text: string; timestamp: number }>>([])
+  const [showChorusDialog, setShowChorusDialog] = useState(false)
+  const [selectedChoruses, setSelectedChoruses] = useState<any[]>([])
 
   const getSyllableConfig = (selectedGenre: string) => {
     const config =
@@ -262,6 +274,33 @@ export default function EditarPage() {
       setTitle("")
       toast.success("Letra limpa")
     }
+  }
+
+  const handleGenerateChorus = () => {
+    if (!genre || !theme) {
+      toast.error("Selecione gênero e tema antes de gerar o refrão")
+      return
+    }
+    setShowChorusDialog(true)
+  }
+
+  const handleSelectChoruses = (choruses: any[]) => {
+    setSelectedChoruses(choruses)
+  }
+
+  const handleApplyChoruses = () => {
+    if (selectedChoruses.length === 0) {
+      toast.error("Selecione pelo menos um refrão")
+      return
+    }
+
+    const chorusText = selectedChoruses.map((c) => c.chorus.replace(/\s\/\s/g, "\n")).join("\n\n")
+    const updatedReqs = additionalReqs ? `${additionalReqs}\n\n[CHORUS]\n${chorusText}` : `[CHORUS]\n${chorusText}`
+
+    setAdditionalReqs(updatedReqs)
+    setShowChorusDialog(false)
+
+    toast.success("Refrão(ões) adicionado(s) aos requisitos!")
   }
 
   const getTemperatureValue = (sliderValue: number) => {
@@ -477,6 +516,17 @@ export default function EditarPage() {
               <p className="text-xs text-muted-foreground">Cole sua letra aqui e visualize as alterações sugeridas.</p>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
+              <Button
+                variant="outline"
+                className="w-full bg-transparent justify-start"
+                size="sm"
+                onClick={handleGenerateChorus}
+                disabled={!genre || !theme || isEditing}
+              >
+                <Wand2 className="h-4 w-4 mr-2" />
+                Gerar Refrão
+              </Button>
+
               <div className="flex items-center gap-2">
                 <Label className="text-xs font-semibold">Título</Label>
                 <Input
@@ -527,6 +577,33 @@ export default function EditarPage() {
           </Card>
         </div>
       </div>
+
+      <Dialog open={showChorusDialog} onOpenChange={setShowChorusDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Gerador de Refrão</DialogTitle>
+            <DialogDescription>
+              A IA gerará automaticamente 5 refrões com notas. Selecione até 2 para adicionar aos requisitos.
+            </DialogDescription>
+          </DialogHeader>
+          <ChorusGenerator
+            genre={genre}
+            theme={theme}
+            mood={mood}
+            onSelectChorus={handleSelectChoruses}
+            showSelectionMode={true}
+            maxSelection={2}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowChorusDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleApplyChoruses} disabled={selectedChoruses.length === 0}>
+              Adicionar aos Requisitos ({selectedChoruses.length})
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
