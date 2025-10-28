@@ -210,7 +210,6 @@ export function countPoeticSyllables(line: string): number {
   return Math.max(1, total)
 }
 
-// Exportações para compatibilidade
 export const countPortugueseSyllables = countPoeticSyllables
 
 export interface SyllableValidationResult {

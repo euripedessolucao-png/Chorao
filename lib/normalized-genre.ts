@@ -181,7 +181,7 @@ export function formatInstrumentationForAI(genre: string, lyrics?: string): stri
   // Remove duplicatas e capitaliza
   const uniqueInstruments = Array.from(new Set(translatedInstruments))
 
-  return `\n\n---\n[Instrumentation]\nGenre: ${normalizedGenre}\nInstruments: ${uniqueInstruments.join(", ")}\n---`
+  return `\n\n(Instrumentation)\n(Genre: ${normalizedGenre})\n(Instruments: ${uniqueInstruments.join(", ")})`
 }
 
 /**

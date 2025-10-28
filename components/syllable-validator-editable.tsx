@@ -73,7 +73,15 @@ export function SyllableValidatorEditable({
   lines.forEach((line, index) => {
     const trimmedLine = line.trim()
 
-    const shouldSkip = !trimmedLine || trimmedLine.startsWith("[") || /^$$[^)]*$$$/.test(trimmedLine) // Ignora linhas que são apenas (parênteses)
+    const shouldSkip =
+      !trimmedLine ||
+      trimmedLine.startsWith("[") ||
+      /^$$[^)]*$$$/.test(trimmedLine) || // Linha que é apenas (parênteses)
+      trimmedLine.startsWith("Genre:") ||
+      trimmedLine.startsWith("Instrumentos:") ||
+      trimmedLine.startsWith("Instruments:") ||
+      trimmedLine.startsWith("Tema:") ||
+      trimmedLine.startsWith("---")
 
     if (!shouldSkip) {
       // ✅ Arquitetura correta: countPoeticSyllables() do syllable-counter-brasileiro.ts
