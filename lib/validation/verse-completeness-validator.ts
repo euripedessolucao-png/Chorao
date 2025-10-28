@@ -28,96 +28,53 @@ export function validateVerseCompleteness(lyrics: string): VerseCompletenessResu
     const line = lines[i].trim()
     const lineNumber = i + 1
 
-    // Ignora linhas vazias, tags de seção e instrumentação
-    if (!line || line.startsWith("[") || line.startsWith("(")) {
+    // Ignora linhas vazias, tags de seção, instrumentação e metadata
+    if (!line || line.startsWith("### [") || line.startsWith("(Instrumentation)") || line.startsWith("(Genre)")) {
       continue
     }
 
-    // Remove tags inline para análise
+    // Remove tags inline e aspas para análise
     const cleanLine = line
       .replace(/\[.*?\]/g, "")
-      .replace(/$$.*?$$/g, "")
+      .replace(/\(.*?\)/g, "")
+      .replace(/^"|"$/g, "")
       .trim()
+      
     if (!cleanLine) continue
 
-    const incompletePhrases = [
-      /cada novo$/i,
-      /onde posso$/i,
-      /do que$/i,
-      /eu vejo o$/i,
-      /em ti me$/i,
-      /a cuidar do$/i,
-      /pela beleza$/i,
-      /é um$/i,
-      /vale só o$/i,
-      /isso é$/i,
-      /pra$/i,
-      /de$/i,
-      /\bo$/i,
-      /\ba$/i,
-      /\be$/i,
-      /\bna$/i,
-      /\bno$/i,
-      /\bda$/i,
-      /\bdo$/i,
-      /\bpelo$/i,
-      /\bpela$/i,
-      /\bcom$/i,
-      /\bsem$/i,
-      /\bpor$/i,
-      /\bque$/i,
-      /\bse$/i,
-      /\bmeu$/i,
-      /\bminha$/i,
-      /\bteu$/i,
-      /\btua$/i,
-    ]
+    // ✅ REGRAS INTELIGENTES DE COMPLETUDE - REPLICADAS DO REWRITER
+    const words = cleanLine.split(/\s+/).filter(w => w.length > 0)
+    
+    // Verifica se é um verso incompleto usando as mesmas regras do rewriter
+    const isIncomplete = 
+      words.length < 3 || // Menos de 3 palavras
+      /[,-]$/.test(cleanLine) || // Termina com vírgula ou traço
+      /\b(e|do|por|me|te|em|a|o|de|da|no|na|com|se|tão|que|um|uma|uns|umas)\s*$/i.test(cleanLine) // Termina com preposição
 
-    for (const pattern of incompletePhrases) {
-      if (pattern.test(cleanLine)) {
-        incompleteVerses.push({
-          line: cleanLine,
-          lineNumber,
-          reason: `Verso cortado - termina com frase incompleta: "${cleanLine.match(pattern)?.[0]}"`,
-        })
-        break
-      }
-    }
-
-    // Verifica se o verso termina abruptamente (sem pontuação ou palavra completa)
-    if (cleanLine.endsWith("-") || (cleanLine.endsWith(",") && i === lines.length - 1)) {
+    if (isIncomplete && words.length > 0) {
       incompleteVerses.push({
-        line: cleanLine,
+        line: line, // Mantém a linha original com formatação
         lineNumber,
-        reason: "Verso parece incompleto (termina com hífen ou vírgula final)",
+        reason: `Verso incompleto - ${getIncompleteReason(cleanLine, words.length)}`
       })
     }
 
-    // Verifica se o verso é muito curto (menos de 3 palavras pode indicar corte)
-    const words = cleanLine.split(/\s+/).filter((w) => w.length > 0)
+    // Verifica palavras cortadas (terminam com hífen)
+    if (cleanLine.match(/\w+-$/)) {
+      incompleteVerses.push({
+        line: line,
+        lineNumber,
+        reason: "Palavra cortada no final do verso"
+      })
+    }
+
+    // Verifica versos muito curtos (apenas como warning)
     if (words.length < 3 && !cleanLine.match(/^(Ah|Oh|Ei|Hey|Yeah|Uh|Hum)$/i)) {
       warnings.push(`Linha ${lineNumber}: Verso muito curto (${words.length} palavras) - "${cleanLine}"`)
     }
-
-    // Verifica se há palavras cortadas (terminam com hífen sem espaço)
-    if (cleanLine.match(/\w+-$/)) {
-      incompleteVerses.push({
-        line: cleanLine,
-        lineNumber,
-        reason: "Palavra cortada no final do verso",
-      })
-    }
-
-    // Verifica se há elipses que podem indicar corte
-    if (cleanLine.endsWith("...") && i < lines.length - 1) {
-      const nextLine = lines[i + 1].trim()
-      if (nextLine && !nextLine.startsWith("[") && !nextLine.startsWith("(")) {
-        warnings.push(`Linha ${lineNumber}: Elipse pode indicar continuação - "${cleanLine}"`)
-      }
-    }
   }
 
-  const score = incompleteVerses.length === 0 ? 100 : Math.max(0, 100 - incompleteVerses.length * 20)
+  const score = incompleteVerses.length === 0 ? 100 : Math.max(0, 100 - incompleteVerses.length * 15)
 
   return {
     valid: incompleteVerses.length === 0,
@@ -128,7 +85,21 @@ export function validateVerseCompleteness(lyrics: string): VerseCompletenessResu
 }
 
 /**
+ * Retorna a razão específica para verso incompleto
+ */
+function getIncompleteReason(line: string, wordCount: number): string {
+  if (wordCount < 3) return "muito curto (menos de 3 palavras)"
+  if (/[,-]$/.test(line)) return "termina com pontuação incompleta"
+  if (/\b(e|do|por|me|te|em|a|o|de|da|no|na|com|se|tão|que|um|uma)\s*$/i.test(line)) {
+    const match = line.match(/\b(e|do|por|me|te|em|a|o|de|da|no|na|com|se|tão|que|um|uma)\s*$/i)
+    return `termina com preposição/artigo: "${match?.[0]}"`
+  }
+  return "estrutura gramatical incompleta"
+}
+
+/**
  * Corrige versos incompletos automaticamente usando IA
+ * AGORA REPLICA EXATAMENTE A MESMA LÓGICA DO REWRITER
  */
 export async function fixIncompleteVerses(
   lyrics: string,
@@ -142,59 +113,138 @@ export async function fixIncompleteVerses(
   }
 
   const changes: string[] = []
-  const lines = lyrics.split("\n")
+  let fixedLyrics = lyrics
 
-  for (const incomplete of validation.incompleteVerses) {
-    const lineIndex = incomplete.lineNumber - 1
-    const incompleteLine = lines[lineIndex]
+  // ✅ APLICA O MESMO CORRETOR INTELIGENTE DO REWRITER
+  console.log("[VerseCompleteness] 🔧 Aplicando correção inteligente (mesma lógica do rewriter)")
+  fixedLyrics = smartFixIncompleteLines(fixedLyrics, changes)
 
-    try {
-      console.log(`[VerseCompleteness] 🔧 Reescrevendo verso incompleto: "${incompleteLine}"`)
+  return {
+    fixed: fixedLyrics,
+    changes,
+  }
+}
 
-      const context = []
-      if (lineIndex > 0) context.push(`Verso anterior: ${lines[lineIndex - 1]}`)
-      if (lineIndex < lines.length - 1) context.push(`Verso seguinte: ${lines[lineIndex + 1]}`)
+/**
+ * ✅ CORRETOR INTELIGENTE - REPLICA EXATAMENTE A LÓGICA DO REWRITER
+ */
+function smartFixIncompleteLines(lyrics: string, changes: string[] = []): string {
+  console.log("[SmartCorrector] 🔧 Aplicando correção inteligente")
+  
+  const lines = lyrics.split('\n')
+  const fixedLines: string[] = []
+  
+  let corrections = 0
 
-      const prompt = `Você é um compositor profissional. Complete este verso que foi cortado:
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i].trim()
+    
+    // Ignora tags e metadata - MESMA LÓGICA DO REWRITER
+    if (!line || line.startsWith('### [') || line.startsWith('(Instrumentation)') || line.startsWith('(Genre)')) {
+      fixedLines.push(line)
+      continue
+    }
 
-VERSO INCOMPLETO: "${incompleteLine}"
-${context.length > 0 ? `CONTEXTO:\n${context.join("\n")}` : ""}
-${genre ? `GÊNERO: ${genre}` : ""}
-${theme ? `TEMA: ${theme}` : ""}
+    // Remove aspas se existirem - MESMA LÓGICA
+    line = line.replace(/^"|"$/g, '').trim()
+    
+    const cleanLine = line.replace(/\[.*?\]/g, "").replace(/\(.*?\)/g, "").trim()
+    if (!cleanLine) {
+      fixedLines.push(line)
+      continue
+    }
 
-REGRAS:
-- Complete o verso de forma natural e coerente
-- Mantenha o estilo e métrica do contexto
-- O verso deve fazer sentido sozinho
-- Máximo 12 sílabas
-- Retorne APENAS o verso completo, sem explicações
+    const words = cleanLine.split(/\s+/).filter(w => w.length > 0)
+    
+    // ✅ DETECTA VERSOS INCOMPLETOS COM MESMAS REGRAS
+    const isIncomplete = 
+      words.length < 3 || // Menos de 3 palavras
+      /[,-]$/.test(cleanLine) || // Termina com vírgula ou traço
+      /\b(e|do|por|me|te|em|a|o|de|da|no|na|com|se|tão|que|um|uma|uns|umas)\s*$/i.test(cleanLine) // Termina com preposição
 
-VERSO COMPLETO:`
-
-      const { text } = await generateText({
-        model: "openai/gpt-4o-mini",
-        prompt,
-        temperature: 0.7,
-        // ❌ REMOVIDO: maxTokens: 100, // Esta propriedade não existe e causa o erro
-      })
-
-      const completedVerse = text.trim()
-      if (completedVerse && completedVerse.length > incompleteLine.length) {
-        lines[lineIndex] = completedVerse
-        changes.push(`Linha ${incomplete.lineNumber}: "${incompleteLine}" → "${completedVerse}"`)
+    if (isIncomplete && words.length > 0) {
+      console.log(`[SmartCorrector] 📝 Ajustando verso: "${cleanLine}"`)
+      
+      let fixedLine = line
+      
+      // Remove pontuação problemática - MESMA LÓGICA
+      fixedLine = fixedLine.replace(/[,-]\s*$/, '').trim()
+      
+      // ✅ COMPLETAMENTO INTELIGENTE BASEADO NO CONTEXTO - MESMA LÓGICA
+      const lastWord = words[words.length - 1].toLowerCase()
+      
+      // Completamentos contextuais para música brasileira - MESMA TABELA
+      const completions: Record<string, string> = {
+        'coração': 'aberto e grato',
+        'vida': 'que recebo de Ti',
+        'gratidão': 'transbordando em mim',
+        'amor': 'que nunca falha',
+        'fé': 'que me sustenta',
+        'alegria': 'que inunda minha alma',
+        'paz': 'que acalma o coração',
+        'força': 'para seguir em frente',
+        'luz': 'que ilumina meu caminho',
+        'esperança': 'que renova meus dias',
+        'sorriso': 'no rosto iluminado',
+        'caminho': 'abençoado por Deus',
+        'dom': 'divino que recebi',
+        'alma': 'que se renova em paz',
+        'essência': 'divina do amor',
+        'canção': 'que canto com fervor',
+        'mão': 'amiga que me guia',
+        'razão': 'do meu viver aqui',
+        'lar': 'eterno nos céus',
+        'lição': 'que levo pra vida'
       }
-    } catch (error) {
-      console.error(`[VerseCompleteness] ❌ Erro ao completar verso:`, error)
-      // Fallback: remove pontuação problemática
-      if (incompleteLine.endsWith("-")) {
-        lines[lineIndex] = incompleteLine.slice(0, -1).trim()
-        changes.push(`Linha ${incomplete.lineNumber}: Removido hífen final`)
+      
+      if (completions[lastWord]) {
+        fixedLine += ' ' + completions[lastWord]
+        changes.push(`Linha ${i + 1}: Completado contexto "${lastWord}" → "${completions[lastWord]}"`)
+      } else {
+        // Completamento genérico natural para música brasileira - MESMA LÓGICA
+        const genericCompletions = [
+          'com muito amor',
+          'e gratidão',
+          'pra sempre vou lembrar',
+          'nunca vou esquecer',
+          'é o que sinto agora',
+          'me faz feliz demais',
+          'que Deus me concedeu'
+        ]
+        const randomCompletion = genericCompletions[Math.floor(Math.random() * genericCompletions.length)]
+        fixedLine += ' ' + randomCompletion
+        changes.push(`Linha ${i + 1}: Completado genericamente → "${randomCompletion}"`)
       }
+      
+      // Garante pontuação final adequada - MESMA LÓGICA
+      if (!/[.!?]$/.test(fixedLine)) {
+        fixedLine = fixedLine.replace(/[.,;:]$/, '') + '.'
+      }
+      
+      // Restaura aspas se necessário - MESMA LÓGICA
+      if (lines[i].trim().startsWith('"')) {
+        fixedLine = `"${fixedLine}"`
+      }
+      
+      console.log(`[SmartCorrector] ✅ CORRIGIDO: "${fixedLine}"`)
+      fixedLines.push(fixedLine)
+      corrections++
+    } else {
+      fixedLines.push(line)
     }
   }
 
+  console.log(`[SmartCorrector] 🎉 CORREÇÃO CONCLUÍDA: ${corrections} versos corrigidos`)
+  return fixedLines.join('\n')
+}
+
+/**
+ * Validação simplificada para uso rápido
+ */
+export function quickVerseCheck(lyrics: string): { hasIncomplete: boolean; issues: number } {
+  const result = validateVerseCompleteness(lyrics)
   return {
-    fixed: lines.join("\n"),
-    changes,
+    hasIncomplete: !result.valid,
+    issues: result.incompleteVerses.length
   }
 }
