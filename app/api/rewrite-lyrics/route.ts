@@ -29,14 +29,14 @@ function getMaxSyllables(genre: string): number {
   return 12
 }
 
-// ✅ CORRETOR SUPER AGRESSIVO - ELIMINA VERSOS INCOMPLETOS
+// ✅ CORRETOR SUPER AGRESSIVO - CORRIGIDO
 function aggressivelyFixIncompleteLines(lyrics: string): string {
   console.log("[Corrector] 🚨 INICIANDO CORREÇÃO AGRESSIVA DE VERSOS INCOMPLETOS")
   
   const lines = lyrics.split('\n')
   const fixedLines: string[] = []
   
-  // ✅ PADRÕES DE CORREÇÃO BASEADOS NO CONTEXTO
+  // ✅ PADRÕES DE CORREÇÃO - SEM DUPLICAÇÕES
   const completionPatterns: { [key: string]: string } = {
     'diante': 'de Ti',
     'aberto,': 'e grato',
@@ -46,9 +46,8 @@ function aggressivelyFixIncompleteLines(lyrics: string): string {
     'viver e de': 'amar em Ti',
     'fonte': 'de vida',
     'trazendo': 'renovação',
-    'que': 'acalma',
     'tão': 'puro',
-    'que': 'criaste',
+    'criaste': 'o universo',
     'por': 'cada mar',
     'é': 'nosso lar',
     'posso': 'receber',
@@ -58,13 +57,11 @@ function aggressivelyFixIncompleteLines(lyrics: string): string {
     'meu': 'coração',
     'quero': 'cantar',
     'Tua': 'presença',
-    'meu': 'viver',
     'em': 'amor',
     'Tu': 'estás aqui',
     'o Teu': 'caminho',
     'meu': 'irmão',
     'que é': 'Teu dom',
-    'que é': 'belo',
     'com': 'Tua criação',
     'de': 'filho Teu',
     'sempre': 'fiel'
@@ -85,8 +82,9 @@ function aggressivelyFixIncompleteLines(lyrics: string): string {
     const lastWord = cleanLine.split(/\s+/).pop()?.toLowerCase() || ''
     
     // ✅ DETECTA SE É VERSO INCOMPLETO
+    const incompleteWords = ['que', 'do', 'por', 'me', 'te', 'em', 'a', 'o', 'de', 'da', 'no', 'na', 'com', 'se', 'tão', 'e', 'diante', 'aberto', 'vida', 'fonte', 'trazendo', 'cada', 'meu', 'Tua', 'sempre']
     const isIncomplete = 
-      (lastWord && ['que', 'do', 'por', 'me', 'te', 'em', 'a', 'o', 'de', 'da', 'no', 'na', 'com', 'se', 'tão', 'e', 'diante', 'aberto', 'vida', 'fonte', 'trazendo', 'cada', 'meu', 'Tua', 'sempre'].includes(lastWord)) ||
+      (lastWord && incompleteWords.includes(lastWord)) ||
       cleanLine.endsWith(',') ||
       cleanLine.endsWith('-') ||
       (cleanLine.split(/\s+/).filter(w => w.length > 0).length < 3)
@@ -108,6 +106,8 @@ function aggressivelyFixIncompleteLines(lyrics: string): string {
       } else {
         // Completamento genérico baseado no contexto
         if (lastWord === 'que') fixedLine += ' Deus me deu'
+        else if (lastWord === 'do') fixedLine += ' Senhor'
+        else if (lastWord === 'por') fixedLine += ' tudo'
         else if (lastWord === 'me') fixedLine += ' guia'
         else if (lastWord === 'te') fixedLine += ' amo'
         else if (lastWord === 'de') fixedLine += ' amor'
