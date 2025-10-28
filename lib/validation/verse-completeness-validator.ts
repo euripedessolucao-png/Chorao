@@ -35,6 +35,36 @@ export function validateVerseCompleteness(lyrics: string): VerseCompletenessResu
     const cleanLine = line.replace(/\[.*?\]/g, "").trim()
     if (!cleanLine) continue
 
+    // Verifica se o verso termina com palavras incompletas comuns
+    const incompletePhrases = [
+      /cada novo$/i,
+      /onde posso$/i,
+      /do que$/i,
+      /eu vejo o$/i,
+      /em ti me$/i,
+      /a cuidar do$/i,
+      /pela beleza$/i,
+      /é um$/i,
+      /vale só o$/i,
+      /isso é$/i,
+      /pra$/i,
+      /de$/i,
+      /o$/i,
+      /a$/i,
+      /e$/i,
+    ]
+
+    for (const pattern of incompletePhrases) {
+      if (pattern.test(cleanLine)) {
+        incompleteVerses.push({
+          line: cleanLine,
+          lineNumber,
+          reason: `Verso cortado - termina com frase incompleta: "${cleanLine.match(pattern)?.[0]}"`,
+        })
+        break
+      }
+    }
+
     // Verifica se o verso termina abruptamente (sem pontuação ou palavra completa)
     if (cleanLine.endsWith("-") || cleanLine.endsWith(",")) {
       incompleteVerses.push({

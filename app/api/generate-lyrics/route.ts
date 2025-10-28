@@ -46,7 +46,15 @@ export async function POST(request: NextRequest) {
 ⚠️ REQUISITOS ADICIONAIS (OBRIGATÓRIOS - NÃO PODEM SER IGNORADOS):
 ${additionalRequirements}
 
-ATENÇÃO: Você DEVE seguir TODOS os requisitos adicionais acima. Eles são OBRIGATÓRIOS e têm prioridade sobre qualquer outra instrução. Se houver conflito, os requisitos adicionais prevalecem.
+ATENÇÃO CRÍTICA SOBRE HOOKS E REFRÕES ESCOLHIDOS:
+- Se houver [HOOK] nos requisitos acima, você DEVE usar esse hook LITERALMENTE na música
+- Se houver [CHORUS] ou [REFRÃO] nos requisitos acima, você DEVE usar esse refrão LITERALMENTE como O REFRÃO da música
+- NÃO crie um novo refrão se já foi fornecido um - USE O FORNECIDO
+- NÃO crie um novo hook se já foi fornecido um - USE O FORNECIDO
+- Os VERSOS devem ser escritos para COMPLETAR e CONECTAR com o hook/refrão escolhido
+- A letra deve ser construída EM TORNO do hook/refrão fornecido, não ignorá-lo
+- Você DEVE seguir TODOS os outros requisitos adicionais acima
+- Os requisitos adicionais têm prioridade ABSOLUTA sobre qualquer outra instrução
 `
       : ""
 
@@ -79,6 +87,10 @@ ${
 }
 
 REGRAS:
+- NUNCA corte versos no meio - cada verso DEVE ser completo e terminar com palavra completa
+- NUNCA deixe frases incompletas como "cada novo" ou "onde posso" ou "do que"
+- Cada verso deve fazer sentido sozinho e ter um final claro
+- Se um verso não cabe na métrica, REESCREVA-O completamente, não corte no meio
 - Refrão memorável e repetível
 - Linguagem brasileira autêntica
 - Evite clichês ("coraçãozinho", "lágrimas no rosto")

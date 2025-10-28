@@ -49,13 +49,15 @@ export async function POST(request: NextRequest) {
 ⚠️ REQUISITOS ADICIONAIS (OBRIGATÓRIOS - NÃO PODEM SER IGNORADOS):
 ${additionalRequirements}
 
-ATENÇÃO CRÍTICA SOBRE HOOKS E REFRÕES:
-- Se houver [HOOK] ou [CHORUS] nos requisitos acima, você deve USAR COMO INSPIRAÇÃO/REFERÊNCIA
-- NÃO copie literalmente o texto do [HOOK] ou [CHORUS] para dentro da letra
-- INTEGRE a ideia/conceito do hook/chorus de forma natural na composição
-- O hook/chorus fornecido é uma DIRETRIZ CRIATIVA, não um texto para copiar e colar
+ATENÇÃO CRÍTICA SOBRE HOOKS E REFRÕES ESCOLHIDOS:
+- Se houver [HOOK] nos requisitos acima, você DEVE usar esse hook LITERALMENTE na música
+- Se houver [CHORUS] ou [REFRÃO] nos requisitos acima, você DEVE usar esse refrão LITERALMENTE como O REFRÃO da música
+- NÃO crie um novo refrão se já foi fornecido um - USE O FORNECIDO
+- NÃO crie um novo hook se já foi fornecido um - USE O FORNECIDO
+- Os VERSOS devem ser escritos para COMPLETAR e CONECTAR com o hook/refrão escolhido
+- A letra deve ser construída EM TORNO do hook/refrão fornecido, não ignorá-lo
 - Você DEVE seguir TODOS os outros requisitos adicionais acima
-- Os requisitos adicionais têm prioridade sobre qualquer outra instrução
+- Os requisitos adicionais têm prioridade ABSOLUTA sobre qualquer outra instrução
 `
       : ""
 
@@ -95,8 +97,10 @@ ${
 }
 
 REGRAS CRÍTICAS:
-- NUNCA corte versos no meio
-- Cada verso deve ser completo e fazer sentido sozinho
+- NUNCA corte versos no meio - cada verso DEVE ser completo e terminar com palavra completa
+- NUNCA deixe frases incompletas como "cada novo" ou "onde posso" ou "do que"
+- Cada verso deve fazer sentido sozinho e ter um final claro
+- Se um verso não cabe na métrica, REESCREVA-O completamente, não corte no meio
 - Mantenha a mensagem central da letra original
 - Adapte linguagem e estilo para ${genre}
 - Refrão memorável e repetível
