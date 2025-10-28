@@ -15,6 +15,128 @@ import { validateRhymesForGenre } from "@/lib/validation/rhyme-validator"
 import { validateSyllablesByGenre } from "@/lib/validation/absolute-syllable-enforcer"
 import { fixLineToMaxSyllables } from "@/lib/validation/local-syllable-fixer"
 
+// ✅ CORRETOR SUPER-EFETIVO - DETECÇÃO EXPANDIDA
+function superFixIncompleteLines(lyrics: string): string {
+  console.log("[SuperCorrector] 🚀 INICIANDO CORREÇÃO SUPER-EFETIVA")
+  
+  const lines = lyrics.split('\n')
+  const fixedLines: string[] = []
+  
+  let corrections = 0
+
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i].trim()
+    
+    // Ignora tags e metadata
+    if (!line || line.startsWith('### [') || line.startsWith('(Instrumentation)') || line.startsWith('(Genre)')) {
+      fixedLines.push(line)
+      continue
+    }
+
+    const cleanLine = line.replace(/\[.*?\]/g, "").replace(/\(.*?\)/g, "").replace(/^"|"$/g, '').trim()
+    if (!cleanLine) {
+      fixedLines.push(line)
+      continue
+    }
+
+    const words = cleanLine.split(/\s+/).filter(w => w.length > 0)
+    const lastWord = words[words.length - 1]?.toLowerCase() || ''
+    
+    // ✅ DETECÇÃO EXPANDIDA - MAIS AGRESSIVA
+    const isIncomplete = 
+      words.length < 3 || // Menos de 3 palavras
+      /[,-]$/.test(cleanLine) || // Termina com vírgula ou traço
+      /\b(e|a|o|que|com|pra|pro|num|numa|de|da|do|em|no|na|por|me|te|se|um|uma)\s*$/i.test(cleanLine) || // Termina com preposição/artigo
+      /^(a|e|o|que|com|pra|de|da|do|em|no|na|por|me|te|se|um|uma)$/i.test(cleanLine) // Apenas uma palavra problemática
+
+    if (isIncomplete && words.length > 0) {
+      console.log(`[SuperCorrector] 🚨 VERSO INCOMPLETO: "${cleanLine}"`)
+      
+      let fixedLine = line
+      
+      // Remove pontuação problemática
+      fixedLine = fixedLine.replace(/[,-]\s*$/, '').trim()
+      
+      // ✅ COMPLETAMENTOS ESPECÍFICOS PARA OS PADRÕES ENCONTRADOS
+      const specificCompletions: Record<string, string> = {
+        'e': 'com amor',
+        'a': 'minha vida',
+        'que': 'Deus me deu',
+        'com': 'muito amor',
+        'pra': 'viver',
+        'pro': 'meu bem',
+        'me': 'ajudar',
+        'te': 'amar',
+        'se': 'entregar',
+        'um': 'presente',
+        'uma': 'bênção',
+        'no': 'coração',
+        'na': 'alma',
+        'de': 'gratidão',
+        'do': 'Senhor',
+        'da': 'minha vida',
+        'em': 'Deus',
+        'por': 'tudo',
+        'sinto a': 'Tua presença',
+        'deixa o': 'coração cantar',
+        'que sou e': 'tudo que tenho',
+        'eu quero': 'agradecer',
+        'sempre a': 'Te louvar',
+        'me ajuda a': 'crescer',
+        'que sou com': 'Ti',
+        'alguém pra': 'abençoar',
+        'agradar e': 'servir',
+        'sempre a': 'Te seguir',
+        'vou me': 'entregar',
+        'sinto Tua luz e': 'Tua graça',
+        'sonhar que': 'um dia realizarei'
+      }
+      
+      // Primeiro tenta match exato com a frase
+      let matched = false
+      for (const [pattern, completion] of Object.entries(specificCompletions)) {
+        if (cleanLine.toLowerCase().endsWith(pattern)) {
+          fixedLine = fixedLine.slice(0, -pattern.length).trim() + ' ' + completion
+          matched = true
+          break
+        }
+      }
+      
+      // Se não encontrou match específico, usa completamento por última palavra
+      if (!matched && specificCompletions[lastWord]) {
+        fixedLine += ' ' + specificCompletions[lastWord]
+      } else if (!matched) {
+        // Completamento genérico inteligente
+        const genericCompletions = [
+          'com gratidão no coração',
+          'e amor infinito',
+          'pra sempre Te louvar',
+          'com fé e esperança',
+          'que renova minha alma',
+          'em cada momento',
+          'com muita alegria'
+        ]
+        const randomCompletion = genericCompletions[Math.floor(Math.random() * genericCompletions.length)]
+        fixedLine += ' ' + randomCompletion
+      }
+      
+      // Garante pontuação final adequada
+      if (!/[.!?]$/.test(fixedLine)) {
+        fixedLine = fixedLine.replace(/[.,;:]$/, '') + '.'
+      }
+      
+      console.log(`[SuperCorrector] ✅ CORRIGIDO: "${fixedLine}"`)
+      fixedLines.push(fixedLine)
+      corrections++
+    } else {
+      fixedLines.push(line)
+    }
+  }
+
+  console.log(`[SuperCorrector] 🎉 CORREÇÃO CONCLUÍDA: ${corrections} versos corrigidos`)
+  return fixedLines.join('\n')
+}
+
 export async function POST(request: NextRequest) {
   try {
     const {
@@ -58,46 +180,70 @@ ATENÇÃO CRÍTICA SOBRE HOOKS E REFRÕES ESCOLHIDOS:
 `
       : ""
 
-    const prompt = `Você é um compositor brasileiro especializado em ${genre}.
+    // ✅ PROMPT PERFEITO - ABORDAGEM POSITIVA E CONSTRUTIVA
+    const prompt = `COMPOSITOR PROFISSIONAL BRASILEIRO - ${genre.toUpperCase()}
 
-TAREFA: Criar uma música completa com estrutura profissional.
+🎯 OBJETIVO PRINCIPAL: Criar VERSOS COMPLETOS e COERENTES
+
+📝 REGRA DE OURO: 
+CADA VERSO = FRASE COMPLETA (sujeito + verbo + complemento)
+
+✅ EXEMPLOS DE VERSOS COMPLETOS:
+"Hoje eu venho aqui de coração aberto" 
+"Com gratidão transbordando em meu peito"
+"Teu amor me renova a cada amanhecer"
+"A vida é uma bênção que eu agradeço"
+"Nos braços de Deus encontro meu abrigo"
+
+🚫 EVITAR VERSOS INCOMPLETOS:
+"Coração aberto" ❌ (incompleto)
+"De gratidão" ❌ (incompleto) 
+"Renovando a cada" ❌ (incompleto)
 
 TEMA: ${theme}
 HUMOR: ${mood || "Adaptado ao tema"}
+GÊNERO: ${genre}
 
 ${additionalReqsSection}
 
-REGRAS DE MÉTRICA:
-- Máximo: ${maxSyllables} sílabas por verso (limite absoluto)
-- Use contrações naturais ("cê", "pra", "tô")
-- Versos curtos são permitidos (ex: "Só paga IPVA" = 4 sílabas)
-- NUNCA exceda ${maxSyllables} sílabas (limite humano de canto)
-
-REGRAS DE RIMA:
-- ${rhymeRules.requirePerfectRhymes ? "Rimas perfeitas obrigatórias" : "Rimas naturais aceitáveis"}
-- ${rhymeRules.minRichRhymePercentage > 0 ? `Mínimo ${rhymeRules.minRichRhymePercentage}% rimas ricas` : ""}
+📏 TÉCNICA MUSICAL BRASILEIRA:
+- Máximo ${maxSyllables} sílabas por verso
+- ${rhymeRules.requirePerfectRhymes ? "Rimas perfeitas" : "Rimas naturais"}
+- Linguagem apropriada para ${genre}
+- Versos autocontidos e completos
+- Emoção genuína e autenticidade
 
 ${genreRules.fullPrompt}
 
-ESTRUTURA:
+🎵 ESTRUTURA SUGERIDA:
 ${
   performanceMode === "performance"
-    ? "[INTRO]\n[VERSE 1]\n[PRE-CHORUS]\n[CHORUS]\n[VERSE 2]\n[CHORUS]\n[BRIDGE]\n[CHORUS]\n[OUTRO]"
-    : "[Intro]\n[Verso 1]\n[Pré-Refrão]\n[Refrão]\n[Verso 2]\n[Refrão]\n[Ponte]\n[Refrão]\n[Outro]"
+    ? `### [INTRO] (4 linhas)
+### [VERSO 1] (6 linhas)  
+### [PRÉ-REFRAO] (4 linhas)
+### [REFRAO] (6 linhas)
+### [VERSO 2] (6 linhas)
+### [REFRAO] (6 linhas)
+### [PONTE] (6 linhas)
+### [REFRAO] (6 linhas)
+### [OUTRO] (4 linhas)`
+    : `### [Intro] (4 linhas)
+### [Verso 1] (6 linhas)
+### [Pré-Refrão] (4 linhas)
+### [Refrão] (6 linhas)
+### [Verso 2] (6 linhas)
+### [Refrão] (6 linhas)
+### [Ponte] (6 linhas)
+### [Refrão] (6 linhas)
+### [Outro] (4 linhas)`
 }
 
-REGRAS:
-- NUNCA corte versos no meio - cada verso DEVE ser completo e terminar com palavra completa
-- NUNCA deixe frases incompletas como "cada novo" ou "onde posso" ou "do que"
-- Cada verso deve fazer sentido sozinho e ter um final claro
-- Se um verso não cabe na métrica, REESCREVA-O completamente, não corte no meio
-- Refrão memorável e repetível
-- Linguagem brasileira autêntica
-- Evite clichês ("coraçãozinho", "lágrimas no rosto")
-- ${performanceMode === "performance" ? "Tags em inglês, versos em português" : "Tags em português"}
-${additionalRequirements ? "\n- CUMPRA TODOS OS REQUISITOS ADICIONAIS ACIMA (OBRIGATÓRIO)" : ""}
+💡 DICA CRÍTICA: 
+Pense em CADA VERSO como uma mini-história completa
+Se ficar muito longo, REESCREVA completamente mantendo a mensagem
+Mantenha a naturalidade da língua portuguesa brasileira
 
-Retorne APENAS a letra, sem explicações.`
+Gere a letra com VERSOS COMPLETOS e EMOCIONALMENTE IMPACTANTES:`
 
     console.log(`[API] 🎵 Gerando com limite máximo de ${maxSyllables} sílabas...`)
     if (additionalRequirements) {
@@ -112,6 +258,10 @@ Retorne APENAS a letra, sem explicações.`
     })
 
     let finalLyrics = capitalizeLines(text)
+
+    // ✅ ETAPA CRÍTICA: CORREÇÃO DE VERSOS INCOMPLETOS
+    console.log("[API] 🔧 Aplicando correção super-efetiva de versos incompletos...")
+    finalLyrics = superFixIncompleteLines(finalLyrics)
 
     finalLyrics = finalLyrics
       .split("\n")
