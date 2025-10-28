@@ -15,8 +15,8 @@ import { toast } from "sonner"
 interface SyllableValidatorEditableProps {
   lyrics: string
   onLyricsChange: (lyrics: string) => void
-  maxSyllables: number
-  genre: string // ✅ Adicione esta linha
+  maxSyllables?: number
+  genre?: string // ✅ Adicione esta linha
 }
 
 interface LineValidation {
@@ -24,12 +24,6 @@ interface LineValidation {
   syllables: number
   lineNumber: number
   suggestions: string[]
-}
-
-interface SyllableValidatorEditableProps {
-  lyrics: string
-  maxSyllables?: number
-  onLyricsChange: (newLyrics: string) => void
 }
 
 export function SyllableValidatorEditable({
