@@ -448,7 +448,11 @@ export default function EditarPage() {
 
               <div className="flex items-center gap-2">
                 <Label className="text-xs font-semibold">Modo Avançado</Label>
-                <Checkbox checked={advancedMode} onCheckedChange={setAdvancedMode} className="h-4 w-4" />
+                <Checkbox
+                  checked={advancedMode}
+                  onCheckedChange={(checked) => setAdvancedMode(checked === true)}
+                  className="h-4 w-4"
+                />
               </div>
 
               <div className="flex items-center gap-2">
@@ -459,7 +463,11 @@ export default function EditarPage() {
 
               <div className="flex items-center gap-2">
                 <Label className="text-xs font-semibold">Polimento Universal</Label>
-                <Checkbox checked={universalPolish} onCheckedChange={setUniversalPolish} className="h-4 w-4" />
+                <Checkbox
+                  checked={universalPolish}
+                  onCheckedChange={(checked) => setUniversalPolish(checked === true)}
+                  className="h-4 w-4"
+                />
               </div>
             </CardContent>
           </Card>
