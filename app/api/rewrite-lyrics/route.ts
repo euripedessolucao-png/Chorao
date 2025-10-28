@@ -24,9 +24,9 @@ function getMaxSyllables(genre: string): number {
   return 12
 }
 
-// ✅ CORRETOR ULTRA-EFETIVO - VERSÃO FINAL
-function ultraFixIncompleteLines(lyrics: string): string {
-  console.log("[UltraCorrector] 🚀 INICIANDO CORREÇÃO ULTRA-EFETIVA")
+// ✅ CORRETOR INTELIGENTE - ABORDAGEM SIMPLES E EFETIVA
+function smartFixIncompleteLines(lyrics: string): string {
+  console.log("[SmartCorrector] 🔧 Aplicando correção inteligente")
   
   const lines = lyrics.split('\n')
   const fixedLines: string[] = []
@@ -51,54 +51,70 @@ function ultraFixIncompleteLines(lyrics: string): string {
       continue
     }
 
-    const lastWord = cleanLine.split(/\s+/).pop()?.toLowerCase() || ''
     const words = cleanLine.split(/\s+/).filter(w => w.length > 0)
     
-    // ✅ DETECTA VERSOS INCOMPLETOS COM MAIS PRECISÃO
+    // ✅ DETECTA VERSOS INCOMPLETOS DE FORMA INTELIGENTE
     const isIncomplete = 
-      (lastWord && ['que', 'do', 'por', 'me', 'te', 'em', 'a', 'o', 'de', 'da', 'no', 'na', 'com', 'se', 'tão', 'e', 'diante', 'aberto', 'vida', 'fonte', 'trazendo', 'cada', 'meu', 'Tua', 'sempre', 'lindo', 'fluindo', 'canção', 'sou', 'passou', 'luta', 'mão', 'razão', 'lar', 'caminho', 'essência', 'alma', 'força', 'lição', 'luz', 'paz', 'hino'].includes(lastWord)) ||
-      cleanLine.endsWith(',') ||
-      cleanLine.endsWith('-') ||
-      words.length < 3
+      words.length < 3 || // Menos de 3 palavras
+      /[,-]$/.test(cleanLine) || // Termina com vírgula ou traço
+      /\b(e|do|por|me|te|em|a|o|de|da|no|na|com|se|tão|que|um|uma|uns|umas)\s*$/i.test(cleanLine) // Termina com preposição
 
-    if (isIncomplete) {
-      console.log(`[UltraCorrector] 🚨 VERSO INCOMPLETO: "${cleanLine}"`)
+    if (isIncomplete && words.length > 0) {
+      console.log(`[SmartCorrector] 📝 Ajustando verso: "${cleanLine}"`)
       
       let fixedLine = line
       
       // Remove pontuação problemática
-      if (fixedLine.endsWith(',') || fixedLine.endsWith('-')) {
-        fixedLine = fixedLine.slice(0, -1).trim()
+      fixedLine = fixedLine.replace(/[,-]\s*$/, '').trim()
+      
+      // ✅ COMPLETAMENTO INTELIGENTE BASEADO NO CONTEXTO
+      const lastWord = words[words.length - 1].toLowerCase()
+      
+      // Completamentos contextuais para música brasileira
+      const completions: Record<string, string> = {
+        'coração': 'aberto e grato',
+        'vida': 'que recebo de Ti',
+        'gratidão': 'transbordando em mim',
+        'amor': 'que nunca falha',
+        'fé': 'que me sustenta',
+        'alegria': 'que inunda minha alma',
+        'paz': 'que acalma o coração',
+        'força': 'para seguir em frente',
+        'luz': 'que ilumina meu caminho',
+        'esperança': 'que renova meus dias',
+        'sorriso': 'no rosto iluminado',
+        'caminho': 'abençoado por Deus',
+        'dom': 'divino que recebi',
+        'alma': 'que se renova em paz',
+        'essência': 'divina do amor',
+        'canção': 'que canto com fervor',
+        'mão': 'amiga que me guia',
+        'razão': 'do meu viver aqui',
+        'lar': 'eterno nos céus',
+        'lição': 'que levo pra vida',
+        'paz': 'infinita no ser'
       }
-
-      // ✅ CORREÇÕES ESPECÍFICAS BASEADAS NOS PADRÕES IDENTIFICADOS
-      if (lastWord === 'rosto') fixedLine += ' iluminado'
-      else if (lastWord === 'caminho') fixedLine += ' da vida'
-      else if (lastWord === 'dom') fixedLine += ' divino'
-      else if (lastWord === 'alma') fixedLine += ' se renova'
-      else if (lastWord === 'essência') fixedLine += ' divina'
-      else if (lastWord === 'lindo') fixedLine += ' ao meu redor'
-      else if (lastWord === 'fluindo') fixedLine += ' em mim'
-      else if (lastWord === 'canção') fixedLine += ' da vida'
-      else if (lastWord === 'sou') fixedLine += ' hoje'
-      else if (lastWord === 'passou') fixedLine += ' até aqui'
-      else if (lastWord === 'luta') fixedLine += ' que enfrento'
-      else if (lastWord === 'mão') fixedLine += ' amiga'
-      else if (lastWord === 'razão') fixedLine += ' do meu viver'
-      else if (lastWord === 'lar') fixedLine += ' eterno'
-      else if (lastWord === 'lição') fixedLine += ' aprendida'
-      else if (lastWord === 'luz') fixedLine += ' divina'
-      else if (lastWord === 'paz') fixedLine += ' infinita'
-      else if (lastWord === 'hino') fixedLine += ' de louvor'
-      else if (lastWord === 'força') fixedLine += ' que me sustenta'
-      else {
-        // Completamento genérico inteligente
-        fixedLine += ' que recebo de Ti'
+      
+      if (completions[lastWord]) {
+        fixedLine += ' ' + completions[lastWord]
+      } else {
+        // Completamento genérico natural para música brasileira
+        const genericCompletions = [
+          'com muito amor',
+          'e gratidão',
+          'pra sempre vou lembrar',
+          'nunca vou esquecer',
+          'é o que sinto agora',
+          'me faz feliz demais',
+          'que Deus me concedeu'
+        ]
+        const randomCompletion = genericCompletions[Math.floor(Math.random() * genericCompletions.length)]
+        fixedLine += ' ' + randomCompletion
       }
       
       // Garante pontuação final adequada
-      if (!fixedLine.endsWith('.') && !fixedLine.endsWith('!') && !fixedLine.endsWith('?') && !fixedLine.endsWith('"')) {
-        fixedLine += '.'
+      if (!/[.!?]$/.test(fixedLine)) {
+        fixedLine = fixedLine.replace(/[.,;:]$/, '') + '.'
       }
       
       // Restaura aspas se necessário
@@ -106,7 +122,7 @@ function ultraFixIncompleteLines(lyrics: string): string {
         fixedLine = `"${fixedLine}"`
       }
       
-      console.log(`[UltraCorrector] ✅ CORRIGIDO: "${fixedLine}"`)
+      console.log(`[SmartCorrector] ✅ CORRIGIDO: "${fixedLine}"`)
       fixedLines.push(fixedLine)
       corrections++
     } else {
@@ -114,7 +130,7 @@ function ultraFixIncompleteLines(lyrics: string): string {
     }
   }
 
-  console.log(`[UltraCorrector] 🎉 CORREÇÃO CONCLUÍDA: ${corrections} versos corrigidos`)
+  console.log(`[SmartCorrector] 🎉 CORREÇÃO CONCLUÍDA: ${corrections} versos corrigidos`)
   return fixedLines.join('\n')
 }
 
@@ -137,70 +153,79 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Gênero é obrigatório" }, { status: 400 })
     }
 
-    console.log(`[API] 🎵 Iniciando reescrita ULTRA para: ${genre}`)
+    console.log(`[API] 🎵 Iniciando reescrita para: ${genre}`)
 
     const maxSyllables = getMaxSyllables(genre)
     const rhymeRules = getUniversalRhymeRules(genre)
     const genreRules = buildGenreRulesPrompt(genre)
 
-    // ✅ PROMPT HIPER-EXPLÍCITO
-    const prompt = `COMPOSITOR ULTRA-PROFISSIONAL - ${genre.toUpperCase()}
+    // ✅ PROMPT PERFEITO - ABORDAGEM POSITIVA E CONSTRUTIVA
+    const prompt = `COMPOSITOR PROFISSIONAL BRASILEIRO - ${genre.toUpperCase()}
 
-🔥🔥🔥 INSTRUÇÃO ULTRA-CRÍTICA: VERSOS 100% COMPLETOS 🔥🔥🔥
+🎯 OBJETIVO PRINCIPAL: Criar VERSOS COMPLETOS e COERENTES
 
-CADA VERSO DEVE SER UMA FRASE COMPLETA E INDEPENDENTE.
+📝 REGRA DE OURO: 
+CADA VERSO = FRASE COMPLETA (sujeito + verbo + complemento)
 
-🚫🚫🚫 PROIBIDO ABSOLUTAMENTE TERMINAR COM:
-rosto, caminho, dom, alma, essência, lindo, fluindo, canção, sou, passou, luta, mão, razão, lar, lição, luz, paz, hino, força, que, do, por, me, te, em, a, o, de, da, no, na, com, se, tão, e
+✅ EXEMPLOS DE VERSOS COMPLETOS:
+"Hoje eu venho aqui de coração aberto" 
+"Com gratidão transbordando em meu peito"
+"Teu amor me renova a cada amanhecer"
+"A vida é uma bênção que eu agradeço"
+"Nos braços de Deus encontro meu abrigo"
 
-✅✅✅ EXEMPLOS DE VERSOS COMPLETOS OBRIGATÓRIOS:
-"Hoje eu acordo com um sorriso no rosto iluminado"
-"Os raios do sol iluminam meu caminho abençoado" 
-"Com o coração cheio de gratidão e amor"
-"Vivo cada momento como um dom divino"
+🚫 EVITAR VERSOS INCOMPLETOS:
+"Coração aberto" ❌ (incompleto)
+"De gratidão" ❌ (incompleto) 
+"Renovando a cada" ❌ (incompleto)
 
-LETRA ORIGINAL:
+LETRA ORIGINAL (inspiração):
 ${originalLyrics}
 
 TEMA: ${theme || "Gratidão divina"}
 HUMOR: ${mood || "Reverente e alegre"}
+GÊNERO: ${genre}
 
-${additionalRequirements ? `REQUISITOS: ${additionalRequirements}` : ""}
+${additionalRequirements ? `REQUISITOS ADICIONAIS: ${additionalRequirements}` : ""}
 
-TÉCNICA ULTRA-RIGOROSA:
+📏 TÉCNICA MUSICAL BRASILEIRA:
 - Máximo ${maxSyllables} sílabas por verso
-- ${rhymeRules.requirePerfectRhymes ? "Rimas perfeitas obrigatórias" : "Rimas naturais"}
+- ${rhymeRules.requirePerfectRhymes ? "Rimas perfeitas" : "Rimas naturais"}
 - Linguagem apropriada para ${genre}
-- VERSOS COMPLETOS OU NÃO ENVIE
+- Versos autocontidos e completos
+- Emoção genuína e autenticidade
 
-ESTRUTURA PERFEITA:
+🎵 ESTRUTURA SUGERIDA:
 ${
   performanceMode === "performance" 
-    ? `### [INTRO] (4 linhas COMPLETAS)
-### [VERSE 1] (6 linhas COMPLETAS)  
-### [PRE-CHORUS] (4 linhas COMPLETAS)
-### [CHORUS] (6 linhas COMPLETAS)
-### [VERSE 2] (6 linhas COMPLETAS)
-### [CHORUS] (6 linhas COMPLETAS)
-### [BRIDGE] (6 linhas COMPLETAS)
-### [CHORUS] (6 linhas COMPLETAS)
-### [OUTRO] (4 linhas COMPLETAS)`
-    : `### [Intro] (4 linhas COMPLETAS)
-### [Verso 1] (6 linhas COMPLETAS)
-### [Pré-Refrão] (4 linhas COMPLETAS)
-### [Refrão] (6 linhas COMPLETAS)
-### [Verso 2] (6 linhas COMPLETAS)
-### [Refrão] (6 linhas COMPLETAS)
-### [Ponte] (6 linhas COMPLETAS)
-### [Refrão] (6 linhas COMPLETAS)
-### [Outro] (4 linhas COMPLETAS)`
+    ? `### [INTRO] (4 linhas)
+### [VERSO 1] (6 linhas)  
+### [PRÉ-REFRAO] (4 linhas)
+### [REFRAO] (6 linhas)
+### [VERSO 2] (6 linhas)
+### [REFRAO] (6 linhas)
+### [PONTE] (6 linhas)
+### [REFRAO] (6 linhas)
+### [OUTRO] (4 linhas)`
+    : `### [Intro] (4 linhas)
+### [Verso 1] (6 linhas)
+### [Pré-Refrão] (4 linhas)
+### [Refrão] (6 linhas)
+### [Verso 2] (6 linhas)
+### [Refrão] (6 linhas)
+### [Ponte] (6 linhas)
+### [Refrão] (6 linhas)
+### [Outro] (4 linhas)`
 }
 
-⚠️⚠️⚠️ SE UM ÚNICO VERSO ESTIVER INCOMPLETO, A MÚSICA SERÁ REJEITADA.
+💡 DICA CRÍTICA: 
+Pense em CADA VERSO como uma mini-história completa
+Se ficar muito longo, REESCREVA completamente mantendo a mensagem
+Mantenha a naturalidade da língua portuguesa brasileira
 
-GERE APENAS VERSOS 100% COMPLETOS E PERFEITOS:`
+Gere a letra com VERSOS COMPLETOS e EMOCIONALMENTE IMPACTANTES:`
 
-    console.log(`[API] 🔄 Solicitando geração ULTRA da IA...`)
+    console.log(`[API] 🔄 Solicitando geração da IA...`)
 
     const { text } = await generateText({
       model: "openai/gpt-4o-mini",
@@ -211,9 +236,9 @@ GERE APENAS VERSOS 100% COMPLETOS E PERFEITOS:`
     let finalLyrics = capitalizeLines(text)
     console.log("[API] 📝 Resposta bruta recebida")
 
-    // ✅ ETAPA ULTRA-CRÍTICA: CORREÇÃO DEFINITIVA
-    console.log("[API] 🚀 Aplicando correção ULTRA-EFETIVA...")
-    finalLyrics = ultraFixIncompleteLines(finalLyrics)
+    // ✅ ETAPA INTELIGENTE: CORREÇÃO APENAS DO NECESSÁRIO
+    console.log("[API] 🔧 Aplicando correção inteligente...")
+    finalLyrics = smartFixIncompleteLines(finalLyrics)
 
     // ✅ LIMPEZA FINAL
     finalLyrics = finalLyrics
@@ -229,8 +254,8 @@ GERE APENAS VERSOS 100% COMPLETOS E PERFEITOS:`
       .join("\n")
       .trim()
 
-    // ✅ CORREÇÃO DE SÍLABAS ULTRA-PRECISA
-    console.log("[API] 📏 Ajustando métrica ultra-precisamente...")
+    // ✅ CORREÇÃO DE SÍLABAS PRECISA
+    console.log("[API] 📏 Ajustando métrica...")
     const lines = finalLyrics.split("\n")
     const correctedLines: string[] = []
     let syllableCorrections = 0
@@ -263,8 +288,8 @@ GERE APENAS VERSOS 100% COMPLETOS E PERFEITOS:`
       finalLyrics = correctedLines.join("\n")
     }
 
-    // ✅ FINALIZAÇÃO ULTRA
-    console.log("[API] 📚 Aplicando empilhamento profissional...")
+    // ✅ FINALIZAÇÃO
+    console.log("[API] 📚 Aplicando empilhamento...")
     const stackingResult = LineStacker.stackLines(finalLyrics)
     finalLyrics = stackingResult.stackedLyrics
 
@@ -273,7 +298,7 @@ GERE APENAS VERSOS 100% COMPLETOS E PERFEITOS:`
     finalLyrics = `${finalLyrics}\n\n${instrumentation}`
 
     const totalLines = finalLyrics.split('\n').filter(line => line.trim().length > 0).length
-    console.log(`[API] 🎉 PROCESSO ULTRA CONCLUÍDO: ${totalLines} linhas PERFEITAS`)
+    console.log(`[API] 🎉 PROCESSO CONCLUÍDO: ${totalLines} linhas`)
 
     return NextResponse.json({
       success: true,
@@ -285,7 +310,7 @@ GERE APENAS VERSOS 100% COMPLETOS E PERFEITOS:`
         maxSyllables,
         totalLines,
         syllableCorrections,
-        quality: "ULTRA_PROCESSED"
+        quality: "PROCESSED"
       },
     })
 
