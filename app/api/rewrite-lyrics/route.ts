@@ -91,8 +91,7 @@ function smartFixIncompleteLines(lyrics: string): string {
         'mão': 'amiga que me guia',
         'razão': 'do meu viver aqui',
         'lar': 'eterno nos céus',
-        'lição': 'que levo pra vida',
-        'paz': 'infinita no ser'
+        'lição': 'que levo pra vida'
       }
       
       if (completions[lastWord]) {
