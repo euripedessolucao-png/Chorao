@@ -204,7 +204,7 @@ RETORNE APENAS A LETRA REESCRITA, SEM EXPLICAÇÕES.`
     const { text } = await generateText({
       model: this.MODEL,
       prompt,
-      temperature: 0.6,
+      temperature: 0.4,
     })
 
     return this.cleanLyricsResponse(text || "")
