@@ -65,7 +65,14 @@ ATENÇÃO CRÍTICA SOBRE HOOKS E REFRÕES ESCOLHIDOS:
 
     const prompt = `Você é um compositor brasileiro especializado em ${genre}.
 
-TAREFA: Reescrever a letra abaixo mantendo a essência mas adaptando para ${genre}.
+TAREFA: Reescrever COMPLETAMENTE a letra abaixo mantendo a essência mas adaptando para ${genre}.
+
+🎯 LIMITAÇÕES CRÍTICAS DE TAMANHO:
+- LETRA COMPLETA deve ter ENTRE 25-35 LINHAS
+- NUNCA corte versos no meio - cada verso DEVE ser completo
+- Se a letra original for longa, selecione os versos mais importantes
+- Mantenha a estrutura completa: Intro, Versos, Refrão, Ponte, Outro
+- REFRÃO deve aparecer PELO MENOS 3 VEZES (padrão música comercial)
 
 LETRA ORIGINAL:
 ${originalLyrics}
@@ -89,18 +96,39 @@ REGRAS DE RIMA:
 
 ${genreRules.fullPrompt}
 
-ESTRUTURA:
+ESTRUTURA OBRIGATÓRIA (COMPLETA):
 ${
   performanceMode === "performance"
-    ? "[INTRO]\n[VERSE 1]\n[PRE-CHORUS]\n[CHORUS]\n[VERSE 2]\n[CHORUS]\n[BRIDGE]\n[CHORUS]\n[OUTRO]"
-    : "[Intro]\n[Verso 1]\n[Pré-Refrão]\n[Refrão]\n[Verso 2]\n[Refrão]\n[Ponte]\n[Refrão]\n[Outro]"
+    ? `[INTRO]
+[VERSE 1]
+[PRE-CHORUS] 
+[CHORUS]
+[VERSE 2]
+[CHORUS]
+[BRIDGE]
+[CHORUS]
+[OUTRO]`
+    : `[Intro]
+[Verso 1]
+[Pré-Refrão]
+[Refrão]
+[Verso 2]
+[Refrão]
+[Ponte]
+[Refrão]
+[Outro]`
 }
 
-REGRAS CRÍTICAS:
-- NUNCA corte versos no meio - cada verso DEVE ser completo e terminar com palavra completa
-- NUNCA deixe frases incompletas como "cada novo" ou "onde posso" ou "do que"
-- Cada verso deve fazer sentido sozinho e ter um final claro
-- Se um verso não cabe na métrica, REESCREVA-O completamente, não corte no meio
+🚫 PROIBIDO ABSOLUTAMENTE:
+- Cortar versos no meio
+- Deixar frases incompletas como "cada novo" ou "onde posso" ou "do que"
+- Terminar com pontuação de continuação (..., -, —)
+- Escrever letra incompleta ou sem estrutura
+- Ignorar o refrão ou repeti-lo menos de 3 vezes
+
+✅ OBRIGATÓRIO:
+- Cada verso deve fazer sentido sozinho e ter final claro
+- Se um verso não cabe na métrica, REESCREVA-O completamente
 - Mantenha a mensagem central da letra original
 - Adapte linguagem e estilo para ${genre}
 - Refrão memorável e repetível
@@ -108,27 +136,55 @@ REGRAS CRÍTICAS:
 - ${performanceMode === "performance" ? "Tags em inglês, versos em português" : "Tags em português"}
 ${additionalRequirements ? "\n- CUMPRA TODOS OS REQUISITOS ADICIONAIS ACIMA (OBRIGATÓRIO)" : ""}
 
-Retorne APENAS a letra reescrita, sem explicações.`
+📏 CONTROLE DE TAMANHO:
+- Letra FINAL deve ter ENTRE 25-35 linhas totais
+- Se preciso, resuma a letra original mas mantenha a ESSÊNCIA
+- NÃO pode ser muito curta (menos de 25 linhas)
+- NÃO pode ser muito longa (mais de 35 linhas)
+
+Retorne APENAS a letra reescrita COMPLETA, sem explicações.`
 
     console.log(`[API] 🔄 Reescrevendo com limite máximo de ${maxSyllables} sílabas...`)
     if (additionalRequirements) {
       console.log(`[API] ⚠️ REQUISITOS ADICIONAIS OBRIGATÓRIOS DETECTADOS`)
     }
 
-    const { text } = await generateText({
+    // ✅ GERAÇÃO PRIMÁRIA - com temperatura mais baixa para manter estrutura
+    const { text: initialText } = await generateText({
       model: "openai/gpt-4o-mini",
       prompt,
-      temperature: 0.8,
-      maxOutputTokens: 2500, // Garante resposta completa sem cortes
+      temperature: 0.7, // Reduzido para manter coesão
     })
 
-    let finalLyrics = capitalizeLines(text)
+    let finalLyrics = capitalizeLines(initialText)
 
+    // ✅ VERIFICAÇÃO DE COMPLETUDE - se a letra está muito curta, regera
+    const lineCount = finalLyrics.split('\n').filter(line => line.trim().length > 0).length
+    if (lineCount < 20) {
+      console.log(`[API] ⚠️ Letra muito curta (${lineCount} linhas), regenerando...`)
+      
+      const retryPrompt = `${prompt}
+
+🚨 ATENÇÃO: A letra gerada anteriormente estava MUITO CURTA (apenas ${lineCount} linhas).
+Gere uma versão COMPLETA com 25-35 linhas, mantendo TODA a estrutura obrigatória.`
+
+      const { text: retryText } = await generateText({
+        model: "openai/gpt-4o-mini", 
+        prompt: retryPrompt,
+        temperature: 0.8,
+      })
+      finalLyrics = capitalizeLines(retryText)
+    }
+
+    // ✅ LIMPEZA DE LINHAS INDESEJADAS
     finalLyrics = finalLyrics
       .split("\n")
       .filter(
         (line) =>
-          !line.trim().startsWith("Retorne") && !line.trim().startsWith("REGRAS") && !line.includes("Explicação"),
+          !line.trim().startsWith("Retorne") && 
+          !line.trim().startsWith("REGRAS") && 
+          !line.includes("Explicação") &&
+          !line.includes("```")
       )
       .join("\n")
       .trim()
@@ -146,7 +202,7 @@ Retorne APENAS a letra reescrita, sem explicações.`
     const verseValidation = validateVerseCompleteness(finalLyrics)
     if (!verseValidation.valid || verseValidation.warnings.length > 0) {
       console.log("[API] 🔧 Corrigindo versos incompletos...")
-      const verseFixResult = await fixIncompleteVerses(finalLyrics)
+      const verseFixResult = await fixIncompleteVerses(finalLyrics, genre, theme)
       if (verseFixResult.changes.length > 0) {
         console.log(`[API] ✅ ${verseFixResult.changes.length} verso(s) corrigido(s)`)
         finalLyrics = verseFixResult.fixed
@@ -218,9 +274,11 @@ Retorne APENAS a letra reescrita, sem explicações.`
     const finalScore = Math.round(validityRatio * 100)
 
     const finalVerseValidation = validateVerseCompleteness(finalLyrics)
+    const finalLineCount = finalLyrics.split('\n').filter(line => line.trim().length > 0).length
 
     console.log(`[API] ✅ Validação final: ${finalScore}% dentro da métrica (${genre})`)
     console.log(`[API] ✅ Completude dos versos: ${finalVerseValidation.score}%`)
+    console.log(`[API] ✅ Tamanho final: ${finalLineCount} linhas`)
 
     return NextResponse.json({
       success: true,
@@ -238,6 +296,8 @@ Retorne APENAS a letra reescrita, sem explicações.`
         incompleteVerses: finalVerseValidation.incompleteVerses.length,
         genreIsolationViolations: isolationValidation.violations.length,
         genreIsolationWarnings: isolationValidation.warnings.length,
+        totalLines: finalLineCount,
+        structureComplete: finalLineCount >= 25 && finalLineCount <= 35,
       },
     })
   } catch (error) {
