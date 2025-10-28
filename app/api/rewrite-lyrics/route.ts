@@ -146,7 +146,7 @@ Retorne APENAS a letra reescrita, sem explicações.`
     const verseValidation = validateVerseCompleteness(finalLyrics)
     if (!verseValidation.valid || verseValidation.warnings.length > 0) {
       console.log("[API] 🔧 Corrigindo versos incompletos...")
-      const verseFixResult = fixIncompleteVerses(finalLyrics)
+      const verseFixResult = await fixIncompleteVerses(finalLyrics)
       if (verseFixResult.changes.length > 0) {
         console.log(`[API] ✅ ${verseFixResult.changes.length} verso(s) corrigido(s)`)
         finalLyrics = verseFixResult.fixed
