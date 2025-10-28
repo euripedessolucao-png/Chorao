@@ -1,7 +1,5 @@
 "use client"
-
-import React from "react"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -29,7 +27,6 @@ import { HookGenerator } from "@/components/hook-generator"
 import { SyllableValidatorEditable } from "@/components/syllable-validator-editable"
 import { RhymeAnalyzer } from "@/components/rhyme-analyzer"
 import { ProcessingStatus } from "@/components/processing-status"
-import { validateSyllablesByGenre } from "@/lib/validation/absolute-syllable-enforcer"
 
 const GENRE_QUALITY_CONFIG = {
   Sertanejo: { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },

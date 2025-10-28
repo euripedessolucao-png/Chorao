@@ -1,7 +1,4 @@
 "use client"
-
-import React from "react" // ✅ ADICIONE ESTA LINHA
-import { useState, useEffect } from "react"
 import { useState, useEffect } from "react"
 import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
@@ -14,19 +11,44 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
-import { RefreshCw, Sparkles, Trash2, Search, Save, Copy } from "lucide-react"
 import { toast } from "sonner"
 import { GenreSelect } from "@/components/genre-select"
-import { SyllableValidator } from "@/components/syllable-validator"
-import { RhymeAnalyzer } from "@/components/rhyme-analyzer"
 import { validateSyllablesByGenre } from "@/lib/validation/absolute-syllable-enforcer"
 
 const MOODS = ["Feliz", "Triste", "Nostálgico", "Romântico", "Animado", "Melancólico"]
 const EMOTIONS = [
-  "Alegria", "Alívio", "Amor", "Ansiedade", "Confusão", "Conexão", "Coragem", "Culpa", "Desapego",
-  "Desilusão", "Desprezo", "Empolgação", "Empoderamento", "Encantamento", "Esperança", "Euforia",
-  "Gratidão", "Inveja", "Liberdade", "Medo", "Melancolia", "Nostalgia", "Orgulho", "Paixão", "Paz",
-  "Raiva", "Saudade", "Solidão", "Tensão", "Ternura", "Tristeza", "Vergonha",
+  "Alegria",
+  "Alívio",
+  "Amor",
+  "Ansiedade",
+  "Confusão",
+  "Conexão",
+  "Coragem",
+  "Culpa",
+  "Desapego",
+  "Desilusão",
+  "Desprezo",
+  "Empolgação",
+  "Empoderamento",
+  "Encantamento",
+  "Esperança",
+  "Euforia",
+  "Gratidão",
+  "Inveja",
+  "Liberdade",
+  "Medo",
+  "Melancolia",
+  "Nostalgia",
+  "Orgulho",
+  "Paixão",
+  "Paz",
+  "Raiva",
+  "Saudade",
+  "Solidão",
+  "Tensão",
+  "Ternura",
+  "Tristeza",
+  "Vergonha",
 ]
 
 const GENRE_QUALITY_CONFIG = {
@@ -128,9 +150,12 @@ export default function EditarPage() {
 
     try {
       const syllableValidation = validateSyllablesByGenre("", genre)
-      const maxSyllables = syllableValidation.maxSyllables
+      const currentSyllableConfig = {
+        min: syllableValidation.minSyllables,
+        max: syllableValidation.maxSyllables,
+        ideal: syllableValidation.maxSyllables,
+      }
 
-      // ✅ CORRIGIDO: usa currentSyllableConfig (já calculado)
       const requestBody = {
         originalLyrics: lyrics,
         genre,
@@ -138,7 +163,7 @@ export default function EditarPage() {
         theme: theme || "Amor",
         additionalRequirements: additionalReqs,
         title,
-        syllableTarget: currentSyllableConfig, // ✅ CORRETO
+        syllableTarget: currentSyllableConfig,
         performanceMode: formattingStyle === "performatico" ? "performance" : "standard",
         temperature: Number.parseFloat(getTemperatureValue(creativity[0])),
       }
@@ -241,8 +266,6 @@ export default function EditarPage() {
     }
   }
 
-  const currentSyllableConfig = genre ? getSyllableConfig(genre) : null
-
   const getTemperatureValue = (sliderValue: number) => {
     return (sliderValue / 100).toFixed(2)
   }
@@ -279,10 +302,18 @@ export default function EditarPage() {
                 <p className="text-xs text-muted-foreground">Adicione textos, áudios, imagens ou links.</p>
                 <Tabs defaultValue="text">
                   <TabsList className="grid w-full grid-cols-4 h-8">
-                    <TabsTrigger value="text" className="text-xs">Texto</TabsTrigger>
-                    <TabsTrigger value="image" className="text-xs">Imagem</TabsTrigger>
-                    <TabsTrigger value="audio" className="text-xs">Áudio</TabsTrigger>
-                    <TabsTrigger value="link" className="text-xs">Link</TabsTrigger>
+                    <TabsTrigger value="text" className="text-xs">
+                      Texto
+                    </TabsTrigger>
+                    <TabsTrigger value="image" className="text-xs">
+                      Imagem
+                    </TabsTrigger>
+                    <TabsTrigger value="audio" className="text-xs">
+                      Áudio
+                    </TabsTrigger>
+                    <TabsTrigger value="link" className="text-xs">
+                      Link
+                    </TabsTrigger>
                   </TabsList>
                   <TabsContent value="text" className="space-y-2">
                     <Textarea
@@ -320,7 +351,9 @@ export default function EditarPage() {
                     onChange={(e) => setLiteraryGenre(e.target.value)}
                     className="h-8 text-xs"
                   />
-                  <Button size="sm" className="h-8">Buscar</Button>
+                  <Button size="sm" className="h-8">
+                    Buscar
+                  </Button>
                 </div>
               </div>
 
@@ -335,3 +368,156 @@ export default function EditarPage() {
                     className="h-8 text-xs"
                   />
                   <Button size="sm" variant="secondary" className="h-8">
+                    Buscar
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Coluna 2: Configurações */}
+          <Card className="order-2 h-fit">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Configurações</CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Personalize sua letra com ajustes de estilo e criatividade.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              <div className="flex items-center gap-2">
+                <Label className="text-xs font-semibold">Gênero Musical</Label>
+                <GenreSelect value={genre} onChange={setGenre} />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Label className="text-xs font-semibold">Mood</Label>
+                <Select value={mood} onValueChange={setMood}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="Selecione um mood" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MOODS.map((m) => (
+                      <SelectItem key={m} value={m} className="text-xs">
+                        {m}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Label className="text-xs font-semibold">Tema</Label>
+                <Input
+                  placeholder="Digite um tema..."
+                  value={theme}
+                  onChange={(e) => setTheme(e.target.value)}
+                  className="h-8 text-xs"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Label className="text-xs font-semibold">Requisitos Adicionais</Label>
+                <Textarea
+                  placeholder="Adicione requisitos adicionais..."
+                  value={additionalReqs}
+                  onChange={(e) => setAdditionalReqs(e.target.value)}
+                  rows={3}
+                  className="text-xs"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Label className="text-xs font-semibold">Estilo de Formatação</Label>
+                <Select value={formattingStyle} onValueChange={setFormattingStyle}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="Selecione um estilo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="padrao" className="text-xs">
+                      Padrão
+                    </SelectItem>
+                    <SelectItem value="performatico" className="text-xs">
+                      Performático
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Label className="text-xs font-semibold">Modo Avançado</Label>
+                <Checkbox checked={advancedMode} onCheckedChange={setAdvancedMode} className="h-4 w-4" />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Label className="text-xs font-semibold">Nível de Criatividade</Label>
+                <Slider value={creativity} onValueChange={setCreativity} max={100} className="w-full h-4" />
+                <Badge>{getTemperatureLabel(Number.parseFloat(getTemperatureValue(creativity[0])))}</Badge>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Label className="text-xs font-semibold">Polimento Universal</Label>
+                <Checkbox checked={universalPolish} onCheckedChange={setUniversalPolish} className="h-4 w-4" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Coluna 3: Edição & Visualização */}
+          <Card className="order-3 h-fit">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Edição & Visualização</CardTitle>
+              <p className="text-xs text-muted-foreground">Cole sua letra aqui e visualize as alterações sugeridas.</p>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              <div className="flex items-center gap-2">
+                <Label className="text-xs font-semibold">Título</Label>
+                <Input
+                  placeholder="Digite o título..."
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="h-8 text-xs"
+                />
+              </div>
+
+              <div className="border rounded-lg p-3 bg-purple-50/50 space-y-2">
+                <Label className="text-xs font-semibold">Letra Original</Label>
+                <Textarea
+                  placeholder="Cole a letra aqui..."
+                  value={lyrics}
+                  onChange={(e) => setLyrics(e.target.value)}
+                  rows={10}
+                  className="text-xs"
+                />
+              </div>
+
+              <div className="border rounded-lg p-3 bg-purple-50/50 space-y-2">
+                <Label className="text-xs font-semibold">Letra Editada</Label>
+                <Textarea
+                  placeholder="Aqui aparecerá a letra editada..."
+                  value={lyrics}
+                  readOnly
+                  rows={10}
+                  className="text-xs"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <Button size="sm" onClick={handleEditLyrics} disabled={isEditing}>
+                  {isEditing ? "Editando..." : "Editar Letra"}
+                </Button>
+                <Button size="sm" onClick={handleSave}>
+                  Salvar Projeto
+                </Button>
+                <Button size="sm" onClick={handleCopy}>
+                  Copiar Letra
+                </Button>
+                <Button size="sm" onClick={handleClear}>
+                  Limpar Letra
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  )
+}

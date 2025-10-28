@@ -39,7 +39,6 @@ export function Navigation() {
     { href: "/reescrever", label: "Reescrever", icon: RefreshCw },
     { href: "/editar", label: "Editar", icon: Pencil },
     { href: "/galeria", label: "Galeria", icon: LayoutGrid },
-    { href: "/avaliar", label: "Avaliar", icon: Music },
     { href: "/aula", label: "Aula", icon: BookOpen },
     { href: "/manual", label: "Manual", icon: HelpCircle },
   ]

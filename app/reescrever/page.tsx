@@ -100,15 +100,19 @@ export default function ReescreverPage() {
     setIsRewriting(true)
 
     try {
-      const genreMetrics = getGenreMetrics(genre)
-      const syllableConfig = getSyllableConfig(genre)
+      const syllableValidation = validateSyllablesByGenre("", genre)
+      const syllableConfig = {
+        min: syllableValidation.minSyllables,
+        max: syllableValidation.maxSyllables,
+        ideal: syllableValidation.maxSyllables,
+      }
 
       const response = await fetch("/api/rewrite-lyrics", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           originalLyrics,
-          genre: genre, // ✅ Changed from "genero" to "genre"
+          genre: genre,
           mood: mood,
           theme: theme,
           additionalRequirements: additionalReqs,
