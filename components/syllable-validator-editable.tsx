@@ -1,4 +1,4 @@
-// components/syllable-validator-editable.tsx - VERSÃO FINAL CORRIGIDA
+// components/syllable-validator-editable.tsx - VERSÃO ROBUSTA RESTAURADA
 
 "use client"
 
@@ -7,16 +7,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { CheckCircle, AlertTriangle, XCircle, Edit2, Check, X } from "lucide-react"
-import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro" // ✅ CORRETO
+import { CheckCircle, AlertTriangle, XCircle, Edit2, Check, X, Wand2 } from "lucide-react"
+import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro"
+import { fixLineToMaxSyllables } from "@/lib/validation/local-syllable-fixer"
 import { toast } from "sonner"
 
-// ✅ NOVO
 interface SyllableValidatorEditableProps {
   lyrics: string
   onLyricsChange: (lyrics: string) => void
   maxSyllables?: number
-  genre?: string // ✅ Adicione esta linha
+  genre?: string
 }
 
 interface LineValidation {
@@ -28,50 +28,42 @@ interface LineValidation {
 
 export function SyllableValidatorEditable({
   lyrics,
-  maxSyllables = 12,
+  maxSyllables = 12, // Limite correto de 12 sílabas do genre-config
   onLyricsChange,
 }: SyllableValidatorEditableProps) {
   const [editingLines, setEditingLines] = useState<Set<number>>(new Set())
 
-  // Função para gerar sugestões básicas
-  const generateBasicSuggestions = (line: string, maxSyllables: number): string[] => {
+  const generateSmartSuggestions = (line: string, maxSyllables: number): string[] => {
     const suggestions: string[] = []
-    const words = line.split(" ")
 
-    // Sugestão 1: Remover última palavra se tiver mais de maxSyllables + 2
-    if (words.length > 1) {
-      const withoutLastWord = words.slice(0, -1).join(" ")
-      const syllablesWithoutLast = countPoeticSyllables(withoutLastWord)
-      if (syllablesWithoutLast <= maxSyllables && syllablesWithoutLast > 0) {
-        suggestions.push(withoutLastWord)
-      }
+    // Sugestão 1: Usar o local-syllable-fixer (correção semântica inteligente)
+    const fixedLine = fixLineToMaxSyllables(line, maxSyllables)
+    if (fixedLine !== line && countPoeticSyllables(fixedLine) <= maxSyllables) {
+      suggestions.push(fixedLine)
     }
 
-    // Sugestão 2: Contrações comuns
+    // Sugestão 2: Contrações naturais
     const contractions: [string, string][] = [
       [" para ", " pra "],
       [" você ", " cê "],
       [" está ", " tá "],
       [" estou ", " tô "],
-      [" com ", " c/ "],
       [" de ", " d"],
       [" que ", " q"],
       [" não ", " num "],
-      [" uma ", " "],
-      [" um ", " "],
     ]
 
     contractions.forEach(([from, to]) => {
       if (line.includes(from)) {
         const newLine = line.replace(new RegExp(from, "g"), to)
         const syllables = countPoeticSyllables(newLine)
-        if (syllables <= maxSyllables && syllables > 0) {
+        if (syllables <= maxSyllables && syllables > 0 && !suggestions.includes(newLine.trim())) {
           suggestions.push(newLine.trim())
         }
       }
     })
 
-    return suggestions.slice(0, 3) // Limitar a 3 sugestões
+    return suggestions.slice(0, 3)
   }
 
   // Analisa todas as linhas da letra
@@ -80,6 +72,7 @@ export function SyllableValidatorEditable({
 
   lines.forEach((line, index) => {
     const trimmedLine = line.trim()
+
     const shouldSkip =
       !trimmedLine ||
       trimmedLine.startsWith("[") ||
@@ -88,7 +81,7 @@ export function SyllableValidatorEditable({
       trimmedLine.toLowerCase().includes("instruments:") ||
       trimmedLine.toLowerCase().includes("backing vocals") ||
       trimmedLine.toLowerCase().includes("backvocal") ||
-      /^$$[^)]*$$$/.test(trimmedLine) // Ignora linhas que são apenas parênteses
+      /^$$[^)]*$$$/.test(trimmedLine)
 
     if (!shouldSkip) {
       // ✅ Arquitetura correta: countPoeticSyllables() do syllable-counter-brasileiro.ts
@@ -96,8 +89,7 @@ export function SyllableValidatorEditable({
 
       // ✅ Validação usa absolute_max: 12 do genre-config.ts
       if (syllables > maxSyllables) {
-        // Gerar sugestões básicas
-        const suggestions = generateBasicSuggestions(line, maxSyllables)
+        const suggestions = generateSmartSuggestions(line, maxSyllables)
 
         validations.push({
           line: line.trim(),
@@ -134,6 +126,20 @@ export function SyllableValidatorEditable({
     const newLyrics = newLines.join("\n")
     onLyricsChange(newLyrics)
     toast.success("Sugestão aplicada com sucesso!")
+  }
+
+  const autoFixLine = (lineNumber: number) => {
+    const line = lines[lineNumber - 1]
+    const fixed = fixLineToMaxSyllables(line, maxSyllables)
+    if (fixed !== line) {
+      const newLines = [...lines]
+      newLines[lineNumber - 1] = fixed
+      const newLyrics = newLines.join("\n")
+      onLyricsChange(newLyrics)
+      toast.success("Linha corrigida automaticamente!")
+    } else {
+      toast.info("Não foi possível corrigir automaticamente")
+    }
   }
 
   const cancelEdit = (lineNumber: number) => {
@@ -227,25 +233,36 @@ export function SyllableValidatorEditable({
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-start justify-between">
+                    <div className="flex items-start justify-between gap-2">
                       <p className="text-sm text-gray-700 font-mono flex-1">"{validation.line}"</p>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => toggleEdit(validation.lineNumber)}
-                        className="h-7 ml-2"
-                      >
-                        <Edit2 className="h-3 w-3" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => autoFixLine(validation.lineNumber)}
+                          className="h-7 px-2"
+                          title="Correção automática inteligente"
+                        >
+                          <Wand2 className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => toggleEdit(validation.lineNumber)}
+                          className="h-7 px-2"
+                        >
+                          <Edit2 className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* SUGESTÕES */}
+              {/* SUGESTÕES INTELIGENTES */}
               {validation.suggestions.length > 0 && !editingLines.has(validation.lineNumber) && (
                 <div className="mt-3 pt-3 border-t border-amber-100">
-                  <span className="text-xs font-medium text-gray-600 mb-2 block">Sugestões automáticas:</span>
+                  <span className="text-xs font-medium text-gray-600 mb-2 block">Sugestões inteligentes:</span>
                   <div className="space-y-2">
                     {validation.suggestions.map((suggestion, suggestionIndex) => {
                       const suggestionSyllables = countPoeticSyllables(suggestion)
@@ -278,7 +295,7 @@ export function SyllableValidatorEditable({
                 <div className="mt-3 pt-3 border-t border-amber-100">
                   <div className="flex items-center text-amber-600">
                     <XCircle className="h-3 w-3 mr-1" />
-                    <span className="text-xs">Edite manualmente para corrigir</span>
+                    <span className="text-xs">Use o botão de varinha mágica para correção automática</span>
                   </div>
                 </div>
               )}
@@ -288,8 +305,8 @@ export function SyllableValidatorEditable({
 
         <div className="p-3 bg-amber-100 border border-amber-200 rounded">
           <p className="text-xs text-amber-800">
-            💡 <strong>Dica:</strong> Use contrações como "pra", "cê", "tá" e elisões como "d'amor", "qu'eu" para
-            reduzir sílabas sem quebrar palavras.
+            💡 <strong>Dica:</strong> Use o botão de varinha mágica para correção automática inteligente ou edite
+            manualmente. O sistema usa contrações naturais e preserva o sentido da frase.
           </p>
         </div>
       </CardContent>
