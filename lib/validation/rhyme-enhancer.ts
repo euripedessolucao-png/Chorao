@@ -93,7 +93,7 @@ export async function enhanceLyricsRhymes(
         const currentRhyme = rhymeValidator.analyzeRhyme(word1, word2)
 
         if (currentRhyme.score < getMinimumRhymeScore(genre)) {
-          const enhancedPair = simpleRhymeImprovement(line, line2, genre)
+          const enhancedPair = await enhanceRhymePair(line, line2, genre, originalTheme, creativityLevel)
 
           if (enhancedPair && enhancedPair.improved) {
             enhancedLines.push(enhancedPair.line1)
@@ -356,40 +356,55 @@ function simpleRhymeImprovement(
 
   if (!word1 || !word2) return null
 
-  const improvements: Record<string, string> = {
-    coração: "canção",
-    paixão: "ilusão",
-    amor: "calor",
-    dor: "flor",
-    viver: "esquecer",
-    partir: "sofri",
-    sentir: "dormir",
-    feliz: "infeliz",
-    sorrir: "partir",
-    chorar: "cantar",
-    solidão: "coração",
-    razão: "paixão",
-    emoção: "canção",
-    saudade: "verdade",
-    noite: "açoite",
-    dia: "alegria",
-    lua: "rua",
-    sol: "farol",
-    mar: "lugar",
-    céu: "véu",
+  const improvements: Record<string, string[]> = {
+    // Rimas ricas com substantivo + verbo
+    coração: ["canção", "emoção", "ilusão", "perdição"],
+    paixão: ["ilusão", "canção", "emoção", "perdição"],
+    amor: ["calor", "dor", "flor", "sabor", "valor"],
+    dor: ["flor", "amor", "calor", "sabor"],
+    viver: ["esquecer", "morrer", "sofrer", "renascer"],
+    partir: ["sofri", "dormi", "senti", "vivi"],
+    sentir: ["dormir", "partir", "sorrir", "fugir"],
+    feliz: ["infeliz", "raiz", "cicatriz", "perdiz"],
+    sorrir: ["partir", "sentir", "fugir", "dormir"],
+    chorar: ["cantar", "amar", "sonhar", "lembrar"],
+    solidão: ["coração", "paixão", "canção", "razão"],
+    razão: ["paixão", "coração", "emoção", "canção"],
+    emoção: ["canção", "coração", "paixão", "razão"],
+    saudade: ["verdade", "cidade", "liberdade", "felicidade"],
+    noite: ["açoite", "dezoito", "biscoito"],
+    dia: ["alegria", "fantasia", "harmonia", "melodia"],
+    lua: ["rua", "sua", "continua"],
+    sol: ["farol", "espanhol", "caracol", "anzol"],
+    mar: ["lugar", "amar", "sonhar", "lembrar"],
+    céu: ["véu", "chapéu", "troféu", "museu"],
+    vida: ["ferida", "partida", "esquecida", "perdida"],
+    tempo: ["momento", "lamento", "tormento", "pensamento"],
+    sonho: ["risonho", "medonho", "tristonho"],
+    olhar: ["amar", "sonhar", "lembrar", "chorar"],
+    mão: ["coração", "paixão", "canção", "razão"],
+    pé: ["você", "café", "fé", "bebê"],
+    vez: ["talvez", "depois", "três", "mês"],
+    fim: ["assim", "jardim", "ruim", "enfim"],
   }
 
-  const improvedWord2 = improvements[word1.toLowerCase()] || word2
+  // Tenta encontrar uma rima rica para word1
+  const possibleRhymes = improvements[word1.toLowerCase()]
 
-  if (improvedWord2 !== word2) {
-    const newLine2 = line2.replace(new RegExp(`${word2}$`, "i"), improvedWord2)
-    const newRhyme = rhymeValidator.analyzeRhyme(word1, improvedWord2)
+  if (possibleRhymes && possibleRhymes.length > 0) {
+    // Escolhe uma rima aleatória da lista para variedade
+    const improvedWord2 = possibleRhymes[Math.floor(Math.random() * possibleRhymes.length)]
 
-    return {
-      line1,
-      line2: newLine2,
-      improved: (newRhyme.score || 0) > 60,
-      newRhymeType: newRhyme.type,
+    if (improvedWord2 !== word2) {
+      const newLine2 = line2.replace(new RegExp(`${word2}$`, "i"), improvedWord2)
+      const newRhyme = rhymeValidator.analyzeRhyme(word1, improvedWord2)
+
+      return {
+        line1,
+        line2: newLine2,
+        improved: (newRhyme.score || 0) > 60,
+        newRhymeType: newRhyme.type,
+      }
     }
   }
 

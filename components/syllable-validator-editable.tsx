@@ -77,6 +77,7 @@ export function SyllableValidatorEditable({
       !trimmedLine ||
       trimmedLine.startsWith("[") ||
       trimmedLine.startsWith("(") ||
+      /^\[.*\]$/.test(trimmedLine) || // Ignora linhas completamente entre colchetes
       trimmedLine.toLowerCase().includes("instrumental") ||
       trimmedLine.toLowerCase().includes("instruments:") ||
       trimmedLine.toLowerCase().includes("backing vocals") ||
@@ -84,19 +85,24 @@ export function SyllableValidatorEditable({
       /^$$[^)]*$$$/.test(trimmedLine)
 
     if (!shouldSkip) {
-      // ✅ Arquitetura correta: countPoeticSyllables() do syllable-counter-brasileiro.ts
-      const syllables = countPoeticSyllables(line)
+      // Remove texto entre colchetes antes de contar sílabas
+      const lineWithoutBrackets = line.replace(/\[.*?\]/g, "").trim()
 
-      // ✅ Validação usa absolute_max: 12 do genre-config.ts
-      if (syllables > maxSyllables) {
-        const suggestions = generateSmartSuggestions(line, maxSyllables)
+      if (lineWithoutBrackets) {
+        // ✅ Arquitetura correta: countPoeticSyllables() do syllable-counter-brasileiro.ts
+        const syllables = countPoeticSyllables(lineWithoutBrackets)
 
-        validations.push({
-          line: line.trim(),
-          syllables: syllables,
-          lineNumber: index + 1,
-          suggestions: suggestions,
-        })
+        // ✅ Validação usa absolute_max: 12 do genre-config.ts
+        if (syllables > maxSyllables) {
+          const suggestions = generateSmartSuggestions(lineWithoutBrackets, maxSyllables)
+
+          validations.push({
+            line: line.trim(),
+            syllables: syllables,
+            lineNumber: index + 1,
+            suggestions: suggestions,
+          })
+        }
       }
     }
   })
