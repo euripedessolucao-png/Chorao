@@ -14,6 +14,7 @@ import { enhanceLyricsRhymes } from "@/lib/validation/rhyme-enhancer"
 import { validateRhymesForGenre } from "@/lib/validation/rhyme-validator"
 import { validateSyllablesByGenre } from "@/lib/validation/absolute-syllable-enforcer"
 import { fixLineToMaxSyllables } from "@/lib/validation/local-syllable-fixer"
+import { validateVerseCompleteness, fixIncompleteVerses } from "@/lib/validation/verse-completeness-validator"
 
 export async function POST(request: NextRequest) {
   try {
@@ -73,7 +74,9 @@ ${
     : "[Intro]\n[Verso 1]\n[Pré-Refrão]\n[Refrão]\n[Verso 2]\n[Refrão]\n[Ponte]\n[Refrão]\n[Outro]"
 }
 
-REGRAS:
+REGRAS CRÍTICAS:
+- NUNCA corte versos no meio
+- Cada verso deve ser completo e fazer sentido sozinho
 - Mantenha a mensagem central da letra original
 - Adapte linguagem e estilo para ${genre}
 - Refrão memorável e repetível
@@ -100,6 +103,17 @@ Retorne APENAS a letra reescrita, sem explicações.`
       )
       .join("\n")
       .trim()
+
+    console.log("[API] 📝 Validando completude dos versos...")
+    const verseValidation = validateVerseCompleteness(finalLyrics)
+    if (!verseValidation.valid || verseValidation.warnings.length > 0) {
+      console.log("[API] 🔧 Corrigindo versos incompletos...")
+      const verseFixResult = fixIncompleteVerses(finalLyrics)
+      if (verseFixResult.changes.length > 0) {
+        console.log(`[API] ✅ ${verseFixResult.changes.length} verso(s) corrigido(s)`)
+        finalLyrics = verseFixResult.fixed
+      }
+    }
 
     console.log("[API] 🎵 Validando qualidade das rimas...")
     const rhymeValidation = validateRhymesForGenre(finalLyrics, genre)
@@ -166,7 +180,10 @@ Retorne APENAS a letra reescrita, sem explicações.`
     const validityRatio = finalValidation.violations.length === 0 ? 1 : 0
     const finalScore = Math.round(validityRatio * 100)
 
+    const finalVerseValidation = validateVerseCompleteness(finalLyrics)
+
     console.log(`[API] ✅ Validação final: ${finalScore}% dentro da métrica (${genre})`)
+    console.log(`[API] ✅ Completude dos versos: ${finalVerseValidation.score}%`)
 
     return NextResponse.json({
       success: true,
@@ -180,6 +197,8 @@ Retorne APENAS a letra reescrita, sem explicações.`
         syllableCorrections: corrections,
         stackingScore: stackingResult.stackingScore,
         syllableViolations: finalValidation.violations.length,
+        verseCompletenessScore: finalVerseValidation.score,
+        incompleteVerses: finalVerseValidation.incompleteVerses.length,
       },
     })
   } catch (error) {

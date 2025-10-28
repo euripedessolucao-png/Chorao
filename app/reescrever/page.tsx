@@ -157,13 +157,22 @@ export default function ReescreverPage() {
       return
     }
 
-    const hookText = `[HOOK]\n${selectedHook}`
-    const updatedReqs = additionalReqs ? `${additionalReqs}\n\n${hookText}` : hookText
+    const hookSection = `\n\n[HOOK]\n${selectedHook}\n`
+    setLyrics((prev) => {
+      if (prev) {
+        const lines = prev.split("\n")
+        const instrumentationIndex = lines.findIndex((line) => line.startsWith("(Instrumentation)"))
+        if (instrumentationIndex !== -1) {
+          lines.splice(instrumentationIndex, 0, hookSection)
+          return lines.join("\n")
+        }
+        return prev + hookSection
+      }
+      return hookSection
+    })
 
-    setAdditionalReqs(updatedReqs)
     setShowHookDialog(false)
-
-    toast.success("Hook adicionado aos requisitos!")
+    toast.success("Hook adicionado à letra!")
   }
 
   const handleClearLyrics = () => {
@@ -617,16 +626,24 @@ export default function ReescreverPage() {
           <DialogHeader>
             <DialogTitle>Gerador de Hook & Ganchômetro</DialogTitle>
             <DialogDescription>
-              Analise sua letra e escolha o melhor hook entre 3 variações geradas pela Terceira Via
+              {originalLyrics
+                ? "Analise a letra original e escolha o melhor hook entre 3 variações"
+                : "Cole uma letra para gerar hooks comerciais"}
             </DialogDescription>
           </DialogHeader>
-          <HookGenerator onSelectHook={handleSelectHook} showSelectionMode={true} />
+          <HookGenerator
+            onSelectHook={handleSelectHook}
+            showSelectionMode={true}
+            initialLyrics={originalLyrics}
+            initialGenre={genre}
+            initialTheme={theme}
+          />
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowHookDialog(false)}>
               Cancelar
             </Button>
             <Button onClick={handleApplyHook} disabled={!selectedHook}>
-              Adicionar aos Requisitos
+              Adicionar Hook à Letra
             </Button>
           </DialogFooter>
         </DialogContent>
