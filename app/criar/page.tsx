@@ -27,6 +27,7 @@ import { HookGenerator } from "@/components/hook-generator"
 import { SyllableValidatorEditable } from "@/components/syllable-validator-editable"
 import { RhymeAnalyzer } from "@/components/rhyme-analyzer"
 import { ProcessingStatus } from "@/components/processing-status"
+import { SubgenreSelect } from "@/components/subgenre-select"
 
 const GENRE_QUALITY_CONFIG = {
   Sertanejo: { max: 12, ideal: 10, rhymeQuality: 0.5 },
@@ -61,6 +62,7 @@ type ChorusResponse = {
 
 export default function CriarPage() {
   const [genre, setGenre] = useState("")
+  const [subgenre, setSubgenre] = useState("") // Adicionando estado para subgênero/ritmo
   const [mood, setMood] = useState("")
   const [theme, setTheme] = useState("")
   const [avoidWords, setAvoidWords] = useState("")
@@ -122,6 +124,8 @@ export default function CriarPage() {
     try {
       const syllableConfig = getSyllableConfig(genre)
 
+      const fullRequirements = subgenre ? `${additionalReqs}\n\nRitmo/Subgênero: ${subgenre}` : additionalReqs
+
       const response = await fetch("/api/generate-lyrics", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -130,7 +134,7 @@ export default function CriarPage() {
           mood: mood,
           theme: theme,
           title: title,
-          additionalRequirements: additionalReqs,
+          additionalRequirements: fullRequirements,
           performanceMode: formattingStyle === "performatico" ? "performance" : "standard",
           temperature: Number.parseFloat(getTemperatureValue(creativity[0])),
         }),
@@ -332,25 +336,60 @@ export default function CriarPage() {
                 Mostrar informações dos gêneros
               </Button>
 
-              <div className="space-y-2">
-                <Label className="text-xs">Gênero</Label>
-                <GenreSelect value={genre} onValueChange={setGenre} className="h-9" />
+              <div className="space-y-3 border rounded-lg p-3 bg-blue-50/30">
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">1. Gênero Musical</Label>
+                  <GenreSelect
+                    value={genre}
+                    onValueChange={(value) => {
+                      setGenre(value)
+                      setSubgenre("") // Reset subgênero ao mudar gênero
+                    }}
+                    className="h-9"
+                  />
+                </div>
 
-                {currentSyllableConfig && (
-                  <div className="bg-blue-50 border border-blue-200 rounded p-2 text-xs">
-                    <div className="font-semibold text-blue-800">Configuração {genre}:</div>
-                    {/* Removed exibição de mínimo - apenas máximo de 12 sílabas */}
-                    <div className="text-blue-700">
-                      Máximo: {currentSyllableConfig.max} sílabas (ideal: {currentSyllableConfig.ideal})
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">2. Ritmo/Subgênero</Label>
+                  <SubgenreSelect genre={genre} value={subgenre} onValueChange={setSubgenre} />
+                  {!genre && <p className="text-xs text-muted-foreground italic">Selecione um gênero primeiro</p>}
+                  {genre && subgenre && (
+                    <div className="bg-green-50 border border-green-200 rounded p-2 text-xs text-green-700">
+                      <div className="font-semibold">Ritmo selecionado: {subgenre}</div>
                     </div>
-                    <div className="text-blue-700">
-                      Rimas:{" "}
-                      {GENRE_QUALITY_CONFIG[genre as keyof typeof GENRE_QUALITY_CONFIG]?.rhymeQuality * 100 || 40}%
-                      mínimas
-                    </div>
-                  </div>
-                )}
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">3. Tema</Label>
+                  <Input
+                    placeholder="Amor, Perda, Jornada, etc."
+                    value={theme}
+                    onChange={(e) => setTheme(e.target.value)}
+                    className="h-9"
+                  />
+                  <Button variant="link" size="sm" className="h-auto p-0 text-xs">
+                    Buscar ideias de Tema
+                  </Button>
+                  <p className="text-xs text-muted-foreground">
+                    Use Tema para definir "o quê" da sua música (a história) e Sensações & Emoções para definir "como" a
+                    história é contada (o sentimento).
+                  </p>
+                </div>
               </div>
+
+              {currentSyllableConfig && (
+                <div className="bg-blue-50 border border-blue-200 rounded p-2 text-xs">
+                  <div className="font-semibold text-blue-800">Configuração {genre}:</div>
+                  <div className="text-blue-700">
+                    Máximo: {currentSyllableConfig.max} sílabas (ideal: {currentSyllableConfig.ideal})
+                  </div>
+                  <div className="text-blue-700">
+                    Rimas: {GENRE_QUALITY_CONFIG[genre as keyof typeof GENRE_QUALITY_CONFIG]?.rhymeQuality * 100 || 40}%
+                    mínimas
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label className="text-xs">Humor</Label>
@@ -361,23 +400,6 @@ export default function CriarPage() {
                   className="h-9"
                 />
                 <p className="text-xs text-muted-foreground">Descreva o humor/sentimento desejado para a composição</p>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-xs">Tema</Label>
-                <Input
-                  placeholder="Amor, Perda, Jornada, etc."
-                  value={theme}
-                  onChange={(e) => setTheme(e.target.value)}
-                  className="h-9"
-                />
-                <Button variant="link" size="sm" className="h-auto p-0 text-xs">
-                  Buscar ideias de Tema
-                </Button>
-                <p className="text-xs text-muted-foreground">
-                  Use Tema para definir "o quê" da sua música (a história) e Sensações & Emoções para definir "como" a
-                  história é contada (o sentimento).
-                </p>
               </div>
 
               <div className="space-y-2">

@@ -25,10 +25,11 @@ import {
 import { EMOTIONS } from "@/lib/genres"
 import { GenreSelect } from "@/components/genre-select"
 import { HookGenerator } from "@/components/hook-generator"
-import { SyllableValidatorEditable } from "@/components/syllable-validator-editable" // Usar validador robusto com edição
+import { SyllableValidatorEditable } from "@/components/syllable-validator-editable"
 import { RhymeAnalyzer } from "@/components/rhyme-analyzer"
 import { validateSyllablesByGenre } from "@/lib/validation/absolute-syllable-enforcer"
 import { ChorusGenerator } from "@/components/chorus-generator"
+import { SubgenreSelect } from "@/components/subgenre-select"
 
 const GENRE_QUALITY_CONFIG = {
   Sertanejo: { max: 12, ideal: 10, rhymeQuality: 0.5 },
@@ -52,6 +53,7 @@ const GENRE_QUALITY_CONFIG = {
 export default function ReescreverPage() {
   const [originalLyrics, setOriginalLyrics] = useState("")
   const [genre, setGenre] = useState("")
+  const [subgenre, setSubgenre] = useState("") // Adicionando estado para subgênero/ritmo
   const [mood, setMood] = useState("")
   const [theme, setTheme] = useState("")
   const [avoidWords, setAvoidWords] = useState("")
@@ -108,6 +110,8 @@ export default function ReescreverPage() {
         ideal: syllableValidation.maxSyllables,
       }
 
+      const fullRequirements = subgenre ? `${additionalReqs}\n\nRitmo/Subgênero: ${subgenre}` : additionalReqs
+
       const response = await fetch("/api/rewrite-lyrics", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -116,7 +120,7 @@ export default function ReescreverPage() {
           genre: genre,
           mood: mood,
           theme: theme,
-          additionalRequirements: additionalReqs,
+          additionalRequirements: fullRequirements,
           title: title,
           syllableTarget: syllableConfig,
           performanceMode: formattingStyle === "performatico" ? "performance" : "standard",
@@ -250,24 +254,53 @@ export default function ReescreverPage() {
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-xs">Gênero</Label>
-                <GenreSelect value={genre} onValueChange={setGenre} className="h-9" />
+              <div className="space-y-3 border rounded-lg p-3 bg-blue-50/30">
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">1. Gênero Musical</Label>
+                  <GenreSelect
+                    value={genre}
+                    onValueChange={(value) => {
+                      setGenre(value)
+                      setSubgenre("") // Reset subgênero ao mudar gênero
+                    }}
+                    className="h-9"
+                  />
+                </div>
 
-                {currentSyllableConfig && (
-                  <div className="bg-blue-50 border border-blue-200 rounded p-2 text-xs">
-                    <div className="font-semibold text-blue-800">Configuração {genre}:</div>
-                    <div className="text-blue-700">
-                      Máximo: {currentSyllableConfig.max} sílabas (ideal: {currentSyllableConfig.ideal})
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">2. Ritmo/Subgênero</Label>
+                  <SubgenreSelect genre={genre} value={subgenre} onValueChange={setSubgenre} />
+                  {!genre && <p className="text-xs text-muted-foreground italic">Selecione um gênero primeiro</p>}
+                  {genre && subgenre && (
+                    <div className="bg-green-50 border border-green-200 rounded p-2 text-xs text-green-700">
+                      <div className="font-semibold">Ritmo selecionado: {subgenre}</div>
                     </div>
-                    <div className="text-blue-700">
-                      Rimas:{" "}
-                      {GENRE_QUALITY_CONFIG[genre as keyof typeof GENRE_QUALITY_CONFIG]?.rhymeQuality * 100 || 40}%
-                      mínimas
-                    </div>
-                  </div>
-                )}
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">3. Tema</Label>
+                  <Input
+                    placeholder="Amor, Perda, Jornada, etc."
+                    value={theme}
+                    onChange={(e) => setTheme(e.target.value)}
+                    className="h-9"
+                  />
+                </div>
               </div>
+
+              {currentSyllableConfig && (
+                <div className="bg-blue-50 border border-blue-200 rounded p-2 text-xs">
+                  <div className="font-semibold text-blue-800">Configuração {genre}:</div>
+                  <div className="text-blue-700">
+                    Máximo: {currentSyllableConfig.max} sílabas (ideal: {currentSyllableConfig.ideal})
+                  </div>
+                  <div className="text-blue-700">
+                    Rimas: {GENRE_QUALITY_CONFIG[genre as keyof typeof GENRE_QUALITY_CONFIG]?.rhymeQuality * 100 || 40}%
+                    mínimas
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label className="text-xs">Humor</Label>
@@ -275,16 +308,6 @@ export default function ReescreverPage() {
                   placeholder="Ex: Feliz, Triste, Nostálgico..."
                   value={mood}
                   onChange={(e) => setMood(e.target.value)}
-                  className="h-9"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-xs">Tema</Label>
-                <Input
-                  placeholder="Amor, Perda, Jornada, etc."
-                  value={theme}
-                  onChange={(e) => setTheme(e.target.value)}
                   className="h-9"
                 />
               </div>
