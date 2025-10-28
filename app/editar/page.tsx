@@ -428,7 +428,10 @@ export default function EditarPage() {
 
               <div className="flex items-center gap-2">
                 <Label className="text-xs font-semibold">Estilo de Formatação</Label>
-                <Select value={formattingStyle} onValueChange={setFormattingStyle}>
+                <Select
+                  value={formattingStyle}
+                  onValueChange={(value) => setFormattingStyle(value as "padrao" | "performatico")}
+                >
                   <SelectTrigger className="h-8 text-xs">
                     <SelectValue placeholder="Selecione um estilo" />
                   </SelectTrigger>
