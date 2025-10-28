@@ -175,7 +175,7 @@ VERSO COMPLETO:`
         model: "openai/gpt-4o-mini",
         prompt,
         temperature: 0.7,
-        maxTokens: 100,
+        // ❌ REMOVIDO: maxTokens: 100, // Esta propriedade não existe e causa o erro
       })
 
       const completedVerse = text.trim()
