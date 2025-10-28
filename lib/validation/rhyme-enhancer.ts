@@ -56,7 +56,7 @@ export async function enhanceLyricsRhymes(
 
   const originalAnalysis = rhymeValidator.analyzeLyricsRhymeScheme(lyrics)
   let improvementCount = 0
-  const MAX_IMPROVEMENTS = 5
+  const MAX_IMPROVEMENTS = 10 // Aumentado de 5 para 10 para melhorar mais rimas
 
   for (let i = 0; i < lines.length; i++) {
     if (Date.now() - startTime > MAX_ENHANCEMENT_TIME) {
@@ -92,8 +92,12 @@ export async function enhanceLyricsRhymes(
       if (word1 && word2) {
         const currentRhyme = rhymeValidator.analyzeRhyme(word1, word2)
 
-        if (currentRhyme.score < getMinimumRhymeScore(genre)) {
-          const enhancedPair = await enhanceRhymePair(line, line2, genre, originalTheme, creativityLevel)
+        if (
+          currentRhyme.type === "pobre" ||
+          currentRhyme.type === "toante" ||
+          currentRhyme.score < getMinimumRhymeScore(genre)
+        ) {
+          const enhancedPair = simpleRhymeImprovement(line, line2, genre)
 
           if (enhancedPair && enhancedPair.improved) {
             enhancedLines.push(enhancedPair.line1)
@@ -123,40 +127,6 @@ export async function enhanceLyricsRhymes(
     improvements,
     rhymeAnalysis: enhancedAnalysis,
   }
-}
-
-/**
- * Aprimora um par de linhas para melhorar a rima
- */
-async function enhanceRhymePair(
-  line1: string,
-  line2: string,
-  genre: string,
-  theme: string,
-  creativity: number,
-): Promise<{ line1: string; line2: string; improved: boolean; newRhymeType?: string } | null> {
-  const word1 = getLastWord(line1)
-  const word2 = getLastWord(line2)
-
-  if (!word1 || !word2) return null
-
-  try {
-    const enhanced = await mockRhymeEnhancement(line1, line2, genre, theme)
-
-    if (enhanced) {
-      const newRhyme = rhymeValidator.analyzeRhyme(getLastWord(enhanced.line1), getLastWord(enhanced.line2))
-      return {
-        line1: enhanced.line1,
-        line2: enhanced.line2,
-        improved: (newRhyme.score || 0) > 60,
-        newRhymeType: newRhyme.type,
-      }
-    }
-  } catch (error) {
-    console.error("Erro ao aprimorar rima:", error)
-  }
-
-  return null
 }
 
 /**
@@ -341,6 +311,14 @@ export function suggestRhymingWords(targetWord: string, genre: string): string[]
     dia: ["magia", "alegria", "fantasia", "harmonia", "melodia"],
     mar: ["lugar", "doce", "você", "pé", "céu"],
     sol: ["farol", "escol", "espanhol", "redor", "amor"],
+    cidade: ["saudade", "verdade", "liberdade", "felicidade"],
+    carro: ["cigarro", "barro", "amarro", "desgarro"],
+    casa: ["asa", "brasa", "escassa", "passa"],
+    rua: ["lua", "sua", "continua", "flutua"],
+    bar: ["lugar", "amar", "sonhar", "lembrar"],
+    festa: ["floresta", "tempesta", "manifesta", "protesta"],
+    beijo: ["desejo", "espelho", "conselho", "velho"],
+    abraço: ["laço", "espaço", "aço", "traço"],
   }
 
   return wordLibrary[targetWord.toLowerCase()] || ["rima1", "rima2", "rima3", "rima4", "rima5"]
@@ -358,34 +336,43 @@ function simpleRhymeImprovement(
 
   const improvements: Record<string, string[]> = {
     // Rimas ricas com substantivo + verbo
-    coração: ["canção", "emoção", "ilusão", "perdição"],
-    paixão: ["ilusão", "canção", "emoção", "perdição"],
-    amor: ["calor", "dor", "flor", "sabor", "valor"],
-    dor: ["flor", "amor", "calor", "sabor"],
-    viver: ["esquecer", "morrer", "sofrer", "renascer"],
-    partir: ["sofri", "dormi", "senti", "vivi"],
-    sentir: ["dormir", "partir", "sorrir", "fugir"],
-    feliz: ["infeliz", "raiz", "cicatriz", "perdiz"],
-    sorrir: ["partir", "sentir", "fugir", "dormir"],
-    chorar: ["cantar", "amar", "sonhar", "lembrar"],
-    solidão: ["coração", "paixão", "canção", "razão"],
-    razão: ["paixão", "coração", "emoção", "canção"],
-    emoção: ["canção", "coração", "paixão", "razão"],
-    saudade: ["verdade", "cidade", "liberdade", "felicidade"],
-    noite: ["açoite", "dezoito", "biscoito"],
-    dia: ["alegria", "fantasia", "harmonia", "melodia"],
-    lua: ["rua", "sua", "continua"],
-    sol: ["farol", "espanhol", "caracol", "anzol"],
-    mar: ["lugar", "amar", "sonhar", "lembrar"],
-    céu: ["véu", "chapéu", "troféu", "museu"],
-    vida: ["ferida", "partida", "esquecida", "perdida"],
-    tempo: ["momento", "lamento", "tormento", "pensamento"],
-    sonho: ["risonho", "medonho", "tristonho"],
-    olhar: ["amar", "sonhar", "lembrar", "chorar"],
-    mão: ["coração", "paixão", "canção", "razão"],
-    pé: ["você", "café", "fé", "bebê"],
-    vez: ["talvez", "depois", "três", "mês"],
-    fim: ["assim", "jardim", "ruim", "enfim"],
+    coração: ["canção", "emoção", "ilusão", "perdição", "atenção"],
+    paixão: ["ilusão", "canção", "emoção", "perdição", "atenção"],
+    amor: ["calor", "dor", "flor", "sabor", "valor", "clamor"],
+    dor: ["flor", "amor", "calor", "sabor", "valor"],
+    viver: ["esquecer", "morrer", "sofrer", "renascer", "amanhecer"],
+    partir: ["sofri", "dormi", "senti", "vivi", "sorri"],
+    sentir: ["dormir", "partir", "sorrir", "fugir", "seguir"],
+    feliz: ["infeliz", "raiz", "cicatriz", "perdiz", "desliz"],
+    sorrir: ["partir", "sentir", "fugir", "dormir", "seguir"],
+    chorar: ["cantar", "amar", "sonhar", "lembrar", "encontrar"],
+    solidão: ["coração", "paixão", "canção", "razão", "emoção"],
+    razão: ["paixão", "coração", "emoção", "canção", "ilusão"],
+    emoção: ["canção", "coração", "paixão", "razão", "atenção"],
+    saudade: ["verdade", "cidade", "liberdade", "felicidade", "vontade"],
+    noite: ["açoite", "dezoito", "biscoito", "afoite"],
+    dia: ["alegria", "fantasia", "harmonia", "melodia", "companhia"],
+    lua: ["rua", "sua", "continua", "flutua"],
+    sol: ["farol", "espanhol", "caracol", "anzol", "lençol"],
+    mar: ["lugar", "amar", "sonhar", "lembrar", "encontrar"],
+    céu: ["véu", "chapéu", "troféu", "museu", "ateu"],
+    vida: ["ferida", "partida", "esquecida", "perdida", "querida"],
+    tempo: ["momento", "lamento", "tormento", "pensamento", "sentimento"],
+    sonho: ["risonho", "medonho", "tristonho", "vergonho"],
+    olhar: ["amar", "sonhar", "lembrar", "chorar", "encontrar"],
+    mão: ["coração", "paixão", "canção", "razão", "emoção"],
+    pé: ["você", "café", "fé", "bebê", "até"],
+    vez: ["talvez", "depois", "três", "mês", "vez"],
+    fim: ["assim", "jardim", "ruim", "enfim", "capim"],
+    // Adicionar mais rimas ricas
+    cidade: ["saudade", "verdade", "liberdade", "felicidade"],
+    carro: ["cigarro", "barro", "amarro", "desgarro"],
+    casa: ["asa", "brasa", "escassa", "passa"],
+    rua: ["lua", "sua", "continua", "flutua"],
+    bar: ["lugar", "amar", "sonhar", "lembrar"],
+    festa: ["floresta", "tempesta", "manifesta", "protesta"],
+    beijo: ["desejo", "espelho", "conselho", "velho"],
+    abraço: ["laço", "espaço", "aço", "traço"],
   }
 
   // Tenta encontrar uma rima rica para word1

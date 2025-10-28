@@ -60,19 +60,29 @@ export class MetaComposer {
     console.log("[MetaComposer] 🎵 Validando e melhorando rimas...")
     const rhymeValidation = validateRhymesForGenre(lyrics, request.genre)
 
-    if (!rhymeValidation.valid || rhymeValidation.warnings.length > 0) {
-      console.log("[MetaComposer] 🔧 Aplicando melhorias de rima...")
-      const rhymeEnhancement = await enhanceLyricsRhymes(
-        lyrics,
-        request.genre,
-        request.theme,
-        request.creativity === "ousado" ? 0.8 : 0.7,
-      )
+    console.log(`[MetaComposer] 📊 Análise inicial de rimas:`, {
+      score: rhymeValidation.analysis.score,
+      richRhymes: rhymeValidation.analysis.quality.filter((q) => q.type === "rica").length,
+      totalRhymes: rhymeValidation.analysis.quality.length,
+      warnings: rhymeValidation.warnings,
+    })
 
-      if (rhymeEnhancement.improvements.length > 0) {
-        console.log(`[MetaComposer] ✅ ${rhymeEnhancement.improvements.length} rima(s) melhorada(s)`)
-        lyrics = rhymeEnhancement.enhancedLyrics
-      }
+    console.log("[MetaComposer] 🔧 Aplicando melhorias de rima...")
+    const rhymeEnhancement = await enhanceLyricsRhymes(
+      lyrics,
+      request.genre,
+      request.theme,
+      request.creativity === "ousado" ? 0.8 : 0.7,
+    )
+
+    if (rhymeEnhancement.improvements.length > 0) {
+      console.log(`[MetaComposer] ✅ ${rhymeEnhancement.improvements.length} rima(s) melhorada(s)`)
+      console.log(
+        `[MetaComposer] 📈 Score de rimas: ${rhymeEnhancement.originalScore} → ${rhymeEnhancement.enhancedScore}`,
+      )
+      lyrics = rhymeEnhancement.enhancedLyrics
+    } else {
+      console.log("[MetaComposer] ℹ️ Nenhuma melhoria de rima aplicada")
     }
 
     // 2. Aplica Terceira Via se necessário
@@ -137,6 +147,13 @@ REGRAS ABSOLUTAS:
 - Mantenha a naturalidade da fala cantada
 - Inclua elementos visuais para clipe (ex: "lua", "carro", "cidade", "chuva")
 
+RIMAS RICAS OBRIGATÓRIAS:
+- Use RIMAS RICAS: palavras de classes gramaticais DIFERENTES
+- Exemplos: "viola" (substantivo) + "consola" (verbo)
+- Exemplos: "cidade" (concreto) + "saudade" (abstrato)
+- EVITE rimas pobres: "coração" + "razão" (ambos substantivos)
+- EVITE rimas clichês: "amor" + "dor", "paixão" + "ilusão"
+
 GÊNERO: ${request.genre}
 TEMA: ${request.theme}
 HUMOR: ${request.mood}
@@ -193,6 +210,13 @@ REGRAS:
 - Use contrações naturais ("cê", "pra", "tô")
 - Remova clichês e torne mais natural
 - Adicione elementos visuais se possível
+
+RIMAS RICAS OBRIGATÓRIAS:
+- Use RIMAS RICAS: palavras de classes gramaticais DIFERENTES
+- Exemplos: "viola" (substantivo) + "consola" (verbo)
+- Exemplos: "cidade" (concreto) + "saudade" (abstrato)
+- EVITE rimas pobres: "coração" + "razão"
+- EVITE rimas clichês: "amor" + "dor"
 
 TEMA: ${request.theme}
 HUMOR: ${request.mood}
