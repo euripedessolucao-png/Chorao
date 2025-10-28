@@ -92,8 +92,20 @@ export class MetaComposer {
    */
   private static async generateLyrics(request: CompositionRequest): Promise<string> {
     const genreConfig = GENRE_CONFIGS[request.genre as keyof typeof GENRE_CONFIGS]
-    const maxSyllables = Math.min(genreConfig?.prosody_rules?.syllable_count?.absolute_max || 12, this.MAX_SYLLABLES)
-    const minSyllables = genreConfig?.prosody_rules?.syllable_count?.without_comma?.acceptable_from || 6
+
+    const syllableRules = genreConfig?.prosody_rules?.syllable_count
+    let maxSyllables = this.MAX_SYLLABLES
+    let minSyllables = 6
+
+    if (syllableRules) {
+      if ("absolute_max" in syllableRules) {
+        maxSyllables = Math.min(syllableRules.absolute_max, this.MAX_SYLLABLES)
+        minSyllables = Math.max(4, syllableRules.absolute_max - 5)
+      } else if ("with_comma" in syllableRules) {
+        maxSyllables = Math.min(syllableRules.with_comma.total_max, this.MAX_SYLLABLES)
+        minSyllables = syllableRules.without_comma?.min || 5
+      }
+    }
 
     const prompt = `Você é um compositor profissional de hits brasileiros.
 
@@ -138,8 +150,20 @@ RETORNE APENAS A LETRA, SEM EXPLICAÇÕES.`
     if (!request.originalLyrics) throw new Error("Original lyrics required")
 
     const genreConfig = GENRE_CONFIGS[request.genre as keyof typeof GENRE_CONFIGS]
-    const maxSyllables = Math.min(genreConfig?.prosody_rules?.syllable_count?.absolute_max || 12, this.MAX_SYLLABLES)
-    const minSyllables = genreConfig?.prosody_rules?.syllable_count?.without_comma?.acceptable_from || 6
+
+    const syllableRules = genreConfig?.prosody_rules?.syllable_count
+    let maxSyllables = this.MAX_SYLLABLES
+    let minSyllables = 6
+
+    if (syllableRules) {
+      if ("absolute_max" in syllableRules) {
+        maxSyllables = Math.min(syllableRules.absolute_max, this.MAX_SYLLABLES)
+        minSyllables = Math.max(4, syllableRules.absolute_max - 5)
+      } else if ("with_comma" in syllableRules) {
+        maxSyllables = Math.min(syllableRules.with_comma.total_max, this.MAX_SYLLABLES)
+        minSyllables = syllableRules.without_comma?.min || 5
+      }
+    }
 
     const prompt = `Reescreva esta letra musical para o gênero "${request.genre}", mantendo o significado mas:
 
@@ -267,7 +291,17 @@ RETORNE APENAS A LETRA REESCRITA, SEM EXPLICAÇÕES.`
    */
   private static enforceSyllableLimits(lyrics: string, genre: string): string {
     const genreConfig = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS]
-    const maxSyllables = Math.min(genreConfig?.prosody_rules?.syllable_count?.absolute_max || 12, this.MAX_SYLLABLES)
+
+    const syllableRules = genreConfig?.prosody_rules?.syllable_count
+    let maxSyllables = this.MAX_SYLLABLES
+
+    if (syllableRules) {
+      if ("absolute_max" in syllableRules) {
+        maxSyllables = Math.min(syllableRules.absolute_max, this.MAX_SYLLABLES)
+      } else if ("with_comma" in syllableRules) {
+        maxSyllables = Math.min(syllableRules.with_comma.total_max, this.MAX_SYLLABLES)
+      }
+    }
 
     return lyrics
       .split("\n")
