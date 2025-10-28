@@ -15,6 +15,7 @@ import { validateRhymesForGenre } from "@/lib/validation/rhyme-validator"
 import { validateSyllablesByGenre } from "@/lib/validation/absolute-syllable-enforcer"
 import { fixLineToMaxSyllables } from "@/lib/validation/local-syllable-fixer"
 import { validateVerseCompleteness, fixIncompleteVerses } from "@/lib/validation/verse-completeness-validator"
+import { validateGenreIsolation, cleanGenreCrossContamination } from "@/lib/validation/genre-isolation-validator"
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,7 +38,6 @@ export async function POST(request: NextRequest) {
 
     console.log(`[API] 🎵 Reescrevendo letra para: ${genre}`)
 
-    // ✅ Usa validateSyllablesByGenre como fonte única da verdade
     const syllableValidation = validateSyllablesByGenre("", genre)
     const maxSyllables = syllableValidation.maxSyllables
 
@@ -53,6 +53,8 @@ ATENÇÃO: Você DEVE seguir TODOS os requisitos adicionais acima. Eles são OBR
 `
       : ""
 
+    const genreIsolationInstructions = getGenreIsolationInstructions(genre)
+
     const prompt = `Você é um compositor brasileiro especializado em ${genre}.
 
 TAREFA: Reescrever a letra abaixo mantendo a essência mas adaptando para ${genre}.
@@ -64,6 +66,8 @@ TEMA: ${theme || "Manter tema original"}
 HUMOR: ${mood || "Manter humor original"}
 
 ${additionalReqsSection}
+
+${genreIsolationInstructions}
 
 REGRAS DE MÉTRICA:
 - Máximo: ${maxSyllables} sílabas por verso (limite absoluto)
@@ -117,6 +121,15 @@ Retorne APENAS a letra reescrita, sem explicações.`
       )
       .join("\n")
       .trim()
+
+    console.log("[API] 🔍 Validando isolamento de gênero...")
+    const isolationValidation = validateGenreIsolation(finalLyrics, genre)
+    if (!isolationValidation.valid) {
+      console.log(`[API] ⚠️ ${isolationValidation.violations.length} violação(ões) de isolamento detectada(s)`)
+      isolationValidation.violations.forEach((v) => console.log(`[API]   - ${v}`))
+      console.log("[API] 🔧 Limpando contaminação entre gêneros...")
+      finalLyrics = cleanGenreCrossContamination(finalLyrics, genre)
+    }
 
     console.log("[API] 📝 Validando completude dos versos...")
     const verseValidation = validateVerseCompleteness(finalLyrics)
@@ -189,7 +202,6 @@ Retorne APENAS a letra reescrita, sem explicações.`
     const instrumentation = formatInstrumentationForAI(genre, finalLyrics)
     finalLyrics = `${finalLyrics}\n\n${instrumentation}`
 
-    // ✅ Validação final com o mesmo sistema usado no front-end
     const finalValidation = validateSyllablesByGenre(finalLyrics, genre)
     const validityRatio = finalValidation.violations.length === 0 ? 1 : 0
     const finalScore = Math.round(validityRatio * 100)
@@ -213,6 +225,8 @@ Retorne APENAS a letra reescrita, sem explicações.`
         syllableViolations: finalValidation.violations.length,
         verseCompletenessScore: finalVerseValidation.score,
         incompleteVerses: finalVerseValidation.incompleteVerses.length,
+        genreIsolationViolations: isolationValidation.violations.length,
+        genreIsolationWarnings: isolationValidation.warnings.length,
       },
     })
   } catch (error) {
@@ -225,6 +239,35 @@ Retorne APENAS a letra reescrita, sem explicações.`
       { status: 500 },
     )
   }
+}
+
+function getGenreIsolationInstructions(genre: string): string {
+  const lowerGenre = genre.toLowerCase()
+
+  if (lowerGenre.includes("gospel")) {
+    return `
+⚠️ ISOLAMENTO DE GÊNERO - GOSPEL:
+- NUNCA use instrumentos de sertanejo: sanfona, accordion, viola caipira
+- NUNCA use audience cues de sertanejo: "Tá ligado!", "Bicho!", "Véio!", "É nóis!"
+- NUNCA use palavras de sertanejo moderno: biquíni, PIX, story, boteco, pickup, zap, rolê
+- USE instrumentos de gospel: Piano, Acoustic Guitar, Bass, Drums, Keyboard, Strings
+- USE audience cues de gospel: "Amém", "Aleluia", "Glória a Deus"
+- Mantenha tom reverente e inspirador, não coloquial de sertanejo
+`
+  }
+
+  if (lowerGenre.includes("sertanejo")) {
+    return `
+⚠️ ISOLAMENTO DE GÊNERO - SERTANEJO:
+- NUNCA use linguagem religiosa excessiva (altar, graça, senhor, deus, fé, oração)
+- Se o tema é religioso, considere usar Gospel ao invés de Sertanejo
+- USE instrumentos de sertanejo: Viola Caipira, Accordion, Acoustic Guitar, Bass, Drums
+- USE audience cues de sertanejo: "Tá ligado!", "Bicho!", "Véio!", "É nóis!"
+- Mantenha tom coloquial e brasileiro, não reverente
+`
+  }
+
+  return ""
 }
 
 export async function GET() {

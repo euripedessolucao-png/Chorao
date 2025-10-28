@@ -7,17 +7,30 @@ export const GOSPEL_2024 = {
     tone: "Inspirador, acolhedor, com força espiritual.",
     narrative_arc: "Provação → Entrega → Vitória em Deus.",
   },
+  instrumentation: {
+    required: ["Piano", "Acoustic Guitar", "Bass", "Drums", "Keyboard"],
+    optional: ["Strings", "Choir", "Backing Vocals", "Electric Guitar"],
+    forbidden: ["Accordion", "Sanfona", "Viola Caipira", "Zabumba", "Triangle"],
+    style: "Contemporâneo, com base em piano e guitarra acústica, bateria suave e teclados atmosféricos",
+  },
+  performance: {
+    allowed_cues: ["Amém", "Aleluia", "Glória a Deus"],
+    forbidden_cues: ["Tá ligado!", "Bicho!", "Véio!", "É nóis!"],
+    vocal_style: "Reverente, inspirador, com emoção controlada",
+    audience_interaction: "Coro congregacional, palmas suaves, mãos levantadas",
+  },
   language_rules: {
     universal_rule:
       "SEMPRE use palavras simples e coloquiais, faladas como um humano no dia-a-dia. Evite vocabulário rebuscado, poético ou formal, EXCETO se especificado em 'Requisitos Adicionais'.",
     allowed: {
-      concrete_objects: ["altar", "luz", "mar", "montanha", "céu", "graça", "promessa"],
-      actions: ["confiar", "entregar", "adorar", "levantar", "caminhar com Deus"],
-      phrases: ["Tua graça me basta", "Em Ti eu descanso", "Minha vitória vem de Ti"],
+      concrete_objects: ["altar", "luz", "mar", "montanha", "céu", "graça", "promessa", "cruz", "templo"],
+      actions: ["confiar", "entregar", "adorar", "levantar", "caminhar com Deus", "louvar", "agradecer"],
+      phrases: ["Tua graça me basta", "Em Ti eu descanso", "Minha vitória vem de Ti", "Deus é fiel"],
     },
     forbidden: {
       fear_based: ["fogo do inferno", "castigo", "pecado te condena"],
       prosperity_gospel: ["Deus te dará carro", "riqueza é bênção"],
+      sertanejo_elements: ["biquíni", "PIX", "story", "boteco", "pickup", "zap", "rolê", "mano", "véio", "bicho"],
     },
     style: "Inspirador, com linguagem bíblica suave e acessível, não dogmática. Use palavras simples do dia-a-dia.",
   },
@@ -53,5 +66,8 @@ export const GOSPEL_2024 = {
     "BPM 70–90",
     "Linguagem simples e acessível",
     "Final de vitória espiritual",
+    "SEM elementos de sertanejo (biquíni, PIX, boteco, etc.)",
+    "SEM sanfona ou viola caipira",
+    "SEM audience cues de sertanejo (Tá ligado!, Bicho!, etc.)",
   ],
 } as const
