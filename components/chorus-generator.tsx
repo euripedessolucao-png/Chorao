@@ -41,6 +41,12 @@ export function ChorusGenerator({
     }
   }, [genre, theme])
 
+  useEffect(() => {
+    if (onSelectChorus && selectedChoruses.length > 0) {
+      onSelectChorus(selectedChoruses)
+    }
+  }, [selectedChoruses])
+
   const generateChorus = async () => {
     setIsGenerating(true)
     setVariations([])
@@ -85,11 +91,7 @@ export function ChorusGenerator({
       }
 
       if (prev.length < maxSelection) {
-        const newSelection = [...prev, chorus]
-        if (onSelectChorus) {
-          onSelectChorus(newSelection)
-        }
-        return newSelection
+        return [...prev, chorus]
       } else {
         toast.error(`Você pode selecionar no máximo ${maxSelection} refrões`)
         return prev

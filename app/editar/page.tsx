@@ -14,6 +14,7 @@ import { Slider } from "@/components/ui/slider"
 import { toast } from "sonner"
 import { GenreSelect } from "@/components/genre-select"
 import { validateSyllablesByGenre } from "@/lib/validation/absolute-syllable-enforcer"
+import { SubgenreSelect } from "@/components/subgenre-select"
 import {
   Dialog,
   DialogContent,
@@ -85,6 +86,7 @@ export default function EditarPage() {
   const [showQuickTips, setShowQuickTips] = useState(true)
   const [showChallenges, setShowChallenges] = useState(false)
   const [genre, setGenre] = useState("")
+  const [subgenre, setSubgenre] = useState("")
   const [mood, setMood] = useState("")
   const [theme, setTheme] = useState("")
   const [inspirationText, setInspirationText] = useState("")
@@ -166,12 +168,14 @@ export default function EditarPage() {
         ideal: syllableValidation.maxSyllables,
       }
 
+      const fullRequirements = subgenre ? `${additionalReqs}\n\nRitmo/Subgênero: ${subgenre}` : additionalReqs
+
       const requestBody = {
         originalLyrics: lyrics,
         genre,
         mood: mood || "Romântico",
         theme: theme || "Amor",
-        additionalRequirements: additionalReqs,
+        additionalRequirements: fullRequirements,
         title,
         syllableTarget: currentSyllableConfig,
         performanceMode: formattingStyle === "performatico" ? "performance" : "standard",
@@ -421,13 +425,43 @@ export default function EditarPage() {
               </p>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
-              <div className="flex items-center gap-2">
-                <Label className="text-xs font-semibold">Gênero Musical</Label>
-                <GenreSelect value={genre} onValueChange={setGenre} />
+              <div className="space-y-3 border rounded-lg p-3 bg-blue-50/30">
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">1. Gênero Musical</Label>
+                  <GenreSelect
+                    value={genre}
+                    onValueChange={(value) => {
+                      setGenre(value)
+                      setSubgenre("") // Reset subgênero ao mudar gênero
+                    }}
+                    className="h-9"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">2. Ritmo/Subgênero</Label>
+                  <SubgenreSelect genre={genre} value={subgenre} onValueChange={setSubgenre} />
+                  {!genre && <p className="text-xs text-muted-foreground italic">Selecione um gênero primeiro</p>}
+                  {genre && subgenre && (
+                    <div className="bg-green-50 border border-green-200 rounded p-2 text-xs text-green-700">
+                      <div className="font-semibold">Ritmo selecionado: {subgenre}</div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">3. Tema</Label>
+                  <Input
+                    placeholder="Digite um tema..."
+                    value={theme}
+                    onChange={(e) => setTheme(e.target.value)}
+                    className="h-9"
+                  />
+                </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <Label className="text-xs font-semibold">Mood</Label>
+              <div className="space-y-2">
+                <Label className="text-xs">Humor</Label>
                 <Select value={mood} onValueChange={setMood}>
                   <SelectTrigger className="h-8 text-xs">
                     <SelectValue placeholder="Selecione um mood" />
@@ -442,18 +476,8 @@ export default function EditarPage() {
                 </Select>
               </div>
 
-              <div className="flex items-center gap-2">
-                <Label className="text-xs font-semibold">Tema</Label>
-                <Input
-                  placeholder="Digite um tema..."
-                  value={theme}
-                  onChange={(e) => setTheme(e.target.value)}
-                  className="h-8 text-xs"
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Label className="text-xs font-semibold">Requisitos Adicionais</Label>
+              <div className="space-y-2">
+                <Label className="text-xs">Requisitos Adicionais</Label>
                 <Textarea
                   placeholder="Adicione requisitos adicionais..."
                   value={additionalReqs}
