@@ -49,7 +49,13 @@ export async function POST(request: NextRequest) {
 ⚠️ REQUISITOS ADICIONAIS (OBRIGATÓRIOS - NÃO PODEM SER IGNORADOS):
 ${additionalRequirements}
 
-ATENÇÃO: Você DEVE seguir TODOS os requisitos adicionais acima. Eles são OBRIGATÓRIOS e têm prioridade sobre qualquer outra instrução. Se houver conflito, os requisitos adicionais prevalecem.
+ATENÇÃO CRÍTICA SOBRE HOOKS E REFRÕES:
+- Se houver [HOOK] ou [CHORUS] nos requisitos acima, você deve USAR COMO INSPIRAÇÃO/REFERÊNCIA
+- NÃO copie literalmente o texto do [HOOK] ou [CHORUS] para dentro da letra
+- INTEGRE a ideia/conceito do hook/chorus de forma natural na composição
+- O hook/chorus fornecido é uma DIRETRIZ CRIATIVA, não um texto para copiar e colar
+- Você DEVE seguir TODOS os outros requisitos adicionais acima
+- Os requisitos adicionais têm prioridade sobre qualquer outra instrução
 `
       : ""
 
