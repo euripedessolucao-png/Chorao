@@ -3,6 +3,8 @@
  * Garante que versos não sejam cortados ou incompletos
  */
 
+import { generateText } from "ai"
+
 interface VerseCompletenessResult {
   valid: boolean
   incompleteVerses: Array<{
@@ -32,10 +34,12 @@ export function validateVerseCompleteness(lyrics: string): VerseCompletenessResu
     }
 
     // Remove tags inline para análise
-    const cleanLine = line.replace(/\[.*?\]/g, "").trim()
+    const cleanLine = line
+      .replace(/\[.*?\]/g, "")
+      .replace(/$$.*?$$/g, "")
+      .trim()
     if (!cleanLine) continue
 
-    // Verifica se o verso termina com palavras incompletas comuns
     const incompletePhrases = [
       /cada novo$/i,
       /onde posso$/i,
@@ -49,9 +53,24 @@ export function validateVerseCompleteness(lyrics: string): VerseCompletenessResu
       /isso é$/i,
       /pra$/i,
       /de$/i,
-      /o$/i,
-      /a$/i,
-      /e$/i,
+      /\bo$/i,
+      /\ba$/i,
+      /\be$/i,
+      /\bna$/i,
+      /\bno$/i,
+      /\bda$/i,
+      /\bdo$/i,
+      /\bpelo$/i,
+      /\bpela$/i,
+      /\bcom$/i,
+      /\bsem$/i,
+      /\bpor$/i,
+      /\bque$/i,
+      /\bse$/i,
+      /\bmeu$/i,
+      /\bminha$/i,
+      /\bteu$/i,
+      /\btua$/i,
     ]
 
     for (const pattern of incompletePhrases) {
@@ -66,11 +85,11 @@ export function validateVerseCompleteness(lyrics: string): VerseCompletenessResu
     }
 
     // Verifica se o verso termina abruptamente (sem pontuação ou palavra completa)
-    if (cleanLine.endsWith("-") || cleanLine.endsWith(",")) {
+    if (cleanLine.endsWith("-") || (cleanLine.endsWith(",") && i === lines.length - 1)) {
       incompleteVerses.push({
         line: cleanLine,
         lineNumber,
-        reason: "Verso parece incompleto (termina com hífen ou vírgula)",
+        reason: "Verso parece incompleto (termina com hífen ou vírgula final)",
       })
     }
 
@@ -109,42 +128,73 @@ export function validateVerseCompleteness(lyrics: string): VerseCompletenessResu
 }
 
 /**
- * Corrige versos incompletos automaticamente
+ * Corrige versos incompletos automaticamente usando IA
  */
-export function fixIncompleteVerses(lyrics: string): { fixed: string; changes: string[] } {
-  const lines = lyrics.split("\n")
+export async function fixIncompleteVerses(
+  lyrics: string,
+  genre?: string,
+  theme?: string,
+): Promise<{ fixed: string; changes: string[] }> {
+  const validation = validateVerseCompleteness(lyrics)
+
+  if (validation.valid) {
+    return { fixed: lyrics, changes: [] }
+  }
+
   const changes: string[] = []
-  const fixedLines: string[] = []
+  const lines = lyrics.split("\n")
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]
-    const trimmed = line.trim()
+  for (const incomplete of validation.incompleteVerses) {
+    const lineIndex = incomplete.lineNumber - 1
+    const incompleteLine = lines[lineIndex]
 
-    // Mantém linhas vazias, tags e instrumentação
-    if (!trimmed || trimmed.startsWith("[") || trimmed.startsWith("(")) {
-      fixedLines.push(line)
-      continue
+    try {
+      console.log(`[VerseCompleteness] 🔧 Reescrevendo verso incompleto: "${incompleteLine}"`)
+
+      const context = []
+      if (lineIndex > 0) context.push(`Verso anterior: ${lines[lineIndex - 1]}`)
+      if (lineIndex < lines.length - 1) context.push(`Verso seguinte: ${lines[lineIndex + 1]}`)
+
+      const prompt = `Você é um compositor profissional. Complete este verso que foi cortado:
+
+VERSO INCOMPLETO: "${incompleteLine}"
+${context.length > 0 ? `CONTEXTO:\n${context.join("\n")}` : ""}
+${genre ? `GÊNERO: ${genre}` : ""}
+${theme ? `TEMA: ${theme}` : ""}
+
+REGRAS:
+- Complete o verso de forma natural e coerente
+- Mantenha o estilo e métrica do contexto
+- O verso deve fazer sentido sozinho
+- Máximo 12 sílabas
+- Retorne APENAS o verso completo, sem explicações
+
+VERSO COMPLETO:`
+
+      const { text } = await generateText({
+        model: "openai/gpt-4o-mini",
+        prompt,
+        temperature: 0.7,
+        maxTokens: 100,
+      })
+
+      const completedVerse = text.trim()
+      if (completedVerse && completedVerse.length > incompleteLine.length) {
+        lines[lineIndex] = completedVerse
+        changes.push(`Linha ${incomplete.lineNumber}: "${incompleteLine}" → "${completedVerse}"`)
+      }
+    } catch (error) {
+      console.error(`[VerseCompleteness] ❌ Erro ao completar verso:`, error)
+      // Fallback: remove pontuação problemática
+      if (incompleteLine.endsWith("-")) {
+        lines[lineIndex] = incompleteLine.slice(0, -1).trim()
+        changes.push(`Linha ${incomplete.lineNumber}: Removido hífen final`)
+      }
     }
-
-    let fixed = line
-
-    // Remove hífens finais
-    if (trimmed.endsWith("-")) {
-      fixed = trimmed.slice(0, -1).trim()
-      changes.push(`Linha ${i + 1}: Removido hífen final`)
-    }
-
-    // Remove vírgulas finais desnecessárias
-    if (trimmed.endsWith(",") && i === lines.length - 1) {
-      fixed = trimmed.slice(0, -1).trim()
-      changes.push(`Linha ${i + 1}: Removida vírgula final`)
-    }
-
-    fixedLines.push(fixed)
   }
 
   return {
-    fixed: fixedLines.join("\n"),
+    fixed: lines.join("\n"),
     changes,
   }
 }

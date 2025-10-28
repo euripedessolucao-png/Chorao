@@ -119,6 +119,7 @@ Retorne APENAS a letra reescrita, sem explicações.`
       model: "openai/gpt-4o-mini",
       prompt,
       temperature: 0.8,
+      maxTokens: 2500, // Garante resposta completa sem cortes
     })
 
     let finalLyrics = capitalizeLines(text)
