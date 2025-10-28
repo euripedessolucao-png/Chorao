@@ -2,17 +2,17 @@
 
 /**
  * PoeticSyllableEngine — Motor definitivo de sílabas poéticas para música brasileira.
- * 
+ *
  * Projetado para sertanejo moderno, MPB, funk, pagode e outros gêneros brasileiros.
  * Usa regras fonéticas reais da fala cantada em PT-BR.
  */
 
 const MUSICAL_SYLLABLES: Record<string, number> = {
   // Monossílabos tônicos
-  tá: 1,   // está
-  dá: 1,   // ele dá
-  pô: 1,   // pôr
-  vê: 1,   // ver
+  tá: 1, // está
+  dá: 1, // ele dá
+  pô: 1, // pôr
+  vê: 1, // ver
   pé: 1,
   pá: 1,
   dó: 1,
@@ -33,20 +33,20 @@ const MUSICAL_SYLLABLES: Record<string, number> = {
   dão: 1,
 
   // Contrações naturais
-  pra: 1,    // para
-  pro: 1,    // para o
-  pras: 1,   // para as
-  pros: 1,   // para os
-  cê: 1,     // você
-  tô: 1,     // estou
-  tamo: 1,   // estamos
-  tão: 1,    // estão
-  da: 1,     // de + a
-  do: 1,     // de + o
+  pra: 1, // para
+  pro: 1, // para o
+  pras: 1, // para as
+  pros: 1, // para os
+  cê: 1, // você
+  tô: 1, // estou
+  tamo: 1, // estamos
+  tão: 1, // estão
+  da: 1, // de + a
+  do: 1, // de + o
   das: 1,
   dos: 1,
-  na: 1,     // em + a
-  no: 1,     // em + o
+  na: 1, // em + a
+  no: 1, // em + o
   nas: 1,
   nos: 1,
 
@@ -115,9 +115,27 @@ function countWordSyllables(word: string): number {
 
   // Ditongos
   const ditongos = [
-    "ai", "ei", "oi", "au", "eu", "ou", "ui",
-    "ia", "ie", "io", "ua", "ue", "uo", "iu",
-    "ao", "ãe", "ão", "õe", "ãi", "ẽi", "õi"
+    "ai",
+    "ei",
+    "oi",
+    "au",
+    "eu",
+    "ou",
+    "ui",
+    "ia",
+    "ie",
+    "io",
+    "ua",
+    "ue",
+    "uo",
+    "iu",
+    "ao",
+    "ãe",
+    "ão",
+    "õe",
+    "ãi",
+    "ẽi",
+    "õi",
   ]
   for (const d of ditongos) {
     s = s.replace(new RegExp(d, "g"), "X")
@@ -165,7 +183,11 @@ function applyInterwordElision(originalLine: string, baseCount: number): number 
 export function countPoeticSyllables(line: string): number {
   if (!line?.trim()) return 0
 
-  let clean = line
+  const cleanLine = line.replace(/$$[^)]*$$/g, "").trim()
+
+  if (!cleanLine) return 0
+
+  let clean = cleanLine
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
@@ -200,12 +222,12 @@ export function validateLyricsSyllables(
   lyrics: string,
   minIdeal = 8,
   maxIdeal = 10,
-  absoluteMax = 12
+  absoluteMax = 12,
 ): SyllableValidationResult {
   const lines = lyrics
     .split("\n")
-    .map(l => l.trim())
-    .filter(l => l && !l.startsWith("[") && !/^\([^)]*\)$/.test(l))
+    .map((l) => l.trim())
+    .filter((l) => l && !l.startsWith("[") && !/^$$[^)]*$$$/.test(l))
 
   const violations = []
 

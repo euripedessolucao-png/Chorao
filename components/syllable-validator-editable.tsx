@@ -73,36 +73,22 @@ export function SyllableValidatorEditable({
   lines.forEach((line, index) => {
     const trimmedLine = line.trim()
 
-    const shouldSkip =
-      !trimmedLine ||
-      trimmedLine.startsWith("[") ||
-      trimmedLine.startsWith("(") ||
-      /^\[.*\]$/.test(trimmedLine) || // Ignora linhas completamente entre colchetes
-      trimmedLine.toLowerCase().includes("instrumental") ||
-      trimmedLine.toLowerCase().includes("instruments:") ||
-      trimmedLine.toLowerCase().includes("backing vocals") ||
-      trimmedLine.toLowerCase().includes("backvocal") ||
-      /^$$[^)]*$$$/.test(trimmedLine)
+    const shouldSkip = !trimmedLine || trimmedLine.startsWith("[") || /^$$[^)]*$$$/.test(trimmedLine) // Ignora linhas que são apenas (parênteses)
 
     if (!shouldSkip) {
-      // Remove texto entre colchetes antes de contar sílabas
-      const lineWithoutBrackets = line.replace(/\[.*?\]/g, "").trim()
+      // ✅ Arquitetura correta: countPoeticSyllables() do syllable-counter-brasileiro.ts
+      const syllables = countPoeticSyllables(line)
 
-      if (lineWithoutBrackets) {
-        // ✅ Arquitetura correta: countPoeticSyllables() do syllable-counter-brasileiro.ts
-        const syllables = countPoeticSyllables(lineWithoutBrackets)
+      // ✅ Validação usa absolute_max: 12 do genre-config.ts
+      if (syllables > maxSyllables) {
+        const suggestions = generateSmartSuggestions(line, maxSyllables)
 
-        // ✅ Validação usa absolute_max: 12 do genre-config.ts
-        if (syllables > maxSyllables) {
-          const suggestions = generateSmartSuggestions(lineWithoutBrackets, maxSyllables)
-
-          validations.push({
-            line: line.trim(),
-            syllables: syllables,
-            lineNumber: index + 1,
-            suggestions: suggestions,
-          })
-        }
+        validations.push({
+          line: line.trim(),
+          syllables: syllables,
+          lineNumber: index + 1,
+          suggestions: suggestions,
+        })
       }
     }
   })
