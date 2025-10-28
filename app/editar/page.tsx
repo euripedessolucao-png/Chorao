@@ -386,7 +386,7 @@ export default function EditarPage() {
             <CardContent className="space-y-3 text-sm">
               <div className="flex items-center gap-2">
                 <Label className="text-xs font-semibold">Gênero Musical</Label>
-                <GenreSelect value={genre} onChange={setGenre} />
+                <GenreSelect value={genre} onValueChange={setGenre} />
               </div>
 
               <div className="flex items-center gap-2">
