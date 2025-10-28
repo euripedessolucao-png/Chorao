@@ -86,7 +86,6 @@ function superFixIncompleteLines(lyrics: string): string {
         'que sou com': 'Ti',
         'alguém pra': 'abençoar',
         'agradar e': 'servir',
-        'sempre a': 'Te seguir',
         'vou me': 'entregar',
         'sinto Tua luz e': 'Tua graça',
         'sonhar que': 'um dia realizarei'
