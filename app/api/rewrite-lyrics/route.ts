@@ -10,19 +10,14 @@ import { LineStacker } from "@/lib/utils/line-stacker"
 import { validateSyllablesByGenre } from "@/lib/validation/absolute-syllable-enforcer"
 import { fixLineToMaxSyllables } from "@/lib/validation/local-syllable-fixer"
 
-// ✅ Importação correta
 import { GENRE_CONFIGS } from "@/lib/genre-config"
 
-// ✅ Função para máximo de sílabas
 function getMaxSyllables(genre: string): number {
   const genreConfig = (GENRE_CONFIGS as any)[genre]
   if (!genreConfig?.prosody_rules?.syllable_count) return 12
 
   const syllableCount = genreConfig.prosody_rules.syllable_count
-
-  if ("absolute_max" in syllableCount) {
-    return syllableCount.absolute_max as number
-  }
+  if ("absolute_max" in syllableCount) return syllableCount.absolute_max as number
   if ("without_comma" in syllableCount) {
     const withoutComma = syllableCount.without_comma as { acceptable_up_to?: number; max?: number }
     return withoutComma.acceptable_up_to || withoutComma.max || 12
@@ -34,57 +29,106 @@ function getMaxSyllables(genre: string): number {
   return 12
 }
 
-// ✅ CORRETOR AUTOMÁTICO DE VERSOS INCOMPLETOS
-function fixIncompleteLines(lyrics: string): string {
+// ✅ CORRETOR SUPER AGRESSIVO - ELIMINA VERSOS INCOMPLETOS
+function aggressivelyFixIncompleteLines(lyrics: string): string {
+  console.log("[Corrector] 🚨 INICIANDO CORREÇÃO AGRESSIVA DE VERSOS INCOMPLETOS")
+  
   const lines = lyrics.split('\n')
   const fixedLines: string[] = []
   
-  // Palavras que indicam verso incompleto
-  const incompleteIndicators = ['que', 'do', 'por', 'me', 'te', 'em', 'a', 'o', 'de', 'da', 'no', 'na', 'com', 'se']
-  
+  // ✅ PADRÕES DE CORREÇÃO BASEADOS NO CONTEXTO
+  const completionPatterns: { [key: string]: string } = {
+    'diante': 'de Ti',
+    'aberto,': 'e grato',
+    'vida e': 'pela graça',
+    'me': 'sustenta',
+    'agradeço': 'pela vida',
+    'viver e de': 'amar em Ti',
+    'fonte': 'de vida',
+    'trazendo': 'renovação',
+    'que': 'acalma',
+    'tão': 'puro',
+    'que': 'criaste',
+    'por': 'cada mar',
+    'é': 'nosso lar',
+    'posso': 'receber',
+    'cada': 'momento',
+    'que me': 'acolhe',
+    'ser': 'amado',
+    'meu': 'coração',
+    'quero': 'cantar',
+    'Tua': 'presença',
+    'meu': 'viver',
+    'em': 'amor',
+    'Tu': 'estás aqui',
+    'o Teu': 'caminho',
+    'meu': 'irmão',
+    'que é': 'Teu dom',
+    'que é': 'belo',
+    'com': 'Tua criação',
+    'de': 'filho Teu',
+    'sempre': 'fiel'
+  }
+
+  let corrections = 0
+
   for (let i = 0; i < lines.length; i++) {
     let line = lines[i].trim()
     
-    // Ignora tags e linhas vazias
+    // Ignora tags e metadata
     if (!line || line.startsWith('### [') || line.startsWith('(Instrumentation)') || line.startsWith('(Genre)')) {
       fixedLines.push(line)
       continue
     }
-    
+
     const cleanLine = line.replace(/\[.*?\]/g, "").replace(/\(.*?\)/g, "").trim()
-    const lastWord = cleanLine.split(/\s+/).pop()?.toLowerCase()
+    const lastWord = cleanLine.split(/\s+/).pop()?.toLowerCase() || ''
     
-    // ✅ CORREÇÃO: Se termina com palavra incompleta, completa a frase
-    if (lastWord && incompleteIndicators.includes(lastWord)) {
-      console.log(`[Corrector] 🔧 Corrigindo verso incompleto: "${line}"`)
+    // ✅ DETECTA SE É VERSO INCOMPLETO
+    const isIncomplete = 
+      (lastWord && ['que', 'do', 'por', 'me', 'te', 'em', 'a', 'o', 'de', 'da', 'no', 'na', 'com', 'se', 'tão', 'e', 'diante', 'aberto', 'vida', 'fonte', 'trazendo', 'cada', 'meu', 'Tua', 'sempre'].includes(lastWord)) ||
+      cleanLine.endsWith(',') ||
+      cleanLine.endsWith('-') ||
+      (cleanLine.split(/\s+/).filter(w => w.length > 0).length < 3)
+
+    if (isIncomplete) {
+      console.log(`[Corrector] 🚨 VERSO INCOMPLETO DETECTADO: "${line}"`)
       
-      // Completar baseado no contexto
-      if (lastWord === 'que') line += ' me dás'
-      else if (lastWord === 'do') line += ' Senhor'
-      else if (lastWord === 'por') line += ' tudo'
-      else if (lastWord === 'me') line += ' sustenta'
-      else if (lastWord === 'te') line += ' amo'
-      else if (lastWord === 'em') line += ' Ti'
-      else if (lastWord === 'de') line += ' graça'
-      else if (lastWord === 'da') line += ' vida'
-      else line += ' sempre'
+      // ✅ CORREÇÃO INTELIGENTE BASEADA NO CONTEXTO
+      let fixedLine = line
       
-      console.log(`[Corrector] ✅ Corrigido para: "${line}"`)
+      // Remove pontuação de continuação
+      if (fixedLine.endsWith(',') || fixedLine.endsWith('-')) {
+        fixedLine = fixedLine.slice(0, -1).trim()
+      }
+      
+      // Aplica completamento baseado no padrão
+      if (completionPatterns[lastWord]) {
+        fixedLine += ' ' + completionPatterns[lastWord]
+      } else {
+        // Completamento genérico baseado no contexto
+        if (lastWord === 'que') fixedLine += ' Deus me deu'
+        else if (lastWord === 'me') fixedLine += ' guia'
+        else if (lastWord === 'te') fixedLine += ' amo'
+        else if (lastWord === 'de') fixedLine += ' amor'
+        else if (lastWord === 'e') fixedLine += ' graça'
+        else fixedLine += ' sempre'
+      }
+      
+      // Garante pontuação final
+      if (!fixedLine.endsWith('.') && !fixedLine.endsWith('!') && !fixedLine.endsWith('?')) {
+        fixedLine += '.'
+      }
+      
+      console.log(`[Corrector] ✅ CORRIGIDO PARA: "${fixedLine}"`)
+      fixedLines.push(fixedLine)
+      corrections++
+    } else {
+      fixedLines.push(line)
     }
-    
-    // ✅ CORREÇÃO: Remove pontuação de continuação
-    if (line.endsWith(',') || line.endsWith('-')) {
-      line = line.slice(0, -1).trim() + '.'
-    }
-    
-    // ✅ CORREÇÃO: Adiciona pontuação final se faltar
-    if (!line.endsWith('.') && !line.endsWith('!') && !line.endsWith('?') && !line.endsWith(']')) {
-      line += '.'
-    }
-    
-    fixedLines.push(line)
   }
-  
+
+  console.log(`[Corrector] 🎉 CORREÇÃO CONCLUÍDA: ${corrections} versos corrigidos`)
   return fixedLines.join('\n')
 }
 
@@ -107,71 +151,69 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Gênero é obrigatório" }, { status: 400 })
     }
 
-    console.log(`[API] 🎵 Reescrevendo letra para: ${genre}`)
+    console.log(`[API] 🎵 Iniciando reescrita para: ${genre}`)
 
     const maxSyllables = getMaxSyllables(genre)
     const rhymeRules = getUniversalRhymeRules(genre)
     const genreRules = buildGenreRulesPrompt(genre)
 
-    const prompt = `COMPOSITOR PROFISSIONAL DE ${genre.toUpperCase()}
+    // ✅ PROMPT ULTRA-EXPLÍCITO
+    const prompt = `COMPOSITOR PROFISSIONAL - GÊNERO: ${genre.toUpperCase()}
 
-TAREFA URGENTE: Reescrever esta letra mantendo VERSOS COMPLETOS.
+🚨🚨🚨 INSTRUÇÃO CRÍTICA: VERSOS COMPLETOS OU NÃO ENVIE 🚨🚨🚨
 
-🚨 REGRA CRÍTICA: CADA LINHA DEVE SER UMA FRASE COMPLETA
-- NUNCA termine com: que, do, por, me, te, em, a, o, de, da
-- Cada verso = sujeito + verbo + complemento
-- Frases devem fazer sentido SOZINHAS
+CADA VERSO DEVE SER UMA FRASE COMPLETA E INDEPENDENTE.
 
-LETRA ORIGINAL:
+🚫 PROIBIDO TERMINAR COM:
+que, do, por, me, te, em, a, o, de, da, no, na, com, se, tão, e, diante, aberto, vida, fonte, trazendo, cada, meu, Tua, sempre
+
+✅ EXEMPLOS DE VERSOS COMPLETOS:
+"Senhor, hoje estou aqui diante de Ti"
+"Com o coração aberto e cheio de gratidão" 
+"Agradeço pela vida e por Tua graça"
+"Teu amor me renova e me sustenta sempre"
+
+LETRA ORIGINAL (INSPIRAÇÃO):
 ${originalLyrics}
 
-TEMA: ${theme || "Gratidão"}
-HUMOR: ${mood || "Reverente"}
-GÊNERO: ${genre}
+TEMA: ${theme || "Gratidão divina"}
+HUMOR: ${mood || "Reverente e alegre"}
 
 ${additionalRequirements ? `REQUISITOS: ${additionalRequirements}` : ""}
 
-REGRAS TÉCNICAS:
+TÉCNICA:
 - Máximo ${maxSyllables} sílabas por verso
 - ${rhymeRules.requirePerfectRhymes ? "Rimas perfeitas" : "Rimas naturais"}
-- Linguagem coloquial brasileira
+- Linguagem gospel contemporânea
 
 ESTRUTURA:
 ${
   performanceMode === "performance" 
-    ? `### [INTRO] (4 linhas)
-### [VERSE 1] (6 linhas)  
-### [PRE-CHORUS] (4 linhas)
-### [CHORUS] (6 linhas)
-### [VERSE 2] (6 linhas)
-### [CHORUS] (6 linhas)
-### [BRIDGE] (6 linhas)
-### [CHORUS] (6 linhas)
-### [OUTRO] (4 linhas)`
-    : `### [Intro] (4 linhas)
-### [Verso 1] (6 linhas)
-### [Pré-Refrão] (4 linhas)
-### [Refrão] (6 linhas)
-### [Verso 2] (6 linhas)
-### [Refrão] (6 linhas)
-### [Ponte] (6 linhas)
-### [Refrão] (6 linhas)
-### [Outro] (4 linhas)`
+    ? `### [INTRO] (4 linhas COMPLETAS)
+### [VERSE 1] (6 linhas COMPLETAS)  
+### [PRE-CHORUS] (4 linhas COMPLETAS)
+### [CHORUS] (6 linhas COMPLETAS)
+### [VERSE 2] (6 linhas COMPLETAS)
+### [CHORUS] (6 linhas COMPLETAS)
+### [BRIDGE] (6 linhas COMPLETAS)
+### [CHORUS] (6 linhas COMPLETAS)
+### [OUTRO] (4 linhas COMPLETAS)`
+    : `### [Intro] (4 linhas COMPLETAS)
+### [Verso 1] (6 linhas COMPLETAS)
+### [Pré-Refrão] (4 linhas COMPLETAS)
+### [Refrão] (6 linhas COMPLETAS)
+### [Verso 2] (6 linhas COMPLETAS)
+### [Refrão] (6 linhas COMPLETAS)
+### [Ponte] (6 linhas COMPLETAS)
+### [Refrão] (6 linhas COMPLETAS)
+### [Outro] (4 linhas COMPLETAS)`
 }
 
-EXEMPLOS CORRETOS:
-✅ "Senhor, eu venho a Ti com gratidão"
-✅ "De joelhos, agradeço pela vida"
-✅ "Cada respiração me faz sentir Teu amor"
+SE GERAR VERSO INCOMPLETO, A MÚSICA SERÁ INUTILIZÁVEL.
 
-EXEMPLOS ERRADOS (NUNCA FAÇA):
-❌ "Senhor, eu venho a Ti" (incompleto)
-❌ "De joelhos, agradeço" (incompleto) 
-❌ "Cada respiração que me" (incompleto)
+GERE APENAS VERSOS COMPLETOS:`
 
-Gere a letra COMPLETA com VERSOS COMPLETOS:`
-
-    console.log(`[API] 🔄 Gerando letra...`)
+    console.log(`[API] 🔄 Solicitando geração da IA...`)
 
     const { text } = await generateText({
       model: "openai/gpt-4o-mini",
@@ -180,10 +222,11 @@ Gere a letra COMPLETA com VERSOS COMPLETOS:`
     })
 
     let finalLyrics = capitalizeLines(text)
+    console.log("[API] 📝 Resposta bruta da IA recebida")
 
-    // ✅ ETAPA CRÍTICA: CORREÇÃO AUTOMÁTICA DE VERSOS INCOMPLETOS
-    console.log("[API] 🔧 Aplicando correção automática de versos incompletos...")
-    finalLyrics = fixIncompleteLines(finalLyrics)
+    // ✅ ETAPA CRÍTICA: CORREÇÃO AGRESSIVA
+    console.log("[API] 🚀 Aplicando correção agressiva...")
+    finalLyrics = aggressivelyFixIncompleteLines(finalLyrics)
 
     // ✅ LIMPEZA
     finalLyrics = finalLyrics
@@ -200,10 +243,10 @@ Gere a letra COMPLETA com VERSOS COMPLETOS:`
       .trim()
 
     // ✅ CORREÇÃO DE SÍLABAS
-    console.log("[API] 📏 Corrigindo sílabas...")
+    console.log("[API] 📏 Ajustando métrica...")
     const lines = finalLyrics.split("\n")
     const correctedLines: string[] = []
-    let corrections = 0
+    let syllableCorrections = 0
 
     for (const line of lines) {
       const trimmed = line.trim()
@@ -212,29 +255,29 @@ Gere a letra COMPLETA com VERSOS COMPLETOS:`
         continue
       }
 
-      const lineWithoutTags = trimmed.replace(/\[.*?\]/g, "").replace(/\(.*?\)/g, "").trim()
-      if (!lineWithoutTags) {
+      const cleanLine = trimmed.replace(/\[.*?\]/g, "").replace(/\(.*?\)/g, "").trim()
+      if (!cleanLine) {
         correctedLines.push(line)
         continue
       }
 
-      const syllables = countPoeticSyllables(lineWithoutTags)
+      const syllables = countPoeticSyllables(cleanLine)
       if (syllables > maxSyllables) {
         const fixed = fixLineToMaxSyllables(trimmed, maxSyllables)
         correctedLines.push(fixed)
-        corrections++
+        syllableCorrections++
       } else {
         correctedLines.push(line)
       }
     }
 
-    if (corrections > 0) {
-      console.log(`[API] ✅ ${corrections} verso(s) corrigido(s) para métrica`)
+    if (syllableCorrections > 0) {
+      console.log(`[API] ✅ ${syllableCorrections} ajustes de sílaba aplicados`)
       finalLyrics = correctedLines.join("\n")
     }
 
-    // ✅ PROCESSAMENTO FINAL
-    console.log("[API] 📚 Empilhando versos...")
+    // ✅ FINALIZAÇÃO
+    console.log("[API] 📚 Aplicando empilhamento...")
     const stackingResult = LineStacker.stackLines(finalLyrics)
     finalLyrics = stackingResult.stackedLyrics
 
@@ -242,8 +285,8 @@ Gere a letra COMPLETA com VERSOS COMPLETOS:`
     const instrumentation = formatInstrumentationForAI(genre, finalLyrics)
     finalLyrics = `${finalLyrics}\n\n${instrumentation}`
 
-    const finalLineCount = finalLyrics.split('\n').filter(line => line.trim().length > 0).length
-    console.log(`[API] ✅ Geração concluída: ${finalLineCount} linhas`)
+    const totalLines = finalLyrics.split('\n').filter(line => line.trim().length > 0).length
+    console.log(`[API] 🎉 PROCESSO CONCLUÍDO: ${totalLines} linhas`)
 
     return NextResponse.json({
       success: true,
@@ -253,16 +296,17 @@ Gere a letra COMPLETA com VERSOS COMPLETOS:`
         genre,
         performanceMode,
         maxSyllables,
-        totalLines: finalLineCount,
-        syllableCorrections: corrections,
+        totalLines,
+        syllableCorrections,
       },
     })
 
   } catch (error) {
-    console.error("[API] ❌ Erro:", error)
+    console.error("[API] ❌ Erro crítico:", error)
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Erro interno",
+        error: "Falha na geração da letra",
+        details: process.env.NODE_ENV === "development" ? error : undefined,
       },
       { status: 500 },
     )
