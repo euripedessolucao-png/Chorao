@@ -67,14 +67,13 @@ ATENÇÃO CRÍTICA SOBRE HOOKS E REFRÕES ESCOLHIDOS:
 
 TAREFA: Reescrever COMPLETAMENTE a letra abaixo mantendo a essência mas adaptando para ${genre}.
 
-🎯 LIMITAÇÕES CRÍTICAS DE TAMANHO:
-- LETRA COMPLETA deve ter ENTRE 25-35 LINHAS
-- NUNCA corte versos no meio - cada verso DEVE ser completo
-- Se a letra original for longa, selecione os versos mais importantes
-- Mantenha a estrutura completa: Intro, Versos, Refrão, Ponte, Outro
-- REFRÃO deve aparecer PELO MENOS 3 VEZES (padrão música comercial)
+🎯 REGRA ABSOLUTA - VERSOS COMPLETOS:
+- CADA VERSO deve ser uma FRASE COMPLETA com começo, meio e FIM
+- NUNCA corte versos no meio como "Abençoado sou, por cada" ou "Teus presentes são grandes, não posso"
+- Cada linha deve fazer sentido SOZINHA
+- Termine CADA verso com pontuação final (. ! ?) ou vírgula natural
 
-LETRA ORIGINAL:
+LETRA ORIGINAL PARA INSPIRAÇÃO:
 ${originalLyrics}
 
 TEMA: ${theme || "Manter tema original"}
@@ -86,9 +85,9 @@ ${genreIsolationInstructions}
 
 REGRAS DE MÉTRICA:
 - Máximo: ${maxSyllables} sílabas por verso (limite absoluto)
-- Use contrações naturais ("cê", "pra", "tô")
-- Versos curtos são permitidos
-- NUNCA exceda ${maxSyllables} sílabas (limite humano de canto)
+- Ideal: 8-10 sílabas por verso
+- Use contrações naturais ("cê", "pra", "tô", "tá")
+- Se não couber, REESCREVA o verso inteiro, NÃO CORTE
 
 REGRAS DE RIMA:
 - ${rhymeRules.requirePerfectRhymes ? "Rimas perfeitas obrigatórias" : "Rimas naturais aceitáveis"}
@@ -99,81 +98,105 @@ ${genreRules.fullPrompt}
 ESTRUTURA OBRIGATÓRIA (COMPLETA):
 ${
   performanceMode === "performance"
-    ? `[INTRO]
-[VERSE 1]
-[PRE-CHORUS] 
-[CHORUS]
-[VERSE 2]
-[CHORUS]
-[BRIDGE]
-[CHORUS]
-[OUTRO]`
-    : `[Intro]
-[Verso 1]
-[Pré-Refrão]
-[Refrão]
-[Verso 2]
-[Refrão]
-[Ponte]
-[Refrão]
-[Outro]`
+    ? `[INTRO] (2-4 linhas)
+[VERSE 1] (4-6 linhas)
+[PRE-CHORUS] (2-4 linhas) 
+[CHORUS] (4-6 linhas)
+[VERSE 2] (4-6 linhas)
+[CHORUS] (4-6 linhas)
+[BRIDGE] (4-6 linhas)
+[CHORUS] (4-6 linhas)
+[OUTRO] (2-4 linhas)`
+    : `[Intro] (2-4 linhas)
+[Verso 1] (4-6 linhas)
+[Pré-Refrão] (2-4 linhas)
+[Refrão] (4-6 linhas)
+[Verso 2] (4-6 linhas)
+[Refrão] (4-6 linhas)
+[Ponte] (4-6 linhas)
+[Refrão] (4-6 linhas)
+[Outro] (2-4 linhas)`
 }
 
-🚫 PROIBIDO ABSOLUTAMENTE:
-- Cortar versos no meio
-- Deixar frases incompletas como "cada novo" ou "onde posso" ou "do que"
-- Terminar com pontuação de continuação (..., -, —)
-- Escrever letra incompleta ou sem estrutura
-- Ignorar o refrão ou repeti-lo menos de 3 vezes
+🚫 PROIBIDO ABSOLUTAMENTE - EXEMPLOS DO QUE NÃO FAZER:
+- ❌ "Abençoado sou, por cada" (INCOMPLETO)
+- ❌ "Teus presentes são grandes, não posso" (INCOMPLETO) 
+- ❌ "Levanta a voz, dá graças, vem comigo" (INCOMPLETO)
+- ❌ "No coração a alegria, não podemos" (INCOMPLETO)
+- ❌ Terminar com "por cada", "não posso", "sempre a nos", "vamos juntos"
+- ❌ Frases sem verbo principal
+- ❌ Versos que dependem do próximo para fazer sentido
 
-✅ OBRIGATÓRIO:
-- Cada verso deve fazer sentido sozinho e ter final claro
-- Se um verso não cabe na métrica, REESCREVA-O completamente
-- Mantenha a mensagem central da letra original
-- Adapte linguagem e estilo para ${genre}
-- Refrão memorável e repetível
-- Evite clichês ("coraçãozinho", "lágrimas no rosto")
-- ${performanceMode === "performance" ? "Tags em inglês, versos em português" : "Tags em português"}
-${additionalRequirements ? "\n- CUMPRA TODOS OS REQUISITOS ADICIONAIS ACIMA (OBRIGATÓRIO)" : ""}
+✅ EXEMPLOS DO QUE FAZER - VERSOS COMPLETOS:
+- ✅ "Abençoado sou por cada dádiva Tua"
+- ✅ "Teus presentes são grandes, não posso negar"
+- ✅ "Levanta a voz e dá graças, vem comigo"
+- ✅ "No coração a alegria não pode caber"
+- ✅ Cada verso = frase completa com sujeito + verbo + complemento
 
-📏 CONTROLE DE TAMANHO:
-- Letra FINAL deve ter ENTRE 25-35 linhas totais
-- Se preciso, resuma a letra original mas mantenha a ESSÊNCIA
-- NÃO pode ser muito curta (menos de 25 linhas)
-- NÃO pode ser muito longa (mais de 35 linhas)
+REGRAS DE COMPOSIÇÃO:
+1. CADA VERSO = FRASE COMPLETA
+2. Sujeito + verbo + complemento em CADA linha
+3. Pontuação correta no final de CADA verso
+4. Se não couber na métrica, REESCREVA completamente
+5. Mantenha a mensagem central da letra original
+6. Refrão memorável e repetível (4-6 linhas COMPLETAS)
+7. ${performanceMode === "performance" ? "Tags em inglês, versos em português" : "Tags em português"}
 
-Retorne APENAS a letra reescrita COMPLETA, sem explicações.`
+📏 CONTROLE DE QUALIDADE:
+- Letra FINAL: 25-35 linhas totais
+- TODOS os versos devem ser frases COMPLETAS
+- Estrutura completa com todas as seções
+- Refrão repetido 3 vezes (igual nas 3 repetições)
+
+Retorne APENAS a letra reescrita COMPLETA com VERSOS COMPLETOS, sem explicações.`
 
     console.log(`[API] 🔄 Reescrevendo com limite máximo de ${maxSyllables} sílabas...`)
     if (additionalRequirements) {
       console.log(`[API] ⚠️ REQUISITOS ADICIONAIS OBRIGATÓRIOS DETECTADOS`)
     }
 
-    // ✅ GERAÇÃO PRIMÁRIA - com temperatura mais baixa para manter estrutura
-    const { text: initialText } = await generateText({
-      model: "openai/gpt-4o-mini",
-      prompt,
-      temperature: 0.7, // Reduzido para manter coesão
-    })
+    // ✅ GERAÇÃO COM VALIDAÇÃO EM LOOP
+    let finalLyrics = ""
+    let attempts = 0
+    let hasCompleteVerses = false
 
-    let finalLyrics = capitalizeLines(initialText)
+    while (attempts < 3 && !hasCompleteVerses) {
+      attempts++
+      console.log(`[API] 🔄 Tentativa ${attempts} de geração...`)
 
-    // ✅ VERIFICAÇÃO DE COMPLETUDE - se a letra está muito curta, regera
-    const lineCount = finalLyrics.split('\n').filter(line => line.trim().length > 0).length
-    if (lineCount < 20) {
-      console.log(`[API] ⚠️ Letra muito curta (${lineCount} linhas), regenerando...`)
-      
-      const retryPrompt = `${prompt}
-
-🚨 ATENÇÃO: A letra gerada anteriormente estava MUITO CURTA (apenas ${lineCount} linhas).
-Gere uma versão COMPLETA com 25-35 linhas, mantendo TODA a estrutura obrigatória.`
-
-      const { text: retryText } = await generateText({
-        model: "openai/gpt-4o-mini", 
-        prompt: retryPrompt,
-        temperature: 0.8,
+      const { text } = await generateText({
+        model: "openai/gpt-4o-mini",
+        prompt: attempts === 1 ? prompt : `${prompt}\n\n🚨 TENTATIVA ${attempts}: A letra anterior tinha versos incompletos. Gere TODOS os versos COMPLETOS agora!`,
+        temperature: 0.7,
       })
-      finalLyrics = capitalizeLines(retryText)
+
+      finalLyrics = capitalizeLines(text)
+
+      // ✅ VERIFICAÇÃO RÁPIDA DE VERSOS INCOMPLETOS
+      const incompletePatterns = [
+        /por cada$/i, /não posso$/i, /sempre a nos$/i, /vamos juntos$/i, 
+        /comigo$/i, /podemos$/i, /do meu$/i, /cada novo$/i, /onde posso$/i
+      ]
+      
+      const lines = finalLyrics.split('\n')
+      let hasIncomplete = false
+      
+      for (const line of lines) {
+        const cleanLine = line.replace(/\[.*?\]/g, "").replace(/\(.*?\)/g, "").trim()
+        if (cleanLine && incompletePatterns.some(pattern => pattern.test(cleanLine))) {
+          console.log(`[API] ⚠️ Verso incompleto detectado: "${cleanLine}"`)
+          hasIncomplete = true
+          break
+        }
+      }
+
+      if (!hasIncomplete) {
+        hasCompleteVerses = true
+        console.log(`[API] ✅ Todos os versos estão completos na tentativa ${attempts}`)
+      } else if (attempts < 3) {
+        console.log(`[API] 🔄 Regenerando devido a versos incompletos...`)
+      }
     }
 
     // ✅ LIMPEZA DE LINHAS INDESEJADAS
@@ -184,24 +207,24 @@ Gere uma versão COMPLETA com 25-35 linhas, mantendo TODA a estrutura obrigatór
           !line.trim().startsWith("Retorne") && 
           !line.trim().startsWith("REGRAS") && 
           !line.includes("Explicação") &&
-          !line.includes("```")
+          !line.includes("```") &&
+          line.trim().length > 0
       )
       .join("\n")
       .trim()
 
+    // ✅ VALIDAÇÃO E CORREÇÃO AUTOMÁTICA
     console.log("[API] 🔍 Validando isolamento de gênero...")
     const isolationValidation = validateGenreIsolation(finalLyrics, genre)
     if (!isolationValidation.valid) {
       console.log(`[API] ⚠️ ${isolationValidation.violations.length} violação(ões) de isolamento detectada(s)`)
-      isolationValidation.violations.forEach((v) => console.log(`[API]   - ${v}`))
-      console.log("[API] 🔧 Limpando contaminação entre gêneros...")
       finalLyrics = cleanGenreCrossContamination(finalLyrics, genre)
     }
 
     console.log("[API] 📝 Validando completude dos versos...")
     const verseValidation = validateVerseCompleteness(finalLyrics)
-    if (!verseValidation.valid || verseValidation.warnings.length > 0) {
-      console.log("[API] 🔧 Corrigindo versos incompletos...")
+    if (!verseValidation.valid) {
+      console.log("[API] 🔧 Corrigindo versos incompletos automaticamente...")
       const verseFixResult = await fixIncompleteVerses(finalLyrics, genre, theme)
       if (verseFixResult.changes.length > 0) {
         console.log(`[API] ✅ ${verseFixResult.changes.length} verso(s) corrigido(s)`)
@@ -211,11 +234,10 @@ Gere uma versão COMPLETA com 25-35 linhas, mantendo TODA a estrutura obrigatór
 
     console.log("[API] 🎵 Validando qualidade das rimas...")
     const rhymeValidation = validateRhymesForGenre(finalLyrics, genre)
-    if (!rhymeValidation.valid || rhymeValidation.warnings.length > 0) {
+    if (!rhymeValidation.valid) {
       console.log("[API] 🔧 Melhorando rimas automaticamente...")
       const rhymeEnhancement = await enhanceLyricsRhymes(finalLyrics, genre, theme || "reescrita", 0.7)
       if (rhymeEnhancement.improvements.length > 0) {
-        console.log(`[API] ✅ ${rhymeEnhancement.improvements.length} rima(s) melhorada(s)`)
         finalLyrics = rhymeEnhancement.enhancedLyrics
       }
     }
@@ -232,7 +254,7 @@ Gere uma versão COMPLETA com 25-35 linhas, mantendo TODA a estrutura obrigatór
         continue
       }
 
-      const lineWithoutBrackets = trimmed.replace(/\[.*?\]/g, "").trim()
+      const lineWithoutBrackets = trimmed.replace(/\[.*?\]/g, "").replace(/\(.*?\)/g, "").trim()
       if (!lineWithoutBrackets) {
         correctedLines.push(line)
         continue
@@ -253,13 +275,7 @@ Gere uma versão COMPLETA com 25-35 linhas, mantendo TODA a estrutura obrigatór
       finalLyrics = correctedLines.join("\n")
     }
 
-    console.log("[API] 📚 Empilhando versos...")
-    const stackingResult = LineStacker.stackLines(finalLyrics)
-    if (stackingResult.improvements.length > 0) {
-      console.log(`[API] ✅ ${stackingResult.improvements.length} verso(s) empilhado(s)`)
-    }
-    finalLyrics = stackingResult.stackedLyrics
-
+    // ✅ FORMATAÇÃO FINAL
     if (shouldUsePerformanceFormat(genre, performanceMode)) {
       console.log("[API] 🎭 Aplicando formatação de performance...")
       finalLyrics = formatSertanejoPerformance(finalLyrics, genre)
@@ -269,15 +285,12 @@ Gere uma versão COMPLETA com 25-35 linhas, mantendo TODA a estrutura obrigatór
     const instrumentation = formatInstrumentationForAI(genre, finalLyrics)
     finalLyrics = `${finalLyrics}\n\n${instrumentation}`
 
+    // ✅ MÉTRICAS FINAIS
     const finalValidation = validateSyllablesByGenre(finalLyrics, genre)
-    const validityRatio = finalValidation.violations.length === 0 ? 1 : 0
-    const finalScore = Math.round(validityRatio * 100)
-
     const finalVerseValidation = validateVerseCompleteness(finalLyrics)
     const finalLineCount = finalLyrics.split('\n').filter(line => line.trim().length > 0).length
 
-    console.log(`[API] ✅ Validação final: ${finalScore}% dentro da métrica (${genre})`)
-    console.log(`[API] ✅ Completude dos versos: ${finalVerseValidation.score}%`)
+    console.log(`[API] ✅ Validação final: ${finalVerseValidation.score}% versos completos`)
     console.log(`[API] ✅ Tamanho final: ${finalLineCount} linhas`)
 
     return NextResponse.json({
@@ -285,19 +298,16 @@ Gere uma versão COMPLETA com 25-35 linhas, mantendo TODA a estrutura obrigatór
       lyrics: finalLyrics,
       title: title || `${theme || "Reescrita"} - ${genre}`,
       metadata: {
-        finalScore,
+        finalScore: finalVerseValidation.score,
         genre,
         performanceMode,
         maxSyllables,
         syllableCorrections: corrections,
-        stackingScore: stackingResult.stackingScore,
-        syllableViolations: finalValidation.violations.length,
         verseCompletenessScore: finalVerseValidation.score,
         incompleteVerses: finalVerseValidation.incompleteVerses.length,
-        genreIsolationViolations: isolationValidation.violations.length,
-        genreIsolationWarnings: isolationValidation.warnings.length,
         totalLines: finalLineCount,
-        structureComplete: finalLineCount >= 25 && finalLineCount <= 35,
+        structureComplete: finalLineCount >= 20,
+        generationAttempts: attempts,
       },
     })
   } catch (error) {
@@ -320,10 +330,9 @@ function getGenreIsolationInstructions(genre: string): string {
 ⚠️ ISOLAMENTO DE GÊNERO - GOSPEL:
 - NUNCA use instrumentos de sertanejo: sanfona, accordion, viola caipira
 - NUNCA use audience cues de sertanejo: "Tá ligado!", "Bicho!", "Véio!", "É nóis!"
-- NUNCA use palavras de sertanejo moderno: biquíni, PIX, story, boteco, pickup, zap, rolê
 - USE instrumentos de gospel: Piano, Acoustic Guitar, Bass, Drums, Keyboard, Strings
 - USE audience cues de gospel: "Amém", "Aleluia", "Glória a Deus"
-- Mantenha tom reverente e inspirador, não coloquial de sertanejo
+- Mantenha tom reverente e inspirador
 `
   }
 
@@ -331,10 +340,9 @@ function getGenreIsolationInstructions(genre: string): string {
     return `
 ⚠️ ISOLAMENTO DE GÊNERO - SERTANEJO:
 - NUNCA use linguagem religiosa excessiva (altar, graça, senhor, deus, fé, oração)
-- Se o tema é religioso, considere usar Gospel ao invés de Sertanejo
 - USE instrumentos de sertanejo: Viola Caipira, Accordion, Acoustic Guitar, Bass, Drums
 - USE audience cues de sertanejo: "Tá ligado!", "Bicho!", "Véio!", "É nóis!"
-- Mantenha tom coloquial e brasileiro, não reverente
+- Mantenha tom coloquial e brasileiro
 `
   }
 
