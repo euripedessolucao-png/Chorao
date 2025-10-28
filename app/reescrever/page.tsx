@@ -102,7 +102,7 @@ export default function ReescreverPage() {
     try {
       const syllableValidation = validateSyllablesByGenre("", genre)
       const syllableConfig = {
-        min: syllableValidation.minSyllables,
+        min: 7, // Valor padrão seguro para a maioria dos gêneros brasileiros
         max: syllableValidation.maxSyllables,
         ideal: syllableValidation.maxSyllables,
       }
