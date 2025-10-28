@@ -151,7 +151,7 @@ export default function EditarPage() {
     try {
       const syllableValidation = validateSyllablesByGenre("", genre)
       const currentSyllableConfig = {
-        min: syllableValidation.minSyllables,
+        min: 7, // valor padrão mínimo
         max: syllableValidation.maxSyllables,
         ideal: syllableValidation.maxSyllables,
       }
