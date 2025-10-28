@@ -2,6 +2,7 @@
 
 import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro"
 import { type TerceiraViaAnalysis, analisarTerceiraVia, applyTerceiraViaToLine } from "@/lib/terceira-via"
+import type { GenreConfig as TerceiraViaGenreConfig } from "@/lib/terceira-via"
 import { generateText } from "ai"
 import {
   formatSertanejoPerformance,
@@ -11,6 +12,7 @@ import { PunctuationValidator } from "@/lib/validation/punctuation-validator"
 import { LineStacker } from "@/lib/utils/line-stacker"
 import { LyricsAuditor } from "@/lib/validation/lyrics-auditor"
 import { GENRE_CONFIGS } from "@/lib/genre-config"
+import type { GenreConfig } from "@/lib/genre-config"
 import { AbsoluteSyllableEnforcer } from "@/lib/validation/absolute-syllable-enforcer"
 import { enhanceLyricsRhymes } from "@/lib/validation/rhyme-enhancer"
 import { validateRhymesForGenre } from "@/lib/validation/rhyme-validator"
@@ -216,6 +218,7 @@ RETORNE APENAS A LETRA REESCRITA, SEM EXPLICAÇÕES.`
     const correctedLines: string[] = []
 
     const genreConfig = GENRE_CONFIGS[request.genre as keyof typeof GENRE_CONFIGS]
+    const simplifiedConfig = this.convertToTerceiraViaConfig(genreConfig)
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]
@@ -226,7 +229,7 @@ RETORNE APENAS A LETRA REESCRITA, SEM EXPLICAÇÕES.`
 
       try {
         const context = this.buildContext(lines, i, request.theme)
-        const corrected = await applyTerceiraViaToLine(line, i, context, request.genre, genreConfig, {
+        const corrected = await applyTerceiraViaToLine(line, i, context, request.genre, simplifiedConfig, {
           isPerformanceMode: request.performanceMode === "performance",
           additionalRequirements: request.additionalRequirements || "",
         })
@@ -369,5 +372,47 @@ RETORNE APENAS A LETRA REESCRITA, SEM EXPLICAÇÕES.`
   private static extractTitle(lyrics: string, request: CompositionRequest): string {
     const firstLine = lyrics.split("\n").find((line) => line.trim() && !this.shouldSkipLine(line))
     return firstLine ? firstLine.substring(0, 50).trim() : `${request.theme} - ${request.genre}`
+  }
+
+  /**
+   * Converte GenreConfig complexo para o formato simplificado esperado pela Terceira Via
+   */
+  private static convertToTerceiraViaConfig(genreConfig: GenreConfig | undefined): TerceiraViaGenreConfig {
+    if (!genreConfig) {
+      return {
+        syllableRange: { min: 6, max: 12 },
+        stylisticPreferences: { avoidCliches: false },
+      }
+    }
+
+    const syllableRules = genreConfig.prosody_rules?.syllable_count
+    let min = 6
+    let max = 12
+
+    if (syllableRules) {
+      if ("absolute_max" in syllableRules) {
+        max = syllableRules.absolute_max
+        min = Math.max(4, max - 5)
+      } else if ("with_comma" in syllableRules) {
+        max = syllableRules.with_comma.total_max
+        min = syllableRules.without_comma?.min || 5
+      }
+    }
+
+    return {
+      syllableRange: { min, max, ideal: max },
+      rhymeRules: {
+        minRichRhymePercentage: 0.6,
+        allowAssonantRhymes: true,
+        requirePerfectRhymes: false,
+      },
+      stylisticPreferences: {
+        avoidCliches: true,
+        preferEmotionalHooks: true,
+        useContractions: true,
+        visualImageryLevel: "medium",
+      },
+      languageTone: "colloquial",
+    }
   }
 }
