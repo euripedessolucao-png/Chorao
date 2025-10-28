@@ -1,4 +1,4 @@
-// app/api/rewrite/route.ts
+// app/api/rewrite-lyrics/route.ts
 import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
@@ -10,11 +10,19 @@ import { LineStacker } from "@/lib/utils/line-stacker"
 import { validateSyllablesByGenre } from "@/lib/validation/absolute-syllable-enforcer"
 import { fixLineToMaxSyllables } from "@/lib/validation/local-syllable-fixer"
 
-// ✅ Funções tipo-seguras para acessar configurações de sílabas
-function getMaxSyllables(genreConfig: any): number {
-  const syllableCount = genreConfig?.prosody_rules?.syllable_count
+// ✅ Importação correta do genre-config
+import { GENRE_CONFIGS } from "@/lib/genre-config"
 
-  if (!syllableCount) return 12
+// ✅ Função tipo-segura para acessar configurações
+function getMaxSyllables(genre: string): number {
+  // ✅ Acesso seguro ao genre config
+  const genreConfig = (GENRE_CONFIGS as any)[genre]
+  
+  if (!genreConfig?.prosody_rules?.syllable_count) {
+    return 12 // Fallback padrão
+  }
+
+  const syllableCount = genreConfig.prosody_rules.syllable_count
 
   if ("absolute_max" in syllableCount) {
     return syllableCount.absolute_max as number
@@ -54,9 +62,8 @@ export async function POST(request: NextRequest) {
 
     console.log(`[API] 🎵 Reescrevendo letra para: ${genre}`)
 
-    // ✅ Configurações do gênero
-    const genreConfig = (await import("@/lib/genre-config")).GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS]
-    const maxSyllables = getMaxSyllables(genreConfig)
+    // ✅ Configurações do gênero - AGORA CORRETO
+    const maxSyllables = getMaxSyllables(genre)
     const rhymeRules = getUniversalRhymeRules(genre)
     const genreRules = buildGenreRulesPrompt(genre)
 
@@ -123,7 +130,7 @@ Retorne APENAS a letra reescrita completa, sem explicações.`
 
     console.log(`[API] 🔄 Gerando letra com ${maxSyllables} sílabas máximas...`)
 
-    // ✅ GERAÇÃO SIMPLES - igual ao gerador de refrão
+    // ✅ GERAÇÃO SIMPLES
     const { text } = await generateText({
       model: "openai/gpt-4o-mini",
       prompt,
