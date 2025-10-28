@@ -52,22 +52,22 @@ const EMOTIONS = [
 ]
 
 const GENRE_QUALITY_CONFIG = {
-  Sertanejo: { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
-  "Sertanejo Moderno": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
-  "Sertanejo Universitário": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
-  "Sertanejo Sofrência": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
-  "Sertanejo Raiz": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
-  MPB: { min: 7, max: 12, ideal: 9, rhymeQuality: 0.6 },
-  "Bossa Nova": { min: 7, max: 12, ideal: 9, rhymeQuality: 0.6 },
-  Funk: { min: 6, max: 10, ideal: 8, rhymeQuality: 0.3 },
-  Pagode: { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
-  Samba: { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
-  Forró: { min: 8, max: 11, ideal: 9, rhymeQuality: 0.4 },
-  Axé: { min: 6, max: 10, ideal: 8, rhymeQuality: 0.3 },
-  Rock: { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
-  Pop: { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
-  Gospel: { min: 8, max: 11, ideal: 9, rhymeQuality: 0.5 },
-  default: { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
+  Sertanejo: { max: 12, ideal: 10, rhymeQuality: 0.5 },
+  "Sertanejo Moderno": { max: 12, ideal: 10, rhymeQuality: 0.5 },
+  "Sertanejo Universitário": { max: 12, ideal: 10, rhymeQuality: 0.5 },
+  "Sertanejo Sofrência": { max: 12, ideal: 10, rhymeQuality: 0.5 },
+  "Sertanejo Raiz": { max: 12, ideal: 10, rhymeQuality: 0.5 },
+  MPB: { max: 12, ideal: 9, rhymeQuality: 0.6 },
+  "Bossa Nova": { max: 12, ideal: 9, rhymeQuality: 0.6 },
+  Funk: { max: 12, ideal: 8, rhymeQuality: 0.3 },
+  Pagode: { max: 12, ideal: 9, rhymeQuality: 0.4 },
+  Samba: { max: 12, ideal: 9, rhymeQuality: 0.4 },
+  Forró: { max: 12, ideal: 9, rhymeQuality: 0.4 },
+  Axé: { max: 12, ideal: 8, rhymeQuality: 0.3 },
+  Rock: { max: 12, ideal: 9, rhymeQuality: 0.4 },
+  Pop: { max: 12, ideal: 9, rhymeQuality: 0.4 },
+  Gospel: { max: 12, ideal: 9, rhymeQuality: 0.5 },
+  default: { max: 12, ideal: 9, rhymeQuality: 0.4 },
 }
 
 export default function EditarPage() {
@@ -96,7 +96,6 @@ export default function EditarPage() {
     const config =
       GENRE_QUALITY_CONFIG[selectedGenre as keyof typeof GENRE_QUALITY_CONFIG] || GENRE_QUALITY_CONFIG.default
     return {
-      min: config.min,
       max: config.max,
       ideal: config.ideal,
     }
@@ -151,7 +150,6 @@ export default function EditarPage() {
     try {
       const syllableValidation = validateSyllablesByGenre("", genre)
       const currentSyllableConfig = {
-        min: 7, // valor padrão mínimo
         max: syllableValidation.maxSyllables,
         ideal: syllableValidation.maxSyllables,
       }

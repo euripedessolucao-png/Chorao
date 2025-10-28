@@ -30,22 +30,22 @@ import { RhymeAnalyzer } from "@/components/rhyme-analyzer"
 import { validateSyllablesByGenre } from "@/lib/validation/absolute-syllable-enforcer"
 
 const GENRE_QUALITY_CONFIG = {
-  Sertanejo: { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
-  "Sertanejo Moderno": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
-  "Sertanejo Universitário": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
-  "Sertanejo Sofrência": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
-  "Sertanejo Raiz": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
-  MPB: { min: 7, max: 12, ideal: 9, rhymeQuality: 0.6 },
-  "Bossa Nova": { min: 7, max: 12, ideal: 9, rhymeQuality: 0.6 },
-  Funk: { min: 6, max: 10, ideal: 8, rhymeQuality: 0.3 },
-  Pagode: { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
-  Samba: { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
-  Forró: { min: 8, max: 11, ideal: 9, rhymeQuality: 0.4 },
-  Axé: { min: 6, max: 10, ideal: 8, rhymeQuality: 0.3 },
-  Rock: { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
-  Pop: { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
-  Gospel: { min: 8, max: 11, ideal: 9, rhymeQuality: 0.5 },
-  default: { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
+  Sertanejo: { max: 12, ideal: 10, rhymeQuality: 0.5 },
+  "Sertanejo Moderno": { max: 12, ideal: 10, rhymeQuality: 0.5 },
+  "Sertanejo Universitário": { max: 12, ideal: 10, rhymeQuality: 0.5 },
+  "Sertanejo Sofrência": { max: 12, ideal: 10, rhymeQuality: 0.5 },
+  "Sertanejo Raiz": { max: 12, ideal: 10, rhymeQuality: 0.5 },
+  MPB: { max: 12, ideal: 9, rhymeQuality: 0.6 },
+  "Bossa Nova": { max: 12, ideal: 9, rhymeQuality: 0.6 },
+  Funk: { max: 12, ideal: 8, rhymeQuality: 0.3 },
+  Pagode: { max: 12, ideal: 9, rhymeQuality: 0.4 },
+  Samba: { max: 12, ideal: 9, rhymeQuality: 0.4 },
+  Forró: { max: 12, ideal: 9, rhymeQuality: 0.4 },
+  Axé: { max: 12, ideal: 8, rhymeQuality: 0.3 },
+  Rock: { max: 12, ideal: 9, rhymeQuality: 0.4 },
+  Pop: { max: 12, ideal: 9, rhymeQuality: 0.4 },
+  Gospel: { max: 12, ideal: 9, rhymeQuality: 0.5 },
+  default: { max: 12, ideal: 9, rhymeQuality: 0.4 },
 }
 
 export default function ReescreverPage() {
@@ -76,7 +76,6 @@ export default function ReescreverPage() {
     const config =
       GENRE_QUALITY_CONFIG[selectedGenre as keyof typeof GENRE_QUALITY_CONFIG] || GENRE_QUALITY_CONFIG.default
     return {
-      min: config.min,
       max: config.max,
       ideal: config.ideal,
     }
@@ -102,7 +101,6 @@ export default function ReescreverPage() {
     try {
       const syllableValidation = validateSyllablesByGenre("", genre)
       const syllableConfig = {
-        min: 7, // Valor padrão seguro para a maioria dos gêneros brasileiros
         max: syllableValidation.maxSyllables,
         ideal: syllableValidation.maxSyllables,
       }
@@ -229,8 +227,7 @@ export default function ReescreverPage() {
                   <div className="bg-blue-50 border border-blue-200 rounded p-2 text-xs">
                     <div className="font-semibold text-blue-800">Configuração {genre}:</div>
                     <div className="text-blue-700">
-                      Sílabas: {currentSyllableConfig.min}-{currentSyllableConfig.max} (ideal:{" "}
-                      {currentSyllableConfig.ideal})
+                      Máximo: {currentSyllableConfig.max} sílabas (ideal: {currentSyllableConfig.ideal})
                     </div>
                     <div className="text-blue-700">
                       Rimas:{" "}
