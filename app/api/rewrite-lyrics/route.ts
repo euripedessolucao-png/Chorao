@@ -29,7 +29,7 @@ function getMaxSyllables(genre: string): number {
   return 12
 }
 
-// ✅ CORRETOR SUPER AGRESSIVO - CORRIGIDO
+// ✅ CORRETOR SUPER AGRESSIVO - SEM DUPLICAÇÕES
 function aggressivelyFixIncompleteLines(lyrics: string): string {
   console.log("[Corrector] 🚨 INICIANDO CORREÇÃO AGRESSIVA DE VERSOS INCOMPLETOS")
   
@@ -41,7 +41,6 @@ function aggressivelyFixIncompleteLines(lyrics: string): string {
     'diante': 'de Ti',
     'aberto,': 'e grato',
     'vida e': 'pela graça',
-    'me': 'sustenta',
     'agradeço': 'pela vida',
     'viver e de': 'amar em Ti',
     'fonte': 'de vida',
@@ -54,13 +53,11 @@ function aggressivelyFixIncompleteLines(lyrics: string): string {
     'cada': 'momento',
     'que me': 'acolhe',
     'ser': 'amado',
-    'meu': 'coração',
     'quero': 'cantar',
     'Tua': 'presença',
     'em': 'amor',
     'Tu': 'estás aqui',
     'o Teu': 'caminho',
-    'meu': 'irmão',
     'que é': 'Teu dom',
     'com': 'Tua criação',
     'de': 'filho Teu',
@@ -111,6 +108,7 @@ function aggressivelyFixIncompleteLines(lyrics: string): string {
         else if (lastWord === 'me') fixedLine += ' guia'
         else if (lastWord === 'te') fixedLine += ' amo'
         else if (lastWord === 'de') fixedLine += ' amor'
+        else if (lastWord === 'meu') fixedLine += ' coração'
         else if (lastWord === 'e') fixedLine += ' graça'
         else fixedLine += ' sempre'
       }
