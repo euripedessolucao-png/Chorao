@@ -48,7 +48,14 @@ const PERFORMANCE_INSTRUCTIONS: Record<string, PerformanceInstruction> = {
   },
 }
 
-const AUDIENCE_CUES = ["Aôôô potência!", "É nóis!", "Véio!", "Bicho!", "Tá ligado!", "Vai!", "Isso aí!"]
+const AUDIENCE_CUES_BY_GENRE: Record<string, string[]> = {
+  sertanejo: ["Aôôô potência!", "É nóis!", "Véio!", "Bicho!", "Tá ligado!", "Vai!", "Isso aí!"],
+  gospel: ["Amém!", "Glória!", "Aleluia!", "Louvado seja!", "Graças a Deus!"],
+  funk: ["Vai!", "Desce!", "Sobe!", "Tá maluco!", "Bora!"],
+  pagode: ["Ô laiá!", "Vai!", "Isso aí!", "Segura!"],
+  forro: ["Ôxe!", "Arrocha!", "Vai!", "Eita!"],
+  default: ["Vai!", "Isso aí!"],
+}
 
 const PERFORMANCE_ACTIONS = [
   "Vocalist points to the crowd, smiling",
@@ -58,21 +65,67 @@ const PERFORMANCE_ACTIONS = [
   "Vocalist closes eyes, feeling the emotion",
 ]
 
-const getInstrumentation = (sectionType: string, genre: string): string => {
+const getInstrumentationByGenre = (sectionType: string, genre: string): string => {
   const lowerGenre = genre.toLowerCase()
+
+  // Gospel - SEM sanfona/accordion
+  if (lowerGenre.includes("gospel")) {
+    return sectionType === "chorus"
+      ? "piano, electric guitar, drums, bass, strings"
+      : "piano, acoustic guitar, light percussion"
+  }
+
+  // Sertanejo Raiz - COM viola e sanfona
   if (lowerGenre.includes("raiz")) {
-    return sectionType === 'chorus'
+    return sectionType === "chorus"
       ? "viola caipira, acoustic guitar, sanfona"
       : "viola caipira, acoustic guitar, light bass"
   }
 
-  // Padrão para outros subgêneros (universitário, moderno etc.)
-  return sectionType === 'chorus'
-    ? "electric guitar, drums, bass, accordion"
-    : "acoustic guitar, bass, light percussion"
+  // Sertanejo Moderno/Universitário - COM accordion
+  if (lowerGenre.includes("sertanejo")) {
+    return sectionType === "chorus"
+      ? "electric guitar, drums, bass, accordion"
+      : "acoustic guitar, bass, light percussion"
+  }
+
+  // Funk - SEM instrumentos acústicos
+  if (lowerGenre.includes("funk")) {
+    return sectionType === "chorus" ? "808 bass, electronic drums, synth" : "808 bass, minimal percussion"
+  }
+
+  // Forró - COM zabumba e triângulo
+  if (lowerGenre.includes("forró") || lowerGenre.includes("forro")) {
+    return sectionType === "chorus" ? "sanfona, zabumba, triângulo, bass" : "sanfona, zabumba, triângulo"
+  }
+
+  // Padrão
+  return sectionType === "chorus" ? "full band, drums, bass, guitar" : "acoustic guitar, bass, light percussion"
 }
 
-function selectStructure(): string[] {
+const getAudienceCueForGenre = (genre: string): string => {
+  const lowerGenre = genre.toLowerCase()
+
+  if (lowerGenre.includes("gospel")) {
+    return AUDIENCE_CUES_BY_GENRE.gospel[Math.floor(Math.random() * AUDIENCE_CUES_BY_GENRE.gospel.length)]
+  }
+  if (lowerGenre.includes("sertanejo")) {
+    return AUDIENCE_CUES_BY_GENRE.sertanejo[Math.floor(Math.random() * AUDIENCE_CUES_BY_GENRE.sertanejo.length)]
+  }
+  if (lowerGenre.includes("funk")) {
+    return AUDIENCE_CUES_BY_GENRE.funk[Math.floor(Math.random() * AUDIENCE_CUES_BY_GENRE.funk.length)]
+  }
+  if (lowerGenre.includes("pagode")) {
+    return AUDIENCE_CUES_BY_GENRE.pagode[Math.floor(Math.random() * AUDIENCE_CUES_BY_GENRE.pagode.length)]
+  }
+  if (lowerGenre.includes("forró") || lowerGenre.includes("forro")) {
+    return AUDIENCE_CUES_BY_GENRE.forro[Math.floor(Math.random() * AUDIENCE_CUES_BY_GENRE.forro.length)]
+  }
+
+  return AUDIENCE_CUES_BY_GENRE.default[Math.floor(Math.random() * AUDIENCE_CUES_BY_GENRE.default.length)]
+}
+
+const selectStructure = (): string[] => {
   const structures = [
     { pattern: ["A", "B", "A", "B", "C", "B"], probability: 0.5 },
     { pattern: ["A", "B", "A", "B", "B"], probability: 0.25 },
@@ -93,7 +146,7 @@ function selectStructure(): string[] {
   return structures[0].pattern
 }
 
-function detectStructure(lyrics: string): string[] {
+const detectStructure = (lyrics: string): string[] => {
   const structure: string[] = []
   const lines = lyrics.split("\n")
 
@@ -112,11 +165,7 @@ function detectStructure(lyrics: string): string[] {
   return structure.length > 0 ? structure : ["A", "B", "A", "B", "C", "B"]
 }
 
-export function formatSertanejoPerformance(
-  lyrics: string,
-  genre: string,
-  useRandomStructure = false
-): string {
+export function formatSertanejoPerformance(lyrics: string, genre: string, useRandomStructure = false): string {
   const lines = lyrics.split("\n")
   const formatted: string[] = []
 
@@ -131,21 +180,21 @@ export function formatSertanejoPerformance(
 
     if (line.match(/\[verse\s*1?\]/i) || line.match(/\[verso\s*1?\]/i)) {
       partACount++
-      const instrumentation = getInstrumentation('verse', genre)
+      const instrumentation = getInstrumentationByGenre("verse", genre)
       formatted.push(`[PART A - Verse 1 - ${instrumentation}]`)
       continue
     }
 
     if (line.match(/\[verse\s*2\]/i) || line.match(/\[verso\s*2\]/i)) {
       partACount++
-      const instrumentation = getInstrumentation('verse', genre)
+      const instrumentation = getInstrumentationByGenre("verse", genre)
       formatted.push(`[PART A2 - Verse 2 - ${instrumentation}]`)
       continue
     }
 
     if (line.match(/\[chorus\]/i) || line.match(/\[refrão\]/i)) {
       partBCount++
-      const instrumentation = getInstrumentation('chorus', genre)
+      const instrumentation = getInstrumentationByGenre("chorus", genre)
       let label = "PART B - Chorus"
       if (partBCount >= 3) label = "PART B - Final Chorus"
       formatted.push(`[${label} - ${instrumentation}]`)
@@ -153,13 +202,13 @@ export function formatSertanejoPerformance(
     }
 
     if (line.match(/\[bridge\]/i) || line.match(/\[ponte\]/i)) {
-      const instrumentation = getInstrumentation('bridge', genre)
+      const instrumentation = getInstrumentationByGenre("bridge", genre)
       formatted.push(`[PART C - Bridge - ${instrumentation}]`)
       continue
     }
 
     if (line.match(/\[outro\]/i) || line.match(/\[final\]/i)) {
-      const instrumentation = getInstrumentation('outro', genre)
+      const instrumentation = getInstrumentationByGenre("outro", genre)
       formatted.push(`[OUTRO - ${instrumentation}]`)
       continue
     }
@@ -170,7 +219,7 @@ export function formatSertanejoPerformance(
 
       // Adiciona elementos performáticos
       if (partBCount === 1 && Math.random() > 0.7) {
-        const cue = AUDIENCE_CUES[Math.floor(Math.random() * AUDIENCE_CUES.length)]
+        const cue = getAudienceCueForGenre(genre)
         formatted.push(`(Audience: "${cue}")`)
       }
 
@@ -197,12 +246,21 @@ export function formatSertanejoPerformance(
     }
 
     // Adiciona solo instrumental após a ponte
-    if (line.match(/\[bridge\]/i) && i < lines.length - 1 && !hasInstrumentalSolo) {
+    const lowerGenre = genre.toLowerCase()
+    const shouldAddSolo = !lowerGenre.includes("gospel")
+
+    if (shouldAddSolo && line.match(/\[bridge\]/i) && i < lines.length - 1 && !hasInstrumentalSolo) {
       const nextLine = lines[i + 1]?.trim()
       if (nextLine && (nextLine.match(/\[chorus\]/i) || nextLine.match(/\[refrão\]/i))) {
         formatted.push("")
+
+        let soloInstrument = "accordion"
+        if (lowerGenre.includes("funk")) soloInstrument = "synth"
+        else if (lowerGenre.includes("forró") || lowerGenre.includes("forro")) soloInstrument = "sanfona"
+        else if (lowerGenre.includes("raiz")) soloInstrument = "viola caipira"
+
         formatted.push(
-          "[INSTRUMENTAL SOLO - Energetic accordion solo for 16 seconds; full band returns with power, drums and bass lock into a tight groove]",
+          `[INSTRUMENTAL SOLO - Energetic ${soloInstrument} solo for 16 seconds; full band returns with power, drums and bass lock into a tight groove]`,
         )
         formatted.push("")
         hasInstrumentalSolo = true
