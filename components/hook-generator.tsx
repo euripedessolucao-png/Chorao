@@ -39,7 +39,7 @@ export function HookGenerator({
   showSelectionMode = false,
   initialLyrics = "",
   initialGenre = "",
-  initialTheme = "" // ✅ PROP ADICIONADA AQUI TAMBÉM
+  initialTheme = "", // ✅ PROP ADICIONADA AQUI TAMBÉM
 }: HookGeneratorProps) {
   const [lyrics, setLyrics] = useState(initialLyrics)
   const [genre, setGenre] = useState(initialGenre)
@@ -60,6 +60,12 @@ export function HookGenerator({
     if (initialTheme) setTheme(initialTheme)
   }, [initialTheme])
 
+  useEffect(() => {
+    if (initialLyrics && initialGenre && initialTheme && !result && !isGenerating) {
+      generateHook()
+    }
+  }, [initialLyrics, initialGenre, initialTheme])
+
   const generateHook = async () => {
     if (!lyrics.trim()) {
       toast.error("Cole uma letra para gerar hooks")
@@ -74,10 +80,10 @@ export function HookGenerator({
       const response = await fetch("/api/generate-hook", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          lyrics: lyrics.trim(), 
+        body: JSON.stringify({
+          lyrics: lyrics.trim(),
           genre,
-          theme // ✅ ENVIANDO TEMA PARA A API
+          theme, // ✅ ENVIANDO TEMA PARA A API
         }),
       })
 
@@ -127,7 +133,7 @@ export function HookGenerator({
           </CardTitle>
           <p className="text-sm text-muted-foreground">
             {initialLyrics
-              ? "Gere hooks da letra já colada"
+              ? "Gerando automaticamente 3 hooks da letra..."
               : "Analise sua letra e gere 3 variações de hooks comerciais com pontuação de viralidade"}
           </p>
         </CardHeader>
@@ -155,19 +161,28 @@ export function HookGenerator({
             </div>
           )}
 
-          <Button onClick={generateHook} disabled={isGenerating || !lyrics.trim()} className="w-full">
-            {isGenerating ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Analisando Gancho...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4 mr-2" />
-                Gerar Hooks & Ganchômetro
-              </>
-            )}
-          </Button>
+          {!initialLyrics && (
+            <Button onClick={generateHook} disabled={isGenerating || !lyrics.trim()} className="w-full">
+              {isGenerating ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Analisando Gancho...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Gerar 3 Hooks & Ganchômetro
+                </>
+              )}
+            </Button>
+          )}
+
+          {initialLyrics && isGenerating && (
+            <div className="flex items-center justify-center p-4">
+              <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
+              <span className="text-sm">Gerando 3 hooks automaticamente...</span>
+            </div>
+          )}
         </CardContent>
       </Card>
 

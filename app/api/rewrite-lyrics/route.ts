@@ -44,6 +44,15 @@ export async function POST(request: NextRequest) {
     const rhymeRules = getUniversalRhymeRules(genre)
     const genreRules = buildGenreRulesPrompt(genre)
 
+    const additionalReqsSection = additionalRequirements?.trim()
+      ? `
+⚠️ REQUISITOS ADICIONAIS (OBRIGATÓRIOS - NÃO PODEM SER IGNORADOS):
+${additionalRequirements}
+
+ATENÇÃO: Você DEVE seguir TODOS os requisitos adicionais acima. Eles são OBRIGATÓRIOS e têm prioridade sobre qualquer outra instrução. Se houver conflito, os requisitos adicionais prevalecem.
+`
+      : ""
+
     const prompt = `Você é um compositor brasileiro especializado em ${genre}.
 
 TAREFA: Reescrever a letra abaixo mantendo a essência mas adaptando para ${genre}.
@@ -53,7 +62,8 @@ ${originalLyrics}
 
 TEMA: ${theme || "Manter tema original"}
 HUMOR: ${mood || "Manter humor original"}
-${additionalRequirements ? `REQUISITOS: ${additionalRequirements}` : ""}
+
+${additionalReqsSection}
 
 REGRAS DE MÉTRICA:
 - Máximo: ${maxSyllables} sílabas por verso (limite absoluto)
@@ -82,10 +92,14 @@ REGRAS CRÍTICAS:
 - Refrão memorável e repetível
 - Evite clichês ("coraçãozinho", "lágrimas no rosto")
 - ${performanceMode === "performance" ? "Tags em inglês, versos em português" : "Tags em português"}
+${additionalRequirements ? "\n- CUMPRA TODOS OS REQUISITOS ADICIONAIS ACIMA (OBRIGATÓRIO)" : ""}
 
 Retorne APENAS a letra reescrita, sem explicações.`
 
     console.log(`[API] 🔄 Reescrevendo com limite máximo de ${maxSyllables} sílabas...`)
+    if (additionalRequirements) {
+      console.log(`[API] ⚠️ REQUISITOS ADICIONAIS OBRIGATÓRIOS DETECTADOS`)
+    }
 
     const { text } = await generateText({
       model: "openai/gpt-4o-mini",

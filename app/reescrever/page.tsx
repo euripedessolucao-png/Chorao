@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
-import { RefreshCw, Save, Search, Loader2, Zap, Copy, Trash2 } from "lucide-react"
+import { RefreshCw, Save, Search, Loader2, Zap, Copy, Trash2, Wand2 } from "lucide-react"
 import { toast } from "sonner"
 import {
   Dialog,
@@ -28,6 +28,7 @@ import { HookGenerator } from "@/components/hook-generator"
 import { SyllableValidatorEditable } from "@/components/syllable-validator-editable" // Usar validador robusto com edição
 import { RhymeAnalyzer } from "@/components/rhyme-analyzer"
 import { validateSyllablesByGenre } from "@/lib/validation/absolute-syllable-enforcer"
+import { ChorusGenerator } from "@/components/chorus-generator"
 
 const GENRE_QUALITY_CONFIG = {
   Sertanejo: { max: 12, ideal: 10, rhymeQuality: 0.5 },
@@ -71,6 +72,8 @@ export default function ReescreverPage() {
   const [selectedHook, setSelectedHook] = useState<string | null>(null)
   const [formattingStyle, setFormattingStyle] = useState("performatico")
   const [universalPolish, setUniversalPolish] = useState(true)
+  const [showChorusDialog, setShowChorusDialog] = useState(false)
+  const [selectedChoruses, setSelectedChoruses] = useState<any[]>([])
 
   const getSyllableConfig = (selectedGenre: string) => {
     const config =
@@ -184,6 +187,25 @@ export default function ReescreverPage() {
       setChords("")
       toast.success("Letra limpa com sucesso!")
     }
+  }
+
+  const handleSelectChoruses = (choruses: any[]) => {
+    setSelectedChoruses(choruses)
+  }
+
+  const handleApplyChoruses = () => {
+    if (selectedChoruses.length === 0) {
+      toast.error("Selecione pelo menos um refrão")
+      return
+    }
+
+    const chorusText = selectedChoruses.map((c) => c.chorus.replace(/\s\/\s/g, "\n")).join("\n\n")
+    const updatedReqs = additionalReqs ? `${additionalReqs}\n\n[CHORUS]\n${chorusText}` : `[CHORUS]\n${chorusText}`
+
+    setAdditionalReqs(updatedReqs)
+    setShowChorusDialog(false)
+
+    toast.success("Refrão(ões) adicionado(s) aos requisitos!")
   }
 
   const currentSyllableConfig = genre ? getSyllableConfig(genre) : null
@@ -504,6 +526,17 @@ export default function ReescreverPage() {
                 </Button>
 
                 <Button
+                  variant="outline"
+                  className="w-full bg-transparent justify-start"
+                  size="sm"
+                  onClick={() => setShowChorusDialog(true)}
+                  disabled={!genre || !theme || isRewriting}
+                >
+                  <Wand2 className="h-4 w-4 mr-2" />
+                  Gerar Refrão
+                </Button>
+
+                <Button
                   className="w-full justify-start"
                   size="sm"
                   onClick={handleRewriteLyrics}
@@ -644,6 +677,33 @@ export default function ReescreverPage() {
             </Button>
             <Button onClick={handleApplyHook} disabled={!selectedHook}>
               Adicionar Hook à Letra
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showChorusDialog} onOpenChange={setShowChorusDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Gerador de Refrão</DialogTitle>
+            <DialogDescription>
+              A IA gerará automaticamente 5 refrões com notas. Selecione até 2 para adicionar aos requisitos.
+            </DialogDescription>
+          </DialogHeader>
+          <ChorusGenerator
+            genre={genre}
+            theme={theme}
+            mood={mood}
+            onSelectChorus={handleSelectChoruses}
+            showSelectionMode={true}
+            maxSelection={2}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowChorusDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleApplyChoruses} disabled={selectedChoruses.length === 0}>
+              Adicionar aos Requisitos ({selectedChoruses.length})
             </Button>
           </DialogFooter>
         </DialogContent>
