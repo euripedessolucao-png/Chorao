@@ -1,18 +1,22 @@
 import { NextResponse } from "next/server"
-import { validateLyricsSyllables } from "@/lib/validation/syllable-counter-brasileiro"
-import { AbsoluteSyllableEnforcer } from "@/lib/validation/absolute-syllable-enforcer"
+import { validateSyllablesByGenre } from "@/lib/validation/absolute-syllable-enforcer"
 
 export async function POST(request: Request) {
   try {
-    const { lyrics, maxSyllables = 12 } = await request.json()
+    const { lyrics, genre = "sertanejo", maxSyllables } = await request.json()
 
     if (!lyrics || typeof lyrics !== "string") {
       return NextResponse.json({ error: "Letra é obrigatória para validação" }, { status: 400 })
     }
 
-    const validation = validateLyricsSyllables(lyrics, maxSyllables)
+    const validation = validateSyllablesByGenre(lyrics, genre)
 
-    return NextResponse.json(validation)
+    return NextResponse.json({
+      isValid: validation.isValid,
+      violations: validation.violations,
+      message: validation.message,
+      maxSyllables: validation.maxSyllables,
+    })
   } catch (error) {
     console.error("[API] Erro na validação de sílabas:", error)
     return NextResponse.json(

@@ -5,7 +5,6 @@ import { validateAllLayers } from "./multi-layer-validator"
 import { WordIntegrityValidator } from "./word-integrity-validator"
 import { GENRE_CONFIGS } from "@/lib/genre-config"
 import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro"
-import { AbsoluteSyllableEnforcer } from "@/lib/validation/absolute-syllable-enforcer"
 
 // ✅ INTERFACES NO TOPO (obrigatório para TypeScript)
 export interface AuditResult {
@@ -78,7 +77,7 @@ export class LyricsAuditor {
     // ✅ AUDITORIA 2: SÍLABAS POR GÊNERO
     const syllableErrors = this.validateSyllablesByGenre(lyrics, minSyllables, maxSyllables)
     if (syllableErrors.length > 0) {
-      syllableErrors.forEach(error => {
+      syllableErrors.forEach((error) => {
         errors.push({
           type: "syllables",
           severity: "critical",
@@ -151,8 +150,8 @@ export class LyricsAuditor {
     }
 
     // ✅ DECISÃO FINAL
-    const isApproved = score >= this.MIN_APPROVAL_SCORE && errors.filter(e => e.severity === "critical").length === 0
-    const mustRegenerate = errors.filter(e => e.severity === "critical").length > 0
+    const isApproved = score >= this.MIN_APPROVAL_SCORE && errors.filter((e) => e.severity === "critical").length === 0
+    const mustRegenerate = errors.filter((e) => e.severity === "critical").length > 0
     const canBeFixed = !mustRegenerate && errors.length > 0
 
     return {
@@ -167,9 +166,7 @@ export class LyricsAuditor {
 
   private static validateSyllablesByGenre(lyrics: string, minSyllables: number, maxSyllables: number): string[] {
     const errors: string[] = []
-    const lines = lyrics.split("\n").filter(line => 
-      line.trim() && !line.startsWith("[") && !line.startsWith("(")
-    )
+    const lines = lyrics.split("\n").filter((line) => line.trim() && !line.startsWith("[") && !line.startsWith("("))
 
     lines.forEach((line, index) => {
       const syllables = countPoeticSyllables(line)

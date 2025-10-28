@@ -1,4 +1,4 @@
-// lib/composition/meta-composer.ts
+// lib/orchestrator/meta-composer.ts
 
 import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro"
 import { type TerceiraViaAnalysis, analisarTerceiraVia, applyTerceiraViaToLine } from "@/lib/terceira-via"
@@ -13,9 +13,10 @@ import { LineStacker } from "@/lib/utils/line-stacker"
 import { LyricsAuditor } from "@/lib/validation/lyrics-auditor"
 import { GENRE_CONFIGS } from "@/lib/genre-config"
 import type { GenreConfig } from "@/lib/genre-config"
-import { AbsoluteSyllableEnforcer } from "@/lib/validation/absolute-syllable-enforcer"
+import { validateSyllablesByGenre } from "@/lib/validation/absolute-syllable-enforcer"
 import { enhanceLyricsRhymes } from "@/lib/validation/rhyme-enhancer"
 import { validateRhymesForGenre } from "@/lib/validation/rhyme-validator"
+import { fixLineToMaxSyllables } from "@/lib/validation/local-syllable-fixer"
 
 export interface CompositionRequest {
   genre: string
@@ -278,11 +279,36 @@ RETORNE APENAS A LETRA REESCRITA, SEM EXPLICAÇÕES.`
       polished = punctResult.correctedLyrics
     }
 
-    const syllableCheck = AbsoluteSyllableEnforcer.validate(polished)
+    const syllableCheck = validateSyllablesByGenre(polished, request.genre)
     if (!syllableCheck.isValid) {
       console.log("[MetaComposer] 🔧 Corrigindo sílabas excedentes...")
-      const fixResult = AbsoluteSyllableEnforcer.validateAndFix(polished)
-      polished = fixResult.correctedLyrics
+      // Correção manual linha por linha
+      const lines = polished.split("\n")
+      const correctedLines: string[] = []
+
+      for (const line of lines) {
+        const trimmed = line.trim()
+        if (!trimmed || trimmed.startsWith("[") || trimmed.startsWith("(")) {
+          correctedLines.push(line)
+          continue
+        }
+
+        const lineWithoutBrackets = trimmed.replace(/\[.*?\]/g, "").trim()
+        if (!lineWithoutBrackets) {
+          correctedLines.push(line)
+          continue
+        }
+
+        const syllables = countPoeticSyllables(lineWithoutBrackets)
+        if (syllables > syllableCheck.maxSyllables) {
+          const fixed = fixLineToMaxSyllables(trimmed, syllableCheck.maxSyllables)
+          correctedLines.push(fixed)
+        } else {
+          correctedLines.push(line)
+        }
+      }
+
+      polished = correctedLines.join("\n")
     }
 
     // Quebra de linhas (agora mais agressivo)

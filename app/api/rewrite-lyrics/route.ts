@@ -9,11 +9,11 @@ import {
   shouldUsePerformanceFormat,
 } from "@/lib/formatters/sertanejo-performance-formatter"
 import { formatInstrumentationForAI } from "@/lib/normalized-genre"
-import { AbsoluteSyllableEnforcer } from "@/lib/validation/absolute-syllable-enforcer"
 import { LineStacker } from "@/lib/utils/line-stacker"
 import { enhanceLyricsRhymes } from "@/lib/validation/rhyme-enhancer"
 import { validateRhymesForGenre } from "@/lib/validation/rhyme-validator"
 import { validateSyllablesByGenre } from "@/lib/validation/absolute-syllable-enforcer"
+import { fixLineToMaxSyllables } from "@/lib/validation/local-syllable-fixer"
 
 export async function POST(request: NextRequest) {
   try {
@@ -39,7 +39,6 @@ export async function POST(request: NextRequest) {
     // ✅ Usa validateSyllablesByGenre como fonte única da verdade
     const syllableValidation = validateSyllablesByGenre("", genre)
     const maxSyllables = syllableValidation.maxSyllables
-    const minSyllables = 8
 
     const rhymeRules = getUniversalRhymeRules(genre)
     const genreRules = buildGenreRulesPrompt(genre)
@@ -56,8 +55,9 @@ HUMOR: ${mood || "Manter humor original"}
 ${additionalRequirements ? `REQUISITOS: ${additionalRequirements}` : ""}
 
 REGRAS DE MÉTRICA:
-- Versos: ${minSyllables}–${maxSyllables} sílabas
+- Máximo: ${maxSyllables} sílabas por verso (limite absoluto)
 - Use contrações naturais ("cê", "pra", "tô")
+- Versos curtos são permitidos
 - NUNCA exceda ${maxSyllables} sílabas (limite humano de canto)
 
 REGRAS DE RIMA:
@@ -82,7 +82,7 @@ REGRAS:
 
 Retorne APENAS a letra reescrita, sem explicações.`
 
-    console.log(`[API] 🔄 Reescrevendo com métrica ${minSyllables}-${maxSyllables} sílabas...`)
+    console.log(`[API] 🔄 Reescrevendo com limite máximo de ${maxSyllables} sílabas...`)
 
     const { text } = await generateText({
       model: "openai/gpt-4o-mini",
@@ -96,9 +96,7 @@ Retorne APENAS a letra reescrita, sem explicações.`
       .split("\n")
       .filter(
         (line) =>
-          !line.trim().startsWith("Retorne") &&
-          !line.trim().startsWith("REGRAS") &&
-          !line.includes("Explicação"),
+          !line.trim().startsWith("Retorne") && !line.trim().startsWith("REGRAS") && !line.includes("Explicação"),
       )
       .join("\n")
       .trim()
@@ -115,10 +113,36 @@ Retorne APENAS a letra reescrita, sem explicações.`
     }
 
     console.log("[API] 🔧 Aplicando correção automática de sílabas...")
-    const enforcementResult = AbsoluteSyllableEnforcer.validateAndFix(finalLyrics)
-    if (enforcementResult.corrections > 0) {
-      console.log(`[API] ✅ ${enforcementResult.corrections} verso(s) corrigido(s) automaticamente`)
-      finalLyrics = enforcementResult.correctedLyrics
+    const lines = finalLyrics.split("\n")
+    const correctedLines: string[] = []
+    let corrections = 0
+
+    for (const line of lines) {
+      const trimmed = line.trim()
+      if (!trimmed || trimmed.startsWith("(") || trimmed.startsWith("[")) {
+        correctedLines.push(line)
+        continue
+      }
+
+      const lineWithoutBrackets = trimmed.replace(/\[.*?\]/g, "").trim()
+      if (!lineWithoutBrackets) {
+        correctedLines.push(line)
+        continue
+      }
+
+      const syllables = countPoeticSyllables(lineWithoutBrackets)
+      if (syllables > maxSyllables) {
+        const fixed = fixLineToMaxSyllables(trimmed, maxSyllables)
+        correctedLines.push(fixed)
+        corrections++
+      } else {
+        correctedLines.push(line)
+      }
+    }
+
+    if (corrections > 0) {
+      console.log(`[API] ✅ ${corrections} verso(s) corrigido(s) automaticamente`)
+      finalLyrics = correctedLines.join("\n")
     }
 
     console.log("[API] 📚 Empilhando versos...")
@@ -152,8 +176,8 @@ Retorne APENAS a letra reescrita, sem explicações.`
         finalScore,
         genre,
         performanceMode,
-        syllableRange: { min: minSyllables, max: maxSyllables },
-        syllableCorrections: enforcementResult.corrections,
+        maxSyllables,
+        syllableCorrections: corrections,
         stackingScore: stackingResult.stackingScore,
         syllableViolations: finalValidation.violations.length,
       },
