@@ -164,22 +164,13 @@ export default function ReescreverPage() {
       return
     }
 
-    const hookSection = `\n\n[HOOK]\n${selectedHook}\n`
-    setLyrics((prev) => {
-      if (prev) {
-        const lines = prev.split("\n")
-        const instrumentationIndex = lines.findIndex((line) => line.startsWith("(Instrumentation)"))
-        if (instrumentationIndex !== -1) {
-          lines.splice(instrumentationIndex, 0, hookSection)
-          return lines.join("\n")
-        }
-        return prev + hookSection
-      }
-      return hookSection
-    })
+    const hookText = `[HOOK]\n${selectedHook}`
+    const updatedReqs = additionalReqs ? `${additionalReqs}\n\n${hookText}` : hookText
 
+    setAdditionalReqs(updatedReqs)
     setShowHookDialog(false)
-    toast.success("Hook adicionado à letra!")
+
+    toast.success("Hook adicionado aos requisitos!")
   }
 
   const handleClearLyrics = () => {
