@@ -226,7 +226,6 @@ Gere a letra com VERSOS COMPLETOS e EMOCIONALMENTE IMPACTANTES:`
       model: "openai/gpt-4o-mini",
       prompt,
       temperature: 0.85,
-      maxTokens: 2500,
     })
 
     let finalLyrics = capitalizeLines(text)
