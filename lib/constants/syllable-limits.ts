@@ -9,54 +9,54 @@
 
 export const SYLLABLE_LIMITS = {
   // Limite absoluto para TODOS os gêneros
-  ABSOLUTE_MIN: 7,
-  ABSOLUTE_MAX: 11,
+  ABSOLUTE_MIN: 4, // Permitindo versos curtos até 4 sílabas
+  ABSOLUTE_MAX: 12, // Máximo agora é 12 sílabas
   IDEAL: 10,
 
   // Limites por gênero (podem ser mais restritivos, nunca mais permissivos)
   SERTANEJO: {
-    min: 7,
-    max: 11,
+    min: 4, // Permitindo versos curtos
+    max: 12, // Máximo 12 sílabas
     ideal: 10,
   },
   BACHATA: {
-    min: 7,
-    max: 11,
+    min: 4,
+    max: 12,
     ideal: 10,
   },
   FORRO: {
-    min: 7,
-    max: 11,
+    min: 4,
+    max: 12,
     ideal: 9,
   },
   FUNK: {
-    min: 6,
-    max: 10,
+    min: 4,
+    max: 12,
     ideal: 8,
   },
   SAMBA: {
-    min: 7,
-    max: 11,
+    min: 4,
+    max: 12,
     ideal: 10,
   },
   MPB: {
-    min: 7,
-    max: 11,
+    min: 4,
+    max: 12,
     ideal: 10,
   },
   ROCK: {
-    min: 7,
-    max: 11,
+    min: 4,
+    max: 12,
     ideal: 9,
   },
   POP: {
-    min: 7,
-    max: 11,
+    min: 4,
+    max: 12,
     ideal: 10,
   },
   GOSPEL: {
-    min: 7,
-    max: 11,
+    min: 4,
+    max: 12,
     ideal: 10,
   },
 } as const

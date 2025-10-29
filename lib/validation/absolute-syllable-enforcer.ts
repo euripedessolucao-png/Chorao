@@ -1,6 +1,6 @@
 /**
  * VALIDADOR ABSOLUTO DE SÍLABAS
- * REGRA INEGOCIÁVEL: Máximo 11 sílabas por verso
+ * REGRA INEGOCIÁVEL: Máximo 12 sílabas por verso
  * Acima disso não é possível ser cantada!
  */
 
@@ -8,11 +8,12 @@ import { countPoeticSyllables } from "./syllable-counter-brasileiro"
 import { IntelligentSyllableReducer } from "./intelligent-syllable-reducer"
 
 export class AbsoluteSyllableEnforcer {
-  private static readonly ABSOLUTE_MAX_SYLLABLES = 11
+  private static readonly ABSOLUTE_MAX_SYLLABLES = 12
+  private static readonly ABSOLUTE_MIN_SYLLABLES = 4
 
   /**
-   * Valida se TODOS os versos têm no máximo 11 sílabas
-   * Retorna false se encontrar QUALQUER verso com mais de 11 sílabas
+   * Valida se TODOS os versos têm no máximo 12 sílabas
+   * Retorna false se encontrar QUALQUER verso com mais de 12 sílabas
    */
   static validate(lyrics: string): {
     isValid: boolean
@@ -25,7 +26,6 @@ export class AbsoluteSyllableEnforcer {
     lines.forEach((line, index) => {
       const trimmed = line.trim()
 
-      // Ignora tags, instruções e linhas vazias
       if (!trimmed || trimmed.startsWith("[") || trimmed.startsWith("(") || trimmed.includes("Instruments:")) {
         return
       }
@@ -60,7 +60,7 @@ export class AbsoluteSyllableEnforcer {
   }
 
   /**
-   * Força TODOS os versos a terem no máximo 11 sílabas
+   * Força TODOS os versos a terem no máximo 12 sílabas
    * Remove palavras agressivamente se necessário
    */
   static enforce(lyrics: string): {
@@ -76,7 +76,6 @@ export class AbsoluteSyllableEnforcer {
     for (const line of lines) {
       const trimmed = line.trim()
 
-      // Ignora tags, instruções e linhas vazias
       if (!trimmed || trimmed.startsWith("[") || trimmed.startsWith("(") || trimmed.includes("Instruments:")) {
         correctedLines.push(line)
         continue
@@ -114,7 +113,7 @@ export class AbsoluteSyllableEnforcer {
   }
 
   /**
-   * Força um verso a ter no máximo 11 sílabas
+   * Força um verso a ter no máximo 12 sílabas
    * Se não conseguir reduzir, quebra em múltiplas linhas
    */
   private static forceMaxSyllables(line: string): string {
@@ -269,7 +268,7 @@ export class AbsoluteSyllableEnforcer {
   }
 
   /**
-   * Valida e corrige automaticamente versos com mais de 11 sílabas
+   * Valida e corrige automaticamente versos com mais de 12 sílabas
    * Usa técnicas poéticas inteligentes para reduzir sílabas
    */
   static validateAndFix(lyrics: string): {

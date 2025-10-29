@@ -135,8 +135,12 @@ function countSyllablesInWord(word: string): number {
 export function countPoeticSyllables(line: string): number {
   if (!line || line.trim().length === 0) return 0
 
+  const withoutParentheses = line.replace(/$$[^)]*$$/g, "").trim()
+
+  if (!withoutParentheses) return 0
+
   // Remove apenas caracteres especiais que não afetam pronúncia
-  const clean = line
+  const clean = withoutParentheses
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "") // remove acentos
     .replace(/[^a-z\s',!?]/gi, " ") // mantém letras, espaços, vírgulas e pontuação básica
@@ -167,7 +171,7 @@ export function countPortugueseSyllables(text: string): number {
  */
 export function validateSyllableLimit(
   line: string,
-  maxSyllables = 11,
+  maxSyllables = 12, // Máximo agora é 12 sílabas
 ): {
   isValid: boolean
   currentSyllables: number
@@ -182,15 +186,15 @@ export function validateSyllableLimit(
       `Use contrações: "está" → "tá", "para" → "pra"`,
       `Remova artigos/preposições desnecessárias`,
     )
-  } else if (syllables < 7) {
+  } else if (syllables < 4) {
+    // Mínimo agora é 4 sílabas
     suggestions.push(
-      `Verso curto (${syllables} sílabas). Considere expandir para 7–11.`,
+      `Verso muito curto (${syllables} sílabas). Considere expandir para 4–12.`,
       `Adicione adjetivos ou detalhes descritivos`,
     )
   }
 
-  // Considera válido se estiver entre 7 e 12 (máximo absoluto)
-  const isValid = syllables >= 7 && syllables <= 12
+  const isValid = syllables >= 4 && syllables <= 12
 
   return { isValid, currentSyllables: syllables, suggestions }
 }
@@ -208,7 +212,8 @@ export interface SyllableValidationResult {
   }>
 }
 
-export function validateLyricsSyllables(lyrics: string, maxSyllables = 11): SyllableValidationResult {
+export function validateLyricsSyllables(lyrics: string, maxSyllables = 12): SyllableValidationResult {
+  // Máximo 12
   const lines = lyrics.split("\n")
   const violations: Array<{
     line: string
@@ -222,7 +227,7 @@ export function validateLyricsSyllables(lyrics: string, maxSyllables = 11): Syll
     if (
       trimmed &&
       !trimmed.startsWith("[") &&
-      !trimmed.startsWith("(") &&
+      !trimmed.startsWith("(") && // Ignora linhas com parênteses (instrumentação)
       !trimmed.startsWith("Title:") &&
       !trimmed.startsWith("Instrumentos:")
     ) {

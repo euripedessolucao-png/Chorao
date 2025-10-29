@@ -181,15 +181,16 @@ export function formatInstrumentationForAI(genre: string, lyrics?: string): stri
   // Remove duplicatas e capitaliza
   const uniqueInstruments = Array.from(new Set(translatedInstruments))
 
-  return `\n\n---\n[Instrumentation]\nGenre: ${normalizedGenre}\nInstruments: ${uniqueInstruments.join(", ")}\n---`
+  return `\n\n(Instrumentos: ${uniqueInstruments.join(", ")})`
 }
 
 /**
  * Adiciona instrumentação ao final da letra formatada
  */
 export function addInstrumentationToLyrics(lyrics: string, genre: string): string {
-  // Remove instrumentação existente se houver
-  const cleanedLyrics = lyrics.replace(/\n*---\n\[Instrumentation\][\s\S]*?---\n*/g, "")
+  const cleanedLyrics = lyrics
+    .replace(/\n*---\n\[Instrumentation\][\s\S]*?---\n*/g, "")
+    .replace(/\n*$$Instrumentos:[\s\S]*?$$\n*/g, "")
 
   const instrumentation = formatInstrumentationForAI(genre, cleanedLyrics)
 
