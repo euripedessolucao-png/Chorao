@@ -16,12 +16,14 @@ function _applyElisionsAndContractionsForCounting(text: string): string {
 
   // Elisões (sinalefa) - junção de vogais entre palavras
   s = s
-    .replace(/\bde\s+(a|e|i|o|u|amor)\b/gi, " d$1")
+    .replace(/\bde\s+(a|e|i|o|u|amor|ela|ele)\b/gi, " d$1")
     .replace(/\bem\s+(um|uns|uma|umas|a|e|i|o|u)\b/gi, " n$1")
-    .replace(/\bque\s+eu\b/gi, " queeu")
-    .replace(/\bse\s+eu\b/gi, " seeu")
-    .replace(/\bmeu\s+amor\b/gi, " meuamor")
-    .replace(/\beu\s+vou\b/gi, " euvou")
+    .replace(/\bque\s+(eu|ela|ele|a|o)\b/gi, " que$1")
+    .replace(/\bse\s+(eu|ela|ele)\b/gi, " se$1")
+    .replace(/\bmeu\s+(amor|coração)\b/gi, " meu$1")
+    .replace(/\beu\s+(vou|sei|sou)\b/gi, " eu$1")
+    .replace(/\bna\s+(hora|alma)\b/gi, " na$1")
+    .replace(/\bno\s+(olhar|amor)\b/gi, " no$1")
 
   // Contrações (uso comum no canto)
   s = s
@@ -29,6 +31,10 @@ function _applyElisionsAndContractionsForCounting(text: string): string {
     .replace(/\bestou\b/gi, "tô")
     .replace(/\bpara\b/gi, "pra")
     .replace(/\bestá\b/gi, "tá")
+    .replace(/\bestava\b/gi, "tava")
+    .replace(/\bestavam\b/gi, "tavam")
+    .replace(/\bpelo\b/gi, "pro")
+    .replace(/\bpela\b/gi, "pra")
 
   return s.trim().replace(/\s+/g, " ")
 }

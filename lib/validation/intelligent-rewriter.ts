@@ -33,13 +33,20 @@ function trimLineToSyllablesSinging(line: string, max: number): string {
 
 async function _suggestCorrection(line: string, maxSyllables: number): Promise<string | null> {
   try {
-    const prompt = `Reescreva este verso brasileiro para ter no máximo ${maxSyllables} sílabas cantáveis.
-Use elisões naturais como "d'amor", "cê", "pra", "tô".
-Mantenha o significado e fluência.
+    const prompt = `Você é um compositor profissional de música sertaneja brasileira.
 
-Verso: "${line}"
+Reescreva este verso para ter EXATAMENTE ${maxSyllables} sílabas cantáveis ou menos.
 
-Verso reescrito:`
+REGRAS IMPORTANTES:
+1. Use elisões naturais: "de amor" → "d'amor", "que eu" → "queeu"
+2. Use contrações: "você" → "cê", "estou" → "tô", "para" → "pra"
+3. MANTENHA o significado e a emoção do verso original
+4. MANTENHA a fluência e naturalidade para cantar
+5. NÃO corte palavras no meio - reescreva com sinônimos se necessário
+
+Verso original: "${line}"
+
+Verso reescrito (${maxSyllables} sílabas ou menos):`
 
     const { text } = await generateText({
       model: "openai/gpt-4o-mini",
@@ -64,6 +71,53 @@ Verso reescrito:`
   }
 
   return null
+}
+
+function _extractHookWords(lyrics: string): string[] {
+  const words: string[] = []
+  const lines = lyrics.split(/\r?\n/)
+
+  for (const line of lines) {
+    // Extract emotional words (substantivos e verbos fortes)
+    const matches = line.match(
+      /\b(amor|coração|paixão|saudade|dor|sonho|vida|tempo|noite|dia|olhar|sentir|amar|querer|sofrer|chorar|voltar|ficar|deixar|perder|ganhar)\b/gi,
+    )
+    if (matches) {
+      words.push(...matches)
+    }
+  }
+
+  return [...new Set(words.map((w) => w.toLowerCase()))]
+}
+
+async function _enrichShortLine(
+  line: string,
+  minSyllables: number,
+  maxSyllables: number,
+  hookWords: string[],
+): Promise<string> {
+  const current = countSyllablesSingingPtBr(line, {
+    applyElisions: true,
+    applyContractions: true,
+  })
+
+  if (current >= minSyllables) return line
+
+  // Try adding a hook word
+  if (hookWords.length > 0) {
+    const randomHook = hookWords[Math.floor(Math.random() * hookWords.length)]
+    const candidate = `${line} ${randomHook}`
+    const candidateSyllables = countSyllablesSingingPtBr(candidate, {
+      applyElisions: true,
+      applyContractions: true,
+    })
+
+    if (candidateSyllables >= minSyllables && candidateSyllables <= maxSyllables) {
+      return candidate.trim()
+    }
+  }
+
+  return line
 }
 
 export async function _rewriteWithinSyllables(line: string, max: number): Promise<string> {
@@ -91,8 +145,9 @@ export async function _rewriteWithinSyllables(line: string, max: number): Promis
   return trimLineToSyllablesSinging(trimmed, max)
 }
 
-export async function enforceSyllableLimitAll(lyrics: string, max = 12): Promise<string> {
+export async function enforceSyllableLimitAll(lyrics: string, max = 12, min = 4): Promise<string> {
   const lines = (lyrics || "").split(/\r?\n/)
+  const hookWords = _extractHookWords(lyrics)
 
   for (let i = 0; i < lines.length; i++) {
     const l = lines[i] ?? ""
@@ -143,13 +198,15 @@ export async function enforceSyllableLimitAll(lyrics: string, max = 12): Promise
     }
 
     // Verifica linha completa
-    if (
-      countSyllablesSingingPtBr(updated, {
-        applyElisions: true,
-        applyContractions: true,
-      }) > max
-    ) {
+    const currentSyllables = countSyllablesSingingPtBr(updated, {
+      applyElisions: true,
+      applyContractions: true,
+    })
+
+    if (currentSyllables > max) {
       updated = await _rewriteWithinSyllables(updated, max)
+    } else if (currentSyllables < min) {
+      updated = await _enrichShortLine(updated, min, max, hookWords)
     }
 
     // Limpezas finais contra "penduradas"
