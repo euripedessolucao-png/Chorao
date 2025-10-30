@@ -1,4 +1,4 @@
-// app/api/rewrite-lyrics/route.ts - VERSÃO VERCEL-OTIMIZADA
+// app/api/rewrite-lyrics/route.ts - VERSÃO CORRIGIDA
 import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
@@ -92,16 +92,22 @@ function smartFixIncompleteLines(lyrics: string): string {
 }
 
 export async function POST(request: NextRequest) {
+  // ✅ DECLARAR genre NO INÍCIO DO MÉTODO
+  let genre = "Sertanejo" // valor padrão
+
   try {
     const {
       originalLyrics,
-      genre,
+      genre: requestGenre, // renomear para evitar conflito
       mood,
       theme,
       additionalRequirements,
       title,
       performanceMode = "standard",
     } = await request.json()
+
+    // ✅ ATRIBUIR AO genre PRINCIPAL
+    genre = requestGenre || "Sertanejo"
 
     if (!originalLyrics?.trim()) {
       return NextResponse.json({ error: "Letra original é obrigatória" }, { status: 400 })
@@ -143,7 +149,6 @@ LETRA RESSRITA COMPLETA:`
       model: "openai/gpt-4o-mini",
       prompt,
       temperature: 0.7,
-      // ⚠️ REMOVIDO: maxTokens (causa erro na Vercel)
     })
 
     let finalLyrics = capitalizeLines(text || "")
@@ -213,7 +218,7 @@ LETRA RESSRITA COMPLETA:`
   } catch (error) {
     console.error("[API] ❌ Erro crítico:", error)
     
-    // ✅ FALLBACK DE EMERGÊNCIA
+    // ✅ FALLBACK DE EMERGÊNCIA CORRIGIDO (genre agora está disponível)
     const emergencyLyrics = `### [Intro]
 Esta letra está sendo reescrita
 Com muito amor e gratidão
@@ -227,7 +232,7 @@ Em instantes estará pronta
 Para sua celebração
 
 (Instrumentation)
-(Genre: ${genre})
+(Genre: ${genre}) <!-- ✅ AGORA FUNCIONA! -->
 (Instruments: Acoustic Guitar, Bass, Drums)`
 
     return NextResponse.json({
