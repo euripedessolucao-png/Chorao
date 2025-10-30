@@ -17,6 +17,8 @@ import { validateSyllablesByGenre } from "@/lib/validation/absolute-syllable-enf
 import { enhanceLyricsRhymes } from "@/lib/validation/rhyme-enhancer"
 import { validateRhymesForGenre } from "@/lib/validation/rhyme-validator"
 import { fixLineToMaxSyllables } from "@/lib/validation/local-syllable-fixer"
+import { enforceSyllableLimitAll } from "@/lib/validation/intelligent-rewriter"
+import { enforceChorusRules } from "@/lib/validation/chorus-optimizer"
 
 export interface CompositionRequest {
   genre: string
@@ -48,32 +50,36 @@ export interface CompositionResult {
  */
 function superFixIncompleteLines(lyrics: string): string {
   console.log("[SuperCorrector] 🚀 Aplicando correção super-efetiva")
-  
-  const lines = lyrics.split('\n')
+
+  const lines = lyrics.split("\n")
   const fixedLines: string[] = []
-  
+
   let corrections = 0
 
   for (let i = 0; i < lines.length; i++) {
-    let line = lines[i].trim()
-    
+    const line = lines[i].trim()
+
     // Ignora tags e metadata
-    if (!line || line.startsWith('### [') || line.startsWith('(Instrumentation)') || line.startsWith('(Genre)')) {
+    if (!line || line.startsWith("### [") || line.startsWith("(Instrumentation)") || line.startsWith("(Genre)")) {
       fixedLines.push(line)
       continue
     }
 
-    const cleanLine = line.replace(/\[.*?\]/g, "").replace(/\(.*?\)/g, "").replace(/^"|"$/g, '').trim()
+    const cleanLine = line
+      .replace(/\[.*?\]/g, "")
+      .replace(/$$.*?$$/g, "")
+      .replace(/^"|"$/g, "")
+      .trim()
     if (!cleanLine) {
       fixedLines.push(line)
       continue
     }
 
-    const words = cleanLine.split(/\s+/).filter(w => w.length > 0)
-    const lastWord = words[words.length - 1]?.toLowerCase() || ''
-    
+    const words = cleanLine.split(/\s+/).filter((w) => w.length > 0)
+    const lastWord = words[words.length - 1]?.toLowerCase() || ""
+
     // ✅ DETECÇÃO EXPANDIDA - MAIS AGRESSIVA
-    const isIncomplete = 
+    const isIncomplete =
       words.length < 3 || // Menos de 3 palavras
       /[,-]$/.test(cleanLine) || // Termina com vírgula ou traço
       /\b(e|a|o|que|com|pra|pro|num|numa|de|da|do|em|no|na|por|me|te|se|um|uma)\s*$/i.test(cleanLine) || // Termina com preposição/artigo
@@ -81,79 +87,79 @@ function superFixIncompleteLines(lyrics: string): string {
 
     if (isIncomplete && words.length > 0) {
       console.log(`[SuperCorrector] 🚨 VERSO INCOMPLETO: "${cleanLine}"`)
-      
+
       let fixedLine = line
-      
+
       // Remove pontuação problemática
-      fixedLine = fixedLine.replace(/[,-]\s*$/, '').trim()
-      
+      fixedLine = fixedLine.replace(/[,-]\s*$/, "").trim()
+
       // ✅ COMPLETAMENTOS ESPECÍFICOS PARA OS PADRÕES ENCONTRADOS
       const specificCompletions: Record<string, string> = {
-        'e': 'com amor',
-        'a': 'minha vida',
-        'que': 'Deus me deu',
-        'com': 'muito amor',
-        'pra': 'viver',
-        'pro': 'meu bem',
-        'me': 'ajudar',
-        'te': 'amar',
-        'se': 'entregar',
-        'um': 'presente',
-        'uma': 'bênção',
-        'no': 'coração',
-        'na': 'alma',
-        'de': 'gratidão',
-        'do': 'Senhor',
-        'da': 'minha vida',
-        'em': 'Deus',
-        'por': 'tudo',
-        'sinto a': 'Tua presença',
-        'deixa o': 'coração cantar',
-        'que sou e': 'tudo que tenho',
-        'eu quero': 'agradecer',
-        'sempre a': 'Te louvar',
-        'me ajuda a': 'crescer',
-        'que sou com': 'Ti',
-        'alguém pra': 'abençoar',
-        'agradar e': 'servir',
-        'vou me': 'entregar',
-        'sinto Tua luz e': 'Tua graça',
-        'sonhar que': 'um dia realizarei'
+        e: "com amor",
+        a: "minha vida",
+        que: "Deus me deu",
+        com: "muito amor",
+        pra: "viver",
+        pro: "meu bem",
+        me: "ajudar",
+        te: "amar",
+        se: "entregar",
+        um: "presente",
+        uma: "bênção",
+        no: "coração",
+        na: "alma",
+        de: "gratidão",
+        do: "Senhor",
+        da: "minha vida",
+        em: "Deus",
+        por: "tudo",
+        "sinto a": "Tua presença",
+        "deixa o": "coração cantar",
+        "que sou e": "tudo que tenho",
+        "eu quero": "agradecer",
+        "sempre a": "Te louvar",
+        "me ajuda a": "crescer",
+        "que sou com": "Ti",
+        "alguém pra": "abençoar",
+        "agradar e": "servir",
+        "vou me": "entregar",
+        "sinto Tua luz e": "Tua graça",
+        "sonhar que": "um dia realizarei",
       }
-      
+
       // Primeiro tenta match exato com a frase
       let matched = false
       for (const [pattern, completion] of Object.entries(specificCompletions)) {
         if (cleanLine.toLowerCase().endsWith(pattern)) {
-          fixedLine = fixedLine.slice(0, -pattern.length).trim() + ' ' + completion
+          fixedLine = fixedLine.slice(0, -pattern.length).trim() + " " + completion
           matched = true
           break
         }
       }
-      
+
       // Se não encontrou match específico, usa completamento por última palavra
       if (!matched && specificCompletions[lastWord]) {
-        fixedLine += ' ' + specificCompletions[lastWord]
+        fixedLine += " " + specificCompletions[lastWord]
       } else if (!matched) {
         // Completamento genérico inteligente
         const genericCompletions = [
-          'com gratidão no coração',
-          'e amor infinito',
-          'pra sempre Te louvar',
-          'com fé e esperança',
-          'que renova minha alma',
-          'em cada momento',
-          'com muita alegria'
+          "com gratidão no coração",
+          "e amor infinito",
+          "pra sempre Te louvar",
+          "com fé e esperança",
+          "que renova minha alma",
+          "em cada momento",
+          "com muita alegria",
         ]
         const randomCompletion = genericCompletions[Math.floor(Math.random() * genericCompletions.length)]
-        fixedLine += ' ' + randomCompletion
+        fixedLine += " " + randomCompletion
       }
-      
+
       // Garante pontuação final adequada
       if (!/[.!?]$/.test(fixedLine)) {
-        fixedLine = fixedLine.replace(/[.,;:]$/, '') + '.'
+        fixedLine = fixedLine.replace(/[.,;:]$/, "") + "."
       }
-      
+
       console.log(`[SuperCorrector] ✅ CORRIGIDO: "${fixedLine}"`)
       fixedLines.push(fixedLine)
       corrections++
@@ -163,7 +169,7 @@ function superFixIncompleteLines(lyrics: string): string {
   }
 
   console.log(`[SuperCorrector] 🎉 CORREÇÃO CONCLUÍDA: ${corrections} versos corrigidos`)
-  return fixedLines.join('\n')
+  return fixedLines.join("\n")
 }
 
 /**
@@ -232,9 +238,16 @@ export class MetaComposer {
     const audit = LyricsAuditor.audit(lyrics, request.genre, request.theme)
     const finalScore = Math.min(100, audit.score + (terceiraViaApplied ? 5 : 0))
 
+    console.log("🎯 Aplicando garantia final com reescrita inteligente...")
+    let finalLyrics = await enforceSyllableLimitAll(lyrics, 12)
+
+    if (request.genre.toLowerCase().includes("sertanejo")) {
+      finalLyrics = enforceChorusRules(finalLyrics, request.theme)
+    }
+
     return {
-      lyrics,
-      title: this.extractTitle(lyrics, request),
+      lyrics: finalLyrics,
+      title: this.extractTitle(finalLyrics, request),
       metadata: {
         finalScore,
         polishingApplied: request.applyFinalPolish !== false,
@@ -394,8 +407,8 @@ REESCREVA mantendo o significado mas garantindo VERSOS COMPLETOS:`
       .split("\n")
       .filter(
         (line) =>
-          !line.trim().startsWith("RETORNE") && 
-          !line.trim().startsWith("REGRAS") && 
+          !line.trim().startsWith("RETORNE") &&
+          !line.trim().startsWith("REGRAS") &&
           !line.includes("Explicação") &&
           !line.includes("```"),
       )

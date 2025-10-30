@@ -7,7 +7,6 @@ import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasilei
 import { getUniversalRhymeRules } from "@/lib/validation/universal-rhyme-rules"
 import { formatInstrumentationForAI } from "@/lib/normalized-genre"
 import { LineStacker } from "@/lib/utils/line-stacker"
-import { validateSyllablesByGenre } from "@/lib/validation/absolute-syllable-enforcer"
 import { fixLineToMaxSyllables } from "@/lib/validation/local-syllable-fixer"
 
 import { GENRE_CONFIGS } from "@/lib/genre-config"
@@ -27,100 +26,103 @@ function getMaxSyllables(genre: string): number {
 // ✅ CORRETOR INTELIGENTE - ABORDAGEM SIMPLES E EFETIVA
 function smartFixIncompleteLines(lyrics: string): string {
   console.log("[SmartCorrector] 🔧 Aplicando correção inteligente")
-  
-  const lines = lyrics.split('\n')
+
+  const lines = lyrics.split("\n")
   const fixedLines: string[] = []
-  
+
   let corrections = 0
 
   for (let i = 0; i < lines.length; i++) {
     let line = lines[i].trim()
-    
+
     // Ignora tags e metadata
-    if (!line || line.startsWith('### [') || line.startsWith('(Instrumentation)') || line.startsWith('(Genre)')) {
+    if (!line || line.startsWith("### [") || line.startsWith("(Instrumentation)") || line.startsWith("(Genre)")) {
       fixedLines.push(line)
       continue
     }
 
     // Remove aspas se existirem
-    line = line.replace(/^"|"$/g, '').trim()
-    
-    const cleanLine = line.replace(/\[.*?\]/g, "").replace(/\(.*?\)/g, "").trim()
+    line = line.replace(/^"|"$/g, "").trim()
+
+    const cleanLine = line
+      .replace(/\[.*?\]/g, "")
+      .replace(/$$.*?$$/g, "")
+      .trim()
     if (!cleanLine) {
       fixedLines.push(line)
       continue
     }
 
-    const words = cleanLine.split(/\s+/).filter(w => w.length > 0)
-    
+    const words = cleanLine.split(/\s+/).filter((w) => w.length > 0)
+
     // ✅ DETECTA VERSOS INCOMPLETOS DE FORMA INTELIGENTE
-    const isIncomplete = 
+    const isIncomplete =
       words.length < 3 || // Menos de 3 palavras
       /[,-]$/.test(cleanLine) || // Termina com vírgula ou traço
       /\b(e|do|por|me|te|em|a|o|de|da|no|na|com|se|tão|que|um|uma|uns|umas)\s*$/i.test(cleanLine) // Termina com preposição
 
     if (isIncomplete && words.length > 0) {
       console.log(`[SmartCorrector] 📝 Ajustando verso: "${cleanLine}"`)
-      
+
       let fixedLine = line
-      
+
       // Remove pontuação problemática
-      fixedLine = fixedLine.replace(/[,-]\s*$/, '').trim()
-      
+      fixedLine = fixedLine.replace(/[,-]\s*$/, "").trim()
+
       // ✅ COMPLETAMENTO INTELIGENTE BASEADO NO CONTEXTO
       const lastWord = words[words.length - 1].toLowerCase()
-      
+
       // Completamentos contextuais para música brasileira
       const completions: Record<string, string> = {
-        'coração': 'aberto e grato',
-        'vida': 'que recebo de Ti',
-        'gratidão': 'transbordando em mim',
-        'amor': 'que nunca falha',
-        'fé': 'que me sustenta',
-        'alegria': 'que inunda minha alma',
-        'paz': 'que acalma o coração',
-        'força': 'para seguir em frente',
-        'luz': 'que ilumina meu caminho',
-        'esperança': 'que renova meus dias',
-        'sorriso': 'no rosto iluminado',
-        'caminho': 'abençoado por Deus',
-        'dom': 'divino que recebi',
-        'alma': 'que se renova em paz',
-        'essência': 'divina do amor',
-        'canção': 'que canto com fervor',
-        'mão': 'amiga que me guia',
-        'razão': 'do meu viver aqui',
-        'lar': 'eterno nos céus',
-        'lição': 'que levo pra vida'
+        coração: "aberto e grato",
+        vida: "que recebo de Ti",
+        gratidão: "transbordando em mim",
+        amor: "que nunca falha",
+        fé: "que me sustenta",
+        alegria: "que inunda minha alma",
+        paz: "que acalma o coração",
+        força: "para seguir em frente",
+        luz: "que ilumina meu caminho",
+        esperança: "que renova meus dias",
+        sorriso: "no rosto iluminado",
+        caminho: "abençoado por Deus",
+        dom: "divino que recebi",
+        alma: "que se renova em paz",
+        essência: "divina do amor",
+        canção: "que canto com fervor",
+        mão: "amiga que me guia",
+        razão: "do meu viver aqui",
+        lar: "eterno nos céus",
+        lição: "que levo pra vida",
       }
-      
+
       if (completions[lastWord]) {
-        fixedLine += ' ' + completions[lastWord]
+        fixedLine += " " + completions[lastWord]
       } else {
         // Completamento genérico natural para música brasileira
         const genericCompletions = [
-          'com muito amor',
-          'e gratidão',
-          'pra sempre vou lembrar',
-          'nunca vou esquecer',
-          'é o que sinto agora',
-          'me faz feliz demais',
-          'que Deus me concedeu'
+          "com muito amor",
+          "e gratidão",
+          "pra sempre vou lembrar",
+          "nunca vou esquecer",
+          "é o que sinto agora",
+          "me faz feliz demais",
+          "que Deus me concedeu",
         ]
         const randomCompletion = genericCompletions[Math.floor(Math.random() * genericCompletions.length)]
-        fixedLine += ' ' + randomCompletion
+        fixedLine += " " + randomCompletion
       }
-      
+
       // Garante pontuação final adequada
       if (!/[.!?]$/.test(fixedLine)) {
-        fixedLine = fixedLine.replace(/[.,;:]$/, '') + '.'
+        fixedLine = fixedLine.replace(/[.,;:]$/, "") + "."
       }
-      
+
       // Restaura aspas se necessário
       if (lines[i].trim().startsWith('"')) {
         fixedLine = `"${fixedLine}"`
       }
-      
+
       console.log(`[SmartCorrector] ✅ CORRIGIDO: "${fixedLine}"`)
       fixedLines.push(fixedLine)
       corrections++
@@ -130,7 +132,7 @@ function smartFixIncompleteLines(lyrics: string): string {
   }
 
   console.log(`[SmartCorrector] 🎉 CORREÇÃO CONCLUÍDA: ${corrections} versos corrigidos`)
-  return fixedLines.join('\n')
+  return fixedLines.join("\n")
 }
 
 export async function POST(request: NextRequest) {
@@ -196,7 +198,7 @@ ${additionalRequirements ? `REQUISITOS ADICIONAIS: ${additionalRequirements}` : 
 
 🎵 ESTRUTURA SUGERIDA:
 ${
-  performanceMode === "performance" 
+  performanceMode === "performance"
     ? `### [INTRO] (4 linhas)
 ### [VERSO 1] (6 linhas)  
 ### [PRÉ-REFRAO] (4 linhas)
@@ -242,13 +244,15 @@ Gere a letra com VERSOS COMPLETOS e EMOCIONALMENTE IMPACTANTES:`
     // ✅ LIMPEZA FINAL
     finalLyrics = finalLyrics
       .split("\n")
-      .filter(line => {
+      .filter((line) => {
         const trimmed = line.trim()
-        return !trimmed.startsWith("Retorne") && 
-               !trimmed.startsWith("REGRAS") && 
-               !trimmed.includes("Explicação") &&
-               !trimmed.includes("```") &&
-               trimmed.length > 0
+        return (
+          !trimmed.startsWith("Retorne") &&
+          !trimmed.startsWith("REGRAS") &&
+          !trimmed.includes("Explicação") &&
+          !trimmed.includes("```") &&
+          trimmed.length > 0
+        )
       })
       .join("\n")
       .trim()
@@ -266,7 +270,11 @@ Gere a letra com VERSOS COMPLETOS e EMOCIONALMENTE IMPACTANTES:`
         continue
       }
 
-      const cleanLine = trimmed.replace(/\[.*?\]/g, "").replace(/\(.*?\)/g, "").replace(/^"|"$/g, '').trim()
+      const cleanLine = trimmed
+        .replace(/\[.*?\]/g, "")
+        .replace(/$$.*?$$/g, "")
+        .replace(/^"|"$/g, "")
+        .trim()
       if (!cleanLine) {
         correctedLines.push(line)
         continue
@@ -296,7 +304,7 @@ Gere a letra com VERSOS COMPLETOS e EMOCIONALMENTE IMPACTANTES:`
     const instrumentation = formatInstrumentationForAI(genre, finalLyrics)
     finalLyrics = `${finalLyrics}\n\n${instrumentation}`
 
-    const totalLines = finalLyrics.split('\n').filter(line => line.trim().length > 0).length
+    const totalLines = finalLyrics.split("\n").filter((line) => line.trim().length > 0).length
     console.log(`[API] 🎉 PROCESSO CONCLUÍDO: ${totalLines} linhas`)
 
     return NextResponse.json({
@@ -309,10 +317,9 @@ Gere a letra com VERSOS COMPLETOS e EMOCIONALMENTE IMPACTANTES:`
         maxSyllables,
         totalLines,
         syllableCorrections,
-        quality: "PROCESSED"
+        quality: "PROCESSED",
       },
     })
-
   } catch (error) {
     console.error("[API] ❌ Erro crítico:", error)
     return NextResponse.json(
