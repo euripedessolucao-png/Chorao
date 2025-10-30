@@ -1,7 +1,8 @@
 import { generateText } from "ai";
 
 export class NuclearValidator {
-  private static readonly BROKEN_PATTERNS = [
+  // ✅ TORNAR PÚBLICO para uso externo
+  public static readonly BROKEN_PATTERNS = [
     /\b(e|a|o|que|com|pra|pro|num|numa|de|da|do|em|no|na|por|me|te|se|um|uma|meu|minha|seu|sua|nosso|nossa|todo|toda|todos|todas|alguns|algumas|muito|muita|pouco|pouca|sem|com|para|porque|quando|onde|como)\s*$/i,
     /[,-]\s*$/,
     /çã$/,
@@ -12,6 +13,31 @@ export class NuclearValidator {
       return words.length <= 2 && line.length < 25 && !/[!?.]$/.test(line);
     }
   ];
+
+  /**
+   * ✅ MÉTODO PÚBLICO para verificar linhas quebradas
+   */
+  public static isBrokenLine(line: string): boolean {
+    const trimmed = line.trim();
+    
+    // Ignora cabeçalhos, metadata e linhas vazias
+    if (!trimmed || 
+        trimmed.startsWith('### [') || 
+        trimmed.startsWith('(Instrumentation)') || 
+        trimmed.startsWith('(Genre)') ||
+        trimmed.startsWith('[Intro]') ||
+        trimmed.startsWith('[Verso') ||
+        trimmed.startsWith('[Pré-Refrão]') ||
+        trimmed.startsWith('[Refrão]') ||
+        trimmed.startsWith('[Ponte]') ||
+        trimmed.startsWith('[Outro]')) {
+      return false;
+    }
+
+    return this.BROKEN_PATTERNS.some(pattern => 
+      typeof pattern === 'function' ? pattern(trimmed) : pattern.test(trimmed)
+    );
+  }
 
   /**
    * 🚨 VALIDAÇÃO NUCLEAR - DETECTA E CORRIGE TODAS AS LINHAS QUEBRADAS
@@ -40,28 +66,6 @@ export class NuclearValidator {
 
     console.log("✅ [NuclearValidator] Nenhuma linha quebrada encontrada");
     return lyrics;
-  }
-
-  private static isBrokenLine(line: string): boolean {
-    const trimmed = line.trim();
-    
-    // Ignora cabeçalhos, metadata e linhas vazias
-    if (!trimmed || 
-        trimmed.startsWith('### [') || 
-        trimmed.startsWith('(Instrumentation)') || 
-        trimmed.startsWith('(Genre)') ||
-        trimmed.startsWith('[Intro]') ||
-        trimmed.startsWith('[Verso') ||
-        trimmed.startsWith('[Pré-Refrão]') ||
-        trimmed.startsWith('[Refrão]') ||
-        trimmed.startsWith('[Ponte]') ||
-        trimmed.startsWith('[Outro]')) {
-      return false;
-    }
-
-    return this.BROKEN_PATTERNS.some(pattern => 
-      typeof pattern === 'function' ? pattern(trimmed) : pattern.test(trimmed)
-    );
   }
 
   /**
@@ -101,8 +105,7 @@ ${brokenLyrics}
       const { text } = await generateText({
         model: "openai/gpt-4o",
         prompt,
-        temperature: 0.3, // Baixa temperatura para consistência
-        maxTokens: 2000,
+        temperature: 0.3,
       });
 
       if (!text) {
@@ -153,8 +156,7 @@ LETRA CORRIGIDA DEFINITIVA:`;
     const { text } = await generateText({
       model: "openai/gpt-4o",
       prompt,
-      temperature: 0.1, // Temperatura mínima para máxima consistência
-      maxTokens: 2000,
+      temperature: 0.1,
     });
 
     return this.cleanGPTResponse(text || lyrics);
