@@ -8,6 +8,7 @@ import { getUniversalRhymeRules } from "@/lib/validation/universal-rhyme-rules"
 import { formatInstrumentationForAI } from "@/lib/normalized-genre"
 import { LineStacker } from "@/lib/utils/line-stacker"
 import { fixLineToMaxSyllables } from "@/lib/validation/local-syllable-fixer"
+import { enforceSyllableLimitAll } from "@/lib/validation/intelligent-rewriter"
 
 import { GENRE_CONFIGS } from "@/lib/genre-config"
 
@@ -294,6 +295,10 @@ Gere a letra com VERSOS COMPLETOS e EMOCIONALMENTE IMPACTANTES:`
       console.log(`[API] ✅ ${syllableCorrections} ajustes de sílaba aplicados`)
       finalLyrics = correctedLines.join("\n")
     }
+
+    // ✅ INTEGRANDO SISTEMA DE SÍLABAS CANTÁVEIS
+    console.log("[API] 🔧 Aplicando sistema de sílabas cantáveis...")
+    finalLyrics = await enforceSyllableLimitAll(finalLyrics, maxSyllables)
 
     // ✅ FINALIZAÇÃO
     console.log("[API] 📚 Aplicando empilhamento...")
