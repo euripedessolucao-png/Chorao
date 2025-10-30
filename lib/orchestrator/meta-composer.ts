@@ -1,12 +1,8 @@
-// lib/orchestrator/meta-composer.ts - VERSÃO DEFINITIVA SIMPLIFICADA
+// lib/orchestrator/meta-composer.ts - VERSÃO SUPER SIMPLIFICADA
 
 import { generateText } from "ai"
 import { UnifiedSyllableManager } from "@/lib/syllable-management/unified-syllable-manager"
-import { NuclearValidator } from "@/lib/validation/nuclear-validator"
-import {
-  formatSertanejoPerformance,
-  shouldUsePerformanceFormat,
-} from "@/lib/formatters/sertanejo-performance-formatter"
+import { formatSertanejoPerformance } from "@/lib/formatters/sertanejo-performance-formatter"
 import { PunctuationValidator } from "@/lib/validation/punctuation-validator"
 import { LineStacker } from "@/lib/utils/line-stacker"
 import { LyricsAuditor } from "@/lib/validation/lyrics-auditor"
@@ -18,10 +14,8 @@ export interface CompositionRequest {
   additionalRequirements?: string
   creativity?: "conservador" | "equilibrado" | "ousado"
   applyFinalPolish?: boolean
-  preservedChoruses?: string[]
   originalLyrics?: string
   performanceMode?: "standard" | "performance"
-  useTerceiraVia?: boolean
 }
 
 export interface CompositionResult {
@@ -32,254 +26,139 @@ export interface CompositionResult {
     polishingApplied: boolean
     performanceMode: string
     modelUsed: string
-    syllableValidation: {
-      isValid: boolean
-      violations: string[]
-      maxSyllables: number
-    }
   }
 }
 
 /**
- * 🎵 MOTOR DE COMPOSIÇÃO DEFINITIVO
- * Foco: SIMPLICIDADE + QUALIDADE + CONFIABILIDADE
+ * 🎵 META-COMPOSER SUPER SIMPLES
  */
 export class MetaComposer {
   private static readonly MODEL = "openai/gpt-4o-mini"
 
   static async compose(request: CompositionRequest): Promise<CompositionResult> {
-    console.log("[MetaComposer] 🚀 Iniciando composição definitiva...")
+    console.log("[MetaComposer] Iniciando...")
 
     try {
-      // 1. 🎯 GERAÇÃO PRINCIPAL
+      // 1. GERAÇÃO
       let lyrics = request.originalLyrics 
         ? await this.rewriteLyrics(request) 
         : await this.generateLyrics(request)
 
-      // 2. 🚨 VALIDAÇÃO NUCLEAR (GARANTIA DE QUALIDADE)
-      console.log("[MetaComposer] 🚨 Aplicando validação nuclear...")
-      lyrics = await NuclearValidator.nuclearValidation(lyrics)
-
-      // 3. 📏 CONTROLE DE SÍLABAS INTELIGENTE
-      console.log("[MetaComposer] 🔧 Aplicando gestor unificado de sílabas...")
+      // 2. CORREÇÃO DE SÍLABAS
       lyrics = await UnifiedSyllableManager.processSongWithBalance(lyrics)
 
-      // 4. ✨ POLIMENTO FINAL (APENAS SE SOLICITADO)
+      // 3. POLIMENTO
       if (request.applyFinalPolish !== false) {
         lyrics = await this.applyPolish(lyrics, request)
       }
 
-      // 5. 📊 AVALIAÇÃO FINAL
-      const validation = UnifiedSyllableManager.validateSong(lyrics)
+      // 4. SCORE
       const audit = LyricsAuditor.audit(lyrics, request.genre, request.theme)
-      
-      const hasBrokenLines = lyrics.split('\n').some(line => 
-        NuclearValidator.isBrokenLine(line)
-      )
-
-      // Score baseado em qualidade real
-      const finalScore = this.calculateFinalScore(audit.score, validation.isValid, hasBrokenLines)
+      const finalScore = Math.min(100, Math.max(0, audit.score))
 
       return {
-        lyrics: lyrics,
+        lyrics,
         title: this.extractTitle(lyrics, request),
         metadata: {
           finalScore,
           polishingApplied: request.applyFinalPolish !== false,
           performanceMode: request.performanceMode || "standard",
           modelUsed: this.MODEL,
-          syllableValidation: {
-            isValid: validation.isValid && !hasBrokenLines,
-            violations: hasBrokenLines ? ['LINHAS_QUEBRADAS_DETECTADAS'] : validation.violations,
-            maxSyllables: 12
-          }
         },
       }
 
     } catch (error) {
-      console.error("[MetaComposer] ❌ Erro crítico:", error)
-      return this.generateFallbackResult(request, error)
+      console.error("[MetaComposer] Erro:", error)
+      return this.fallbackResult(request)
     }
   }
 
-  /**
-   * 🎼 GERAÇÃO DE LETRA ORIGINAL
-   */
   private static async generateLyrics(request: CompositionRequest): Promise<string> {
-    const prompt = `COMPOSITOR PROFISSIONAL BRASILEIRO - ${request.genre.toUpperCase()}
+    const prompt = `Componha uma música ${request.genre} sobre ${request.theme}.
 
-🎯 REGRA ABSOLUTA: ZERO LINHAS QUEBRADAS
-
-📝 CADA VERSO DEVE SER UMA FRASE COMPLETA:
-• Sujeito + verbo + complemento
-• NUNCA terminar em "que", "de", "meu", "teu", "com", "em"
-• NUNCA cortar palavras como "coraçã" (use "coração")
-• NUNCA frases incompletas
-
-✅ EXEMPLOS CORRETOS:
-"Hoje eu venho aqui de coração aberto" 
-"Teu sorriso é luz que ilumina meu caminho"
-"Nos teus braços eu encontro a paz completa"
-
-🚫 EXEMPLOS PROIBIDOS:
-"coraçã" ❌ → "coração" ✅
-"ilumina meu" ❌ → "ilumina meu caminho" ✅  
-"encontro a paz que eu" ❌ → "encontro a paz que eu preciso" ✅
-
-TEMA: ${request.theme}
-HUMOR: ${request.mood || "romântico"}
-GÊNERO: ${request.genre}
-
-${request.additionalRequirements ? `REQUISITOS: ${request.additionalRequirements}` : ""}
-
-ESTRUTURA:
+Estrutura:
 [Intro]
-[Verso 1] 
-[Pré-Refrão]
-[Refrão]
-[Verso 2]
+[Verso 1]
 [Refrão] 
+[Verso 2]
+[Refrão]
 [Ponte]
 [Refrão]
 [Outro]
 
-LETRA COMPLETA E COERENTE:`
+Máximo 12 sílabas por verso. Linguagem brasileira natural.
+
+Letra:`
 
     const { text } = await generateText({
       model: this.MODEL,
       prompt,
-      temperature: this.getTemperature(request.creativity),
+      temperature: request.creativity === "ousado" ? 0.8 : 0.6,
     })
 
-    return this.cleanLyricsResponse(text || "Letra não pôde ser gerada.")
+    return text || "Música em desenvolvimento."
   }
 
-  /**
-   * 🔄 REESCRITA DE LETRA EXISTENTE
-   */
   private static async rewriteLyrics(request: CompositionRequest): Promise<string> {
-    if (!request.originalLyrics) {
-      throw new Error("Letra original é obrigatória para reescrita")
-    }
+    if (!request.originalLyrics) return "Letra original necessária."
 
-    const prompt = `REESCRITOR PROFISSIONAL - ${request.genre.toUpperCase()}
+    const prompt = `Reescreva esta letra no estilo ${request.genre}:
 
-🎯 OBJETIVO: Melhorar esta letra mantendo VERSOS COMPLETOS
-
-📝 REGRA ABSOLUTA: 
-- ZERO linhas quebradas ou incompletas
-- TODOS os versos devem fazer sentido completo
-- Mantenha o tema e essência original
-
-LETRA ORIGINAL:
 ${request.originalLyrics}
 
-TEMA: ${request.theme}
-HUMOR: ${request.mood}
-GÊNERO: ${request.genre}
+Mantenha máximo 12 sílabas por verso. Versos completos.
 
-${request.additionalRequirements ? `REQUISITOS: ${request.additionalRequirements}` : ""}
-
-REESCREVA COM VERSOS COMPLETOS:`
+Letra reescrita:`
 
     const { text } = await generateText({
       model: this.MODEL,
       prompt,
-      temperature: 0.4, // Temperatura baixa para reescrita conservadora
+      temperature: 0.4,
     })
 
-    return this.cleanLyricsResponse(text || request.originalLyrics)
+    return text || request.originalLyrics
   }
 
-  /**
-   * ✨ APLICA POLIMENTO FINAL
-   */
   private static async applyPolish(lyrics: string, request: CompositionRequest): Promise<string> {
     let polished = lyrics
 
-    // Formatação de performance para sertanejo
-    if (shouldUsePerformanceFormat(request.genre, request.performanceMode || "standard")) {
+    // Formatação sertanejo
+    if (request.genre.toLowerCase().includes("sertanejo")) {
       polished = formatSertanejoPerformance(polished, request.genre)
     }
 
-    // Correção de pontuação
-    const punctResult = PunctuationValidator.validate(polished)
-    if (!punctResult.isValid) {
-      polished = punctResult.correctedLyrics
-    }
+    // Pontuação
+    const punct = PunctuationValidator.validate(polished)
+    if (!punct.isValid) polished = punct.correctedLyrics
 
-    // Organização visual das linhas
-    const stackResult = LineStacker.stackLines(polished)
-    return stackResult.stackedLyrics
+    // Organização
+    const stack = LineStacker.stackLines(polished)
+    return stack.stackedLyrics
   }
 
-  /**
-   * 🧮 CALCULA SCORE FINAL INTELIGENTE
-   */
-  private static calculateFinalScore(
-    auditScore: number, 
-    syllableValid: boolean, 
-    hasBrokenLines: boolean
-  ): number {
-    let score = auditScore * 0.7 // 70% da auditoria padrão
+  private static extractTitle(lyrics: string, request: CompositionRequest): string {
+    const firstLine = lyrics.split('\n').find(line => {
+      const trimmed = line.trim()
+      return trimmed && !trimmed.startsWith('[') && !trimmed.startsWith('(')
+    })
     
-    // Bônus/Penalidades baseados em qualidade real
-    if (syllableValid) score += 15
-    if (!hasBrokenLines) score += 15
-    if (!syllableValid) score -= 20
-    if (hasBrokenLines) score -= 30
-
-    return Math.max(0, Math.min(100, score))
+    return firstLine?.substring(0, 40) || `${request.theme} - ${request.genre}`
   }
 
-  /**
-   * 🆘 GERA RESULTADO DE FALLBACK EM CASO DE ERRO
-   */
-  private static generateFallbackResult(
-    request: CompositionRequest, 
-    error: any
-  ): CompositionResult {
-    console.error("[MetaComposer] 🆘 Usando fallback de emergência")
+  private static fallbackResult(request: CompositionRequest): CompositionResult {
+    const fallbackLyrics = `[Intro]
+Música em criação
+Com inspiração
 
-    const fallbackLyrics = `### [Intro]
-A música está sendo preparada
-Com carinho e inspiração
-Em breve estará perfeita
-Para sua celebração
+[Refrão]
+Em breve estará pronta
+Para sua emoção
 
-### [Verso 1]
-Às vezes a criação precisa de tempo
-Para nascer com perfeição
-Cada verso é cuidado com carinho
-Na mais pura emoção
-
-### [Refrão]
-Esta canção é feita pra você
-Com amor e dedicação
-Em cada nota, em cada acorde
-A nossa conexão
-
-### [Verso 2]
-A vida é uma melodia constante
-Que toca o coração
-E nesta sintonia especial
-Encontramos a união
-
-### [Refrão] 
-Esta canção é feita pra você
-Com amor e dedicação
-Em cada nota, em cada acorde
-A nossa conexão
-
-### [Outro]
+[Outro]
 Com gratidão no coração
-Por este momento especial
-A música é vida e emoção
-Num laço celestial
 
 (Instrumentation)
-(Genre: ${request.genre})
-(Instruments: Acoustic Guitar, Piano, Bass, Drums)`
+(Genre: ${request.genre})`
 
     return {
       lyrics: fallbackLyrics,
@@ -287,89 +166,9 @@ Num laço celestial
       metadata: {
         finalScore: 60,
         polishingApplied: false,
-        performanceMode: request.performanceMode || "standard",
+        performanceMode: "standard",
         modelUsed: "FALLBACK",
-        syllableValidation: {
-          isValid: true,
-          violations: [],
-          maxSyllables: 12
-        }
       },
     }
-  }
-
-  /**
-   * 🧼 LIMPEZA DA RESPOSTA DA IA
-   */
-  private static cleanLyricsResponse(text: string): string {
-    return text
-      .split("\n")
-      .filter(line => {
-        const trimmed = line.trim()
-        return trimmed && 
-               !trimmed.startsWith("Retorne") &&
-               !trimmed.startsWith("REGRAS") &&
-               !trimmed.startsWith("🎯") &&
-               !trimmed.startsWith("📝") &&
-               !trimmed.startsWith("✅") &&
-               !trimmed.startsWith("🚫") &&
-               !trimmed.includes("Explicação") &&
-               !trimmed.includes("```")
-      })
-      .join("\n")
-      .trim()
-  }
-
-  /**
-   * 🔥 EXTRAI TÍTULO DA LETRA
-   */
-  private static extractTitle(lyrics: string, request: CompositionRequest): string {
-    const lines = lyrics.split("\n")
-    
-    // Procura por linha significativa para título
-    for (const line of lines) {
-      const trimmed = line.trim()
-      if (trimmed && 
-          !trimmed.startsWith("[") && 
-          !trimmed.startsWith("(") &&
-          !trimmed.startsWith("###") &&
-          !trimmed.includes("Instrumentation") &&
-          !trimmed.includes("Genre:") &&
-          trimmed.length > 10 && trimmed.length < 50) {
-        return trimmed
-      }
-    }
-    
-    // Fallback para tema + gênero
-    return `${request.theme} - ${request.genre}`
-  }
-
-  /**
-   * 🌡️ CONFIGURA TEMPERATURA BASEADA NA CRIATIVIDADE
-   */
-  private static getTemperature(creativity?: string): number {
-    const temperatures = {
-      conservador: 0.3,
-      equilibrado: 0.6,
-      ousado: 0.8
-    }
-    
-    return temperatures[creativity as keyof typeof temperatures] || 0.6
-  }
-
-  /**
-   * 🔍 VERIFICA SE LINHA É METADATA/MARCAÇÃO
-   */
-  private static isMetadataLine(line: string): boolean {
-    const trimmed = line.trim()
-    return (
-      !trimmed ||
-      trimmed.startsWith("[") ||
-      trimmed.startsWith("(") ||
-      trimmed.startsWith("###") ||
-      trimmed.includes("Instrumentation") ||
-      trimmed.includes("BPM:") ||
-      trimmed.includes("Key:")
-    )
   }
 }
