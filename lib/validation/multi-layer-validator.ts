@@ -16,7 +16,9 @@ import { countPoeticSyllables, validateLyricsSyllables } from "./syllable-counte
 import { validateNarrativeFlow } from "./narrative-validator"
 import { analyzeLyricsRhymeScheme, validateRhymesForGenre } from "./rhyme-validator"
 import { validateFullLyricAgainstForcing } from "./anti-forcing-validator"
+import { processSongWithBalance } from "./balanced-syllable-manager";
 
+const finalLyrics = await processSongWithBalance(originalLyrics);
 export interface MultiLayerValidationResult {
   isValid: boolean
   overallScore: number
