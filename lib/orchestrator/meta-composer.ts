@@ -1,6 +1,9 @@
 // lib/composition/meta-composer.ts
 
 import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro"
+import { enforceSyllableLimitAll } from "@/lib/validation/intelligent-rewriter"
+import { enforceChorusRules } from "@/lib/validation/chorus-optimizer"
+import { countSyllablesSingingPtBr } from "@/lib/validation/singing-syllable-counter"
 import { type TerceiraViaAnalysis, analisarTerceiraVia, applyTerceiraViaToLine } from "@/lib/terceira-via"
 import { generateText } from "ai"
 import {
@@ -11,7 +14,6 @@ import { PunctuationValidator } from "@/lib/validation/punctuation-validator"
 import { LineStacker } from "@/lib/utils/line-stacker"
 import { LyricsAuditor } from "@/lib/validation/lyrics-auditor"
 import { getGenreMetrics } from "@/lib/metrics/brazilian-metrics"
-import { AbsoluteSyllableEnforcer } from "@/lib/validation/absolute-syllable-enforcer"
 
 export interface CompositionRequest {
   genre: string
@@ -47,7 +49,7 @@ export class MetaComposer {
   private static readonly MAX_SYLLABLES = 12 // 12 é limite real na música
 
   static async compose(request: CompositionRequest): Promise<CompositionResult> {
-    console.log("[MetaComposer] 🚀 Iniciando composição (produção)...")
+    console.log("[MetaComposer] 🚀 Iniciando composição com sistema de canto...")
 
     // 1. Gera letra base
     let lyrics = request.originalLyrics ? await this.rewriteLyrics(request) : await this.generateLyrics(request)
@@ -58,6 +60,14 @@ export class MetaComposer {
     if (analysis.score_geral < 75) {
       lyrics = await this.applyTerceiraVia(lyrics, request, analysis)
       terceiraViaApplied = true
+    }
+
+    console.log("🎯 Aplicando reescrita inteligente com elisões para canto...")
+    lyrics = await enforceSyllableLimitAll(lyrics, this.MAX_SYLLABLES)
+
+    if (request.genre.toLowerCase().includes("sertanejo") && request.theme) {
+      console.log("🎵 Otimizando refrões para Sertanejo...")
+      lyrics = enforceChorusRules(lyrics, request.theme)
     }
 
     // 3. Polimento final
@@ -234,13 +244,6 @@ RETORNE APENAS A LETRA REESCRITA, SEM EXPLICAÇÕES.`
       polished = punctResult.correctedLyrics
     }
 
-    const syllableCheck = AbsoluteSyllableEnforcer.validate(polished)
-    if (!syllableCheck.isValid) {
-      console.log("[MetaComposer] 🔧 Corrigindo sílabas excedentes...")
-      const fixResult = AbsoluteSyllableEnforcer.validateAndFix(polished)
-      polished = fixResult.correctedLyrics
-    }
-
     // Quebra de linhas (agora mais agressivo)
     const stackResult = LineStacker.stackLines(polished)
     return stackResult.stackedLyrics
@@ -258,7 +261,10 @@ RETORNE APENAS A LETRA REESCRITA, SEM EXPLICAÇÕES.`
       .map((line) => {
         if (this.shouldSkipLine(line)) return line
 
-        const syllables = countPoeticSyllables(line)
+        const syllables = countSyllablesSingingPtBr(line, {
+          applyElisions: true,
+          applyContractions: true,
+        })
         if (syllables <= maxSyllables) return line
 
         // Aplica correções locais (sem IA)

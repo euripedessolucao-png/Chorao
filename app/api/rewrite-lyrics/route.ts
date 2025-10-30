@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 import { buildGenreRulesPrompt } from "@/lib/validation/genre-rules-builder"
-import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro"
+import { enforceSyllableLimitAll } from "@/lib/validation/intelligent-rewriter"
 import { getUniversalRhymeRules } from "@/lib/validation/universal-rhyme-rules"
 import {
   formatSertanejoPerformance,
@@ -12,7 +12,6 @@ import { formatInstrumentationForAI } from "@/lib/normalized-genre"
 import { LineStacker } from "@/lib/utils/line-stacker"
 import { enhanceLyricsRhymes } from "@/lib/validation/rhyme-enhancer"
 import { validateRhymesForGenre } from "@/lib/validation/rhyme-validator"
-import { fixLineToMaxSyllables } from "@/lib/validation/local-syllable-fixer"
 import { GENRE_CONFIGS } from "@/lib/genre-config"
 
 function getMaxSyllables(genre: string): number {
@@ -234,42 +233,8 @@ Gere a letra com VERSOS COMPLETOS e EMOCIONALMENTE IMPACTANTES:`
       }
     }
 
-    console.log("[API] 📏 Ajustando métrica...")
-    const lines = finalLyrics.split("\n")
-    const correctedLines: string[] = []
-    let syllableCorrections = 0
-
-    for (const line of lines) {
-      const trimmed = line.trim()
-      if (!trimmed || trimmed.startsWith("### [") || trimmed.startsWith("(")) {
-        correctedLines.push(line)
-        continue
-      }
-
-      const cleanLine = trimmed
-        .replace(/\[.*?\]/g, "")
-        .replace(/$$.*?$$/g, "")
-        .replace(/^"|"$/g, "")
-        .trim()
-      if (!cleanLine) {
-        correctedLines.push(line)
-        continue
-      }
-
-      const syllables = countPoeticSyllables(cleanLine)
-      if (syllables > maxSyllables) {
-        const fixed = fixLineToMaxSyllables(trimmed, maxSyllables)
-        correctedLines.push(fixed)
-        syllableCorrections++
-      } else {
-        correctedLines.push(line)
-      }
-    }
-
-    if (syllableCorrections > 0) {
-      console.log(`[API] ✅ ${syllableCorrections} ajustes de sílaba aplicados`)
-      finalLyrics = correctedLines.join("\n")
-    }
+    console.log("[API] 🎤 Aplicando reescrita inteligente com elisões para canto...")
+    finalLyrics = await enforceSyllableLimitAll(finalLyrics, maxSyllables)
 
     console.log("[API] 📚 Aplicando empilhamento...")
     const stackingResult = LineStacker.stackLines(finalLyrics)
@@ -295,7 +260,7 @@ Gere a letra com VERSOS COMPLETOS e EMOCIONALMENTE IMPACTANTES:`
         performanceMode,
         maxSyllables,
         totalLines,
-        syllableCorrections,
+        syllableCorrections: 0, // Agora feito pelo intelligent-rewriter
         quality: "PROCESSED",
       },
     })
