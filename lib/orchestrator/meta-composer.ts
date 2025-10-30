@@ -19,6 +19,7 @@ import { validateRhymesForGenre } from "@/lib/validation/rhyme-validator"
 import { fixLineToMaxSyllables } from "@/lib/validation/local-syllable-fixer"
 import { enforceSyllableLimitAll } from "@/lib/validation/intelligent-rewriter"
 import { enforceChorusRules } from "@/lib/validation/chorus-optimizer"
+import { LyricsCompletionEngine } from "@/lib/validation/lyrics-completion-engine"
 
 export interface CompositionRequest {
   genre: string
@@ -240,6 +241,9 @@ export class MetaComposer {
 
     console.log("🎯 Aplicando garantia final com reescrita inteligente...")
     let finalLyrics = await enforceSyllableLimitAll(lyrics, 12)
+
+    console.log("🔧 Aplicando correção de linhas quebradas...")
+    finalLyrics = await LyricsCompletionEngine.completeBrokenLines(finalLyrics)
 
     if (request.genre.toLowerCase().includes("sertanejo")) {
       finalLyrics = enforceChorusRules(finalLyrics, request.theme)

@@ -1,5 +1,6 @@
 import { countSyllablesSingingPtBr } from "./singing-syllable-counter"
 import { _rewriteWithinSyllables } from "./intelligent-rewriter"
+import { generateText } from "./text-generator" // Assuming this function is imported from another module
 
 export function enforceChorusRules(lyrics: string, hook?: string): string {
   const h = (hook || "").trim()
@@ -119,4 +120,44 @@ export async function applySertanejoChorusShaping(text: string, hookText: string
   }
 
   return lines.join("\n")
+}
+
+export async function fixBrokenChorus(chorus: string): Promise<string> {
+  const lines = chorus.split("\n").filter((line) => line.trim())
+
+  if (lines.length < 4) return chorus
+
+  const prompt = `REESCREVA ESTE REFRÃO QUEBRADO COM COERÊNCIA:
+
+REFRÃO ORIGINAL (PROBLEMAS):
+${lines.join("\n")}
+
+REGRAS:
+- 4 linhas com 9-12 sílabas cada
+- Estrutura A-B-A-B ou A-A-B-B
+- Significado coerente
+- Linguagem natural do sertanejo/gospel
+- Rimas ricas nas linhas pares
+
+REFRÃO CORRIGIDO:`
+
+  try {
+    const { text } = await generateText({
+      model: "openai/gpt-4o-mini",
+      prompt,
+      temperature: 0.4,
+      maxOutputTokens: 200,
+    })
+
+    return (
+      text
+        ?.split("\n")
+        .filter((line) => line.trim() && !line.includes("REFRÃO") && !line.includes("REGRAS"))
+        .slice(0, 4)
+        .join("\n") || chorus
+    )
+  } catch (error) {
+    console.warn("❌ Erro ao corrigir refrão:", error)
+    return chorus
+  }
 }
