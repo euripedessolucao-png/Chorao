@@ -1,6 +1,6 @@
 import { countSyllablesSingingPtBr } from "./singing-syllable-counter"
 import { _rewriteWithinSyllables } from "./intelligent-rewriter"
-import { generateText } from "./text-generator" // Assuming this function is imported from another module
+import { generateText } from "ai" // ← CORRETO
 
 export function enforceChorusRules(lyrics: string, hook?: string): string {
   const h = (hook || "").trim()
