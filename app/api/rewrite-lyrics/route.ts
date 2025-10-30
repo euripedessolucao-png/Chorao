@@ -1,4 +1,4 @@
-// app/api/rewrite-lyrics/route.ts - VERSÃO CORRIGIDA
+// app/api/rewrite-lyrics/route.ts - VERSÃO TOTALMENTE CORRIGIDA
 import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
@@ -92,22 +92,28 @@ function smartFixIncompleteLines(lyrics: string): string {
 }
 
 export async function POST(request: NextRequest) {
-  // ✅ DECLARAR genre NO INÍCIO DO MÉTODO
-  let genre = "Sertanejo" // valor padrão
+  // ✅ DECLARAR TODAS AS VARIÁVEIS NO INÍCIO
+  let genre = "Sertanejo"
+  let theme = "Música"
+  let title = "Música em Processamento"
 
   try {
+    const requestData = await request.json()
+    
     const {
       originalLyrics,
-      genre: requestGenre, // renomear para evitar conflito
+      genre: requestGenre,
       mood,
-      theme,
+      theme: requestTheme,
       additionalRequirements,
-      title,
+      title: requestTitle,
       performanceMode = "standard",
-    } = await request.json()
+    } = requestData
 
-    // ✅ ATRIBUIR AO genre PRINCIPAL
+    // ✅ ATRIBUIR VALORES COM FALLBACK
     genre = requestGenre || "Sertanejo"
+    theme = requestTheme || "Música"
+    title = requestTitle || `${theme} - ${genre}`
 
     if (!originalLyrics?.trim()) {
       return NextResponse.json({ error: "Letra original é obrigatória" }, { status: 400 })
@@ -122,7 +128,7 @@ export async function POST(request: NextRequest) {
     const prompt = `COMPOSITOR PROFISSIONAL - REESCREVA ESTA LETRA
 
 GÊNERO: ${genre}
-TEMA: ${theme || "Gratidão divina"} 
+TEMA: ${theme}
 HUMOR: ${mood || "Reverente e alegre"}
 
 🚫 PROIBIDO:
@@ -207,7 +213,7 @@ LETRA RESSRITA COMPLETA:`
     return NextResponse.json({
       success: true,
       lyrics: finalLyrics,
-      title: title || `${theme || "Música"} - ${genre}`,
+      title: title,
       metadata: {
         genre,
         performanceMode,
@@ -215,10 +221,11 @@ LETRA RESSRITA COMPLETA:`
         quality: "PROCESSED",
       },
     })
+
   } catch (error) {
     console.error("[API] ❌ Erro crítico:", error)
     
-    // ✅ FALLBACK DE EMERGÊNCIA CORRIGIDO (genre agora está disponível)
+    // ✅ FALLBACK DE EMERGÊNCIA - TODAS AS VARIÁVEIS DISPONÍVEIS
     const emergencyLyrics = `### [Intro]
 Esta letra está sendo reescrita
 Com muito amor e gratidão
@@ -232,13 +239,13 @@ Em instantes estará pronta
 Para sua celebração
 
 (Instrumentation)
-(Genre: ${genre}) <!-- ✅ AGORA FUNCIONA! -->
+(Genre: ${genre})
 (Instruments: Acoustic Guitar, Bass, Drums)`
 
     return NextResponse.json({
       success: true,
       lyrics: emergencyLyrics,
-      title: title || "Música em Processamento",
+      title: title, // ✅ AGORA FUNCIONA!
       metadata: {
         genre,
         performanceMode: "standard", 
