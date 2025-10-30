@@ -1,3 +1,4 @@
+// lib/syllable-management/unified-syllable-manager.ts - VERSÃO CORRIGIDA
 import { generateText } from "ai";
 import { countSyllablesSingingPtBr } from "../validation/singing-syllable-counter";
 
@@ -9,7 +10,7 @@ export class UnifiedSyllableManager {
   private static readonly MAX_SYLLABLES = 12;
 
   /**
-   * Gestor balanceado: reescreve → reduz → corta (como você propôs)
+   * Gestor balanceado: reescreve → reduz → corta
    */
   static async balancedSyllableManager(verse: string): Promise<string> {
     const maxSyllables = this.MAX_SYLLABLES;
@@ -65,7 +66,7 @@ Verso reescrito:`;
         model: "openai/gpt-4o-mini",
         prompt,
         temperature: 0.3,
-        maxTokens: 100,
+        // ⚠️ REMOVIDO: maxTokens (causa erro na Vercel)
       });
 
       return text?.trim().replace(/^["']|["']$/g, '') || verse;
