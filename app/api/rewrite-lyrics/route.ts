@@ -37,6 +37,14 @@ Conte parte da história. Máximo 11 sílabas.
 
 Opções de VERSO:`,
 
+    PRE_CHORUS: `Crie ${count} opções de PRÉ-REFRÃO (2-3 linhas) para ${genre} baseada nesta letra:
+"${originalLyrics}"
+
+Tema: ${theme}
+Prepare para o refrão. Máximo 11 sílabas.
+
+Opções de PRÉ-REFRÃO:`,
+
     CHORUS: `Crie ${count} opções de REFRÃO (4-6 linhas) para ${genre} baseada nesta letra:
 "${originalLyrics}"
 
@@ -126,6 +134,7 @@ function assembleCombinations(blocks: Record<string, MusicBlock[]>): string[] {
   const structure = [
     { type: "INTRO", label: "Intro" },
     { type: "VERSE", label: "Verso 1" },
+    { type: "PRE_CHORUS", label: "Pré-Refrão" },
     { type: "CHORUS", label: "Refrão" },
     { type: "VERSE", label: "Verso 2" },
     { type: "CHORUS", label: "Refrão" },
@@ -219,7 +228,7 @@ export async function POST(request: NextRequest) {
     // 🎯 1. GERAR MÚLTIPLAS OPÇÕES DE CADA PARTE
     console.log("[API] 🎲 Gerando variações de blocos...")
 
-    const blockTypes: MusicBlock["type"][] = ["INTRO", "VERSE", "CHORUS", "BRIDGE", "OUTRO"]
+    const blockTypes: MusicBlock["type"][] = ["INTRO", "VERSE", "PRE_CHORUS", "CHORUS", "BRIDGE", "OUTRO"]
     const allBlocks: Record<string, MusicBlock[]> = {}
 
     for (const blockType of blockTypes) {
@@ -270,7 +279,43 @@ Com nova abordagem criativa
 Em breve estará perfeita
 Combinando as melhores opções
 
+[Verse 1]
+Narrando a história
+Com palavras que tocam o coração
+Momentos de luz e sombra
+Em uma jornada emocional
+
+[Pré-Refrão]
+Prepare-se para a melodia
+Que vai tocar seu coração
+Um refrão que vai se tornar
+Um clássico que vai perdurar
+
 [Refrão]
+Sistema de geração por blocos
+Criando variações únicas
+Selecionando o melhor conjunto
+Para música autêntica
+
+[Verse 2]
+Continuando a história
+Com versos que ressoam na alma
+Um ritmo que vai se tornar
+Um eco que vai permanecer
+
+[Refrão]
+Sistema de geração por blocos
+Criando variações únicas
+Selecionando o melhor conjunto
+Para música autêntica
+
+[Ponte]
+Momento de reflexão
+Um tempo para pensar
+Na música que foi criada
+E na jornada que ela traz
+
+[Refrão Final]
 Sistema de geração por blocos
 Criando variações únicas
 Selecionando o melhor conjunto
@@ -288,7 +333,7 @@ Processo em andamento
       title: title,
       metadata: {
         genre,
-        totalLines: 8,
+        totalLines: 16,
         quality: "FALLBACK",
         method: "TRADITIONAL",
       },
