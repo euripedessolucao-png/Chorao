@@ -1,6 +1,6 @@
 // lib/orchestrator/meta-composer.ts - ADICIONAR VALIDAÇÃO ESPECÍFICA
 
-import { UnifiedSyllableManager } from "../syllable-management/unified-syllable-manager" // Import declaration for UnifiedSyllableManager
+import { UnifiedSyllableManager } from "../syllable-management/unified-syllable-manager"
 
 export interface CompositionRequest {
   genre: string
@@ -27,7 +27,22 @@ export interface CompositionResult {
   }
 }
 
+interface GenreValidationResult {
+  adjustedLyrics: string | null
+  score: number
+  type: string
+  suggestions: string[]
+}
+
+interface SertanejoValidationResult {
+  score: number
+  suggestions: string[]
+  errors: string[]
+}
+
 export class MetaComposer {
+  private static readonly MODEL = "openai/gpt-4o-mini"
+
   static async compose(request: CompositionRequest): Promise<CompositionResult> {
     console.log("[MetaComposer] 🚀 Iniciando composição...")
 
@@ -36,9 +51,9 @@ export class MetaComposer {
       let lyrics = request.originalLyrics ? await this.rewriteLyrics(request) : await this.generateLyrics(request)
 
       // 2. CORREÇÃO DE SÍLABAS (SISTEMA UNIFICADO)
-      lyrics = await UnifiedSyllableManager.processSongWithBalance(lyrics, request.genre)
+      lyrics = await UnifiedSyllableManager.processSongWithBalance(lyrics)
 
-      // ✅ 3. VALIDAÇÃO ESPECÍFICA POR GÊNERO
+      // 3. VALIDAÇÃO ESPECÍFICA POR GÊNERO
       const genreSpecificValidation = await this.applyGenreSpecificValidation(lyrics, request)
       if (genreSpecificValidation.adjustedLyrics) {
         lyrics = genreSpecificValidation.adjustedLyrics
@@ -47,7 +62,7 @@ export class MetaComposer {
       // 4. TERCEIRA VIA (SE APLICÁVEL)
       let thirdWayApplied = false
       if (this.shouldApplyThirdWay(request, lyrics)) {
-        lyrics = await ThirdWayIntegration.applyStrategicThirdWay(lyrics, request.genre, request.theme)
+        lyrics = await this.applyStrategicThirdWay(lyrics, request.genre, request.theme)
         thirdWayApplied = true
       }
 
@@ -78,9 +93,53 @@ export class MetaComposer {
     }
   }
 
-  /**
-   * ✅ APLICA VALIDAÇÃO ESPECÍFICA POR GÊNERO
-   */
+  private static async generateLyrics(request: CompositionRequest): Promise<string> {
+    // TODO: Implementar geração de letras
+    return "Generated lyrics"
+  }
+
+  private static async rewriteLyrics(request: CompositionRequest): Promise<string> {
+    // TODO: Implementar reescrita de letras
+    return request.originalLyrics || "Rewritten lyrics"
+  }
+
+  private static async applyPolish(lyrics: string, request: CompositionRequest): Promise<string> {
+    // TODO: Implementar polimento final
+    return lyrics
+  }
+
+  private static extractTitle(lyrics: string, request: CompositionRequest): string {
+    // TODO: Implementar extração de título
+    const firstLine = lyrics.split("\n")[0]
+    return firstLine?.replace(/[^\w\s]/g, "").trim() || "Sem Título"
+  }
+
+  private static fallbackResult(request: CompositionRequest): CompositionResult {
+    return {
+      lyrics: "Erro ao gerar letra. Por favor, tente novamente.",
+      title: "Erro",
+      metadata: {
+        finalScore: 0,
+        polishingApplied: false,
+        performanceMode: request.performanceMode || "standard",
+        modelUsed: this.MODEL,
+        thirdWayApplied: false,
+        genreSpecificScore: 0,
+        creativityLevel: request.creativity || "equilibrado",
+      },
+    }
+  }
+
+  private static shouldApplyThirdWay(request: CompositionRequest, lyrics: string): boolean {
+    // TODO: Implementar lógica de decisão para terceira via
+    return false
+  }
+
+  private static async applyStrategicThirdWay(lyrics: string, genre: string, theme: string): Promise<string> {
+    // TODO: Implementar aplicação de terceira via
+    return lyrics
+  }
+
   private static async applyGenreSpecificValidation(
     lyrics: string,
     request: CompositionRequest,
@@ -89,14 +148,13 @@ export class MetaComposer {
 
     // 🎵 VALIDAÇÃO SERTANEJO ESPECÍFICA
     if (genre.includes("sertanejo")) {
-      const sertanejoValidation = validateSertanejoModerno(lyrics)
+      const sertanejoValidation = this.validateSertanejoModerno(lyrics)
 
       console.log(`[MetaComposer] 🎵 Validação Sertanejo: ${sertanejoValidation.score} pontos`)
 
       if (sertanejoValidation.score < 80 && sertanejoValidation.suggestions.length > 0) {
         console.log(`[MetaComposer] 💡 Sugestões Sertanejo:`, sertanejoValidation.suggestions.slice(0, 2))
 
-        // Aplica correções automáticas para problemas críticos
         const corrected = await this.autoCorrectSertanejoIssues(lyrics, sertanejoValidation)
         return {
           adjustedLyrics: corrected,
@@ -114,173 +172,87 @@ export class MetaComposer {
       }
     }
 
-    // 🎶 OUTROS GÊNEROS PODEM TER VALIDAÇÕES ESPECÍFICAS FUTURAS
     return {
       adjustedLyrics: null,
-      score: 85, // Score base para outros gêneros
+      score: 85,
       type: "generic",
       suggestions: [],
     }
   }
 
-  /**
-   * ✅ CORREÇÃO AUTOMÁTICA PARA PROBLEMAS SERTANEJO
-   */
   private static async autoCorrectSertanejoIssues(
     lyrics: string,
     validation: SertanejoValidationResult,
   ): Promise<string> {
-    // Para rimas repetitivas - reescreve seções problemáticas
     if (validation.errors.some((error) => error.includes("rimas consecutivas"))) {
       console.log("[MetaComposer] 🔧 Corrigindo rimas repetitivas...")
-
-      // Usa o sistema de reescrita para variar rimas
       const rewritten = await this.rewriteProblematicSections(lyrics, "variar rimas")
       return rewritten || lyrics
     }
 
-    // Para pré-refrão incompleto - completa frases
     if (validation.errors.some((error) => error.includes("Pré-refrão"))) {
       console.log("[MetaComposer] 🔧 Completando pré-refrão...")
       return await this.completePreChorusLines(lyrics)
     }
 
-    return lyrics // Mantém original se não há correção automática
+    return lyrics
   }
 
-  /**
-   * ✅ CALCULA SCORE COMPREENSIVO
-   */
   private static calculateComprehensiveScore(
     lyrics: string,
     request: CompositionRequest,
     thirdWayApplied: boolean,
     genreValidation: GenreValidationResult,
   ): number {
-    let score = 75 // Base
+    let score = 75
 
-    // 📏 VALIDAÇÃO DE SÍLABAS (CRÍTICO)
-    const syllableValidation = validateLyricsSyllables(lyrics, 8, 10, 12)
+    const syllableValidation = this.validateLyricsSyllables(lyrics, 8, 10, 12)
     if (syllableValidation.valid) {
       score += 15
     } else {
       score -= syllableValidation.violations.length * 5
     }
 
-    // 🎵 SCORE ESPECÍFICO DO GÊNERO
     if (genreValidation.score >= 80) score += 10
     else if (genreValidation.score >= 60) score += 5
 
-    // 🌟 BÔNUS TERCEIRA VIA
     if (thirdWayApplied) score += 8
 
-    // 🎨 BÔNUS CRIATIVIDADE
     if (request.creativity === "ousado") score += 7
     else if (request.creativity === "conservador") score += 3
 
     return Math.min(100, Math.max(0, score))
   }
 
-  // ... outros métodos existentes ...
-}
-
-// ✅ INTERFACE PARA VALIDAÇÃO POR GÊNERO
-interface GenreValidationResult {
-  adjustedLyrics: string | null
-  score: number
-  type: string
-  suggestions: string[]
-}
-
-// ✅ INTERFACE PARA VALIDAÇÃO SERTANEJO
-interface SertanejoValidationResult {
-  score: number
-  suggestions: string[]
-  errors: string[]
-}
-
-// ✅ FUNÇÃO DE VALIDAÇÃO SERTANEJO MODERNO
-function validateSertanejoModerno(lyrics: string): SertanejoValidationResult {
-  // Implementação da validação específica para sertanejo moderno
-  return {
-    score: 85,
-    suggestions: [],
-    errors: [],
+  private static validateSertanejoModerno(lyrics: string): SertanejoValidationResult {
+    // TODO: Implementar validação específica para sertanejo moderno
+    return {
+      score: 85,
+      suggestions: [],
+      errors: [],
+    }
   }
-}
 
-// ✅ FUNÇÃO DE VALIDAÇÃO DE SÍLABAS DE LETRAS
-function validateLyricsSyllables(
-  lyrics: string,
-  min: number,
-  max: number,
-  ideal: number,
-): { valid: boolean; violations: string[] } {
-  // Implementação da validação de sílabas
-  return {
-    valid: true,
-    violations: [],
+  private static validateLyricsSyllables(
+    lyrics: string,
+    min: number,
+    max: number,
+    ideal: number,
+  ): { valid: boolean; violations: string[] } {
+    // TODO: Implementar validação de sílabas
+    return {
+      valid: true,
+      violations: [],
+    }
   }
-}
 
-// ✅ FUNÇÃO DE REESCRITA DE SEÇÕES PROBLEMÁTICAS
-async function rewriteProblematicSections(lyrics: string, strategy: string): Promise<string | null> {
-  // Implementação da reescrita de seções problemáticas
-  return null
-}
+  private static async rewriteProblematicSections(lyrics: string, strategy: string): Promise<string | null> {
+    // TODO: Implementar reescrita de seções problemáticas
+    return null
+  }
 
-// ✅ FUNÇÃO DE COMPLETAÇÃO DE LINHAS DE PRÉ-REFRÃO
-async function completePreChorusLines(lyrics: string): Promise<string> {
-  // Implementação da completação de linhas de pré-refrão
-  return lyrics
-}
-
-// ✅ FUNÇÃO DE APLICAÇÃO DE TERCEIRA VIA
-class ThirdWayIntegration {
-  static async applyStrategicThirdWay(lyrics: string, genre: string, theme: string): Promise<string> {
-    // Implementação da aplicação de terceira via
+  private static async completePreChorusLines(lyrics: string): Promise<string> {
+    // TODO: Implementar completação de linhas de pré-refrão
     return lyrics
-  }
-}
-
-// ✅ FUNÇÃO DE GERAÇÃO DE LETRAS
-async function generateLyrics(request: CompositionRequest): Promise<string> {
-  // Implementação da geração de letras
-  return "Generated lyrics"
-}
-
-// ✅ FUNÇÃO DE REESCRITA DE LETRAS
-async function rewriteLyrics(request: CompositionRequest): Promise<string> {
-  // Implementação da reescrita de letras
-  return "Rewritten lyrics"
-}
-
-// ✅ FUNÇÃO DE POLIMENTO FINAL
-async function applyPolish(lyrics: string, request: CompositionRequest): Promise<string> {
-  // Implementação do polimento final
-  return lyrics
-}
-
-// ✅ FUNÇÃO DE EXTRAÇÃO DE TÍTULO
-function extractTitle(lyrics: string, request: CompositionRequest): string {
-  // Implementação da extração de título
-  return "Title"
-}
-
-// ✅ FUNÇÃO DE RETORNO DE RESULTADO DE CADEIA
-function fallbackResult(request: CompositionRequest): CompositionResult {
-  // Implementação do retorno de resultado de cadeia
-  return {
-    lyrics: "Fallback lyrics",
-    title: "Fallback title",
-    metadata: {
-      finalScore: 50,
-      polishingApplied: false,
-      performanceMode: request.performanceMode || "standard",
-      modelUsed: "Fallback model",
-      thirdWayApplied: false,
-      genreSpecificScore: 50,
-      creativityLevel: request.creativity || "equilibrado",
-    },
   }
 }
