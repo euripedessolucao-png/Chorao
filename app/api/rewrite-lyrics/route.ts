@@ -1,223 +1,235 @@
-// app/api/rewrite-lyrics/route.ts - SISTEMA AGGRESSIVO DE CORREÇÃO
+// app/api/rewrite-lyrics/route.ts - PRIORIDADE: ESTRUTURA PRIMEIRO, RIMAS DEPOIS
 
-// ✅ SISTEMA RIGOROSO DE VALIDAÇÃO E CORREÇÃO
-function validateAndFixLine(line: string): string {
-  if (!line.trim()) return line
-  
-  // ❌ DETECTAR LINHAS INCOMPLETAS (terminam com artigo/preposição)
-  const incompletePatterns = [
-    / eu me$/i, / o meu$/i, / a minha$/i, / em meu$/i, / no meu$/i, 
-    / com meu$/i, / para meu$/i, / que me$/i, / se me$/i, / teu$/i,
-    / meu$/i, / sua$/i, / nossa$/i, / em$/i, / no$/i, / na$/i
-  ]
-  
-  for (const pattern of incompletePatterns) {
-    if (pattern.test(line)) {
-      // ✅ CORREÇÕES PARA LINHAS INCOMPLETAS
-      const fixes: Record<string, string> = {
-        "eu me": "eu me encontro",
-        "o meu": "o meu coração",
-        "a minha": "a minha vida", 
-        "em meu": "em meu peito",
-        "no meu": "no meu ser",
-        "com meu": "com meu amor",
-        "teu": "teu amor",
-        "meu": "meu coração",
-        "em": "em paz",
-        "no": "no ar",
-        "na": "na luz"
-      }
-      
-      for (const [problem, fix] of Object.entries(fixes)) {
-        if (line.toLowerCase().endsWith(problem)) {
-          return line + " " + fix.split(' ').pop()
-        }
-      }
-      
-      // Fallback genérico
-      return line + " viver"
-    }
-  }
-  
-  return line
-}
-
-// ✅ SISTEMA DE CORREÇÃO DE RIMAS POBRES
-function improvePoorRhymes(line1: string, line2: string): { line1: string; line2: string; improved: boolean } {
-  const word1 = getLastWord(line1)
-  const word2 = getLastWord(line2)
-  
-  if (!word1 || !word2) return { line1, line2, improved: false }
-  
-  const currentRhyme = analyzeSimpleRhyme(word1, word2)
-  
-  // ✅ SÓ CORRIGIR SE RIMA MUITO FRACA
-  if (currentRhyme.score >= 60) {
-    return { line1, line2, improved: false }
-  }
-  
-  // ✅ BANCO DE CORREÇÕES PARA RIMAS POBRES
-  const rhymeFixes: Record<string, string[]> = {
-    "acende": ["acende", "ascende", "pretende", "contende"],
-    "sonhar": ["sonhar", "voar", "amar", "cantar", "encontrar"],
-    "vê": ["vê", "pé", "fé", "você", "café", "bebê"],
-    "amar": ["amar", "sonhar", "voar", "cantar", "encontrar"],
-    "perco": ["perco", "merco", "aperto", "converto"],
-    "me": ["me", "fé", "pé", "você", "café"],
-    "meu": ["meu", "céu", "véu", "chapéu", "troféu"],
-    "destino": ["destino", "caminho", "carinho", "vizinho", "menino"],
-    "chão": ["chão", "mão", "coração", "ilusão", "canção"],
-    "calor": ["calor", "amor", "dor", "flor", "sabor", "valor"],
-    "paixão": ["paixão", "coração", "ilusão", "canção", "atenção"],
-    "amor": ["amor", "dor", "flor", "calor", "sabor", "valor"],
-    "estar": ["estar", "amar", "sonhar", "voar", "cantar"],
-    "lar": ["lar", "amar", "sonhar", "voar", "cantar"],
-    "brilhar": ["brilhar", "cantar", "amar", "sonhar", "voar"],
-    "eternizar": ["eternizar", "realizar", "alcançar", "encontrar"],
-    "encontro": ["encontro", "assunto", "ponto", "junto", "monto"],
-    "abrigo": ["abrigo", "amigo", "perigo", "testemunho"],
-    "sonho": ["sonho", "empenho", "lenho", "desenho", "sonho"],
-    "comigo": ["comigo", "contigo", "testemunho", "carinho"]
-  }
-  
-  // ✅ TENTAR CORRIGIR word2 PRIMEIRO
-  const fixesForWord2 = rhymeFixes[word2.toLowerCase()]
-  if (fixesForWord2) {
-    for (const fix of fixesForWord2) {
-      if (fix !== word2) {
-        const newLine2 = line2.replace(new RegExp(`${word2}$`, "i"), fix)
-        const newRhyme = analyzeSimpleRhyme(word1, fix)
-        if (newRhyme.score > currentRhyme.score) {
-          return { 
-            line1, 
-            line2: newLine2, 
-            improved: true 
-          }
-        }
-      }
-    }
-  }
-  
-  // ✅ TENTAR CORRIGIR word1 SE PRECISAR
-  const fixesForWord1 = rhymeFixes[word1.toLowerCase()]
-  if (fixesForWord1) {
-    for (const fix of fixesForWord1) {
-      if (fix !== word1) {
-        const newLine1 = line1.replace(new RegExp(`${word1}$`, "i"), fix)
-        const newRhyme = analyzeSimpleRhyme(fix, word2)
-        if (newRhyme.score > currentRhyme.score) {
-          return { 
-            line1: newLine1, 
-            line2, 
-            improved: true 
-          }
-        }
-      }
-    }
-  }
-  
-  return { line1, line2, improved: false }
-}
-
-// ✅ PROCESSAMENTO AGGRESSIVO DA LETRA COMPLETA
-function applyAggressiveFixes(lyrics: string): string {
-  const lines = lyrics.split('\n')
-  const fixedLines: string[] = []
-  
-  for (let i = 0; i < lines.length; i++) {
-    let currentLine = lines[i]
-    
-    // ✅ CORRIGIR LINHA ATUAL
-    currentLine = validateAndFixLine(currentLine)
-    
-    // ✅ CORRIGIR RIMAS EM PARES
-    if (i < lines.length - 1 && 
-        !lines[i].startsWith('[') && !lines[i + 1].startsWith('[') &&
-        !lines[i].startsWith('(') && !lines[i + 1].startsWith('(') &&
-        lines[i].trim() && lines[i + 1].trim()) {
-      
-      const nextLine = lines[i + 1]
-      const rhymeFix = improvePoorRhymes(currentLine, nextLine)
-      
-      if (rhymeFix.improved) {
-        fixedLines.push(rhymeFix.line1)
-        fixedLines.push(rhymeFix.line2)
-        i++ // Pular próxima linha já que foi corrigida
-        continue
-      }
-    }
-    
-    fixedLines.push(currentLine)
-  }
-  
-  return fixedLines.join('\n')
-}
-
-// ✅ ATUALIZAR A MONTAGEM DA MÚSICA PARA USAR CORREÇÕES AGGRESSIVAS
-async function assembleRewrittenSong(
-  blocks: Record<string, MusicBlock[]>,
+// 🎯 ESTRATÉGIA CORRETA: PRIMEIRO VERSOS COMPLETOS, DEPOIS RIMAS
+async function rewriteSectionWithQuality(
+  originalSection: string,
+  blockType: MusicBlock["type"],
   genre: string,
   theme: string
-): Promise<{ lyrics: string; rhymeImprovements: string[]; rhymeScore: number }> {
+): Promise<MusicBlock[]> {
   
-  const structure = [
-    { type: "INTRO", label: "Intro" },
-    { type: "VERSE", label: "Verso 1" },
-    { type: "CHORUS", label: "Refrão" },
-    { type: "VERSE", label: "Verso 2" },
-    { type: "CHORUS", label: "Refrão" },
-    { type: "BRIDGE", label: "Ponte" },
-    { type: "CHORUS", label: "Refrão Final" },
-    { type: "OUTRO", label: "Outro" },
-  ]
+  const rewritePrompts = {
+    INTRO: `🎵 REESCREVA esta INTRO no estilo ${genre}:
 
-  let lyrics = ""
+ORIGINAL:
+"${originalSection}"
 
-  for (const section of structure) {
-    const availableBlocks = blocks[section.type] || []
-    if (availableBlocks.length > 0) {
-      const bestBlock = availableBlocks.reduce((best, current) => 
-        (current.rhymeScore || 0) > (best.rhymeScore || 0) ? current : best
-      )
-      lyrics += `[${section.label}]\n${bestBlock.content}\n\n`
-    } else {
-      const fallback = generateQualityFallback(section.type as any, "")
-      lyrics += `[${section.label}]\n${fallback.content}\n\n`
-    }
+Tema: ${theme}
+
+📝 **PRIORIDADE MÁXIMA:**
+1. ✅ 4 linhas COMPLETAS e COERENTES
+2. ✅ Máximo 12 sílabas por verso (NUNCA cortar versos)
+3. ✅ Mantenha a essência emocional
+4. 🔄 Rimas são SECUNDÁRIAS - não corte versos por causa delas
+
+EXEMPLO DE VERSO COMPLETO:
+"Quando a noite chega e a lua brilha no céu"
+"Teu sorriso ilumina meu caminho solitário"
+
+INTRO RESSRITA (4 linhas COMPLETAS):`,
+
+    VERSE: `🎵 REESCREVA este VERSO no estilo ${genre}:
+
+ORIGINAL:
+"${originalSection}"
+
+Tema: ${theme}
+
+📝 **PRIORIDADE MÁXIMA:**
+1. ✅ 4 linhas COMPLETAS e COERENTES  
+2. ✅ Máximo 12 sílabas por verso (NUNCA cortar)
+3. ✅ Desenvolva a narrativa com começo, meio e fim
+4. 🔄 Rimas são BÔNUS, não obrigação
+
+EXEMPLO DE VERSO COMPLETO:
+"Nos teus olhos vejo um mundo de esperança"
+"Onde posso ser eu mesmo sem mudança"
+
+VERSO RESSRITO (4 linhas COMPLETAS):`,
+
+    CHORUS: `🎵 REESCREVA este REFRÃO no estilo ${genre}:
+
+ORIGINAL:
+"${originalSection}"
+
+Tema: ${theme}
+
+📝 **PRIORIDADE MÁXIMA:**
+1. ✅ 4 linhas COMPLETAS e IMPACTANTES
+2. ✅ Máximo 12 sílabas por verso
+3. ✅ Gancho emocional forte
+4. 🔄 Rimas são importantes mas NÃO cortar versos
+
+EXEMPLO DE REFRÃO COMPLETO:
+"Teu amor é minha força, minha direção"
+"Em cada passo, em cada decisão"
+
+REFRÃO RESSRITO (4 linhas COMPLETAS):`,
+
+    BRIDGE: `🎵 REESCREVA esta PONTE no estilo ${genre}:
+
+ORIGINAL:
+"${originalSection}"
+
+Tema: ${theme}
+
+📝 **PRIORIDADE MÁXIMA:**
+1. ✅ 4 linhas COMPLETAS com mudança de perspectiva
+2. ✅ Máximo 12 sílabas por verso
+3. ✅ Profundidade emocional
+4. 🔄 Rimas são opcionais
+
+PONTE RESSRITA (4 linhas COMPLETAS):`,
+
+    OUTRO: `🎵 REESCREVA este OUTRO no estilo ${genre}:
+
+ORIGINAL:
+"${originalSection}"
+
+Tema: ${theme}
+
+📝 **PRIORIDADE MÁXIMA:**
+1. ✅ 2-4 linhas COMPLETAS de fechamento
+2. ✅ Máximo 9 sílabas por verso
+3. ✅ Sensação de conclusão satisfatória
+4. 🔄 Rimas suaves são bônus
+
+OUTRO RESSRITO (linhas COMPLETAS de fechamento):`
   }
 
   try {
-    // ✅ PRIMEIRO: Balanceamento de sílabas
-    let processedLyrics = await UnifiedSyllableManager.processSongWithBalance(lyrics.trim())
+    const prompt = rewritePrompts[blockType as keyof typeof rewritePrompts]
     
-    // ✅ SEGUNDO: CORREÇÕES AGGRESSIVAS DE LINHAS INCOMPLETAS E RIMAS POBRES
-    processedLyrics = applyAggressiveFixes(processedLyrics)
+    const { text } = await generateText({
+      model: openai("gpt-4o-mini"),
+      prompt,
+      temperature: 0.7,
+    })
+
+    return processRewrittenBlock(text || "", blockType, originalSection, genre)
+  } catch (error) {
+    console.error(`[Rewrite] Erro em ${blockType}:`, error)
+    return [generateQualityFallback(blockType, theme)]
+  }
+}
+
+// ✅ VALIDAÇÃO RIGOROSA DE VERSOS COMPLETOS
+function validateCompleteLines(content: string): { valid: boolean; errors: string[] } {
+  const lines = content.split("\n").filter(line => line.trim())
+  const errors: string[] = []
+  
+  // ❌ DETECTAR LINHAS INCOMPLETAS (terminam com palavras soltas)
+  const incompleteIndicators = [
+    /\b(eu|me|te|se|nos|vos)\s*$/i,
+    /\b(o|a|os|as|um|uma)\s*$/i, 
+    /\b(em|no|na|de|da|do|por|pra)\s*$/i,
+    /\b(que|se|mas|porém)\s*$/i,
+    /\b(meu|minha|teu|tua|seu|sua)\s*$/i
+  ]
+  
+  lines.forEach((line, index) => {
+    const trimmedLine = line.trim()
     
-    // ✅ TERCEIRO: Melhoria de rimas
-    const rhymeEnhancement = await enhanceLyricsRhymes(processedLyrics, genre)
-    
-    // ✅ QUARTO: APLICAR CORREÇÕES NOVAMENTE PARA GARANTIR
-    let finalLyrics = applyAggressiveFixes(rhymeEnhancement.enhancedLyrics)
-    
-    // Análise final
-    const finalAnalysis = analyzeLyricsRhymeScheme(finalLyrics)
-    
-    return {
-      lyrics: finalLyrics,
-      rhymeImprovements: [...rhymeEnhancement.improvements, "Correções agressivas aplicadas"],
-      rhymeScore: finalAnalysis.score
+    // Verificar se linha termina com indicador de incompleto
+    for (const pattern of incompleteIndicators) {
+      if (pattern.test(trimmedLine)) {
+        errors.push(`Linha ${index + 1} INCOMPLETA: "${trimmedLine}"`)
+        break
+      }
     }
     
-  } catch (error) {
-    console.error("[RewriteAssemble] Erro no processamento:", error)
-    // ✅ APLICAR CORREÇÕES MESMO NO FALLBACK
-    const correctedLyrics = applyAggressiveFixes(lyrics.trim())
-    const analysis = analyzeLyricsRhymeScheme(correctedLyrics)
+    // Verificar se linha é muito curta semanticamente
+    const words = trimmedLine.split(/\s+/)
+    if (words.length <= 3 && trimmedLine.length < 15) {
+      errors.push(`Linha ${index + 1} MUITO CURTA: "${trimmedLine}"`)
+    }
+  })
+  
+  return {
+    valid: errors.length === 0,
+    errors
+  }
+}
+
+// ✅ PROCESSAR BLOCO COM VALIDAÇÃO DE COMPLETUDE
+function processRewrittenBlock(
+  text: string, 
+  blockType: MusicBlock["type"], 
+  originalSection: string,
+  genre: string
+): MusicBlock[] {
+  
+  const cleanText = text
+    .replace(/^(🎵|📝|PRIORIDADE|ORIGINAL|Tema|EXEMPLO).*?[\n:]/gmi, '')
+    .replace(/.*RESSRITA.*?[\n:]/gmi, '')
+    .replace(/\*\*.*?\*\*/g, '')
+    .trim()
+
+  const lines = cleanText.split("\n")
+    .map(line => line.trim())
+    .filter(line => {
+      // ✅ FILTRAGEM MENOS RESTRITIVA - aceitar linhas mais longas
+      return line && line.length >= 4 // Reduzido mínimo para 4 caracteres
+    })
+    .slice(0, blockType === "OUTRO" ? 4 : 4)
+
+  // ✅ VALIDAR SE AS LINHAS ESTÃO COMPLETAS
+  const completenessCheck = validateCompleteLines(lines.join("\n"))
+  
+  if (lines.length >= (blockType === "OUTRO" ? 2 : 3) && completenessCheck.valid) {
+    const content = lines.join("\n")
+    const rhymeAnalysis = analyzeLyricsRhymeScheme(content)
     
-    return {
-      lyrics: correctedLyrics,
-      rhymeImprovements: ["Correções básicas aplicadas"],
-      rhymeScore: analysis.score
+    // ✅ SCORE ALTO PARA VERSOS COMPLETOS (prioridade)
+    let score = 80 // Base alta para versos completos
+    
+    // ✅ BÔNUS POR RIMAS (secundário)
+    if (rhymeAnalysis.score > 70) score += 10
+    else if (rhymeAnalysis.score > 50) score += 5
+    
+    return [{
+      type: blockType,
+      content: content,
+      score: Math.min(score, 100),
+      rhymeScore: rhymeAnalysis.score,
+    }]
+  } else {
+    console.log(`[Rewrite] ❌ Bloco ${blockType} rejeitado - linhas incompletas:`, completenessCheck.errors)
+    // ✅ FALLBACK QUE GARANTE VERSOS COMPLETOS
+    return [generateQualityFallback(blockType, "")]
+  }
+}
+
+// ✅ FALLBACKS COM VERSOS COMPLETOS GARANTIDOS
+function generateQualityFallback(blockType: MusicBlock["type"], theme: string): MusicBlock {
+  const qualityFallbacks = {
+    INTRO: {
+      content: `Quando a noite chega e a lua aparece no céu\nTeu sorriso ilumina todo o meu caminho\nNa batida do coração a paixão cresce\nNessa dança da vida, nosso amor fica miudo`,
+      score: 85,
+      rhymeScore: 70
+    },
+    VERSE: {
+      content: `No brilho dos teus olhos eu me reconheço\nNavegando em cada momento do nosso enredo\nTeu perfume é como uma brisa de verão\nQue me faz sentir completo em qualquer estação`,
+      score: 85, 
+      rhymeScore: 75
+    },
+    CHORUS: {
+      content: `Teu sorriso é o chão onde eu posso pisar\nTeu abraço é o calor que me faz sonhar\nNo ritmo dessa paixão que não tem fim\nEu danço contigo e sinto que sou feliz`,
+      score: 90,
+      rhymeScore: 85
+    },
+    BRIDGE: {
+      content: `Nos teus braços eu encontro meu lugar\nTeu sorriso é o lar que vou habitando\nEntre as estrelas que vejo a brilhar\nNosso amor vai se eternizando no tempo`,
+      score: 85,
+      rhymeScore: 80
+    },
+    OUTRO: {
+      content: `Nos teus olhos eu me encontro verdadeiro\nTeu amor é o abrigo do meu caminho\nCom você ao meu lado tudo fica inteiro\nE a vida se transforma em puro carinho`,
+      score: 85,
+      rhymeScore: 80
     }
   }
+
+  const fallback = qualityFallbacks[blockType as keyof typeof qualityFallbacks] || qualityFallbacks.VERSE
+  return { type: blockType, ...fallback }
 }
