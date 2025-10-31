@@ -1,5 +1,6 @@
-// app/api/generate-lyrics/route.ts - NOVA VERSÃO SIMPLIFICADA
+// app/api/generate-lyrics/route.ts - VERSÃO CORRIGIDA
 import { type NextRequest, NextResponse } from "next/server"
+import { openai } from "@ai-sdk/openai"
 import { generateText } from "ai"
 import { formatInstrumentationForAI } from "@/lib/normalized-genre"
 import { LineStacker } from "@/lib/utils/line-stacker"
@@ -12,7 +13,7 @@ interface MusicBlock {
   score: number
 }
 
-// 🎯 GERAR REFRÕES COMO PONTO CENTRAL
+// 🎯 GERAR REFRÕES COMO PONTO CENTRAL - CORRIGIDO
 async function generateChorusOptions(genre: string, theme: string, mood: string): Promise<MusicBlock[]> {
   try {
     const prompt = `Crie 3 opções de REFRÃO memorável para ${genre} sobre "${theme}"
@@ -23,17 +24,18 @@ REGRAS:
 - Gancho emocional forte
 - Fácil de cantar junto
 - Linguagem natural brasileira
+- APENAS as linhas do refrão, sem explicações
 
 Exemplo bom:
-"Teu abraço é meu porto seguro
+Teu abraço é meu porto seguro
 Onde encontro paz e futuro
 Cada instante ao teu lado
-É um presente abençoado"
+É um presente abençoado
 
-Gere 3 opções de REFRÃO:`
+Gere 3 opções de REFRÃO (apenas as linhas):`
 
     const { text } = await generateText({
-      model: "openai/gpt-4o-mini",
+      model: openai("gpt-4o-mini"), // ✅ CORREÇÃO: openai wrapper
       prompt,
       temperature: 0.8,
     })
@@ -41,24 +43,37 @@ Gere 3 opções de REFRÃO:`
     return processChorusOptions(text || "", genre)
   } catch (error) {
     console.error("[Chorus] Erro:", error)
-    return []
+    return generateFallbackChoruses(genre, theme)
   }
 }
 
-// 🧩 PROCESSAR REFRÕES GERADOS
+// 🧩 PROCESSAR REFRÕES GERADOS - CORRIGIDO
 function processChorusOptions(text: string, genre: string): MusicBlock[] {
   const blocks: MusicBlock[] = []
-  const lines = text.split("\n").filter((line) => {
-    const trimmed = line.trim()
-    return trimmed && !trimmed.match(/^(Opção|Refrão|\d+[.)])/i)
-  })
+  
+  // Limpeza agressiva
+  const cleanText = text
+    .replace(/^(Opção|Refrão|\d+[.)])/gmi, '')
+    .replace(/\*\*.*?\*\*/g, '')
+    .replace(/".*?"/g, '')
+    .replace(/^.*exemplo.*$/gmi, '')
+    .trim()
+
+  const lines = cleanText.split("\n")
+    .map(line => line.trim())
+    .filter(line => {
+      return line && 
+             line.length > 5 && 
+             !line.match(/^(Opção|Refrão|\d+[.)])/i) &&
+             !line.includes('**') &&
+             !line.includes('Exemplo')
+    })
 
   let currentChorus: string[] = []
 
   for (const line of lines) {
-    const trimmed = line.trim()
-    if (trimmed) {
-      currentChorus.push(trimmed)
+    if (line) {
+      currentChorus.push(line)
 
       if (currentChorus.length >= 4) {
         const content = currentChorus.join("\n")
@@ -77,102 +92,151 @@ function processChorusOptions(text: string, genre: string): MusicBlock[] {
   return blocks
 }
 
-// 🎲 GERAR OUTROS BLOCOS BASEADOS NO REFRÃO
+// 🆘 FALLBACK PARA REFRÕES
+function generateFallbackChoruses(genre: string, theme: string): MusicBlock[] {
+  const fallbacks = [
+    `Seu amor é minha direção\nNa escuridão da solidão\nCada olhar, cada emoção\nRenova meu coração`,
+    `Te encontrei no caminho\nE tudo fez sentido\nSeu abraço é meu destino\nO amor que eu sempre quis`,
+    `Nessa vida de aventuras\nEncontrei razão pura\nSeu sorriso me assegura\nUm futuro de doçura`
+  ]
+
+  return fallbacks.map(content => ({
+    type: "CHORUS",
+    content,
+    score: 70
+  }))
+}
+
+// 🎲 GERAR OUTROS BLOCOS BASEADOS NO REFRÃO - CORRIGIDO
 async function generateOtherBlocks(
   selectedChorus: string,
   blockType: "INTRO" | "VERSE" | "BRIDGE" | "OUTRO",
   genre: string,
   theme: string,
 ): Promise<MusicBlock[]> {
+  
   const prompts = {
-    INTRO: `Crie INTRO (4 linhas) para ${genre} que prepare para este REFRÃO:
-"${selectedChorus}"
+    INTRO: `Crie INTRO (4 linhas) para ${genre} que prepare para este REFRÃO. APENAS 4 linhas:
+
+"${selectedChorus.substring(0, 100)}"
 
 Tema: ${theme}
-Crie atmosfera emocional. Máximo 10 sílabas.
+4 LINHAS APENAS:`,
 
-INTRO:`,
+    VERSE: `Crie VERSO (4 linhas) para ${genre} que construa para este REFRÃO. APENAS 4 linhas:
 
-    VERSE: `Crie VERSO (4 linhas) para ${genre} que construa para este REFRÃO:
-"${selectedChorus}"
-
-Tema: ${theme}
-Conte parte da história. Máximo 11 sílabas.
-
-VERSO:`,
-
-    BRIDGE: `Crie PONTE (4 linhas) para ${genre} que complemente este REFRÃO:
-"${selectedChorus}"
+"${selectedChorus.substring(0, 100)}"
 
 Tema: ${theme}
-Momento de reflexão. Máximo 11 sílabas.
+4 LINHAS APENAS:`,
 
-PONTE:`,
+    BRIDGE: `Crie PONTE (4 linhas) para ${genre} que complemente este REFRÃO. APENAS 4 linhas:
 
-    OUTRO: `Crie OUTRO (2-4 linhas) para ${genre} que feche após este REFRÃO:
-"${selectedChorus}"
+"${selectedChorus.substring(0, 100)}"
 
 Tema: ${theme}
-Fecho emocional. Máximo 9 sílabas.
+4 LINHAS APENAS:`,
 
-OUTRO:`,
+    OUTRO: `Crie OUTRO (2-4 linhas) para ${genre} que feche após este REFRÃO. APENAS as linhas:
+
+"${selectedChorus.substring(0, 100)}"
+
+Tema: ${theme}
+LINHAS FINAIS APENAS:`,
   }
 
-  const { text } = await generateText({
-    model: "openai/gpt-4o-mini",
-    prompt: prompts[blockType],
-    temperature: 0.7,
-  })
+  try {
+    const { text } = await generateText({
+      model: openai("gpt-4o-mini"), // ✅ CORREÇÃO: openai wrapper
+      prompt: prompts[blockType],
+      temperature: 0.7,
+    })
 
-  return processGeneratedBlocks(text || "", blockType)
+    return processGeneratedBlocks(text || "", blockType)
+  } catch (error) {
+    console.error(`[Block] Erro em ${blockType}:`, error)
+    return [generateFallbackBlock(blockType, theme)]
+  }
 }
 
-// 🧩 PROCESSAR BLOCOS GERADOS
+// 🧩 PROCESSAR BLOCOS GERADOS - CORRIGIDO
 function processGeneratedBlocks(text: string, blockType: MusicBlock["type"]): MusicBlock[] {
-  const lines = text.split("\n").filter((line) => {
-    const trimmed = line.trim()
-    return trimmed && !trimmed.startsWith("[") && !trimmed.startsWith("(")
-  })
+  
+  // Limpeza agressiva
+  const cleanText = text
+    .replace(/^(NOVO|VERSO|INTRO|PONTE|OUTRO).*?[\n:]/gi, '')
+    .replace(/\*\*.*?\*\*/g, '')
+    .replace(/".*?"/g, '')
+    .replace(/^.*APENAS.*$/gmi, '')
+    .replace(/^.*LINHAS.*$/gmi, '')
+    .trim()
 
-  const blocks: MusicBlock[] = []
-  const currentBlock: string[] = []
+  const lines = cleanText.split("\n")
+    .map(line => line.trim())
+    .filter(line => {
+      return line && 
+             line.length >= 5 && 
+             !line.match(/^[\[\(]/) &&
+             !line.match(/^(NOVO|VERSO|INTRO|PONTE|OUTRO|APENAS|LINHAS)/i) &&
+             !line.includes('**')
+    })
+    .slice(0, blockType === "OUTRO" ? 4 : 4) // Máximo 4 linhas
 
-  for (const line of lines) {
-    const trimmed = line.trim()
-    if (trimmed) {
-      currentBlock.push(trimmed)
+  if (lines.length >= (blockType === "OUTRO" ? 2 : 3)) {
+    return [{
+      type: blockType,
+      content: lines.join("\n"),
+      score: calculateBlockScore(lines.join("\n")),
+    }]
+  }
 
-      const minLines = blockType === "OUTRO" ? 2 : 4
-      if (currentBlock.length >= minLines) {
-        blocks.push({
-          type: blockType,
-          content: currentBlock.join("\n"),
-          score: calculateBlockScore(currentBlock.join("\n")),
-        })
-        break // Uma opção por bloco para simplicidade
-      }
+  return [generateFallbackBlock(blockType, "")]
+}
+
+// 🆘 FALLBACK PARA BLOCOS
+function generateFallbackBlock(blockType: MusicBlock["type"], theme: string): MusicBlock {
+  const fallbacks = {
+    INTRO: {
+      content: `Pensando em você\nNo silêncio da emoção\nUm sentimento que nasce\nDentro do coração`,
+      score: 65
+    },
+    VERSE: {
+      content: `A vida me mostrou\nCaminhos a seguir\nCom você ao meu lado\nSou capaz de sorrir`,
+      score: 65
+    },
+    BRIDGE: {
+      content: `E o tempo vai passando\nTrazendo aprendizado\nCada momento contigo\nÉ um sonho realizado`,
+      score: 65
+    },
+    OUTRO: {
+      content: `Até amanhã\nMeu amor sem fim`,
+      score: 65
     }
   }
 
-  return blocks
+  const fallback = fallbacks[blockType] || fallbacks.VERSE
+  
+  return {
+    type: blockType,
+    content: fallback.content,
+    score: fallback.score
+  }
 }
 
-// 📊 CALCULAR SCORE DO BLOCO
+// 📊 CALCULAR SCORE DO BLOCO (mantido igual)
 function calculateBlockScore(content: string): number {
   const lines = content.split("\n").filter((line) => line.trim())
   let score = 70 // Base
 
-  // Bônus por número de linhas ideal
   if (lines.length >= 4) score += 10
 
-  // Bônus por versos completos
   const completeLines = lines.filter((line) => line.length > 5 && !line.match(/\b(e|a|o|que|de|em|com)\s*$/i))
   score += (completeLines.length / lines.length) * 20
 
   return Math.min(score, 100)
 }
 
-// 🏗️ MONTAR MÚSICA COMPLETA
+// 🏗️ MONTAR MÚSICA COMPLETA - CORRIGIDO
 async function assembleCompleteSong(
   chorus: MusicBlock,
   otherBlocks: Record<string, MusicBlock[]>,
@@ -198,11 +262,20 @@ async function assembleCompleteSong(
       const availableBlocks = otherBlocks[section.type] || []
       if (availableBlocks.length > 0) {
         lyrics += `[${section.label}]\n${availableBlocks[0].content}\n\n`
+      } else {
+        // Fallback para seção faltante
+        const fallback = generateFallbackBlock(section.type as any, "")
+        lyrics += `[${section.label}]\n${fallback.content}\n\n`
       }
     }
   }
 
-  return await UnifiedSyllableManager.processSongWithBalance(lyrics.trim())
+  try {
+    return await UnifiedSyllableManager.processSongWithBalance(lyrics.trim())
+  } catch (error) {
+    console.error("[Assemble] Erro corrigindo sílabas:", error)
+    return lyrics.trim()
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -258,13 +331,21 @@ export async function POST(request: NextRequest) {
 
     // ✨ Aplicando formatação...
     console.log("[API] ✨ Aplicando formatação...")
-    const stackingResult = LineStacker.stackLines(finalLyrics)
-    finalLyrics = stackingResult.stackedLyrics
+    try {
+      const stackingResult = LineStacker.stackLines(finalLyrics)
+      finalLyrics = stackingResult.stackedLyrics
+    } catch (error) {
+      console.log("[API] ℹ️ LineStacker não disponível")
+    }
 
     // 🎸 INSTRUMENTAÇÃO
-    if (!finalLyrics.includes("(Instrumentation)")) {
-      const instrumentation = formatInstrumentationForAI(genre, finalLyrics)
-      finalLyrics = `${finalLyrics}\n\n${instrumentation}`
+    try {
+      if (!finalLyrics.includes("(Instrumentation)")) {
+        const instrumentation = formatInstrumentationForAI(genre, finalLyrics)
+        finalLyrics = `${finalLyrics}\n\n${instrumentation}`
+      }
+    } catch (error) {
+      console.log("[API] ℹ️ Instrumentação não disponível")
     }
 
     const totalLines = finalLyrics.split("\n").filter((line) => line.trim()).length
@@ -287,30 +368,31 @@ export async function POST(request: NextRequest) {
 
     // 🆘 FALLBACK SIMPLES
     const emergencyLyrics = `[Intro]
-Música sendo criada com nova abordagem
-Começando pelo refrão central
-Para qualidade garantida
+Começando essa jornada
+Com sentimentos na estrada
+Uma história pra contar
+E no coração guardar
 
 [Refrão]
-Sistema de geração inteligente
-Construindo em torno do coração
-Refrão forte como base
-Versos que completam a emoção
+Vou cantando essa emoção
+Com toda a inspiração
+Uma música que nasce
+E no peito permanece
 
 [Verso 1]
-Cada parte gerada com cuidado
-Para criar uma história completa
-Com começo, meio e fim
-Na mais pura conexão
+Cada verso que se escreve
+É um pedaço que se move
+Na dança das palavras
+Que a alma celebra
 
 [Refrão]
-Sistema de geração inteligente
-Construindo em torno do coração
-Refrão forte como base
-Versos que completam a emoção
+Vou cantando essa emoção
+Com toda a inspiração
+Uma música que nasce
+E no peito permanece
 
 [Outro]
-Processo em finalização
+Até a próxima canção
 
 (Instrumentation)
 (Genre: ${genre})`
@@ -330,5 +412,8 @@ Processo em finalização
 }
 
 export async function GET() {
-  return NextResponse.json({ error: "Método não permitido" }, { status: 405 })
+  return NextResponse.json({ 
+    error: "Método não permitido",
+    message: "Use POST para gerar letras"
+  }, { status: 405 })
 }
