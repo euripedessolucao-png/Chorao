@@ -1,4 +1,4 @@
-// app/api/generate-lyrics/route.ts - VERSÃO COM QUALIDADE UNIFICADA
+// app/api/generate-chorus/route.ts - VERSÃO CORRIGIDA
 import { type NextRequest, NextResponse } from "next/server"
 import { openai } from "@ai-sdk/openai"
 import { generateText } from "ai"
@@ -21,6 +21,7 @@ async function generateBlockWithQuality(
   context?: string
 ): Promise<MusicBlock[]> {
   
+  // ✅ CORREÇÃO: Adicionado PRE_CHORUS
   const qualityPrompts = {
     INTRO: `🎵 Crie uma INTRO PROFISSIONAL para ${genre} sobre "${theme}"
 
@@ -47,6 +48,19 @@ INTRO DE ALTA QUALIDADE (apenas 4 linhas):`,
 ${context ? `CONTEXTO: ${context}` : ''}
 
 VERSO DE ALTA QUALIDADE (apenas 4 linhas):`,
+
+    PRE_CHORUS: `🎵 Crie um PRÉ-REFRÃO PROFISSIONAL para ${genre} sobre "${theme}"
+
+📝 REQUISITOS DE QUALIDADE:
+- 4 linhas EXATAS
+- Máximo 11 sílabas por verso
+- CRIE tensão emocional
+- PREPARE para o clímax do refrão
+- Transição natural e impactante
+
+${context ? `CONTEXTO: ${context}` : ''}
+
+PRÉ-REFRÃO DE ALTA QUALIDADE (apenas 4 linhas):`,
 
     CHORUS: `🎵 Crie um REFRÃO PROFISSIONAL para ${genre} sobre "${theme}"
 
@@ -89,7 +103,8 @@ OUTRO DE ALTA QUALIDADE (apenas as linhas finais):`
   }
 
   try {
-    const prompt = qualityPrompts[blockType]
+    // ✅ CORREÇÃO: Type-safe access
+    const prompt = qualityPrompts[blockType as keyof typeof qualityPrompts]
     
     const { text } = await generateText({
       model: openai("gpt-4o-mini"),
@@ -176,6 +191,10 @@ function generateQualityFallback(blockType: MusicBlock["type"], theme: string): 
       content: `Cada passo que eu dei\nUm aprendizado que ficou\nNa estrada da emoção\nO coração se transformou`,
       score: 80
     },
+    PRE_CHORUS: {
+      content: `E agora tudo muda\nO coração se influencia\nUm novo sentimento\nToma conta do momento`,
+      score: 80
+    },
     CHORUS: {
       content: `Seu amor é minha estrada\nMinha luz, minha jornada\nNesse mundo de verdade\nEncontro a liberdade`,
       score: 85
@@ -187,20 +206,17 @@ function generateQualityFallback(blockType: MusicBlock["type"], theme: string): 
     OUTRO: {
       content: `Vou levando na lembrança\nEssa doce esperança`,
       score: 80
-    },
-    PRE_CHORUS: {
-      content: `E agora tudo muda\nO coração se influencia\nUm novo sentimento\nToma conta do momento`,
-      score: 80
     }
   }
 
+  // ✅ CORREÇÃO: Type-safe access com switch
   switch (blockType) {
     case "INTRO": return { type: blockType, ...qualityFallbacks.INTRO }
     case "VERSE": return { type: blockType, ...qualityFallbacks.VERSE }
+    case "PRE_CHORUS": return { type: blockType, ...qualityFallbacks.PRE_CHORUS }
     case "CHORUS": return { type: blockType, ...qualityFallbacks.CHORUS }
     case "BRIDGE": return { type: blockType, ...qualityFallbacks.BRIDGE }
     case "OUTRO": return { type: blockType, ...qualityFallbacks.OUTRO }
-    case "PRE_CHORUS": return { type: blockType, ...qualityFallbacks.PRE_CHORUS }
     default: return { type: "VERSE", ...qualityFallbacks.VERSE }
   }
 }
