@@ -1,4 +1,4 @@
-// app/api/rewrite-lyrics/route.ts - VERSÃO CORRIGIDA
+// app/api/rewrite-lyrics/route.ts - VERSÃO COM QUALIDADE UNIFICADA
 import { type NextRequest, NextResponse } from "next/server"
 import { openai } from "@ai-sdk/openai"
 import { generateText } from "ai"
@@ -9,230 +9,271 @@ import { parseLyricSections } from "@/lib/validation/parser"
 
 // 🎵 TIPOS DE BLOCO MUSICAL
 interface MusicBlock {
-  type: "VERSE" | "CHORUS" | "BRIDGE" | "OUTRO"
+  type: "INTRO" | "VERSE" | "PRE_CHORUS" | "CHORUS" | "BRIDGE" | "OUTRO"
   content: string
-  lines: string[]
   score: number
 }
 
-// 🎯 GERAR BLOCO - VERSÃO CORRIGIDA
-async function generateBlockVariations(
+// 🎯 RESSECRITURA COM QUALIDADE UNIFICADA
+async function rewriteSectionWithQuality(
+  originalSection: string,
   blockType: MusicBlock["type"],
   genre: string,
-  originalSection: string,
-  sectionIndex: number = 1
+  theme: string
 ): Promise<MusicBlock[]> {
   
-  const lineTargets = {
-    VERSE: 4,
-    CHORUS: 4,
-    BRIDGE: 4,
-    OUTRO: 2
-  }
+  const rewritePrompts = {
+    INTRO: `🎵 REESCREVA esta INTRO no estilo ${genre} com ALTA QUALIDADE:
 
-  // PROMPTS COM CONTEXTUALIZAÇÃO POR POSIÇÃO
-  const prompts = {
-    VERSE: `Escreva APENAS 4 linhas para ${sectionIndex === 1 ? 'PRIMEIRO VERSO' : 'SEGUNDO VERSO'} ${genre}. NADA mais:
+ORIGINAL:
+"${originalSection}"
 
-Original: "${originalSection.substring(0, 100)}"
+Tema: ${theme}
 
-4 LINHAS DIFERENTES do verso anterior:`,
+📝 REQUISITOS DE QUALIDADE:
+- 4 linhas EXATAS
+- Máximo 11 sílabas por verso
+- Mantenha a ESSÊNCIA emocional
+- Melhore a fluência poética
+- Linguagem natural e impactante
 
-    CHORUS: `Escreva APENAS 4 linhas para REFRÃO ${genre}. NADA mais:
+INTRO RESSRITA DE ALTA QUALIDADE (apenas 4 linhas):`,
 
-Original: "${originalSection.substring(0, 100)}"
+    VERSE: `🎵 REESCREVA este VERSO no estilo ${genre} com ALTA QUALIDADE:
 
-4 LINHAS MEMORÁVEIS:`,
+ORIGINAL:
+"${originalSection}"
 
-    BRIDGE: `Escreva APENAS 4 linhas para PONTE ${genre}. NADA mais. Deve ser DIFERENTE dos versos:
+Tema: ${theme}
 
-Original: "${originalSection.substring(0, 100)}"
+📝 REQUISITOS DE QUALIDADE:
+- 4 linhas EXATAS  
+- Máximo 11 sílabas por verso
+- Mantenha a NARRATIVA principal
+- Melhore a coerência temática
+- Conexão emocional forte
 
-4 LINHAS DE REFLEXÃO:`,
+VERSO RESSRITO DE ALTA QUALIDADE (apenas 4 linhas):`,
 
-    OUTRO: `Escreva APENAS 2 linhas para OUTRO ${genre}. NADA mais:
+    CHORUS: `🎵 REESCREVA este REFRÃO no estilo ${genre} com ALTA QUALIDADE:
 
-Original: "${originalSection.substring(0, 100)}"
+ORIGINAL:
+"${originalSection}"
 
-2 LINHAS FINAIS:`
+Tema: ${theme}
+
+📝 REQUISITOS DE QUALIDADE:
+- 4 linhas EXATAS
+- Máximo 12 sílabas por verso
+- Fortaleça o GANCHO emocional
+- Mantenha a MEMORABILIDADE
+- Clímax emocional impactante
+
+REFRÃO RESSRITO DE ALTA QUALIDADE (apenas 4 linhas):`,
+
+    BRIDGE: `🎵 REESCREVA esta PONTE no estilo ${genre} com ALTA QUALIDADE:
+
+ORIGINAL:
+"${originalSection}"
+
+Tema: ${theme}
+
+📝 REQUISITOS DE QUALIDADE:
+- 4 linhas EXATAS
+- Máximo 11 sílabas por verso
+- Mantenha a MUDANÇA de perspectiva
+- Aprofunde a reflexão emocional
+- Transição natural para o final
+
+PONTE RESSRITA DE ALTA QUALIDADE (apenas 4 linhas):`,
+
+    OUTRO: `🎵 REESCREVA este OUTRO no estilo ${genre} com ALTA QUALIDADE:
+
+ORIGINAL:
+"${originalSection}"
+
+Tema: ${theme}
+
+📝 REQUISITOS DE QUALIDADE:
+- 2-4 linhas
+- Máximo 9 sílabas por verso
+- Mantenha o FECHO emocional
+- Reforce a sensação de conclusão
+- Deixe marca memorável
+
+OUTRO RESSRITO DE ALTA QUALIDADE (apenas as linhas finais):`
   }
 
   try {
-    const prompt = prompts[blockType]
+    const prompt = rewritePrompts[blockType as keyof typeof rewritePrompts]
     
     const { text } = await generateText({
       model: openai("gpt-4o-mini"),
       prompt,
-      temperature: 0.3,
+      temperature: 0.7,
     })
 
-    console.log(`[BlockGen] ${blockType}${sectionIndex} resposta:`, text)
-    
-    const processed = processBlockText(text || "", blockType, lineTargets[blockType])
-    return processed.length > 0 ? [processed[0]] : [generateStrictFallback(blockType, originalSection)]
+    return processRewrittenBlock(text || "", blockType, originalSection)
   } catch (error) {
-    console.error(`[BlockGen] Erro em ${blockType}:`, error)
-    return [generateStrictFallback(blockType, originalSection)]
+    console.error(`[Rewrite] Erro em ${blockType}:`, error)
+    return [generateQualityFallback(blockType, theme)]
   }
 }
 
-// 🧩 PROCESSAMENTO SUPER RESTRITIVO
-function processBlockText(
-  text: string, 
-  blockType: MusicBlock["type"],
-  targetLines: number
-): MusicBlock[] {
+// 🧩 PROCESSAR BLOCO RESSRITO
+function processRewrittenBlock(text: string, blockType: MusicBlock["type"], originalSection: string): MusicBlock[] {
   
-  // EXTREMA limpeza - remove TUDO que não for linha de letra
+  // Limpeza agressiva mantendo qualidade
   const cleanText = text
-    .replace(/^(NOVO|REESCRITO|VERSO|REFRÃO|PONTE|OUTRO).*?[\n:]/gi, '')
+    .replace(/^(🎵|📝|REQUISITOS|ORIGINAL|Tema|QUALIDADE).*?[\n:]/gmi, '')
+    .replace(/.*(RESSRITA|ALTA QUALIDADE).*?[\n:]/gmi, '')
     .replace(/\*\*.*?\*\*/g, '')
     .replace(/".*?"/g, '')
-    .replace(/\(.*?\)/g, '')
-    .replace(/^Claro!.*$/gmi, '')
-    .replace(/^Aqui.*$/gmi, '')
-    .replace(/^.*[Rr]eescrit[ao].*$/gmi, '')
-    .replace(/^.*REFRÃO REESCRITO.*$/gmi, '')
-    .replace(/^.*SEÇÃO REESCRITA.*$/gmi, '')
-    .replace(/^.*tá ponte.*$/gmi, '')
-    .replace(/^.*ó!.*$/gmi, '')
-    .replace(/^.*APENAS.*$/gmi, '')
-    .replace(/^.*LINHAS.*$/gmi, '')
-    .replace(/^.*NADA mais.*$/gmi, '')
+    .replace(/^.*(linhas|verso).*$/gmi, '')
     .trim()
 
-  console.log(`[Process] ${blockType} após limpeza:`, cleanText)
-
-  // Extrai APENAS linhas que parecem verso de música
-  const lines = cleanText
-    .split("\n")
+  const lines = cleanText.split("\n")
     .map(line => line.trim())
     .filter(line => {
       return line && 
              line.length >= 5 && 
-             line.length <= 50 &&
-             !line.match(/^[\[\(]/) && // Não começa com [ ou (
-             !line.match(/^[0-9]/) && // Não começa com número
-             !line.match(/^["']/) && // Não começa com aspas
-             !line.includes('**') &&
-             !line.match(/^(NOVO|VERSO|REFRÃO|PONTE|OUTRO|APENAS|LINHAS|NADA)/i) &&
-             !line.match(/REESCRITO/i) &&
-             !line.match(/Claro!/i) &&
-             !line.match(/Aqui/i) &&
-             !line.match(/ó!/i)
+             line.length <= 60 &&
+             !line.match(/^[\[\(]/) &&
+             !line.match(/^(🎵|📝|REQUISITOS|ORIGINAL|RESSRITA)/i) &&
+             !line.includes('**')
     })
-    .slice(0, targetLines) // Pega apenas as primeiras X linhas
+    .slice(0, blockType === "OUTRO" ? 4 : 4)
 
-  console.log(`[Process] ${blockType} linhas finais:`, lines)
-
-  if (lines.length >= 2) {
+  if (lines.length >= (blockType === "OUTRO" ? 2 : 3)) {
+    const content = lines.join("\n")
     return [{
       type: blockType,
-      content: lines.join("\n"),
-      lines: lines,
-      score: 80
+      content: content,
+      score: calculateRewriteQualityScore(content, originalSection, blockType),
     }]
   }
 
-  return []
+  return [generateQualityFallback(blockType, "")]
 }
 
-// 🆘 FALLBACK SUPER CONSERVADOR
-function generateStrictFallback(
-  blockType: MusicBlock["type"],
-  originalSection: string
-): MusicBlock {
-  
-  // Extrai as primeiras linhas limpas da seção original como fallback
-  const originalLines = originalSection
-    .split("\n")
-    .map(line => line.trim())
-    .filter(line => line && !line.startsWith('[') && !line.startsWith('('))
-    .slice(0, 4)
+// 📊 SCORE DE QUALIDADE PARA RESSECRITURA
+function calculateRewriteQualityScore(content: string, originalSection: string, blockType: MusicBlock["type"]): number {
+  const lines = content.split("\n").filter(line => line.trim())
+  let score = 70 // Base
 
-  const fallbacks = {
-    VERSE: originalLines.length >= 4 ? originalLines : [
-      "Na estrada da vida",
-      "Encontrei você",
-      "Meu coração bate",
-      "Só pra te ver"
-    ],
-    CHORUS: [
-      "Seu amor me guia",
-      "Sua luz me traz",
-      "Nessa melodia",
-      "Que nunca se faz"
-    ],
-    BRIDGE: [
-      "E o tempo passou",
-      "Tudo mudou",
-      "O amor ficou",
-      "E me transformou"
-    ],
-    OUTRO: [
-      "Até amanhã",
-      "Meu amor sem fim"
-    ]
-  }
+  // ✅ Bônus por estrutura completa
+  const targetLines = blockType === "OUTRO" ? 2 : 4
+  if (lines.length === targetLines) score += 15
 
-  const lines = fallbacks[blockType]
+  // ✅ Bônus por preservação da essência
+  const originalWords = originalSection.toLowerCase().split(/\s+/).filter(w => w.length > 3)
+  const newWords = content.toLowerCase().split(/\s+/)
   
-  return {
-    type: blockType,
-    content: lines.join("\n"),
-    lines: lines,
-    score: 60
-  }
+  const preservedWords = originalWords.filter(word => 
+    newWords.some(nw => nw.includes(word) || word.includes(nw))
+  ).length
+  
+  if (preservedWords >= Math.min(2, originalWords.length)) score += 10
+
+  // ✅ Bônus por versos completos
+  const completeLines = lines.filter(line => {
+    const hasEllipsis = line.includes('...') || line.match(/[.,!?;:]$/)
+    return line.length > 5 && !hasEllipsis
+  })
+  
+  if (completeLines.length === lines.length) score += 5
+
+  return Math.min(score, 100)
 }
 
-// 🏗️ MONTAR LETRA COMPLETA
-function assembleLyric(blocks: Record<string, MusicBlock[]>): string {
-  let lyrics = ""
-  let verseCount = 1
-  let chorusCount = 1
-
-  // Estrutura fixa e simples
-  const structure: MusicBlock["type"][] = ["VERSE", "CHORUS", "VERSE", "CHORUS", "BRIDGE", "CHORUS", "OUTRO"]
-
-  for (const sectionType of structure) {
-    const availableBlocks = blocks[sectionType] || []
-    if (availableBlocks.length > 0) {
-      const block = availableBlocks[0] // Pega o primeiro bloco
-
-      let label = ""
-      if (sectionType === "VERSE") {
-        label = `Verso ${verseCount}`
-        verseCount++
-      } else if (sectionType === "CHORUS") {
-        label = `Refrão ${chorusCount}`
-        chorusCount++
-      } else if (sectionType === "BRIDGE") {
-        label = "Ponte"
-      } else if (sectionType === "OUTRO") {
-        label = "Outro"
-      }
-
-      lyrics += `[${label}]\n${block.content}\n\n`
+// 🆘 FALLBACK DE QUALIDADE (mesmo da geração)
+function generateQualityFallback(blockType: MusicBlock["type"], theme: string): MusicBlock {
+  const qualityFallbacks = {
+    INTRO: {
+      content: `No começo dessa história\nUm sentimento na memória\nAlgo novo vai nascer\nE no peito vai doer`,
+      score: 75
+    },
+    VERSE: {
+      content: `Cada passo que eu dei\nUm aprendizado que ficou\nNa estrada da emoção\nO coração se transformou`,
+      score: 75
+    },
+    CHORUS: {
+      content: `Seu amor é minha estrada\nMinha luz, minha jornada\nNesse mundo de verdade\nEncontro a liberdade`,
+      score: 80
+    },
+    BRIDGE: {
+      content: `E o que era incerto\nVirou concreto no peito\nUma nova perspectiva\nQue a alma aguarda quieta`,
+      score: 75
+    },
+    OUTRO: {
+      content: `Vou levando na lembrança\nEssa doce esperança`,
+      score: 75
     }
   }
 
-  return lyrics.trim()
+  switch (blockType) {
+    case "INTRO": return { type: blockType, ...qualityFallbacks.INTRO }
+    case "VERSE": return { type: blockType, ...qualityFallbacks.VERSE }
+    case "CHORUS": return { type: blockType, ...qualityFallbacks.CHORUS }
+    case "BRIDGE": return { type: blockType, ...qualityFallbacks.BRIDGE }
+    case "OUTRO": return { type: blockType, ...qualityFallbacks.OUTRO }
+    default: return { type: "VERSE", ...qualityFallbacks.VERSE }
+  }
 }
 
-// 🎼 DETECTAR SEÇÕES ORIGINAIS
-function extractOriginalSections(lyrics: string): Array<{type: MusicBlock["type"], content: string}> {
+// 🏗️ MONTAR MÚSICA RESSRITA COM QUALIDADE
+async function assembleRewrittenSong(
+  blocks: Record<string, MusicBlock[]>,
+  genre: string,
+): Promise<string> {
+  const structure = [
+    { type: "INTRO", label: "Intro" },
+    { type: "VERSE", label: "Verso 1" },
+    { type: "CHORUS", label: "Refrão" },
+    { type: "VERSE", label: "Verso 2" },
+    { type: "CHORUS", label: "Refrão" },
+    { type: "BRIDGE", label: "Ponte" },
+    { type: "CHORUS", label: "Refrão Final" },
+    { type: "OUTRO", label: "Outro" },
+  ]
+
+  let lyrics = ""
+
+  for (const section of structure) {
+    const availableBlocks = blocks[section.type] || []
+    if (availableBlocks.length > 0) {
+      const bestBlock = availableBlocks.reduce((best, current) => 
+        current.score > best.score ? current : best
+      )
+      lyrics += `[${section.label}]\n${bestBlock.content}\n\n`
+    } else {
+      const fallback = generateQualityFallback(section.type as any, "")
+      lyrics += `[${section.label}]\n${fallback.content}\n\n`
+    }
+  }
+
+  try {
+    return await UnifiedSyllableManager.processSongWithBalance(lyrics.trim())
+  } catch (error) {
+    console.error("[RewriteAssemble] Erro corrigindo sílabas:", error)
+    return lyrics.trim()
+  }
+}
+
+// 🎼 DETECTAR ESTRUTURA ORIGINAL
+function extractSectionsToRewrite(lyrics: string): Array<{type: MusicBlock["type"], content: string}> {
   const sections = parseLyricSections(lyrics)
   const result: Array<{type: MusicBlock["type"], content: string}> = []
 
   for (const section of sections) {
     let mappedType: MusicBlock["type"] = "VERSE"
     
-    if (section.type === "chorus") mappedType = "CHORUS"
-    else if (section.type === "bridge") mappedType = "BRIDGE" 
+    if (section.type === "intro") mappedType = "INTRO"
+    else if (section.type === "chorus") mappedType = "CHORUS"
+    else if (section.type === "bridge") mappedType = "BRIDGE"
     else if (section.type === "outro") mappedType = "OUTRO"
     else mappedType = "VERSE"
 
-    // Extrai apenas o conteúdo das linhas
     const content = section.lines.join("\n")
     if (content.trim()) {
       result.push({
@@ -243,106 +284,130 @@ function extractOriginalSections(lyrics: string): Array<{type: MusicBlock["type"
   }
 
   return result.length > 0 ? result : [
-    { type: "VERSE", content: "Conteúdo do verso original" },
-    { type: "CHORUS", content: "Conteúdo do refrão original" }
+    { type: "VERSE", content: lyrics.substring(0, 200) }
   ]
 }
 
-// ✅ POST PRINCIPAL - VERSÃO SIMPLIFICADA
 export async function POST(request: NextRequest) {
   let genre = "Sertanejo"
   let theme = "Música"
-  let title = "Música Renascida"
+  let title = "Música Resscrita"
 
   try {
-    const { originalLyrics, genre: requestGenre, theme: requestTheme, title: requestTitle } = await request.json()
+    const { 
+      originalLyrics, 
+      genre: requestGenre, 
+      theme: requestTheme, 
+      title: requestTitle 
+    } = await request.json()
 
     genre = requestGenre || "Sertanejo"
-    theme = requestTheme || "Música" 
+    theme = requestTheme || "Música"
     title = requestTitle || `${theme} - ${genre}`
 
     if (!originalLyrics?.trim()) {
       return NextResponse.json({ error: "Letra original é obrigatória" }, { status: 400 })
     }
 
-    console.log(`[API] 🎵 Iniciando reescrita: ${genre}`)
+    console.log(`[API] 🎵 RESSRITA com QUALIDADE UNIFICADA: ${genre}`)
 
-    // Extrai seções da original
-    const originalSections = extractOriginalSections(originalLyrics)
-    console.log(`[API] 📊 Seções extraídas:`, originalSections.map(s => s.type))
+    // 🎯 ANALISAR E RESSECREVER CADA SEÇÃO
+    console.log("[API] 🔍 Analisando estrutura original...")
+    const originalSections = extractSectionsToRewrite(originalLyrics)
+    console.log(`[API] 📊 Seções para reescrever:`, originalSections.map(s => s.type))
 
-    const allBlocks: Record<string, MusicBlock[]> = {}
-    let verseIndex = 1
+    const rewrittenBlocks: Record<string, MusicBlock[]> = {}
 
-    // Processa CADA seção individualmente
-    for (const section of originalSections) {
-      try {
-        const sectionIndex = section.type === "VERSE" ? verseIndex++ : 1
-        const blocks = await generateBlockVariations(section.type, genre, section.content, sectionIndex)
-        allBlocks[section.type] = blocks
-        console.log(`[API] ✅ ${section.type}: ${blocks.length} bloco`)
-      } catch (error) {
-        console.error(`[API] ❌ Erro em ${section.type}:`, error)
-        allBlocks[section.type] = [generateStrictFallback(section.type, section.content)]
-      }
-    }
+    // ✅ RESSECREVER CADA SEÇÃO COM QUALIDADE
+    console.log("[API] 🎨 Reescrevendo seções com qualidade...")
+    const rewritePromises = originalSections.map(async (section) => {
+      const blocks = await rewriteSectionWithQuality(section.content, section.type, genre, theme)
+      rewrittenBlocks[section.type] = blocks
+      console.log(`[API] ✅ ${section.type} reescrito - Score: ${blocks[0]?.score || 0}`)
+    })
 
-    // Monta a letra final
-    const finalLyrics = assembleLyric(allBlocks)
-    console.log(`[API] 🧩 Letra montada: ${finalLyrics.split('\n').length} linhas`)
+    await Promise.all(rewritePromises)
 
-    // Aplica correções de sílabas
-    let processedLyrics = finalLyrics
+    // 🏗️ MONTAR MÚSICA RESSRITA
+    console.log("[API] 🏗️ Montando música reescrita...")
+    let finalLyrics = await assembleRewrittenSong(rewrittenBlocks, genre)
+
+    // ✨ APLICAR FORMATAÇÃO
+    console.log("[API] ✨ Aplicando formatação final...")
     try {
-      processedLyrics = await UnifiedSyllableManager.processSongWithBalance(finalLyrics)
+      const stackingResult = LineStacker.stackLines(finalLyrics)
+      finalLyrics = stackingResult.stackedLyrics
     } catch (error) {
-      console.log("[API] ℹ️ Correção de sílabas não disponível")
+      console.log("[API] ℹ️ LineStacker não disponível")
     }
 
-    // Adiciona instrumentação
+    // 🎸 INSTRUMENTAÇÃO
     try {
-      if (!processedLyrics.includes("(Instrumentation)")) {
-        const instrumentation = formatInstrumentationForAI(genre, processedLyrics)
-        processedLyrics = `${processedLyrics}\n\n${instrumentation}`
+      if (!finalLyrics.includes("(Instrumentation)")) {
+        const instrumentation = formatInstrumentationForAI(genre, finalLyrics)
+        finalLyrics = `${finalLyrics}\n\n${instrumentation}`
       }
     } catch (error) {
       console.log("[API] ℹ️ Instrumentação não disponível")
     }
 
-    console.log(`[API] 🎉 CONCLUÍDO: "${title}"`)
+    const totalLines = finalLyrics.split("\n").filter((line) => line.trim()).length
+    console.log(`[API] 🎉 RESSRITA CONCLUÍDA: ${totalLines} linhas de qualidade`)
 
     return NextResponse.json({
       success: true,
-      lyrics: processedLyrics,
+      lyrics: finalLyrics,
       title: title,
       metadata: {
         genre,
-        theme, 
-        totalLines: processedLyrics.split("\n").filter(line => line.trim()).length,
-        quality: "STRICT_REWRITE",
-        method: "SUPER_RESTRICTIVE",
-        timestamp: new Date().toISOString()
+        theme,
+        totalLines,
+        quality: "REWRITE_UNIFIED_QUALITY",
+        method: "QUALITY_REWRITE",
+        rewrittenSections: originalSections.length,
       },
     })
 
   } catch (error) {
-    console.error("[API] ❌ Erro crítico:", error)
-    
-    // Fallback extremamente simples
-    const emergencyLyrics = `[Verso 1]
-Vou escrevendo essa história
-Com sentimento e verdade
-Cada verso, cada linha
-É um pedaço de saudade
+    console.error("[API] ❌ Erro na reescrita:", error)
 
-[Refrão 1]
-Cantando pro coração
-Com amor e emoção
-Uma música que fica
-No peito como canção
+    // 🆘 FALLBACK DE QUALIDADE
+    const emergencyLyrics = `[Intro]
+Reescrevendo com nova qualidade
+Cada verso ganha profundidade
+Na medida certa da emoção
+Com atenção e precisão
+
+[Verso 1]
+A reescrita traz melhoria
+Mantendo a essência original
+Mas com mais poesia
+E fluência emocional
+
+[Refrão]
+Qualidade em cada detalhe
+Na versão renovada
+O mesmo sentimento
+Em forma melhorada
+
+[Verso 2]
+Cada palavra repensada
+Cada rima valorizada
+A história se mantém
+Mas brilha também
+
+[Refrão]
+Qualidade em cada detalhe
+Na versão renovada
+O mesmo sentimento
+Em forma melhorada
 
 [Outro]
-Até a próxima vez`
+Assim se reescreve
+Com qualidade que move
+
+(Instrumentation)
+(Genre: ${genre})`
 
     return NextResponse.json({
       success: true,
@@ -351,9 +416,9 @@ Até a próxima vez`
       metadata: {
         genre,
         theme,
-        totalLines: emergencyLyrics.split("\n").filter(line => line.trim()).length,
-        quality: "FALLBACK",
-        method: "EMERGENCY"
+        totalLines: 12,
+        quality: "REWRITE_FALLBACK",
+        method: "QUALITY_REWRITE",
       },
     })
   }
