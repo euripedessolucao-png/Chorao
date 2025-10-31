@@ -1,7 +1,8 @@
-// app/api/rewrite-lyrics/route.ts - VERSÃO COMPLETA CORRIGIDA
+// app/api/rewrite-lyrics/route.ts - VERSÃO CORRIGIDA
 import { type NextRequest, NextResponse } from "next/server"
 import { openai } from "@ai-sdk/openai"
 import { generateText } from "ai"
+import { countPoeticSyllables } from '@/lib/validation/syllable-counter-brasileiro'
 
 // 🎵 TIPOS DE BLOCO MUSICAL
 interface MusicBlock {
@@ -10,8 +11,24 @@ interface MusicBlock {
   score: number
 }
 
-// ✅ CONFIGURAÇÕES CORRIGIDAS DE SÍLABAS
-const GENRE_SYLLABLE_CONFIG = {
+// ✅ CONFIGURAÇÕES CORRIGIDAS DE SÍLABAS COM TIPOS
+type GenreKey = 
+  | "Sertanejo Moderno Masculino"
+  | "Sertanejo Moderno Feminino" 
+  | "Sertanejo Universitário"
+  | "Sertanejo Raiz"
+  | "Pagode Romântico"
+  | "Funk Carioca"
+  | "Gospel Contemporâneo"
+  | "MPB"
+
+interface SyllableConfig {
+  max: number
+  ideal: number
+  min: number
+}
+
+const GENRE_SYLLABLE_CONFIG: Record<GenreKey, SyllableConfig> = {
   "Sertanejo Moderno Masculino": { max: 12, ideal: 10, min: 8 },
   "Sertanejo Moderno Feminino": { max: 12, ideal: 10, min: 8 },
   "Sertanejo Universitário": { max: 12, ideal: 10, min: 8 },
@@ -20,6 +37,15 @@ const GENRE_SYLLABLE_CONFIG = {
   "Funk Carioca": { max: 10, ideal: 6, min: 3 },
   "Gospel Contemporâneo": { max: 12, ideal: 9, min: 7 },
   "MPB": { max: 13, ideal: 10, min: 7 },
+}
+
+// ✅ FUNÇÃO SEGURA PARA OBTER CONFIGURAÇÃO
+function getSyllableConfig(genre: string): SyllableConfig {
+  const validGenre = Object.keys(GENRE_SYLLABLE_CONFIG).includes(genre) 
+    ? genre as GenreKey 
+    : "Sertanejo Moderno Masculino"
+  
+  return GENRE_SYLLABLE_CONFIG[validGenre]
 }
 
 // ✅ CORREÇÃO: REMOVER ASPAS E VALIDAR SÍLABAS
@@ -32,8 +58,22 @@ function removeQuotesAndClean(text: string): string {
     .trim()
 }
 
-// ✅ CONTADOR SIMPLIFICADO DE SÍLABAS
-function countSyllables(text: string): number {
+// ✅ VALIDAÇÃO AVANÇADA COM MOTOR BRASILEIRO
+function validateAdvancedSyllables(line: string, maxSyllables: number): boolean {
+  const syllables = countPoeticSyllables(line)
+  const isValid = syllables <= maxSyllables
+  
+  if (!isValid) {
+    console.log(`[SyllableCheck] ❌ "${line}" - ${syllables} sílabas (máx: ${maxSyllables})`)
+  } else {
+    console.log(`[SyllableCheck] ✅ "${line}" - ${syllables} sílabas`)
+  }
+  
+  return isValid
+}
+
+// ✅ CONTADOR SIMPLIFICADO DE SÍLABAS (fallback)
+function countBasicSyllables(text: string): number {
   const cleanText = text.toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
@@ -43,16 +83,22 @@ function countSyllables(text: string): number {
   return vowels ? vowels.length : 0
 }
 
-// ✅ VALIDAÇÃO RIGOROSA DE SÍLABAS
+// ✅ VALIDAÇÃO RIGOROSA DE SÍLABAS (usa motor avançado)
 function validateSyllableCount(line: string, maxSyllables: number): boolean {
-  const syllableCount = countSyllables(line)
-  const isValid = syllableCount <= maxSyllables
-  
-  if (!isValid) {
-    console.log(`[SyllableCheck] ❌ "${line}" - ${syllableCount} sílabas (máx: ${maxSyllables})`)
+  try {
+    return validateAdvancedSyllables(line, maxSyllables)
+  } catch (error) {
+    console.log("[SyllableCheck] ⚠️  Motor avançado falhou, usando básico")
+    // Fallback para contagem básica se o motor falhar
+    const syllableCount = countBasicSyllables(line)
+    const isValid = syllableCount <= maxSyllables
+    
+    if (!isValid) {
+      console.log(`[SyllableCheck] ❌ "${line}" - ${syllableCount} sílabas (fallback)`)
+    }
+    
+    return isValid
   }
-  
-  return isValid
 }
 
 // 🎯 RESSECRITURA COM CONTROLE DE SÍLABAS E SEM ASPAS
@@ -63,7 +109,7 @@ async function rewriteSectionWithQuality(
   theme: string
 ): Promise<MusicBlock[]> {
   
-  const syllableConfig = GENRE_SYLLABLE_CONFIG[genre as keyof typeof GENRE_SYLLABLE_CONFIG] || { max: 12, ideal: 10, min: 8 }
+  const syllableConfig = getSyllableConfig(genre)
   const structure = "A-B-A-B"
 
   const rewritePrompts = {
@@ -71,11 +117,12 @@ async function rewriteSectionWithQuality(
 
 REGRAS CRÍTICAS:
 - 4 linhas COMPLETAS SEM ASPAS
-- Máximo ${syllableConfig.max} sílabas por verso (NUNCA ultrapassar)
+- Máximo ${syllableConfig.max} sílabas poéticas por verso (NUNCA ultrapassar)
 - Ideal ${syllableConfig.ideal} sílabas
 - Estrutura ${structure}
 - Linguagem natural brasileira
 - NUNCA use aspas nas linhas
+- Use contrações naturais: "pra", "tá", "cê"
 
 EXEMPLO CORRETO:
 Quando a noite chega suave
@@ -89,11 +136,12 @@ E nosso amor segue em frente
 
 REGRAS CRÍTICAS:
 - 4 linhas COMPLETAS SEM ASPAS  
-- Máximo ${syllableConfig.max} sílabas (NUNCA ultrapassar)
+- Máximo ${syllableConfig.max} sílabas poéticas (NUNCA ultrapassar)
 - Ideal ${syllableConfig.ideal} sílabas
 - Estrutura ${structure}
 - Desenvolva a narrativa
 - NUNCA use aspas nas linhas
+- Use linguagem coloquial brasileira
 
 EXEMPLO CORRETO:
 Nos teus olhos vejo esperança
@@ -107,11 +155,12 @@ Que aquece e acalma a alma
 
 REGRAS CRÍTICAS:
 - 4 linhas COMPLETAS SEM ASPAS
-- Máximo ${syllableConfig.max} sílabas (NUNCA ultrapassar) 
+- Máximo ${syllableConfig.max} sílabas poéticas (NUNCA ultrapassar) 
 - Ideal ${syllableConfig.ideal} sílabas
 - Estrutura ${structure}
 - Gancho memorável
 - NUNCA use aspas nas linhas
+- Use rimas naturais
 
 EXEMPLO CORRETO:
 Teu sorriso é meu abrigo
@@ -125,9 +174,10 @@ Encontro paz e seu mimo
 
 REGRAS CRÍTICAS:
 - 4 linhas COMPLETAS SEM ASPAS
-- Máximo ${syllableConfig.max} sílabas (NUNCA ultrapassar)
+- Máximo ${syllableConfig.max} sílabas poéticas (NUNCA ultrapassar)
 - Mudança de perspectiva
 - NUNCA use aspas nas linhas
+- Linguagem poética
 
 EXEMPLO CORRETO:
 Nos teus olhos vejo novo dia
@@ -141,9 +191,10 @@ Nosso amor conta vitórias
 
 REGRAS CRÍTICAS:
 - 2-4 linhas COMPLETAS SEM ASPAS
-- Máximo 9 sílabas por verso
+- Máximo 9 sílabas poéticas por verso
 - Fecho emocional
 - NUNCA use aspas nas linhas
+- Linguagem suave
 
 EXEMPLO CORRETO:
 Nos teus olhos me encontrei
@@ -170,7 +221,7 @@ LINHAS FINAIS SEM ASPAS:`
   }
 }
 
-// ✅ PROCESSAMENTO COM VALIDAÇÃO DE SÍLABAS E REMOÇÃO DE ASPAS
+// ✅ PROCESSAMENTO COM VALIDAÇÃO AVANÇADA DE SÍLABAS
 function processRewrittenBlock(
   text: string, 
   blockType: MusicBlock["type"],
@@ -193,7 +244,7 @@ function processRewrittenBlock(
     })
     .slice(0, blockType === "OUTRO" ? 4 : 4)
 
-  // ✅ VALIDAR SÍLABAS EM CADA LINHA
+  // ✅ VALIDAR SÍLABAS COM MOTOR AVANÇADO
   const validLines = lines.filter(line => validateSyllableCount(line, maxSyllables))
   
   if (validLines.length >= (blockType === "OUTRO" ? 2 : 3)) {
@@ -252,7 +303,7 @@ function generateQualityFallback(blockType: MusicBlock["type"], theme: string, m
 
   const fallback = fallbacks[blockType as keyof typeof fallbacks] || fallbacks.VERSE
   
-  // ✅ GARANTIR que o fallback está dentro do limite
+  // ✅ GARANTIR que o fallback está dentro do limite com motor avançado
   const lines = fallback.content.split("\n")
   const validLines = lines.filter(line => validateSyllableCount(line, maxSyllables))
   
@@ -285,7 +336,7 @@ async function assembleRewrittenSong(
   ]
 
   let lyrics = ""
-  const improvements: string[] = ["Sistema de qualidade aplicado"]
+  const improvements: string[] = ["Sistema de qualidade aplicado", "Motor de sílabas poéticas ativo"]
 
   for (const section of structure) {
     const availableBlocks = blocks[section.type] || []
@@ -295,7 +346,7 @@ async function assembleRewrittenSong(
       )
       lyrics += `[${section.label}]\n${bestBlock.content}\n\n`
     } else {
-      const syllableConfig = GENRE_SYLLABLE_CONFIG[genre as keyof typeof GENRE_SYLLABLE_CONFIG] || { max: 12, ideal: 10, min: 8 }
+      const syllableConfig = getSyllableConfig(genre)
       const fallback = generateQualityFallback(section.type as any, "", syllableConfig.max)
       lyrics += `[${section.label}]\n${fallback.content}\n\n`
       improvements.push(`Fallback aplicado em ${section.label}`)
@@ -374,8 +425,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Letra original é obrigatória" }, { status: 400 })
     }
 
+    const syllableConfig = getSyllableConfig(genre)
+    
     console.log(`[API] 🎵 Iniciando reescrita para: ${genre}`)
-    console.log(`[API] 📏 Configuração: ${GENRE_SYLLABLE_CONFIG[genre]?.max || 12} sílabas máximas`)
+    console.log(`[API] 📏 Configuração: ${syllableConfig.max} sílabas máximas`)
+    console.log(`[API] 🔧 Motor de sílabas: PoeticSyllableEngine`)
 
     // Analisar estrutura
     const originalSections = extractSectionsToRewrite(originalLyrics)
@@ -392,7 +446,7 @@ export async function POST(request: NextRequest) {
         console.log(`[API] ✅ ${section.type} - Score: ${score}`)
       } catch (error) {
         console.error(`[API] ❌ Erro em ${section.type}:`, error)
-        const syllableConfig = GENRE_SYLLABLE_CONFIG[genre as keyof typeof GENRE_SYLLABLE_CONFIG] || { max: 12, ideal: 10, min: 8 }
+        const syllableConfig = getSyllableConfig(genre)
         rewrittenBlocks[section.type] = [generateQualityFallback(section.type, theme, syllableConfig.max)]
       }
     })
@@ -415,8 +469,9 @@ export async function POST(request: NextRequest) {
         theme,
         totalLines,
         improvements: assemblyResult.improvements,
-        syllableConfig: GENRE_SYLLABLE_CONFIG[genre] || { max: 12, ideal: 10, min: 8 },
-        method: "QUALIDADE_GARANTIDA"
+        syllableConfig: syllableConfig,
+        method: "QUALIDADE_GARANTIDA",
+        syllableEngine: "PoeticSyllableEngine"
       },
     })
 
@@ -449,6 +504,8 @@ O amor nos guiar
 (Instrumentation)
 (Genre: ${genre})`
 
+    const syllableConfig = getSyllableConfig(genre)
+
     return NextResponse.json({
       success: true,
       lyrics: emergencyLyrics,
@@ -458,8 +515,9 @@ O amor nos guiar
         theme: "amor",
         totalLines: 14,
         improvements: ["Fallback de qualidade aplicado"],
-        syllableConfig: GENRE_SYLLABLE_CONFIG[genre] || { max: 12, ideal: 10, min: 8 },
-        method: "FALLBACK_SEGURO"
+        syllableConfig: syllableConfig,
+        method: "FALLBACK_SEGURO",
+        syllableEngine: "PoeticSyllableEngine"
       },
     })
   }
