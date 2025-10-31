@@ -2,7 +2,6 @@
 
 import { generateText } from "ai"
 import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro"
-import { UnifiedSyllableManager } from "@/lib/syllable-management/unified-syllable-manager"
 
 export class ThirdWayEngine {
   /**
@@ -26,7 +25,7 @@ export class ThirdWayEngine {
     try {
       // ✅ ANÁLISE DA LINHA ORIGINAL
       const analysis = this.analyzeLine(originalLine, genre)
-      
+
       // ✅ SE JÁ É BOA, MANTÉM
       if (analysis.qualityScore >= 80 && !this.hasAICliche(originalLine)) {
         console.log(`[ThirdWay] ✅ Linha já de qualidade - mantendo`)
@@ -37,20 +36,14 @@ export class ThirdWayEngine {
       const approaches = await Promise.all([
         this.approachEmotional(originalLine, genre, context, analysis),
         this.approachMinimalist(originalLine, genre, context, analysis),
-        this.approachMetaphorical(originalLine, genre, context, analysis)
+        this.approachMetaphorical(originalLine, genre, context, analysis),
       ])
 
       // ✅ SELECIONA A MELHOR
-      const bestLine = await this.selectBestApproach(
-        originalLine, 
-        approaches, 
-        genre, 
-        analysis
-      )
+      const bestLine = await this.selectBestApproach(originalLine, approaches, genre, analysis)
 
       console.log(`[ThirdWay] 🎉 MELHOR: "${bestLine.substring(0, 50)}..."`)
       return bestLine
-
     } catch (error) {
       console.error(`[ThirdWay] ❌ Erro em: "${originalLine}" -`, error)
       return originalLine
@@ -65,7 +58,7 @@ export class ThirdWayEngine {
     originalLine: string,
     genre: string,
     context: string,
-    analysis: LineAnalysis
+    analysis: LineAnalysis,
   ): Promise<string> {
     const prompt = `COMO SER HUMANO COMPOSITOR - ABORDAGEM EMOCIONAL AUTÊNTICA
 
@@ -101,14 +94,14 @@ LINHA RESSRITA (máximo ${analysis.maxSyllables} sílabas):`
   }
 
   /**
-   * 🎨 ABORDAGEM 2: MINIMALISTA E DIRETA  
+   * 🎨 ABORDAGEM 2: MINIMALISTA E DIRETA
    * Remove excessos, foca no essencial
    */
   private static async approachMinimalist(
     originalLine: string,
     genre: string,
     context: string,
-    analysis: LineAnalysis
+    analysis: LineAnalysis,
   ): Promise<string> {
     const prompt = `COPO METADE VAZIO - ABORDAGEM MINIMALISTA CRÍTICA
 
@@ -133,7 +126,7 @@ EXEMPLOS DE DESCONSTRUÇÃO:
 LINHA RESSRITA (seja cru, seja real, ${analysis.maxSyllables} sílabas):`
 
     const { text } = await generateText({
-      model: "openai/gpt-4o-mini", 
+      model: "openai/gpt-4o-mini",
       prompt,
       temperature: 0.7,
     })
@@ -149,7 +142,7 @@ LINHA RESSRITA (seja cru, seja real, ${analysis.maxSyllables} sílabas):`
     originalLine: string,
     genre: string,
     context: string,
-    analysis: LineAnalysis
+    analysis: LineAnalysis,
   ): Promise<string> {
     const prompt = `POETA ORIGINAL - METÁFORAS NUNCA VISTAS
 
@@ -189,15 +182,16 @@ LINHA RESSRITA (metáfora nova, ${analysis.maxSyllables} sílabas):`
     originalLine: string,
     approaches: string[],
     genre: string,
-    analysis: LineAnalysis
+    analysis: LineAnalysis,
   ): Promise<string> {
     // Remove duplicatas e linhas inválidas
-    const validApproaches = approaches.filter((line, index, array) => 
-      line && 
-      line !== originalLine &&
-      array.indexOf(line) === index && // Remove duplicatas
-      this.countSyllables(line) <= analysis.maxSyllables &&
-      !this.hasAICliche(line)
+    const validApproaches = approaches.filter(
+      (line, index, array) =>
+        line &&
+        line !== originalLine &&
+        array.indexOf(line) === index && // Remove duplicatas
+        this.countSyllables(line) <= analysis.maxSyllables &&
+        !this.hasAICliche(line),
     )
 
     if (validApproaches.length === 0) {
@@ -209,35 +203,31 @@ LINHA RESSRITA (metáfora nova, ${analysis.maxSyllables} sílabas):`
     }
 
     // ✅ ANALISA QUALIDADE DAS ABORDAGENS
-    const scoredApproaches = validApproaches.map(line => ({
+    const scoredApproaches = validApproaches.map((line) => ({
       line,
-      score: this.calculateLineQuality(line, originalLine, genre)
+      score: this.calculateLineQuality(line, originalLine, genre),
     }))
 
     // Ordena por score e pega a melhor
     scoredApproaches.sort((a, b) => b.score - a.score)
-    
+
     return scoredApproaches[0].line
   }
 
   /**
    * 📊 ANALISA QUALIDADE DA LINHA
    */
-  private static calculateLineQuality(
-    line: string, 
-    original: string, 
-    genre: string
-  ): number {
+  private static calculateLineQuality(line: string, original: string, genre: string): number {
     let score = 50
 
     // ✅ BÔNUS POR ORIGINALIDADE
     if (!this.hasAICliche(line)) score += 20
     if (this.hasOriginalMetaphor(line)) score += 15
-    
+
     // ✅ BÔNUS POR ESPECIFICIDADE
     if (this.hasConcreteDetails(line)) score += 10
     if (this.hasEmotionalAuthenticity(line)) score += 10
-    
+
     // ✅ BÔNUS POR FORMATAÇÃO
     const syllables = this.countSyllables(line)
     const idealSyllables = this.getIdealSyllables(genre)
@@ -256,80 +246,114 @@ LINHA RESSRITA (metáfora nova, ${analysis.maxSyllables} sílabas):`
   private static analyzeLine(line: string, genre: string): LineAnalysis {
     const syllables = this.countSyllables(line)
     const maxSyllables = this.getMaxSyllables(genre)
-    
+
     return {
       originalLine: line,
       syllableCount: syllables,
       maxSyllables,
       hasCliche: this.hasAICliche(line),
       qualityScore: this.calculateBaseQuality(line, genre),
-      emotionalDepth: this.assessEmotionalDepth(line)
+      emotionalDepth: this.assessEmotionalDepth(line),
     }
   }
 
   private static hasAICliche(line: string): boolean {
     const cliches = [
-      'coração aberto', 'gratidão transbordando', 'amor infinito', 'tua luz',
-      'minha alma', 'abençoado', 'renovar', 'cada amanhecer', 'tua presença',
-      'eternamente', 'nos braços de', 'encontro paz', 'achando abrigo',
-      'transbordando em mim', 'de mãos dadas', 'minha fortaleza', 'minha esperança',
-      'Deus me deu', 'sinto a tua', 'minha vida', 'é uma bênção'
+      "coração aberto",
+      "gratidão transbordando",
+      "amor infinito",
+      "tua luz",
+      "minha alma",
+      "abençoado",
+      "renovar",
+      "cada amanhecer",
+      "tua presença",
+      "eternamente",
+      "nos braços de",
+      "encontro paz",
+      "achando abrigo",
+      "transbordando em mim",
+      "de mãos dadas",
+      "minha fortaleza",
+      "minha esperança",
+      "Deus me deu",
+      "sinto a tua",
+      "minha vida",
+      "é uma bênção",
     ]
 
     const lowerLine = line.toLowerCase()
-    return cliches.some(cliche => lowerLine.includes(cliche))
+    return cliches.some((cliche) => lowerLine.includes(cliche))
   }
 
   private static hasOriginalMetaphor(line: string): boolean {
-    const originalIndicators = [
-      'como', 'parecido', 'igual', 'que nem', 'tipo'
-    ]
-    return originalIndicators.some(indicator => 
-      line.toLowerCase().includes(indicator)
-    )
+    const originalIndicators = ["como", "parecido", "igual", "que nem", "tipo"]
+    return originalIndicators.some((indicator) => line.toLowerCase().includes(indicator))
   }
 
   private static hasConcreteDetails(line: string): boolean {
     const concreteWords = [
-      'café', 'janela', 'ônibus', 'chuva', 'telefone', 'mesa', 'cadeira',
-      'rua', 'praça', 'filme', 'música', 'livro', 'caneta', 'papel'
+      "café",
+      "janela",
+      "ônibus",
+      "chuva",
+      "telefone",
+      "mesa",
+      "cadeira",
+      "rua",
+      "praça",
+      "filme",
+      "música",
+      "livro",
+      "caneta",
+      "papel",
     ]
-    return concreteWords.some(word => 
-      line.toLowerCase().includes(word)
-    )
+    return concreteWords.some((word) => line.toLowerCase().includes(word))
   }
 
   private static hasEmotionalAuthenticity(line: string): boolean {
     const authenticMarkers = [
-      'quase', 'talvez', 'às vezes', 'de repente', 'do nada',
-      'sem querer', 'quando', 'enquanto', 'antes', 'depois'
+      "quase",
+      "talvez",
+      "às vezes",
+      "de repente",
+      "do nada",
+      "sem querer",
+      "quando",
+      "enquanto",
+      "antes",
+      "depois",
     ]
-    return authenticMarkers.some(marker => 
-      line.toLowerCase().includes(marker)
-    )
+    return authenticMarkers.some((marker) => line.toLowerCase().includes(marker))
   }
 
   private static isTooAbstract(line: string): boolean {
     const abstractWords = [
-      'vida', 'amor', 'paz', 'alegria', 'esperança', 'fé',
-      'destino', 'universo', 'eternidade', 'infinito'
+      "vida",
+      "amor",
+      "paz",
+      "alegria",
+      "esperança",
+      "fé",
+      "destino",
+      "universo",
+      "eternidade",
+      "infinito",
     ]
-    
+
     const words = line.toLowerCase().split(/\s+/)
-    const abstractCount = words.filter(word => 
-      abstractWords.includes(word)
-    ).length
-    
+    const abstractCount = words.filter((word) => abstractWords.includes(word)).length
+
     return abstractCount >= 2
   }
 
   private static calculateBaseQuality(line: string, genre: string): number {
     let score = 60
-    
+
     if (!this.hasAICliche(line)) score += 20
     if (this.hasConcreteDetails(line)) score += 10
     if (this.hasEmotionalAuthenticity(line)) score += 10
-    
+
     const syllables = this.countSyllables(line)
     const ideal = this.getIdealSyllables(genre)
     if (Math.abs(syllables - ideal) <= 2) score += 10
@@ -348,19 +372,21 @@ LINHA RESSRITA (metáfora nova, ${analysis.maxSyllables} sílabas):`
 
   private static shouldProcessLine(line: string): boolean {
     const trimmed = line.trim()
-    return trimmed && 
-           trimmed.length > 3 &&
-           !trimmed.startsWith('[') && 
-           !trimmed.startsWith('(') &&
-           !trimmed.startsWith('###')
+    return (
+      trimmed.length > 0 &&
+      trimmed.length > 3 &&
+      !trimmed.startsWith("[") &&
+      !trimmed.startsWith("(") &&
+      !trimmed.startsWith("###")
+    )
   }
 
   private static validateAndClean(line: string, maxSyllables: number): string {
-    if (!line) return ''
-    
+    if (!line) return ""
+
     let cleaned = line
-      .replace(/^["']|["']$/g, '') // Remove aspas
-      .replace(/\s+/g, ' ') // Normaliza espaços
+      .replace(/^["']|["']$/g, "") // Remove aspas
+      .replace(/\s+/g, " ") // Normaliza espaços
       .trim()
 
     // Garante que não exceda sílabas
@@ -372,11 +398,11 @@ LINHA RESSRITA (metáfora nova, ${analysis.maxSyllables} sílabas):`
   }
 
   private static smartTrim(line: string, maxSyllables: number): string {
-    const words = line.split(' ')
+    const words = line.split(" ")
     let result = words[0]
 
     for (let i = 1; i < words.length; i++) {
-      const testLine = words.slice(0, i + 1).join(' ')
+      const testLine = words.slice(0, i + 1).join(" ")
       if (this.countSyllables(testLine) > maxSyllables) {
         break
       }
@@ -397,9 +423,9 @@ LINHA RESSRITA (metáfora nova, ${analysis.maxSyllables} sílabas):`
 
   private static getIdealSyllables(genre: string): number {
     const genreLower = genre.toLowerCase()
-    if (genreLower.includes('sertanejo')) return 9
-    if (genreLower.includes('pagode')) return 9
-    if (genreLower.includes('rock')) return 10
+    if (genreLower.includes("sertanejo")) return 9
+    if (genreLower.includes("pagode")) return 9
+    if (genreLower.includes("rock")) return 10
     return 9 // Padrão
   }
 }
