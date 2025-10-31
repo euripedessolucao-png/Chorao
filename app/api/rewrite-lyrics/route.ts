@@ -1,4 +1,4 @@
-// app/api/rewrite-lyrics/route.ts - VERSÃO SUPER RESTRITIVA
+// app/api/rewrite-lyrics/route.ts - VERSÃO SEM MAX_TOKENS
 import { type NextRequest, NextResponse } from "next/server"
 import { openai } from "@ai-sdk/openai"
 import { generateText } from "ai"
@@ -15,7 +15,7 @@ interface MusicBlock {
   score: number
 }
 
-// 🎯 GERAR BLOCO - VERSÃO EXTREMAMENTE DIRETA
+// 🎯 GERAR BLOCO - VERSÃO SEM MAX_TOKENS
 async function generateBlockVariations(
   blockType: MusicBlock["type"],
   genre: string,
@@ -29,27 +29,31 @@ async function generateBlockVariations(
     OUTRO: 2
   }
 
-  // PROMPTS SUPER RESTRITIVOS - ZERO EXPLICAÇÕES
+  // PROMPTS SUPER RESTRITIVOS - COM LIMITAÇÃO EXPLÍCITA NO TEXTO
   const prompts = {
-    VERSE: `VERSO ${genre} (4 linhas):
-${originalSection}
+    VERSE: `Escreva APENAS 4 linhas para um VERSO ${genre}. NADA mais. Apenas as 4 linhas:
 
-NOVO VERSO:`,
+Original: "${originalSection.substring(0, 100)}"
 
-    CHORUS: `REFRÃO ${genre} (4 linhas):
-${originalSection}
+4 LINHAS APENAS:`,
 
-NOVO REFRÃO:`,
+    CHORUS: `Escreva APENAS 4 linhas para um REFRÃO ${genre}. NADA mais. Apenas as 4 linhas:
 
-    BRIDGE: `PONTE ${genre} (4 linhas):
-${originalSection}
+Original: "${originalSection.substring(0, 100)}"
 
-NOVA PONTE:`,
+4 LINHAS APENAS:`,
 
-    OUTRO: `OUTRO ${genre} (2 linhas):
-${originalSection}
+    BRIDGE: `Escreva APENAS 4 linhas para uma PONTE ${genre}. NADA mais. Apenas as 4 linhas:
 
-NOVO OUTRO:`
+Original: "${originalSection.substring(0, 100)}"
+
+4 LINHAS APENAS:`,
+
+    OUTRO: `Escreva APENAS 2 linhas para um OUTRO ${genre}. NADA mais. Apenas as 2 linhas:
+
+Original: "${originalSection.substring(0, 100)}"
+
+2 LINHAS APENAS:`
   }
 
   try {
@@ -58,8 +62,8 @@ NOVO OUTRO:`
     const { text } = await generateText({
       model: openai("gpt-4o-mini"),
       prompt,
-      temperature: 0.3, // Muito baixo para menos criatividade
-      maxTokens: 100, // Limita muito a resposta
+      temperature: 0.2, // Muito baixo para menos criatividade
+      // REMOVIDO: maxTokens: 100 - Vercel não suporta
     })
 
     console.log(`[BlockGen] ${blockType} resposta crua:`, text)
@@ -72,7 +76,7 @@ NOVO OUTRO:`
   }
 }
 
-// 🧩 PROCESSAMENTO SUPER RESTRITIVO
+// 🧩 PROCESSAMENTO SUPER RESTRITIVO (mantido igual)
 function processBlockText(
   text: string, 
   blockType: MusicBlock["type"],
@@ -92,6 +96,9 @@ function processBlockText(
     .replace(/^.*SEÇÃO REESCRITA.*$/gmi, '')
     .replace(/^.*tá ponte.*$/gmi, '')
     .replace(/^.*ó!.*$/gmi, '')
+    .replace(/^.*APENAS.*$/gmi, '')
+    .replace(/^.*LINHAS.*$/gmi, '')
+    .replace(/^.*NADA mais.*$/gmi, '')
     .trim()
 
   console.log(`[Process] ${blockType} após limpeza:`, cleanText)
@@ -108,7 +115,7 @@ function processBlockText(
              !line.match(/^[0-9]/) && // Não começa com número
              !line.match(/^["']/) && // Não começa com aspas
              !line.includes('**') &&
-             !line.match(/^(NOVO|VERSO|REFRÃO|PONTE|OUTRO)/i) &&
+             !line.match(/^(NOVO|VERSO|REFRÃO|PONTE|OUTRO|APENAS|LINHAS|NADA)/i) &&
              !line.match(/REESCRITO/i) &&
              !line.match(/Claro!/i) &&
              !line.match(/Aqui/i) &&
@@ -130,7 +137,7 @@ function processBlockText(
   return []
 }
 
-// 🆘 FALLBACK SUPER CONSERVADOR
+// 🆘 FALLBACK SUPER CONSERVADOR (mantido igual)
 function generateStrictFallback(
   blockType: MusicBlock["type"],
   originalSection: string
@@ -178,7 +185,7 @@ function generateStrictFallback(
   }
 }
 
-// 🏗️ MONTAR LETRA COMPLETA
+// 🏗️ MONTAR LETRA COMPLETA (mantido igual)
 function assembleLyric(blocks: Record<string, MusicBlock[]>): string {
   let lyrics = ""
   let verseCount = 1
@@ -212,7 +219,7 @@ function assembleLyric(blocks: Record<string, MusicBlock[]>): string {
   return lyrics.trim()
 }
 
-// 🎼 DETECTAR SEÇÕES ORIGINAIS
+// 🎼 DETECTAR SEÇÕES ORIGINAIS (mantido igual)
 function extractOriginalSections(lyrics: string): Array<{type: MusicBlock["type"], content: string}> {
   const sections = parseLyricSections(lyrics)
   const result: Array<{type: MusicBlock["type"], content: string}> = []
@@ -241,7 +248,7 @@ function extractOriginalSections(lyrics: string): Array<{type: MusicBlock["type"
   ]
 }
 
-// ✅ POST PRINCIPAL - VERSÃO SIMPLIFICADA
+// ✅ POST PRINCIPAL - VERSÃO SIMPLIFICADA (mantido igual)
 export async function POST(request: NextRequest) {
   let genre = "Sertanejo"
   let theme = "Música"
