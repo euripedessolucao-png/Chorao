@@ -1,25 +1,24 @@
 // app/api/rewrite-lyrics/route.ts - NOVA ABORDAGEM POR PARTES
 import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
-import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 import { formatInstrumentationForAI } from "@/lib/normalized-genre"
 import { LineStacker } from "@/lib/utils/line-stacker"
 import { UnifiedSyllableManager } from "@/lib/syllable-management/unified-syllable-manager"
 
 // 🎵 TIPOS DE BLOCO MUSICAL
 interface MusicBlock {
-  type: 'INTRO' | 'VERSE' | 'PRE_CHORUS' | 'CHORUS' | 'BRIDGE' | 'OUTRO'
+  type: "INTRO" | "VERSE" | "PRE_CHORUS" | "CHORUS" | "BRIDGE" | "OUTRO"
   content: string
   score: number
 }
 
 // 🎯 GERAR MÚLTIPLAS OPÇÕES DE CADA PARTE
 async function generateBlockVariations(
-  blockType: MusicBlock['type'],
+  blockType: MusicBlock["type"],
   genre: string,
   theme: string,
   originalLyrics: string,
-  count: number = 3
+  count = 3,
 ): Promise<MusicBlock[]> {
   const prompts = {
     INTRO: `Crie ${count} opções de INTRO (4 linhas) para ${genre} baseada nesta letra:
@@ -60,7 +59,7 @@ Opções de PONTE:`,
 Tema: ${theme}
 Fecho emocional. Máximo 9 sílabas.
 
-Opções de OUTRO:`
+Opções de OUTRO:`,
   }
 
   const { text } = await generateText({
@@ -70,54 +69,54 @@ Opções de OUTRO:`
   })
 
   // Processar as opções geradas
-  return processGeneratedBlocks(text || '', blockType, count)
+  return processGeneratedBlocks(text || "", blockType, count)
 }
 
 // 🧩 PROCESSAR BLOCO GERADOS
-function processGeneratedBlocks(text: string, blockType: MusicBlock['type'], count: number): MusicBlock[] {
-  const lines = text.split('\n').filter(line => line.trim() && !line.match(/^(Opções|Crie|\d+\.)/))
+function processGeneratedBlocks(text: string, blockType: MusicBlock["type"], count: number): MusicBlock[] {
+  const lines = text.split("\n").filter((line) => line.trim() && !line.match(/^(Opções|Crie|\d+\.)/))
   const blocks: MusicBlock[] = []
-  
+
   let currentBlock: string[] = []
-  
+
   for (const line of lines) {
     const trimmed = line.trim()
-    if (trimmed && !trimmed.startsWith('[') && !trimmed.startsWith('(')) {
+    if (trimmed && !trimmed.startsWith("[") && !trimmed.startsWith("(")) {
       currentBlock.push(trimmed)
-      
+
       // Considerar bloco completo com 4-6 linhas
       if (currentBlock.length >= 4) {
         blocks.push({
           type: blockType,
-          content: currentBlock.join('\n'),
-          score: calculateBlockScore(currentBlock.join('\n'))
+          content: currentBlock.join("\n"),
+          score: calculateBlockScore(currentBlock.join("\n")),
         })
         currentBlock = []
-        
+
         if (blocks.length >= count) break
       }
     }
   }
-  
+
   return blocks.slice(0, count)
 }
 
 // 📊 CALCULAR SCORE DO BLOCO
 function calculateBlockScore(content: string): number {
-  const lines = content.split('\n').filter(line => line.trim())
+  const lines = content.split("\n").filter((line) => line.trim())
   let score = 50 // Base
-  
+
   // Bônus por número de linhas
   score += Math.min(lines.length * 5, 20)
-  
+
   // Bônus por diversidade de palavras
-  const words = content.split(/\s+/).filter(word => word.length > 2)
-  const uniqueWords = new Set(words.map(w => w.toLowerCase()))
+  const words = content.split(/\s+/).filter((word) => word.length > 2)
+  const uniqueWords = new Set(words.map((w) => w.toLowerCase()))
   score += Math.min(uniqueWords.size * 2, 20)
-  
+
   // Bônus por estrutura completa
   if (lines.length >= 4) score += 10
-  
+
   return Math.min(score, 100)
 }
 
@@ -125,34 +124,34 @@ function calculateBlockScore(content: string): number {
 function assembleCombinations(blocks: Record<string, MusicBlock[]>): string[] {
   const combinations: string[] = []
   const structure = [
-    { type: 'INTRO', label: 'Intro' },
-    { type: 'VERSE', label: 'Verso 1' },
-    { type: 'CHORUS', label: 'Refrão' },
-    { type: 'VERSE', label: 'Verso 2' },
-    { type: 'CHORUS', label: 'Refrão' },
-    { type: 'BRIDGE', label: 'Ponte' },
-    { type: 'CHORUS', label: 'Refrão Final' },
-    { type: 'OUTRO', label: 'Outro' }
+    { type: "INTRO", label: "Intro" },
+    { type: "VERSE", label: "Verso 1" },
+    { type: "CHORUS", label: "Refrão" },
+    { type: "VERSE", label: "Verso 2" },
+    { type: "CHORUS", label: "Refrão" },
+    { type: "BRIDGE", label: "Ponte" },
+    { type: "CHORUS", label: "Refrão Final" },
+    { type: "OUTRO", label: "Outro" },
   ]
 
   // Gerar 3 combinações diferentes
   for (let combo = 0; combo < 3; combo++) {
-    let lyrics = ''
-    
+    let lyrics = ""
+
     for (const section of structure) {
       const availableBlocks = blocks[section.type] || []
       if (availableBlocks.length > 0) {
         // Selecionar bloco baseado no score e variação
         const selectedIndex = combo % availableBlocks.length
         const selectedBlock = availableBlocks[selectedIndex]
-        
+
         lyrics += `[${section.label}]\n${selectedBlock.content}\n\n`
       }
     }
-    
+
     combinations.push(lyrics.trim())
   }
-  
+
   return combinations
 }
 
@@ -162,41 +161,40 @@ async function selectBestCombination(combinations: string[], genre: string): Pro
   let bestLyrics = combinations[0]
 
   for (const lyrics of combinations) {
-    // Validar sílabas
-    const validated = await UnifiedSyllableManager.processSongWithBalance(lyrics, genre)
+    const validated = await UnifiedSyllableManager.processSongWithBalance(lyrics)
     const syllableScore = calculateSyllableScore(validated)
-    
+
     // Score por tamanho e estrutura
-    const lines = validated.split('\n').filter(line => line.trim() && !line.startsWith('['))
+    const lines = validated.split("\n").filter((line) => line.trim() && !line.startsWith("["))
     const structureScore = Math.min(lines.length * 2, 50)
-    
+
     const totalScore = syllableScore + structureScore
-    
+
     if (totalScore > bestScore) {
       bestScore = totalScore
       bestLyrics = validated
     }
   }
-  
+
   console.log(`🎯 Melhor combinação: ${bestScore} pontos`)
   return bestLyrics
 }
 
 // 📏 CALCULAR SCORE DE SÍLABAS
 function calculateSyllableScore(lyrics: string): number {
-  const lines = lyrics.split('\n').filter(line => {
+  const lines = lyrics.split("\n").filter((line) => {
     const trimmed = line.trim()
-    return trimmed && !trimmed.startsWith('[') && !trimmed.startsWith('(')
+    return trimmed && !trimmed.startsWith("[") && !trimmed.startsWith("(")
   })
-  
+
   let validLines = 0
-  lines.forEach(line => {
+  lines.forEach((line) => {
     // Considerar válido se não tiver problemas óbvios
     if (!line.match(/\b(e|a|o|que|de|em|com)\s*$/i) && line.length > 5) {
       validLines++
     }
   })
-  
+
   return (validLines / lines.length) * 50
 }
 
@@ -209,7 +207,7 @@ export async function POST(request: NextRequest) {
     const { originalLyrics, genre: requestGenre, theme: requestTheme, title: requestTitle } = await request.json()
 
     genre = requestGenre || "Sertanejo"
-    theme = requestTheme || "Música" 
+    theme = requestTheme || "Música"
     title = requestTitle || `${theme} - ${genre}`
 
     if (!originalLyrics?.trim()) {
@@ -220,8 +218,8 @@ export async function POST(request: NextRequest) {
 
     // 🎯 1. GERAR MÚLTIPLAS OPÇÕES DE CADA PARTE
     console.log("[API] 🎲 Gerando variações de blocos...")
-    
-    const blockTypes: MusicBlock['type'][] = ['INTRO', 'VERSE', 'CHORUS', 'BRIDGE', 'OUTRO']
+
+    const blockTypes: MusicBlock["type"][] = ["INTRO", "VERSE", "CHORUS", "BRIDGE", "OUTRO"]
     const allBlocks: Record<string, MusicBlock[]> = {}
 
     for (const blockType of blockTypes) {
@@ -248,7 +246,7 @@ export async function POST(request: NextRequest) {
       finalLyrics = `${finalLyrics}\n\n${instrumentation}`
     }
 
-    const totalLines = finalLyrics.split('\n').filter(line => line.trim()).length
+    const totalLines = finalLyrics.split("\n").filter((line) => line.trim()).length
     console.log(`[API] 🎉 CONCLUÍDO: ${totalLines} linhas`)
 
     return NextResponse.json({
@@ -259,13 +257,12 @@ export async function POST(request: NextRequest) {
         genre,
         totalLines,
         quality: "BLOCK_ASSEMBLED",
-        method: "BLOCK_GENERATION"
+        method: "BLOCK_GENERATION",
       },
     })
-
   } catch (error) {
     console.error("[API] ❌ Erro:", error)
-    
+
     // 🆘 FALLBACK TRADICIONAL
     const emergencyLyrics = `[Intro]
 Música sendo reconstruída por partes
@@ -293,7 +290,7 @@ Processo em andamento
         genre,
         totalLines: 8,
         quality: "FALLBACK",
-        method: "TRADITIONAL"
+        method: "TRADITIONAL",
       },
     })
   }
