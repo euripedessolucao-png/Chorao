@@ -36,9 +36,10 @@ function calculateSyllableCompliance(lines: string[], genre: string): number {
     let isValid = false
 
     if ("absolute_max" in rules) {
-      isValid = syllables <= rules.absolute_max
+      isValid = syllables <= (rules as { absolute_max: number }).absolute_max
     } else if ("without_comma" in rules) {
-      isValid = syllables >= rules.without_comma.min && syllables <= rules.without_comma.acceptable_up_to
+      const commaRules = rules as { without_comma: { min: number; acceptable_up_to: number } }
+      isValid = syllables >= commaRules.without_comma.min && syllables <= commaRules.without_comma.acceptable_up_to
     }
 
     if (isValid) compliantCount++
