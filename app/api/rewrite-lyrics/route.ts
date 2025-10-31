@@ -1,4 +1,4 @@
-// app/api/rewrite-lyrics/route.ts - VERSÃO CORRIGIDA
+// app/api/rewrite-lyrics/route.ts - VERSÃO CORRIGIDA PARA VERCEL
 import { type NextRequest, NextResponse } from "next/server"
 import { openai } from "@ai-sdk/openai"
 import { generateText } from "ai"
@@ -15,7 +15,7 @@ interface MusicBlock {
   score: number
 }
 
-// 🎯 GERAR MÚLTIPLAS OPÇÕES DE CADA PARTE (CORRIGIDO)
+// 🎯 GERAR MÚLTIPLAS OPÇÕES DE CADA PARTE (CORRIGIDO PARA VERCEL)
 async function generateBlockVariations(
   blockType: MusicBlock["type"],
   genre: string,
@@ -33,7 +33,6 @@ async function generateBlockVariations(
     OUTRO: 3
   }
 
-  // CORREÇÃO: Adicionar prompts para todos os tipos de blocos
   const prompts = {
     INTRO: `Crie ${count} opções de INTRO (${lineTargets.INTRO} linhas) para música ${genre} sobre "${theme}".
 
@@ -177,14 +176,14 @@ Linha 3`
   }
 
   try {
-    // CORREÇÃO: Agora todos os tipos têm prompts definidos
     const prompt = prompts[blockType]
     
+    // CORREÇÃO: Removido maxTokens para compatibilidade com Vercel
     const { text } = await generateText({
       model: openai("gpt-4o-mini"),
       prompt,
       temperature: 0.7,
-      maxTokens: 500,
+      // maxTokens: 500, // REMOVIDO - não é suportado pelo Vercel
     })
 
     console.log(`[BlockGen] ${blockType} generated:`, text?.substring(0, 100))
@@ -249,7 +248,7 @@ function createMusicBlock(type: MusicBlock["type"], lines: string[]): MusicBlock
   }
 }
 
-// 🆘 GERAR BLOCOS DE FALLBACK (CORRIGIDO - adicionar todos os tipos)
+// 🆘 GERAR BLOCOS DE FALLBACK (mantido igual)
 function generateFallbackBlocks(
   blockType: MusicBlock["type"], 
   theme: string, 
@@ -258,7 +257,6 @@ function generateFallbackBlocks(
 ): MusicBlock[] {
   const blocks: MusicBlock[] = []
   
-  // CORREÇÃO: Adicionar templates para todos os tipos
   const templates = {
     INTRO: [
       `Pensando em ${theme}\nNo silêncio da emoção\nUm sentimento que cresce\nDentro do coração`,
