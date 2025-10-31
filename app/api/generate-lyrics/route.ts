@@ -1,14 +1,13 @@
 // app/api/generate-lyrics/route.ts - NOVA VERSÃO SIMPLIFICADA
 import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
-import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 import { formatInstrumentationForAI } from "@/lib/normalized-genre"
 import { LineStacker } from "@/lib/utils/line-stacker"
 import { UnifiedSyllableManager } from "@/lib/syllable-management/unified-syllable-manager"
 
 // 🎵 TIPOS DE BLOCO MUSICAL
 interface MusicBlock {
-  type: 'INTRO' | 'VERSE' | 'PRE_CHORUS' | 'CHORUS' | 'BRIDGE' | 'OUTRO'
+  type: "INTRO" | "VERSE" | "PRE_CHORUS" | "CHORUS" | "BRIDGE" | "OUTRO"
   content: string
   score: number
 }
@@ -39,7 +38,7 @@ Gere 3 opções de REFRÃO:`
       temperature: 0.8,
     })
 
-    return processChorusOptions(text || '', genre)
+    return processChorusOptions(text || "", genre)
   } catch (error) {
     console.error("[Chorus] Erro:", error)
     return []
@@ -49,27 +48,27 @@ Gere 3 opções de REFRÃO:`
 // 🧩 PROCESSAR REFRÕES GERADOS
 function processChorusOptions(text: string, genre: string): MusicBlock[] {
   const blocks: MusicBlock[] = []
-  const lines = text.split('\n').filter(line => {
+  const lines = text.split("\n").filter((line) => {
     const trimmed = line.trim()
-    return trimmed && !trimmed.match(/^(Opção|Refrão|\d+[\.\)])/i)
+    return trimmed && !trimmed.match(/^(Opção|Refrão|\d+[.)])/i)
   })
 
   let currentChorus: string[] = []
-  
+
   for (const line of lines) {
     const trimmed = line.trim()
     if (trimmed) {
       currentChorus.push(trimmed)
-      
+
       if (currentChorus.length >= 4) {
-        const content = currentChorus.join('\n')
+        const content = currentChorus.join("\n")
         blocks.push({
-          type: 'CHORUS',
+          type: "CHORUS",
           content: content,
-          score: calculateBlockScore(content)
+          score: calculateBlockScore(content),
         })
         currentChorus = []
-        
+
         if (blocks.length >= 3) break
       }
     }
@@ -81,9 +80,9 @@ function processChorusOptions(text: string, genre: string): MusicBlock[] {
 // 🎲 GERAR OUTROS BLOCOS BASEADOS NO REFRÃO
 async function generateOtherBlocks(
   selectedChorus: string,
-  blockType: 'INTRO' | 'VERSE' | 'BRIDGE' | 'OUTRO',
+  blockType: "INTRO" | "VERSE" | "BRIDGE" | "OUTRO",
   genre: string,
-  theme: string
+  theme: string,
 ): Promise<MusicBlock[]> {
   const prompts = {
     INTRO: `Crie INTRO (4 linhas) para ${genre} que prepare para este REFRÃO:
@@ -116,7 +115,7 @@ PONTE:`,
 Tema: ${theme}
 Fecho emocional. Máximo 9 sílabas.
 
-OUTRO:`
+OUTRO:`,
   }
 
   const { text } = await generateText({
@@ -125,53 +124,51 @@ OUTRO:`
     temperature: 0.7,
   })
 
-  return processGeneratedBlocks(text || '', blockType)
+  return processGeneratedBlocks(text || "", blockType)
 }
 
 // 🧩 PROCESSAR BLOCOS GERADOS
-function processGeneratedBlocks(text: string, blockType: MusicBlock['type']): MusicBlock[] {
-  const lines = text.split('\n').filter(line => {
+function processGeneratedBlocks(text: string, blockType: MusicBlock["type"]): MusicBlock[] {
+  const lines = text.split("\n").filter((line) => {
     const trimmed = line.trim()
-    return trimmed && !trimmed.startsWith('[') && !trimmed.startsWith('(')
+    return trimmed && !trimmed.startsWith("[") && !trimmed.startsWith("(")
   })
 
   const blocks: MusicBlock[] = []
-  let currentBlock: string[] = []
-  
+  const currentBlock: string[] = []
+
   for (const line of lines) {
     const trimmed = line.trim()
     if (trimmed) {
       currentBlock.push(trimmed)
-      
-      const minLines = blockType === 'OUTRO' ? 2 : 4
+
+      const minLines = blockType === "OUTRO" ? 2 : 4
       if (currentBlock.length >= minLines) {
         blocks.push({
           type: blockType,
-          content: currentBlock.join('\n'),
-          score: calculateBlockScore(currentBlock.join('\n'))
+          content: currentBlock.join("\n"),
+          score: calculateBlockScore(currentBlock.join("\n")),
         })
         break // Uma opção por bloco para simplicidade
       }
     }
   }
-  
+
   return blocks
 }
 
 // 📊 CALCULAR SCORE DO BLOCO
 function calculateBlockScore(content: string): number {
-  const lines = content.split('\n').filter(line => line.trim())
+  const lines = content.split("\n").filter((line) => line.trim())
   let score = 70 // Base
-  
+
   // Bônus por número de linhas ideal
   if (lines.length >= 4) score += 10
-  
+
   // Bônus por versos completos
-  const completeLines = lines.filter(line => 
-    line.length > 5 && !line.match(/\b(e|a|o|que|de|em|com)\s*$/i)
-  )
+  const completeLines = lines.filter((line) => line.length > 5 && !line.match(/\b(e|a|o|que|de|em|com)\s*$/i))
   score += (completeLines.length / lines.length) * 20
-  
+
   return Math.min(score, 100)
 }
 
@@ -179,23 +176,23 @@ function calculateBlockScore(content: string): number {
 async function assembleCompleteSong(
   chorus: MusicBlock,
   otherBlocks: Record<string, MusicBlock[]>,
-  genre: string
+  genre: string,
 ): Promise<string> {
   const structure = [
-    { type: 'INTRO', label: 'Intro' },
-    { type: 'VERSE', label: 'Verso 1' },
-    { type: 'CHORUS', label: 'Refrão' },
-    { type: 'VERSE', label: 'Verso 2' },
-    { type: 'CHORUS', label: 'Refrão' },
-    { type: 'BRIDGE', label: 'Ponte' },
-    { type: 'CHORUS', label: 'Refrão Final' },
-    { type: 'OUTRO', label: 'Outro' }
+    { type: "INTRO", label: "Intro" },
+    { type: "VERSE", label: "Verso 1" },
+    { type: "CHORUS", label: "Refrão" },
+    { type: "VERSE", label: "Verso 2" },
+    { type: "CHORUS", label: "Refrão" },
+    { type: "BRIDGE", label: "Ponte" },
+    { type: "CHORUS", label: "Refrão Final" },
+    { type: "OUTRO", label: "Outro" },
   ]
 
-  let lyrics = ''
+  let lyrics = ""
 
   for (const section of structure) {
-    if (section.type === 'CHORUS') {
+    if (section.type === "CHORUS") {
       lyrics += `[${section.label}]\n${chorus.content}\n\n`
     } else {
       const availableBlocks = otherBlocks[section.type] || []
@@ -205,8 +202,7 @@ async function assembleCompleteSong(
     }
   }
 
-  // Aplicar correção de sílabas
-  return await UnifiedSyllableManager.processSongWithBalance(lyrics.trim(), genre)
+  return await UnifiedSyllableManager.processSongWithBalance(lyrics.trim())
 }
 
 export async function POST(request: NextRequest) {
@@ -215,16 +211,16 @@ export async function POST(request: NextRequest) {
   let title = "Música em Processamento"
 
   try {
-    const { 
-      genre: requestGenre, 
-      theme: requestTheme, 
+    const {
+      genre: requestGenre,
+      theme: requestTheme,
       title: requestTitle,
       mood = "neutro",
-      additionalRequirements = ""
+      additionalRequirements = "",
     } = await request.json()
 
     genre = requestGenre || "Sertanejo"
-    theme = requestTheme || "Música" 
+    theme = requestTheme || "Música"
     title = requestTitle || `${theme} - ${genre}`
 
     if (!genre) {
@@ -233,52 +229,45 @@ export async function POST(request: NextRequest) {
 
     console.log(`[API] 🎵 Gerando música com refrão central: ${genre}`)
 
-    // 🎯 1. GERAR OPÇÕES DE REFRÃO (PONTO DE PARTIDA)
+    // 🎶 Gerando refrões...
     console.log("[API] 🎶 Gerando refrões...")
     const chorusOptions = await generateChorusOptions(genre, theme, mood)
-    
+
     if (chorusOptions.length === 0) {
       throw new Error("Não foi possível gerar refrões")
     }
 
     // Selecionar melhor refrão
-    const bestChorus = chorusOptions.reduce((best, current) => 
-      current.score > best.score ? current : best
-    )
+    const bestChorus = chorusOptions.reduce((best, current) => (current.score > best.score ? current : best))
     console.log(`[API] ✅ Refrão selecionado: ${bestChorus.score} pontos`)
 
-    // 🧩 2. GERAR OUTROS BLOCOS BASEADOS NO REFRÃO
+    // 🧩 Gerando blocos complementares...
     console.log("[API] 🧩 Gerando blocos complementares...")
     const otherBlocks: Record<string, MusicBlock[]> = {}
-    
-    const blockTypes: ('INTRO' | 'VERSE' | 'BRIDGE' | 'OUTRO')[] = ['INTRO', 'VERSE', 'BRIDGE', 'OUTRO']
-    
+
+    const blockTypes: ("INTRO" | "VERSE" | "BRIDGE" | "OUTRO")[] = ["INTRO", "VERSE", "BRIDGE", "OUTRO"]
+
     for (const blockType of blockTypes) {
-      otherBlocks[blockType] = await generateOtherBlocks(
-        bestChorus.content,
-        blockType,
-        genre,
-        theme
-      )
+      otherBlocks[blockType] = await generateOtherBlocks(bestChorus.content, blockType, genre, theme)
       console.log(`[API] ✅ ${blockType}: ${otherBlocks[blockType].length} opções`)
     }
 
-    // 🏗️ 3. MONTAR MÚSICA COMPLETA
+    // 🏗️ Montando música completa...
     console.log("[API] 🏗️ Montando música completa...")
     let finalLyrics = await assembleCompleteSong(bestChorus, otherBlocks, genre)
 
-    // ✨ 4. FORMATAÇÃO FINAL
+    // ✨ Aplicando formatação...
     console.log("[API] ✨ Aplicando formatação...")
     const stackingResult = LineStacker.stackLines(finalLyrics)
     finalLyrics = stackingResult.stackedLyrics
 
-    // 🎸 5. INSTRUMENTAÇÃO
+    // 🎸 INSTRUMENTAÇÃO
     if (!finalLyrics.includes("(Instrumentation)")) {
       const instrumentation = formatInstrumentationForAI(genre, finalLyrics)
       finalLyrics = `${finalLyrics}\n\n${instrumentation}`
     }
 
-    const totalLines = finalLyrics.split('\n').filter(line => line.trim()).length
+    const totalLines = finalLyrics.split("\n").filter((line) => line.trim()).length
     console.log(`[API] 🎉 CONCLUÍDO: ${totalLines} linhas`)
 
     return NextResponse.json({
@@ -290,13 +279,12 @@ export async function POST(request: NextRequest) {
         totalLines,
         quality: "CHORUS_CENTERED",
         method: "CHORUS_FIRST",
-        chorusScore: bestChorus.score
+        chorusScore: bestChorus.score,
       },
     })
-
   } catch (error) {
     console.error("[API] ❌ Erro:", error)
-    
+
     // 🆘 FALLBACK SIMPLES
     const emergencyLyrics = `[Intro]
 Música sendo criada com nova abordagem
@@ -335,7 +323,7 @@ Processo em finalização
         genre,
         totalLines: 12,
         quality: "FALLBACK",
-        method: "TRADITIONAL"
+        method: "TRADITIONAL",
       },
     })
   }
