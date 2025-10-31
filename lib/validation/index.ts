@@ -51,9 +51,7 @@ export { validateChorus } from "./validateChorus"
 // Validador Multi-Camadas
 export {
   validateAllLayers,
-  validateSingleVerse,
   type MultiLayerValidationResult,
-  type LayerResult,
 } from "./multi-layer-validator"
 
 // Utilitários de validação
