@@ -12,8 +12,9 @@ import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
 import { toast } from "sonner"
-import { GenreSelect } from "@/components/genre-select"
-import { SubgenreSelect } from "@/components/subgenre-select"
+// ✅ CORREÇÃO: Remover componentes problemáticos temporariamente
+// import { GenreSelect } from "@/components/genre-select"
+// import { SubgenreSelect } from "@/components/subgenre-select"
 import {
   Dialog,
   DialogContent,
@@ -25,9 +26,6 @@ import {
 import { ChorusGenerator } from "@/components/chorus-generator"
 import { Wand2 } from "lucide-react"
 
-// ✅ CORREÇÃO: Importação simplificada ou remoção se não for necessária
-// import { UnifiedSyllableManager } from "@/lib/syllable-management/unified-syllable-manager"
-
 const MOODS = ["Feliz", "Triste", "Nostálgico", "Romântico", "Animado", "Melancólicico"]
 const EMOTIONS = [
   "Alegria", "Alívio", "Amor", "Ansiedade", "Confusão", "Conexão", "Coragem", "Culpa",
@@ -37,7 +35,25 @@ const EMOTIONS = [
   "Ternura", "Tristeza", "Vergonha"
 ]
 
-// ✅ CONFIGURAÇÃO ATUALIZADA - VALORES PADRÃO
+// ✅ LISTA DE GÊNEROS PARA O SELECT
+const GENRES = [
+  "Sertanejo",
+  "Sertanejo Moderno", 
+  "Sertanejo Universitário",
+  "Sertanejo Sofrência",
+  "Sertanejo Raiz",
+  "MPB",
+  "Bossa Nova",
+  "Funk",
+  "Pagode",
+  "Samba",
+  "Forró",
+  "Axé",
+  "Rock",
+  "Pop",
+  "Gospel"
+]
+
 const GENRE_QUALITY_CONFIG = {
   "Sertanejo": { max: 12, ideal: 9, min: 7, rhymeQuality: 0.5 },
   "Sertanejo Moderno": { max: 12, ideal: 9, min: 7, rhymeQuality: 0.5 },
@@ -79,7 +95,6 @@ export default function EditarPage() {
   const [showChorusDialog, setShowChorusDialog] = useState(false)
   const [selectedChoruses, setSelectedChoruses] = useState<any[]>([])
 
-  // ✅ FUNÇÃO CORRIGIDA - USA CONFIGURAÇÃO LOCAL
   const getSyllableConfig = (selectedGenre: string) => {
     const config = GENRE_QUALITY_CONFIG[selectedGenre as keyof typeof GENRE_QUALITY_CONFIG] || GENRE_QUALITY_CONFIG.default
     return {
@@ -124,7 +139,6 @@ export default function EditarPage() {
     toast.success("Inspiração adicionada")
   }
 
-  // ✅ FUNÇÃO PRINCIPAL CORRIGIDA
   const handleEditLyrics = async () => {
     if (!lyrics.trim()) {
       toast.error("Por favor, cole a letra para editar")
@@ -278,7 +292,6 @@ export default function EditarPage() {
     toast.success("Refrão(ões) adicionado(s) aos requisitos!")
   }
 
-  // ✅ FUNÇÃO CORRIGIDA
   const getCreativityLevel = (sliderValue: number): "conservador" | "equilibrado" | "ousado" => {
     if (sliderValue < 40) return "conservador"
     if (sliderValue < 70) return "equilibrado"
@@ -336,14 +349,31 @@ export default function EditarPage() {
                     />
                   </div>
 
+                  {/* ✅ CORREÇÃO: Select nativo para Gênero */}
                   <div className="space-y-2">
                     <Label>Gênero Musical</Label>
-                    <GenreSelect value={genre} onChange={setGenre} />
+                    <Select value={genre} onValueChange={setGenre}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o gênero" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {GENRES.map((genreOption) => (
+                          <SelectItem key={genreOption} value={genreOption}>
+                            {genreOption}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
+                  {/* ✅ CORREÇÃO: Input para Subgênero */}
                   <div className="space-y-2">
                     <Label>Subgênero/Ritmo</Label>
-                    <SubgenreSelect value={subgenre} onChange={setSubgenre} genre={genre} />
+                    <Input
+                      placeholder="Ex: Arrocha, Piseiro, etc..."
+                      value={subgenre}
+                      onChange={(e) => setSubgenre(e.target.value)}
+                    />
                   </div>
 
                   <div className="space-y-2">
