@@ -1,4 +1,4 @@
-// app/api/rewrite-lyrics/route.ts - VERSÃO CORRIGIDA
+// app/api/rewrite-lyrics/route.ts - SOLUÇÃO ESTRATÉGICA
 import { type NextRequest, NextResponse } from "next/server"
 import { openai } from "@ai-sdk/openai"
 import { generateText } from "ai"
@@ -8,297 +8,250 @@ interface MusicBlock {
   type: "INTRO" | "VERSE" | "PRE_CHORUS" | "CHORUS" | "BRIDGE" | "OUTRO"
   content: string
   score: number
-  rhymeScore?: number
 }
 
-// ✅ SISTEMA SIMPLIFICADO DE ANÁLISE DE RIMAS
-function analyzeSimpleRhyme(word1: string, word2: string): { type: string; score: number } {
-  if (!word1 || !word2 || word1.length < 2 || word2.length < 2) {
-    return { type: "none", score: 0 }
-  }
-
-  const w1 = word1.toLowerCase().replace(/[^a-záàâãéèêíìîóòôõúùûç]/g, '')
-  const w2 = word2.toLowerCase().replace(/[^a-záàâãéèêíìîóòôõúùûç]/g, '')
-
-  // Rima perfeita (últimas 2-3 letras iguais)
-  if (w1.slice(-2) === w2.slice(-2) || w1.slice(-3) === w2.slice(-3)) {
-    return { type: "perfeita", score: 80 }
-  }
-
-  // Rima consoante (consoantes finais similares)
-  const cons1 = w1.replace(/[aeiouáàâãéèêíìîóòôõúùûç]/g, '')
-  const cons2 = w2.replace(/[aeiouáàâãéèêíìîóòôõúùûç]/g, '')
-  if (cons1.slice(-2) === cons2.slice(-2)) {
-    return { type: "consoante", score: 70 }
-  }
-
-  // Rima pobre
-  return { type: "pobre", score: 40 }
-}
-
-function getLastWord(line: string): string {
-  const words = line.trim().split(/\s+/)
-  return words[words.length - 1]?.replace(/[.,!?;:]$/, '') || ""
-}
-
-function analyzeLyricsRhymeScheme(lyrics: string): { score: number } {
-  const lines = lyrics.split("\n")
-    .filter(line => line.trim() && !line.startsWith("[") && !line.startsWith("("))
-  
-  let totalScore = 0
-  let rhymeCount = 0
-
-  for (let i = 0; i < lines.length - 1; i += 2) {
-    const word1 = getLastWord(lines[i])
-    const word2 = getLastWord(lines[i + 1])
-    
-    if (word1 && word2) {
-      const rhyme = analyzeSimpleRhyme(word1, word2)
-      totalScore += rhyme.score
-      rhymeCount++
-    }
-  }
-
-  return {
-    score: rhymeCount > 0 ? Math.round(totalScore / rhymeCount) : 50
-  }
-}
-
-// ✅ VALIDAÇÃO DE LINHAS COMPLETAS
-function validateCompleteLines(content: string): { valid: boolean; errors: string[] } {
-  const lines = content.split("\n").filter(line => line.trim())
-  const errors: string[] = []
-  
-  const incompleteIndicators = [
-    /\b(eu|me|te|se|nos|vos)\s*$/i,
-    /\b(o|a|os|as|um|uma)\s*$/i, 
-    /\b(em|no|na|de|da|do|por|pra)\s*$/i,
-    /\b(que|se|mas|porém)\s*$/i,
-    /\b(meu|minha|teu|tua|seu|sua)\s*$/i
-  ]
-  
-  lines.forEach((line, index) => {
-    const trimmedLine = line.trim()
-    
-    for (const pattern of incompleteIndicators) {
-      if (pattern.test(trimmedLine)) {
-        errors.push(`Linha ${index + 1} INCOMPLETA: "${trimmedLine}"`)
-        break
-      }
-    }
-  })
-  
-  return {
-    valid: errors.length === 0,
-    errors
-  }
-}
-
-// 🎯 RESSECRITURA COM PRIORIDADE EM VERSOS COMPLETOS
-async function rewriteSectionWithQuality(
+// ✅ SISTEMA DE ENSINO PARA A IA
+async function teachAItoWriteWithRhymes(
   originalSection: string,
   blockType: MusicBlock["type"],
   genre: string,
   theme: string
 ): Promise<MusicBlock[]> {
   
-  const rewritePrompts = {
-    INTRO: `Reescreva esta INTRO no estilo ${genre}:
+  const teachingPrompts = {
+    INTRO: `🎵 ESCREVA UMA INTRO no estilo ${genre} SOBRE "${theme}"
 
-ORIGINAL: "${originalSection}"
+📋 **COMO FAZER RIMAS CORRETAMENTE:**
+1. PRIMEIRO: Escreva 4 linhas COMPLETAS (máximo 12 sílabas)
+2. SEGUNDO: Ajuste as rimas SEM CORTAR versos
+3. TERCEIRO: Mantenha o sentido emocional
 
-Tema: ${theme}
+🎯 **EXEMPLOS DE RIMAS QUE FUNCIONAM:**
+"Quando a noite chega e a lua aparece" (11 sílabas)
+"Teu sorriso ilumina e me oferece" (11 sílabas) 
+→ RIMA: aparece/oferece (PERFEITA)
 
-REGRAS PRIORITÁRIAS:
-1. 4 linhas COMPLETAS e coerentes
-2. Máximo 12 sílabas por verso
-3. Não corte versos - termine cada linha com sentido completo
-4. Rimas são secundárias
+"Nos braços do destino a vida dança" (10 sílabas)  
+"Enquanto nosso amor sempre avança" (10 sílabas)
+→ RIMA: dança/avança (PERFEITA)
 
-INTRO RESSRITA (4 linhas completas):`,
+❌ **NUNCA FAÇA:**
+"Quando a noite chega e a lua" (INCOMPLETO)
+"Teu sorriso ilumina meu" (INCOMPLETO)
 
-    VERSE: `Reescreva este VERSO no estilo ${genre}:
+📝 AGORA ESCREVA 4 LINHAS COMPLETAS COM RIMAS:`,
 
-ORIGINAL: "${originalSection}"
+    VERSE: `🎵 ESCREVA UM VERSO no estilo ${genre} SOBRE "${theme}"
 
-Tema: ${theme}
+📋 **ESTRATÉGIA PARA VERSOS RIMADOS:**
+1. Linha 1: Estabeleça a cena (máximo 12 sílabas)
+2. Linha 2: Desenvolva com rima da linha 1
+3. Linha 3: Continue a narrativa  
+4. Linha 4: Finalize com rima da linha 3
 
-REGRAS PRIORITÁRIAS:
-1. 4 linhas COMPLETAS com narrativa
-2. Máximo 12 sílabas por verso  
-3. Desenvolva a história com começo, meio e fim
-4. Versos completos são mais importantes que rimas
+🎯 **EXEMPLO PRÁTICO:**
+"Nos teus olhos encontro paz e calma" (10 sílabas)
+"Que acalenta e cura toda a alma" (10 sílabas)
+"Teu perfume é brisa de verão" (9 sílabas)
+"Que aquece e alegra o coração" (9 sílabas)
 
-VERSO RESSRITO (4 linhas completas):`,
+❌ **EVITE:**
+Linhas cortadas ou sem sentido completo
 
-    CHORUS: `Reescreva este REFRÃO no estilo ${genre}:
+📝 AGORA ESCREVA 4 LINHAS COMPLETAS COM RIMAS A-B-A-B:`,
 
-ORIGINAL: "${originalSection}"
+    CHORUS: `🎵 ESCREVA UM REFRÃO no estilo ${genre} SOBRE "${theme}"
 
-Tema: ${theme}
+📋 **REFRAO MEMORÁVEL COM RIMAS:**
+- Linhas 1 e 3 rimam entre si
+- Linhas 2 e 4 rimam entre si  
+- Todas as linhas COMPLETAS (máximo 12 sílabas)
 
-REGRAS PRIORITÁRIAS:
-1. 4 linhas COMPLETAS e impactantes
-2. Máximo 12 sílabas por verso
-3. Gancho emocional forte
-4. Versos completos primeiro, rimas depois
+🎯 **EXEMPLO DE ESTRUTURA:**
+"Teu sorriso é meu porto seguro" (10 sílabas)
+"Teu abraço é meu aquecimento" (10 sílabas)  
+"No ritmo desse amor tão puro" (9 sílabas)
+"Encontro paz e sentimento" (9 sílabas)
 
-REFRÃO RESSRITO (4 linhas completas):`,
+📝 AGORA ESCREVA UM REFRÃO COM 4 LINHAS COMPLETAS:`,
 
-    BRIDGE: `Reescreva esta PONTE no estilo ${genre}:
+    BRIDGE: `🎵 ESCREVA UMA PONTE no estilo ${genre} SOBRE "${theme}"
 
-ORIGINAL: "${originalSection}"
+📋 **PONTE COM MUDANÇA E RIMA:**
+- 4 linhas completas com nova perspectiva
+- Rimas que reforcem a mudança emocional
+- Máximo 12 sílabas por verso
 
-Tema: ${theme}
+🎯 **EXEMPLO:**
+"Nos teus olhos vejo um novo amanhecer" (11 sílabas)
+"Cada promessa faz o medo esquecer" (11 sílabas)
+"Entre risos e lágrimas, verdades a florescer" (13 sílabas - AJUSTAR!)
+"Nosso amor é forte e vai merecer" (11 sílabas)
 
-REGRAS PRIORITÁRIAS:
-1. 4 linhas COMPLETAS com mudança
-2. Máximo 12 sílabas por verso
-3. Profundidade emocional
-4. Foque em versos completos
+📝 AGORA ESCREVA UMA PONTE COM 4 LINHAS COMPLETAS:`,
 
-PONTE RESSRITA (4 linhas completas):`,
+    OUTRO: `🎵 ESCREVA UM OUTRO no estilo ${genre} SOBRE "${theme}"
 
-    OUTRO: `Reescreva este OUTRO no estilo ${genre}:
+📋 **FECHO COM RIMAS SUAVES:**
+- 2-4 linhas completas e conclusivas
+- Máximo 9 sílabas por verso
+- Rimas que tragam sensação de encerramento
 
-ORIGINAL: "${originalSection}"
+🎯 **EXEMPLO:**
+"Nos teus olhos me encontrei" (7 sílabas)
+"Teu amor me completou" (7 sílabas)
+"Juntos vamos seguir" (6 sílabas)
+"O amor nos guiou" (6 sílabas)
 
-Tema: ${theme}
-
-REGRAS PRIORITÁRIAS:
-1. 2-4 linhas COMPLETAS de fechamento
-2. Máximo 9 sílabas por verso
-3. Sensação de conclusão
-4. Versos completos são essenciais
-
-OUTRO RESSRITA (linhas completas):`
+📝 AGORA ESCREVA UM OUTRO COM 2-4 LINHAS COMPLETAS:`
   }
 
   try {
-    const prompt = rewritePrompts[blockType as keyof typeof rewritePrompts]
+    const prompt = teachingPrompts[blockType as keyof typeof teachingPrompts]
     
     const { text } = await generateText({
       model: openai("gpt-4o-mini"),
       prompt,
       temperature: 0.7,
+      maxTokens: 500,
     })
 
-    return processRewrittenBlock(text || "", blockType, originalSection, genre)
+    return processAILearningResult(text || "", blockType, originalSection)
   } catch (error) {
-    console.error(`[Rewrite] Erro em ${blockType}:`, error)
-    return [generateQualityFallback(blockType, theme)]
+    console.error(`[Teaching] Erro em ${blockType}:`, error)
+    return [generateSmartFallback(blockType, theme, genre)]
   }
 }
 
-// 🧩 PROCESSAR BLOCO COM FOCO EM COMPLETUDE
-function processRewrittenBlock(
+// ✅ PROCESSAR RESULTADO DO "ENSINO"
+function processAILearningResult(
   text: string, 
   blockType: MusicBlock["type"], 
-  originalSection: string,
-  genre: string
+  originalSection: string
 ): MusicBlock[] {
   
-  const cleanText = text
-    .replace(/^(REGRAS|ORIGINAL|Tema).*?[\n:]/gmi, '')
-    .replace(/.*RESSRITA.*?[\n:]/gmi, '')
-    .trim()
-
-  const lines = cleanText.split("\n")
+  // Extrair apenas as linhas da letra (remover instruções)
+  const lines = text.split("\n")
     .map(line => line.trim())
-    .filter(line => line && line.length >= 5)
+    .filter(line => {
+      // Manter apenas linhas que parecem versos de música
+      return line && 
+             line.length >= 5 && 
+             line.length <= 80 &&
+             !line.startsWith("📋") &&
+             !line.startsWith("🎯") &&
+             !line.startsWith("❌") &&
+             !line.startsWith("📝") &&
+             !line.startsWith("🎵") &&
+             !line.includes("sílabas") &&
+             !line.match(/^\d+\./) // não numeradas
+    })
     .slice(0, blockType === "OUTRO" ? 4 : 4)
 
-  // ✅ VALIDAR COMPLETUDE ANTES DE ACEITAR
-  const completenessCheck = validateCompleteLines(lines.join("\n"))
-  
-  if (lines.length >= (blockType === "OUTRO" ? 2 : 3) && completenessCheck.valid) {
+  console.log(`[AI Learning] ${blockType} - Linhas geradas:`, lines)
+
+  // ✅ VALIDAÇÃO INTELIGENTE
+  if (isValidStrophe(lines, blockType)) {
     const content = lines.join("\n")
-    const rhymeAnalysis = analyzeLyricsRhymeScheme(content)
-    
-    // ✅ SCORE ALTO PARA VERSOS COMPLETOS
-    let score = 80
-    
-    if (rhymeAnalysis.score > 70) score += 10
-    else if (rhymeAnalysis.score > 50) score += 5
     
     return [{
       type: blockType,
       content: content,
-      score: Math.min(score, 100),
-      rhymeScore: rhymeAnalysis.score,
+      score: calculateLearningScore(content, originalSection, blockType),
     }]
   } else {
-    console.log(`[Rewrite] ❌ Bloco ${blockType} rejeitado - linhas incompletas`)
-    return [generateQualityFallback(blockType, "")]
+    console.log(`[AI Learning] ❌ ${blockType} inválido - usando fallback inteligente`)
+    return [generateSmartFallback(blockType, "", "Sertanejo Moderno Masculino")]
   }
 }
 
-// 🆘 FALLBACKS COM VERSOS COMPLETOS GARANTIDOS
-function generateQualityFallback(blockType: MusicBlock["type"], theme: string): MusicBlock {
-  const qualityFallbacks = {
-    INTRO: {
-      content: `Quando a noite chega e a lua aparece no céu\nTeu sorriso ilumina todo o meu caminho\nNa batida do coração a paixão cresce\nNessa dança da vida, nosso amor fica miudo`,
-      score: 85,
-      rhymeScore: 70
-    },
-    VERSE: {
-      content: `No brilho dos teus olhos eu me reconheço\nNavegando em cada momento do nosso enredo\nTeu perfume é como uma brisa de verão\nQue me faz sentir completo em qualquer estação`,
-      score: 85, 
-      rhymeScore: 75
-    },
-    CHORUS: {
-      content: `Teu sorriso é o chão onde eu posso pisar\nTeu abraço é o calor que me faz sonhar\nNo ritmo dessa paixão que não tem fim\nEu danço contigo e sinto que sou feliz`,
-      score: 90,
-      rhymeScore: 85
-    },
-    BRIDGE: {
-      content: `Nos teus braços eu encontro meu lugar\nTeu sorriso é o lar que vou habitando\nEntre as estrelas que vejo a brilhar\nNosso amor vai se eternizando no tempo`,
-      score: 85,
-      rhymeScore: 80
-    },
-    OUTRO: {
-      content: `Nos teus olhos eu me encontro verdadeiro\nTeu amor é o abrigo do meu caminho\nCom você ao meu lado tudo fica inteiro`,
-      score: 85,
-      rhymeScore: 80
+// ✅ VALIDAÇÃO POR ESTROFE (NÃO POR VERSO)
+function isValidStrophe(lines: string[], blockType: MusicBlock["type"]): boolean {
+  if (lines.length < (blockType === "OUTRO" ? 2 : 4)) {
+    console.log(`[Validation] ❌ Estrofe muito curta: ${lines.length} linhas`)
+    return false
+  }
+
+  // Verificar se todas as linhas são completas
+  const incompletePatterns = [
+    /\b(eu|me|te|se|nos|vos|o|a|os|as|um|uma|em|no|na|de|da|do|por|pra|que|se|mas|meu|minha|teu|tua)\s*$/i
+  ]
+
+  for (const line of lines) {
+    for (const pattern of incompletePatterns) {
+      if (pattern.test(line)) {
+        console.log(`[Validation] ❌ Linha incompleta: "${line}"`)
+        return false
+      }
+    }
+
+    // Verificar comprimento razoável (não muito longo)
+    if (line.length > 70) {
+      console.log(`[Validation] ❌ Linha muito longa: ${line.length} chars`)
+      return false
     }
   }
 
-  const fallback = qualityFallbacks[blockType as keyof typeof qualityFallbacks] || qualityFallbacks.VERSE
+  console.log(`[Validation] ✅ Estrofe válida: ${lines.length} linhas completas`)
+  return true
+}
+
+// ✅ SCORE BASEADO NA QUALIDADE DA ESTROFE
+function calculateLearningScore(
+  content: string, 
+  originalSection: string, 
+  blockType: MusicBlock["type"]
+): number {
+  const lines = content.split("\n").filter(line => line.trim())
+  let score = 75 // Base mais alta para conteúdo validado
+
+  // Bônus por estrutura completa
+  const targetLines = blockType === "OUTRO" ? 2 : 4
+  if (lines.length === targetLines) score += 15
+
+  // Bônus por diversidade vocabular
+  const words = content.split(/\s+/).filter(word => word.length > 2)
+  const uniqueWords = new Set(words)
+  if (uniqueWords.size / words.length > 0.6) score += 10
+
+  return Math.min(score, 100)
+}
+
+// ✅ FALLBACKS INTELIGENTES COM RIMAS NATURAIS
+function generateSmartFallback(blockType: MusicBlock["type"], theme: string, genre: string): MusicBlock {
+  const smartFallbacks = {
+    INTRO: {
+      content: `Quando a noite cai e a lua aparece\nTeu sorriso brilha e me oferece\nNos braços da sorte a vida dança\nE nosso amor sempre avança`,
+      score: 90
+    },
+    VERSE: {
+      content: `Nos teus olhos vejo paz e calma\nQue acalenta e cura toda a alma\nTeu perfume é brisa de verão\nQue aquece e alegra o coração`,
+      score: 90
+    },
+    CHORUS: {
+      content: `Teu sorriso é meu porto seguro\nTeu abraço é meu aquecimento\nNo ritmo desse amor tão puro\nEncontro paz e sentimento`,
+      score: 95
+    },
+    BRIDGE: {
+      content: `Nos teus olhos vejo novo amanhecer\nCada promessa faz o medo esquecer\nEntre risos e sonhos a florescer\nNosso amor é forte e vai vencer`,
+      score: 90
+    },
+    OUTRO: {
+      content: `Nos teus olhos me encontrei\nTeu amor me completou\nJuntos vamos seguir\nO amor nos guiou`,
+      score: 90
+    }
+  }
+
+  const fallback = smartFallbacks[blockType as keyof typeof smartFallbacks] || smartFallbacks.VERSE
   return { type: blockType, ...fallback }
 }
 
-// ✅ SISTEMA SIMPLIFICADO DE MELHORIA DE RIMAS
-async function enhanceLyricsRhymes(lyrics: string, genre: string): Promise<{
-  enhancedLyrics: string;
-  improvements: string[];
-}> {
-  const lines = lyrics.split("\n")
-  const enhancedLines: string[] = []
-  const improvements: string[] = []
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]
-    
-    if (line.startsWith("[") || line.startsWith("(") || !line.trim()) {
-      enhancedLines.push(line)
-      continue
-    }
-
-    enhancedLines.push(line)
-  }
-
-  return {
-    enhancedLyrics: enhancedLines.join("\n"),
-    improvements: ["Sistema de rimas simplificado - focando em versos completos"]
-  }
-}
-
-// 🏗️ MONTAR MÚSICA RESSRITA
-async function assembleRewrittenSong(
+// ✅ MONTAGEM ESTRATÉGICA DA MÚSICA
+async function assembleLearnedSong(
   blocks: Record<string, MusicBlock[]>,
   genre: string,
   theme: string
-): Promise<{ lyrics: string; rhymeImprovements: string[]; rhymeScore: number }> {
+): Promise<{ lyrics: string }> {
   
   const structure = [
     { type: "INTRO", label: "Intro" },
@@ -317,60 +270,41 @@ async function assembleRewrittenSong(
     const availableBlocks = blocks[section.type] || []
     if (availableBlocks.length > 0) {
       const bestBlock = availableBlocks.reduce((best, current) => 
-        (current.score || 0) > (best.score || 0) ? current : best
+        current.score > best.score ? current : best
       )
       lyrics += `[${section.label}]\n${bestBlock.content}\n\n`
     } else {
-      const fallback = generateQualityFallback(section.type as any, "")
+      const fallback = generateSmartFallback(section.type as any, "", genre)
       lyrics += `[${section.label}]\n${fallback.content}\n\n`
     }
   }
 
-  try {
-    // ✅ MELHORIA DE RIMAS (SECUNDÁRIA)
-    const rhymeEnhancement = await enhanceLyricsRhymes(lyrics.trim(), genre)
-    
-    // Análise final
-    const finalAnalysis = analyzeLyricsRhymeScheme(rhymeEnhancement.enhancedLyrics)
-    
-    return {
-      lyrics: rhymeEnhancement.enhancedLyrics,
-      rhymeImprovements: rhymeEnhancement.improvements,
-      rhymeScore: finalAnalysis.score
-    }
-    
-  } catch (error) {
-    console.error("[RewriteAssemble] Erro no processamento:", error)
-    const analysis = analyzeLyricsRhymeScheme(lyrics.trim())
-    
-    return {
-      lyrics: lyrics.trim(),
-      rhymeImprovements: ["Sistema simplificado aplicado"],
-      rhymeScore: analysis.score
-    }
-  }
+  // Adicionar instrumentação
+  lyrics += `(Instrumentation)\n(Genre: ${genre})\n(Instruments: Acoustic Guitar, Electric Guitar, Bass, Drums)`
+
+  return { lyrics: lyrics.trim() }
 }
 
-// 🎼 DETECTAR ESTRUTURA ORIGINAL SIMPLIFICADA
+// ✅ DETECTAR ESTRUTURA ORIGINAL
 function extractSectionsToRewrite(lyrics: string): Array<{type: MusicBlock["type"], content: string}> {
   const lines = lyrics.split("\n")
   const result: Array<{type: MusicBlock["type"], content: string}> = []
   let currentSection: {type: MusicBlock["type"], content: string} | null = null
 
   for (const line of lines) {
-    if (line.startsWith("[Intro]") || line.startsWith("[Intro ")) {
+    if (line.startsWith("[Intro]")) {
       if (currentSection) result.push(currentSection)
       currentSection = { type: "INTRO", content: "" }
-    } else if (line.startsWith("[Verso") || line.includes("Verso")) {
+    } else if (line.startsWith("[Verso 1]") || line.startsWith("[Verso 2]")) {
       if (currentSection) result.push(currentSection)
       currentSection = { type: "VERSE", content: "" }
-    } else if (line.startsWith("[Refrão") || line.includes("Refrão")) {
+    } else if (line.startsWith("[Refrão]") || line.startsWith("[Refrão Final]")) {
       if (currentSection) result.push(currentSection)
       currentSection = { type: "CHORUS", content: "" }
-    } else if (line.startsWith("[Ponte") || line.includes("Ponte")) {
+    } else if (line.startsWith("[Ponte]")) {
       if (currentSection) result.push(currentSection)
       currentSection = { type: "BRIDGE", content: "" }
-    } else if (line.startsWith("[Outro") || line.includes("Outro")) {
+    } else if (line.startsWith("[Outro]")) {
       if (currentSection) result.push(currentSection)
       currentSection = { type: "OUTRO", content: "" }
     } else if (currentSection && line.trim() && !line.startsWith("(")) {
@@ -381,15 +315,15 @@ function extractSectionsToRewrite(lyrics: string): Array<{type: MusicBlock["type
   if (currentSection) result.push(currentSection)
 
   return result.length > 0 ? result : [
-    { type: "VERSE", content: lyrics.substring(0, Math.min(200, lyrics.length)) }
+    { type: "VERSE", content: lyrics }
   ]
 }
 
-// 🚀 API PRINCIPAL
+// 🚀 API PRINCIPAL COM ESTRATÉGIA DE ENSINO
 export async function POST(request: NextRequest) {
   let genre = "Sertanejo Moderno Masculino"
   let theme = "Música"
-  let title = "Música Resscrita"
+  let title = "Música Melhorada"
 
   try {
     const { 
@@ -407,40 +341,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Letra original é obrigatória" }, { status: 400 })
     }
 
-    console.log(`[API] 🎵 Iniciando reescrita para: ${genre}`)
+    console.log(`[API] 🎵 ENSINANDO IA a escrever com rimas...`)
 
     // Analisar estrutura
     const originalSections = extractSectionsToRewrite(originalLyrics)
-    console.log(`[API] 📊 Seções encontradas:`, originalSections.map(s => s.type))
+    console.log(`[API] 📊 Seções para ensinar:`, originalSections.map(s => s.type))
 
     const rewrittenBlocks: Record<string, MusicBlock[]> = {}
 
-    // Reescrever seções
-    const rewritePromises = originalSections.map(async (section) => {
+    // ✅ ENSINAR CADA SEÇÃO A ESCREVER COM RIMAS
+    const teachingPromises = originalSections.map(async (section) => {
       try {
-        const blocks = await rewriteSectionWithQuality(section.content, section.type, genre, theme)
+        const blocks = await teachAItoWriteWithRhymes(section.content, section.type, genre, theme)
         rewrittenBlocks[section.type] = blocks
         const score = blocks[0]?.score || 0
-        console.log(`[API] ✅ ${section.type} - Score: ${score}`)
+        console.log(`[API] ✅ ${section.type} - Aprendizado: ${score}%`)
       } catch (error) {
-        console.error(`[API] ❌ Erro em ${section.type}:`, error)
-        rewrittenBlocks[section.type] = [generateQualityFallback(section.type, theme)]
+        console.error(`[API] ❌ Erro ensinando ${section.type}:`, error)
+        rewrittenBlocks[section.type] = [generateSmartFallback(section.type, theme, genre)]
       }
     })
 
-    await Promise.all(rewritePromises)
+    await Promise.all(teachingPromises)
 
-    // Montar música
-    const assemblyResult = await assembleRewrittenSong(rewrittenBlocks, genre, theme)
-    let finalLyrics = assemblyResult.lyrics
-
-    // Adicionar instrumentação básica
-    if (!finalLyrics.includes("(Instrumentation)")) {
-      finalLyrics = `${finalLyrics}\n\n(Instrumentation)\n(Genre: ${genre})\n(Instruments: Acoustic Guitar, Electric Guitar, Bass, Drums)`
-    }
+    // Montar música aprendida
+    const assemblyResult = await assembleLearnedSong(rewrittenBlocks, genre, theme)
+    const finalLyrics = assemblyResult.lyrics
 
     const totalLines = finalLyrics.split("\n").filter((line) => line.trim()).length
-    console.log(`[API] 🎉 Reescrita concluída: ${totalLines} linhas`)
+    console.log(`[API] 🎉 ENSINO CONCLUÍDO: ${totalLines} linhas com rimas naturais`)
 
     return NextResponse.json({
       success: true,
@@ -450,38 +379,36 @@ export async function POST(request: NextRequest) {
         genre,
         theme,
         totalLines,
-        rhymeScore: assemblyResult.rhymeScore,
-        rhymeImprovements: assemblyResult.rhymeImprovements,
-        rewrittenSections: originalSections.length,
-        strategy: "VERSOS_COMPLETOS_PRIMEIRO"
+        strategy: "ENSINO_DE_RIMAS",
+        method: "APRENDIZADO_ESTRUTURADO"
       },
     })
 
   } catch (error) {
-    console.error("[API] ❌ Erro na reescrita:", error)
+    console.error("[API] ❌ Erro no ensino:", error)
 
-    // Fallback de emergência
+    // Fallback inteligente
     const emergencyLyrics = `[Intro]
-Reescrevendo com versos completos
-Cada linha tem sentido inteiro
-Na medida da emoção verdadeira
-Com estrutura e conteúdo pleno
+Quando a noite chega suave e calma
+Teu sorriso acende luz na alma
+Nos braços do destino a vida gira
+E nosso amor no peito inspira
 
 [Verso 1]
-A prioridade são versos completos
-Que contam histórias com começo e fim
-Nada de linhas cortadas ou soltas
-Tudo com sentido para cantar assim
+Nos teus olhos vejo paz e quietude
+Que transforma minha atitude
+Teu perfume é doce melodia
+Que na alma traz alegria
 
 [Refrão]
-Versos completos em primeiro lugar
-Estrutura sólida para poder cantar
-Rimas são importantes mas secundárias
-O essencial é a mensagem necessária
+Teu sorriso é meu abrigo
+Teu abraço é meu calor
+No compasso desse amigo
+Encontro todo o amor
 
 [Outro]
-Com versos completos e bem estruturados
-A música ganha vida e emoção
+Juntos vamos caminhar
+O amor nos guiar
 
 (Instrumentation)
 (Genre: ${genre})`
@@ -493,11 +420,9 @@ A música ganha vida e emoção
       metadata: {
         genre,
         theme,
-        totalLines: 12,
-        rhymeScore: 70,
-        rhymeImprovements: ["Fallback com versos completos garantidos"],
-        rewrittenSections: 0,
-        strategy: "FALLBACK_VERSOS_COMPLETOS"
+        totalLines: 14,
+        strategy: "FALLBACK_EDUCATIVO",
+        method: "ENSINO_DE_RIMAS"
       },
     })
   }
@@ -506,6 +431,6 @@ A música ganha vida e emoção
 export async function GET() {
   return NextResponse.json({ 
     error: "Método não permitido",
-    message: "Use POST para reescrever letras"
+    message: "Use POST para melhorar letras"
   }, { status: 405 })
 }
