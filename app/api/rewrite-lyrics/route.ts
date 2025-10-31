@@ -21,7 +21,7 @@ async function generateBlockVariations(
   genre: string,
   theme: string,
   originalLyrics: string,
-  count = 2, // Reduzido para melhor performance
+  count = 2,
 ): Promise<MusicBlock[]> {
   
   const lineTargets = {
@@ -33,6 +33,7 @@ async function generateBlockVariations(
     OUTRO: 3
   }
 
+  // CORREÇÃO: Adicionar prompts para todos os tipos de blocos
   const prompts = {
     INTRO: `Crie ${count} opções de INTRO (${lineTargets.INTRO} linhas) para música ${genre} sobre "${theme}".
 
@@ -82,6 +83,28 @@ Linha 2
 Linha 3
 Linha 4`,
 
+    PRE_CHORUS: `Crie ${count} opções de PRÉ-REFRÃO (${lineTargets.PRE_CHORUS} linhas) para música ${genre} sobre "${theme}".
+
+Letra original como referência:
+"${originalLyrics.substring(0, 200)}..."
+
+INSTRUÇÕES:
+- ${lineTargets.PRE_CHORUS} linhas cada opção
+- Máximo 11 sílabas por linha
+- Prepare para o refrão
+- Crie tensão emocional
+
+FORMATO:
+Opção 1:
+Linha 1
+Linha 2
+Linha 3
+
+Opção 2:
+Linha 1
+Linha 2
+Linha 3`,
+
     CHORUS: `Crie ${count} opções de REFRÃO (${lineTargets.CHORUS} linhas) para música ${genre} sobre "${theme}".
 
 Letra original como referência:
@@ -104,11 +127,58 @@ Opção 2:
 Linha 1
 Linha 2
 Linha 3
-Linha 4`
+Linha 4`,
+
+    BRIDGE: `Crie ${count} opções de PONTE (${lineTargets.BRIDGE} linhas) para música ${genre} sobre "${theme}".
+
+Letra original como referência:
+"${originalLyrics.substring(0, 200)}..."
+
+INSTRUÇÕES:
+- ${lineTargets.BRIDGE} linhas cada opção
+- Máximo 11 sílabas por linha
+- Momento de reflexão profunda
+- Mude a perspectiva
+
+FORMATO:
+Opção 1:
+Linha 1
+Linha 2
+Linha 3
+Linha 4
+
+Opção 2:
+Linha 1
+Linha 2
+Linha 3
+Linha 4`,
+
+    OUTRO: `Crie ${count} opções de OUTRO (${lineTargets.OUTRO} linhas) para música ${genre} sobre "${theme}".
+
+Letra original como referência:
+"${originalLyrics.substring(0, 200)}..."
+
+INSTRUÇÕES:
+- ${lineTargets.OUTRO} linhas cada opção
+- Máximo 9 sílabas por linha
+- Fecho emocional
+- Sensação de conclusão
+
+FORMATO:
+Opção 1:
+Linha 1
+Linha 2
+Linha 3
+
+Opção 2:
+Linha 1
+Linha 2
+Linha 3`
   }
 
   try {
-    const prompt = prompts[blockType] || prompts.VERSE
+    // CORREÇÃO: Agora todos os tipos têm prompts definidos
+    const prompt = prompts[blockType]
     
     const { text } = await generateText({
       model: openai("gpt-4o-mini"),
@@ -119,7 +189,6 @@ Linha 4`
 
     console.log(`[BlockGen] ${blockType} generated:`, text?.substring(0, 100))
     
-    // Processar as opções geradas
     return processGeneratedBlocks(text || "", blockType, count, lineTargets[blockType])
   } catch (error) {
     console.error(`[BlockGen] Erro em ${blockType}:`, error)
@@ -127,7 +196,7 @@ Linha 4`
   }
 }
 
-// 🧩 PROCESSAR BLOCO GERADOS (CORRIGIDO)
+// 🧩 PROCESSAR BLOCO GERADOS (mantido igual)
 function processGeneratedBlocks(
   text: string, 
   blockType: MusicBlock["type"], 
@@ -141,9 +210,8 @@ function processGeneratedBlocks(
   let inOption = false
 
   for (const line of lines) {
-    // Detecta início de uma nova opção
     if (line.match(/^(Opção|Option|Versão|Variação)\s*\d+/i)) {
-      if (currentBlock.length >= 2) { // Aceita blocos com pelo menos 2 linhas
+      if (currentBlock.length >= 2) {
         blocks.push(createMusicBlock(blockType, currentBlock))
       }
       currentBlock = []
@@ -151,11 +219,9 @@ function processGeneratedBlocks(
       continue
     }
 
-    // Se está dentro de uma opção e a linha não é numeração ou marcador
     if (inOption && !line.match(/^\d+[\.\)]/) && !line.match(/^[-*]/)) {
       currentBlock.push(line)
       
-      // Se atingiu o número target de linhas, finaliza o bloco
       if (currentBlock.length >= targetLines) {
         blocks.push(createMusicBlock(blockType, currentBlock))
         currentBlock = []
@@ -166,7 +232,6 @@ function processGeneratedBlocks(
     }
   }
 
-  // Adiciona o último bloco se tiver conteúdo
   if (currentBlock.length >= 2 && blocks.length < count) {
     blocks.push(createMusicBlock(blockType, currentBlock))
   }
@@ -184,7 +249,7 @@ function createMusicBlock(type: MusicBlock["type"], lines: string[]): MusicBlock
   }
 }
 
-// 🆘 GERAR BLOCOS DE FALLBACK
+// 🆘 GERAR BLOCOS DE FALLBACK (CORRIGIDO - adicionar todos os tipos)
 function generateFallbackBlocks(
   blockType: MusicBlock["type"], 
   theme: string, 
@@ -193,6 +258,7 @@ function generateFallbackBlocks(
 ): MusicBlock[] {
   const blocks: MusicBlock[] = []
   
+  // CORREÇÃO: Adicionar templates para todos os tipos
   const templates = {
     INTRO: [
       `Pensando em ${theme}\nNo silêncio da emoção\nUm sentimento que cresce\nDentro do coração`,
@@ -202,9 +268,21 @@ function generateFallbackBlocks(
       `A vida me ensinou\nSobre ${theme} e emoção\nCada momento vivido\nTem um novo significado`,
       `Caminhando em frente\nCom ${theme} no pensamento\nSuperando desafios\nAprendendo a cada momento`
     ],
+    PRE_CHORUS: [
+      `E agora o coração\nPrepara pra emoção\nDo refrão que vai chegar\nCom toda a inspiração`,
+      `O momento chegou\nO sentimento aflorou\nPrepare-se agora\nPara o que vai cantar`
+    ],
     CHORUS: [
       `É ${theme} no coração\nUma linda emoção\nCantando com sentimento\nNessa canção`,
       `${theme} que me inspira\nMeu coração suspira\nUma história bonita\nQue nunca termina`
+    ],
+    BRIDGE: [
+      `Mas tudo tem sentido\nQuando olho pra trás\n${theme} me trouxe\nAté onde estou agora`,
+      `E na reflexão\nEncontro a razão\nDe cantar ${theme}\nCom tanta emoção`
+    ],
+    OUTRO: [
+      `E assim termina\nEssa melodia\nCom ${theme} no coração\nPara sempre em mim`,
+      `Até a próxima vez\nCom ${theme} e paz\nA música continua\nNo coração demais`
     ]
   }
 
@@ -218,33 +296,29 @@ function generateFallbackBlocks(
   return blocks
 }
 
-// 📊 CALCULAR SCORE DO BLOCO (MELHORADO)
+// 📊 CALCULAR SCORE DO BLOCO (mantido igual)
 function calculateBlockScore(content: string): number {
   const lines = content.split("\n").filter(line => line.trim())
-  let score = 60 // Base mais alta
+  let score = 60
 
-  // Bônus por número adequado de linhas
   if (lines.length >= 3 && lines.length <= 6) {
     score += 20
   }
 
-  // Bônus por diversidade vocabular
   const words = content.toLowerCase().split(/\s+/).filter(word => word.length > 2)
   const uniqueWords = new Set(words)
   score += Math.min(uniqueWords.size, 15)
 
-  // Penalidade por linhas muito curtas
   const shortLines = lines.filter(line => line.length < 4).length
   score -= shortLines * 5
 
   return Math.min(100, Math.max(30, score))
 }
 
-// 🏗️ MONTAR COMBINAÇÕES (CORRIGIDO)
+// 🏗️ MONTAR COMBINAÇÕES (mantido igual)
 function assembleCombinations(blocks: Record<string, MusicBlock[]>): string[] {
   const combinations: string[] = []
   
-  // Estrutura simplificada e mais flexível
   const structures = [
     ["INTRO", "VERSE", "CHORUS", "VERSE", "CHORUS", "OUTRO"],
     ["VERSE", "CHORUS", "VERSE", "CHORUS", "BRIDGE", "CHORUS"],
@@ -268,14 +342,12 @@ function assembleCombinations(blocks: Record<string, MusicBlock[]>): string[] {
     for (const sectionType of structure) {
       const availableBlocks = blocks[sectionType] || []
       if (availableBlocks.length > 0) {
-        // Seleciona o melhor bloco disponível
         const bestBlock = availableBlocks.reduce((best, current) => 
           current.score > best.score ? current : best
         )
 
         let label = sectionLabels[sectionType] || sectionType
         
-        // Numera versos e refrões
         if (sectionType === "VERSE") {
           label = `Verso ${verseCount}`
           verseCount++
@@ -296,7 +368,7 @@ function assembleCombinations(blocks: Record<string, MusicBlock[]>): string[] {
   return combinations.length > 0 ? combinations : [generateSimpleFallbackLyric()]
 }
 
-// 🏆 SELECIONAR MELHOR COMBINAÇÃO (CORRIGIDO)
+// 🏆 SELECIONAR MELHOR COMBINAÇÃO (mantido igual)
 async function selectBestCombination(combinations: string[], genre: string): Promise<string> {
   if (combinations.length === 0) {
     return generateSimpleFallbackLyric()
@@ -307,14 +379,11 @@ async function selectBestCombination(combinations: string[], genre: string): Pro
 
   for (const lyrics of combinations) {
     try {
-      // Valida sílabas primeiro
       const validated = await UnifiedSyllableManager.processSongWithBalance(lyrics)
       
-      // Score por estrutura
       const sections = parseLyricSections(validated)
       const structureScore = Math.min(sections.length * 10, 40)
       
-      // Score por linhas válidas
       const totalLines = validated.split("\n").filter(line => {
         const trimmed = line.trim()
         return trimmed && !trimmed.startsWith("[") && !trimmed.startsWith("(")
@@ -336,7 +405,7 @@ async function selectBestCombination(combinations: string[], genre: string): Pro
   return bestLyrics
 }
 
-// 🎼 GERAR LETRA SIMPLES DE FALLBACK
+// 🎼 GERAR LETRA SIMPLES DE FALLBACK (mantido igual)
 function generateSimpleFallbackLyric(): string {
   return `[Intro]
 Começando essa canção
@@ -388,7 +457,7 @@ export async function POST(request: NextRequest) {
 
     console.log(`[API] 🎵 Iniciando reescrita por partes: ${genre} - "${theme}"`)
 
-    // 🎯 1. GERAR OPÇÕES DE BLOCOS PRINCIPAIS (reduzido para performance)
+    // 🎯 1. GERAR OPÇÕES DE BLOCOS PRINCIPAIS
     console.log("[API] 🎲 Gerando blocos principais...")
     
     const mainBlockTypes: MusicBlock["type"][] = ["INTRO", "VERSE", "CHORUS", "OUTRO"]
@@ -416,7 +485,6 @@ export async function POST(request: NextRequest) {
     // ✨ 4. APLICAR FORMATAÇÃO E MELHORIAS
     console.log("[API] ✨ Aplicando melhorias...")
     
-    // Aplica stack de linhas se disponível
     try {
       const stackingResult = LineStacker.stackLines(finalLyrics)
       finalLyrics = stackingResult.stackedLyrics
@@ -454,7 +522,6 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("[API] ❌ Erro crítico:", error)
     
-    // Fallback robusto
     const emergencyLyrics = generateSimpleFallbackLyric()
 
     return NextResponse.json({
