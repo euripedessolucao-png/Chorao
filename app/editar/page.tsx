@@ -25,8 +25,8 @@ import {
 import { ChorusGenerator } from "@/components/chorus-generator"
 import { Wand2 } from "lucide-react"
 
-// ✅ IMPORTAÇÃO CORRIGIDA
-import { UnifiedSyllableManager } from "@/lib/syllable-management/unified-syllable-manager"
+// ✅ CORREÇÃO: Importação simplificada ou remoção se não for necessária
+// import { UnifiedSyllableManager } from "@/lib/syllable-management/unified-syllable-manager"
 
 const MOODS = ["Feliz", "Triste", "Nostálgico", "Romântico", "Animado", "Melancólicico"]
 const EMOTIONS = [
@@ -37,24 +37,24 @@ const EMOTIONS = [
   "Ternura", "Tristeza", "Vergonha"
 ]
 
-// ✅ CONFIGURAÇÃO ATUALIZADA COM SISTEMA UNIFICADO
+// ✅ CONFIGURAÇÃO ATUALIZADA - VALORES PADRÃO
 const GENRE_QUALITY_CONFIG = {
-  "Sertanejo": { max: 12, ideal: 9, rhymeQuality: 0.5 },
-  "Sertanejo Moderno": { max: 12, ideal: 9, rhymeQuality: 0.5 },
-  "Sertanejo Universitário": { max: 12, ideal: 9, rhymeQuality: 0.5 },
-  "Sertanejo Sofrência": { max: 12, ideal: 9, rhymeQuality: 0.5 },
-  "Sertanejo Raiz": { max: 12, ideal: 10, rhymeQuality: 0.6 },
-  "MPB": { max: 13, ideal: 10, rhymeQuality: 0.7 },
-  "Bossa Nova": { max: 12, ideal: 9, rhymeQuality: 0.6 },
-  "Funk": { max: 12, ideal: 6, rhymeQuality: 0.3 },
-  "Pagode": { max: 12, ideal: 9, rhymeQuality: 0.4 },
-  "Samba": { max: 12, ideal: 9, rhymeQuality: 0.4 },
-  "Forró": { max: 12, ideal: 9, rhymeQuality: 0.4 },
-  "Axé": { max: 12, ideal: 8, rhymeQuality: 0.3 },
-  "Rock": { max: 12, ideal: 10, rhymeQuality: 0.4 },
-  "Pop": { max: 12, ideal: 9, rhymeQuality: 0.4 },
-  "Gospel": { max: 12, ideal: 9, rhymeQuality: 0.5 },
-  "default": { max: 12, ideal: 9, rhymeQuality: 0.4 },
+  "Sertanejo": { max: 12, ideal: 9, min: 7, rhymeQuality: 0.5 },
+  "Sertanejo Moderno": { max: 12, ideal: 9, min: 7, rhymeQuality: 0.5 },
+  "Sertanejo Universitário": { max: 12, ideal: 9, min: 7, rhymeQuality: 0.5 },
+  "Sertanejo Sofrência": { max: 12, ideal: 9, min: 7, rhymeQuality: 0.5 },
+  "Sertanejo Raiz": { max: 12, ideal: 10, min: 8, rhymeQuality: 0.6 },
+  "MPB": { max: 13, ideal: 10, min: 7, rhymeQuality: 0.7 },
+  "Bossa Nova": { max: 12, ideal: 9, min: 7, rhymeQuality: 0.6 },
+  "Funk": { max: 12, ideal: 6, min: 3, rhymeQuality: 0.3 },
+  "Pagode": { max: 12, ideal: 9, min: 7, rhymeQuality: 0.4 },
+  "Samba": { max: 12, ideal: 9, min: 7, rhymeQuality: 0.4 },
+  "Forró": { max: 12, ideal: 9, min: 7, rhymeQuality: 0.4 },
+  "Axé": { max: 12, ideal: 8, min: 6, rhymeQuality: 0.3 },
+  "Rock": { max: 12, ideal: 10, min: 7, rhymeQuality: 0.4 },
+  "Pop": { max: 12, ideal: 9, min: 7, rhymeQuality: 0.4 },
+  "Gospel": { max: 12, ideal: 9, min: 7, rhymeQuality: 0.5 },
+  "default": { max: 12, ideal: 9, min: 7, rhymeQuality: 0.4 },
 }
 
 export default function EditarPage() {
@@ -79,13 +79,13 @@ export default function EditarPage() {
   const [showChorusDialog, setShowChorusDialog] = useState(false)
   const [selectedChoruses, setSelectedChoruses] = useState<any[]>([])
 
-  // ✅ FUNÇÃO CORRIGIDA - USA SISTEMA UNIFICADO
+  // ✅ FUNÇÃO CORRIGIDA - USA CONFIGURAÇÃO LOCAL
   const getSyllableConfig = (selectedGenre: string) => {
-    const rules = UnifiedSyllableManager.getSyllableRules(selectedGenre)
+    const config = GENRE_QUALITY_CONFIG[selectedGenre as keyof typeof GENRE_QUALITY_CONFIG] || GENRE_QUALITY_CONFIG.default
     return {
-      max: rules.max,
-      ideal: rules.ideal,
-      min: rules.min
+      max: config.max,
+      ideal: config.ideal,
+      min: config.min
     }
   }
 
@@ -139,9 +139,6 @@ export default function EditarPage() {
     setIsEditing(true)
 
     try {
-      // ✅ USA SISTEMA UNIFICADO
-      const syllableConfig = getSyllableConfig(genre)
-      
       const fullRequirements = subgenre ? 
         `${additionalReqs}\n\nRitmo/Subgênero: ${subgenre}` : 
         additionalReqs
@@ -179,18 +176,9 @@ export default function EditarPage() {
         setTitle(data.title)
       }
 
-      // ✅ MENSAGEM ATUALIZADA
-      if (data.metadata?.thirdWayApplied) {
-        toast.success("Letra editada com Terceira Via!", {
-          description: `Sistema anti-clichês aplicado para ${genre}`,
-        })
-      } else if (data.metadata?.polishingApplied) {
-        toast.success("Letra editada com Sistema Universal!", {
-          description: `Polimento específico para ${genre} aplicado`,
-        })
-      } else {
-        toast.success("Letra editada com sucesso!")
-      }
+      toast.success("Letra editada com sucesso!", {
+        description: `Reescrita no estilo ${genre}`,
+      })
     } catch (error) {
       console.error("Erro na edição:", error)
       toast.error(error instanceof Error ? error.message : "Erro ao editar letra")
@@ -303,11 +291,222 @@ export default function EditarPage() {
     return "Muito Criativo"
   }
 
-  // ... (restante do JSX permanece igual - já está bom)
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      {/* ... JSX existente ... */}
+      
+      <main className="container mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h1 className="text-4xl font-bold text-foreground">Editor de Letras</h1>
+              <p className="text-muted-foreground mt-2">
+                Edite e refine suas letras com inteligência artificial
+              </p>
+            </div>
+            
+            <div className="flex gap-4">
+              <Button variant="outline" onClick={handleCopy}>
+                Copiar Letra
+              </Button>
+              <Button variant="outline" onClick={handleClear}>
+                Limpar Tudo
+              </Button>
+              <Button onClick={handleSave}>
+                Salvar Projeto
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* COLUNA ESQUERDA - CONFIGURAÇÕES */}
+            <div className="lg:col-span-1 space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Configurações Básicas</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Título da Música</Label>
+                    <Input
+                      id="title"
+                      placeholder="Digite o título..."
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Gênero Musical</Label>
+                    <GenreSelect value={genre} onChange={setGenre} />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Subgênero/Ritmo</Label>
+                    <SubgenreSelect value={subgenre} onChange={setSubgenre} genre={genre} />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Tema Principal</Label>
+                    <Input
+                      placeholder="Ex: Amor, Saudade, Superação..."
+                      value={theme}
+                      onChange={(e) => setTheme(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Clima da Música</Label>
+                    <Select value={mood} onValueChange={setMood}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o clima" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {MOODS.map((moodOption) => (
+                          <SelectItem key={moodOption} value={moodOption}>
+                            {moodOption}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Configurações Avançadas</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Nível de Criatividade</Label>
+                    <div className="space-y-4">
+                      <Slider
+                        value={creativity}
+                        onValueChange={setCreativity}
+                        max={100}
+                        step={1}
+                        className="w-full"
+                      />
+                      <div className="text-sm text-muted-foreground text-center">
+                        {getCreativityLabel(creativity[0])}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Formatação</Label>
+                    <Select value={formattingStyle} onValueChange={(value: "padrao" | "performatico") => setFormattingStyle(value)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="performatico">Performática (Recomendado)</SelectItem>
+                        <SelectItem value="padrao">Padrão</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="polish"
+                      checked={universalPolish}
+                      onCheckedChange={(checked) => setUniversalPolish(checked as boolean)}
+                    />
+                    <Label htmlFor="polish">Aplicar polimento final</Label>
+                  </div>
+
+                  <Button 
+                    variant="outline" 
+                    className="w-full" 
+                    onClick={handleGenerateChorus}
+                  >
+                    <Wand2 className="w-4 h-4 mr-2" />
+                    Gerar Refrões
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Requisitos Adicionais</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Textarea
+                    placeholder="Instruções específicas, referências, elementos a incluir..."
+                    value={additionalReqs}
+                    onChange={(e) => setAdditionalReqs(e.target.value)}
+                    rows={6}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* COLUNA DIREITA - EDITOR */}
+            <div className="lg:col-span-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Editor de Letras</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <Textarea
+                      placeholder="Cole ou digite sua letra aqui..."
+                      value={lyrics}
+                      onChange={(e) => setLyrics(e.target.value)}
+                      rows={20}
+                      className="font-mono text-sm"
+                    />
+                    
+                    <div className="flex justify-between">
+                      <div className="text-sm text-muted-foreground">
+                        {lyrics.length} caracteres • {lyrics.split('\n').length} linhas
+                      </div>
+                      
+                      <Button 
+                        onClick={handleEditLyrics} 
+                        disabled={isEditing || !lyrics.trim() || !genre}
+                        className="min-w-32"
+                      >
+                        {isEditing ? "Editando..." : "Editar Letra"}
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* DIALOG DE REFRÕES */}
+      <Dialog open={showChorusDialog} onOpenChange={setShowChorusDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Gerador de Refrões</DialogTitle>
+            <DialogDescription>
+              Gere e selecione refrões para sua música no estilo {genre}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="overflow-y-auto max-h-[60vh]">
+            <ChorusGenerator
+              genre={genre}
+              theme={theme}
+              onChorusesGenerated={handleSelectChoruses}
+            />
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowChorusDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleApplyChoruses}>
+              Aplicar Refrões Selecionados
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
