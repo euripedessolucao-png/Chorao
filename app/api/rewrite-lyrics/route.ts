@@ -1,4 +1,4 @@
-// app/api/rewrite-lyrics/route.ts - VERSÃO CORRIGIDA PARA DEPLOYMENT
+// app/api/rewrite-lyrics/route.ts - VERSÃO CORRIGIDA SEM IMPORTAÇÕES PROBLEMÁTICAS
 import { type NextRequest, NextResponse } from "next/server"
 import { openai } from "@ai-sdk/openai"
 import { generateText } from "ai"
