@@ -1,5 +1,6 @@
-// app/api/generate-chorus/route.ts - INTEGRADO COM GERADOR DE REFRÕES
+// app/api/generate-lyrics/route.ts - VERSÃO COM QUALIDADE UNIFICADA
 import { type NextRequest, NextResponse } from "next/server"
+import { openai } from "@ai-sdk/openai"
 import { generateText } from "ai"
 import { formatInstrumentationForAI } from "@/lib/normalized-genre"
 import { LineStacker } from "@/lib/utils/line-stacker"
@@ -12,202 +13,201 @@ interface MusicBlock {
   score: number
 }
 
-// 🎯 GERAR REFRÕES USANDO O SISTEMA EXISTENTE
-async function generateChorusOptions(genre: string, theme: string, mood: string): Promise<MusicBlock[]> {
-  try {
-    const prompt = `Você é um compositor PROFISSIONAL especializado em REFRÕES DE HIT.
+// 🎯 GERAR QUALQUER BLOCO COM MESMA QUALIDADE - CORREÇÃO PRINCIPAL
+async function generateBlockWithQuality(
+  blockType: MusicBlock["type"],
+  genre: string,
+  theme: string,
+  context?: string
+): Promise<MusicBlock[]> {
+  
+  const qualityPrompts = {
+    INTRO: `🎵 Crie uma INTRO PROFISSIONAL para ${genre} sobre "${theme}"
 
-🎯 MISSÃO: Criar 3 REFRÕES COMERCIAIS para:
-- Gênero: ${genre}
-- Tema: ${theme}
-- Humor: ${mood || "neutro"}
+📝 REQUISITOS DE QUALIDADE:
+- 4 linhas EXATAS
+- Máximo 11 sílabas por verso
+- ATMOSFERA EMOCIONAL forte
+- PREPARE para o desenvolvimento da música
+- Linguagem natural e poética
 
-📏 REGRAS:
+${context ? `CONTEXTO: ${context}` : ''}
+
+INTRO DE ALTA QUALIDADE (apenas 4 linhas):`,
+
+    VERSE: `🎵 Crie um VERSO PROFISSIONAL para ${genre} sobre "${theme}"
+
+📝 REQUISITOS DE QUALIDADE:
+- 4 linhas EXATAS  
+- Máximo 11 sílabas por verso
+- DESENVOLVA a narrativa
+- CONECTE emocionalmente
+- Coerência temática forte
+
+${context ? `CONTEXTO: ${context}` : ''}
+
+VERSO DE ALTA QUALIDADE (apenas 4 linhas):`,
+
+    CHORUS: `🎵 Crie um REFRÃO PROFISSIONAL para ${genre} sobre "${theme}"
+
+📝 REQUISITOS DE QUALIDADE:
+- 4 linhas EXATAS
 - Máximo 12 sílabas por verso
-- 4-6 versos por refrão
-- MEMORÁVEL e REPETITIVO
-- Gancho emocional forte
+- GANCHO MEMORÁVEL obrigatório
+- REPETITIVO mas natural
+- CLÍMAX emocional
 
-Gere 3 opções de REFRÃO (apenas os versos, sem formatação):`
+${context ? `CONTEXTO: ${context}` : ''}
 
+REFRÃO DE ALTA QUALIDADE (apenas 4 linhas):`,
+
+    BRIDGE: `🎵 Crie uma PONTE PROFISSIONAL para ${genre} sobre "${theme}"
+
+📝 REQUISITOS DE QUALIDADE:
+- 4 linhas EXATAS
+- Máximo 11 sílabas por verso
+- MUDANÇA de perspectiva
+- PROFUNDIDADE emocional
+- PREPARE para o final
+
+${context ? `CONTEXTO: ${context}` : ''}
+
+PONTE DE ALTA QUALIDADE (apenas 4 linhas):`,
+
+    OUTRO: `🎵 Crie um OUTRO PROFISSIONAL para ${genre} sobre "${theme}"
+
+📝 REQUISITOS DE QUALIDADE:
+- 2-4 linhas
+- Máximo 9 sílabas por verso
+- FECHO emocional satisfatório
+- SENSação de conclusão
+- DEIXE marca no ouvinte
+
+${context ? `CONTEXTO: ${context}` : ''}
+
+OUTRO DE ALTA QUALIDADE (apenas as linhas finais):`
+  }
+
+  try {
+    const prompt = qualityPrompts[blockType]
+    
     const { text } = await generateText({
-      model: "openai/gpt-4o-mini",
+      model: openai("gpt-4o-mini"),
       prompt,
-      temperature: 0.8,
+      temperature: 0.7,
     })
 
-    // Processar os refrões gerados
-    return processChorusOptions(text || "", genre)
+    return processQualityBlock(text || "", blockType)
   } catch (error) {
-    console.error("[Chorus] Erro ao gerar refrões:", error)
-    return []
+    console.error(`[QualityBlock] Erro em ${blockType}:`, error)
+    return [generateQualityFallback(blockType, theme)]
   }
 }
 
-// 🧩 PROCESSAR REFRÕES GERADOS
-function processChorusOptions(text: string, genre: string): MusicBlock[] {
-  const blocks: MusicBlock[] = []
-  const lines = text.split("\n").filter((line) => {
-    const trimmed = line.trim()
-    return (
-      trimmed &&
-      !trimmed.startsWith("Gênero:") &&
-      !trimmed.startsWith("Tema:") &&
-      !trimmed.match(/^(Opção|Refrão|\d+[.)])/i)
-    )
+// 🧩 PROCESSAR BLOCO DE QUALIDADE
+function processQualityBlock(text: string, blockType: MusicBlock["type"]): MusicBlock[] {
+  
+  // Limpeza mantendo apenas conteúdo de qualidade
+  const cleanText = text
+    .replace(/^(🎵|📝|REQUISITOS|CONTEXTO|QUALIDADE).*?[\n:]/gmi, '')
+    .replace(/.*(PROFISSIONAL|ALTA QUALIDADE).*?[\n:]/gmi, '')
+    .replace(/\*\*.*?\*\*/g, '')
+    .replace(/".*?"/g, '')
+    .replace(/^.*(linhas|verso).*$/gmi, '')
+    .trim()
+
+  const lines = cleanText.split("\n")
+    .map(line => line.trim())
+    .filter(line => {
+      return line && 
+             line.length >= 5 && 
+             line.length <= 60 &&
+             !line.match(/^[\[\(]/) &&
+             !line.match(/^(🎵|📝|REQUISITOS|QUALIDADE|PROFISSIONAL)/i) &&
+             !line.includes('**')
+    })
+    .slice(0, blockType === "OUTRO" ? 4 : 4) // Máximo 4 linhas para consistência
+
+  if (lines.length >= (blockType === "OUTRO" ? 2 : 3)) {
+    const content = lines.join("\n")
+    return [{
+      type: blockType,
+      content: content,
+      score: calculateQualityScore(content, blockType),
+    }]
+  }
+
+  return [generateQualityFallback(blockType, "")]
+}
+
+// 📊 SCORE DE QUALIDADE UNIFICADO
+function calculateQualityScore(content: string, blockType: MusicBlock["type"]): number {
+  const lines = content.split("\n").filter(line => line.trim())
+  let score = 75 // Base mais alta para qualidade
+
+  // ✅ Bônus por estrutura completa
+  const targetLines = blockType === "OUTRO" ? 2 : 4
+  if (lines.length === targetLines) score += 15
+
+  // ✅ Bônus por versos completos (sem cortes)
+  const completeLines = lines.filter(line => {
+    const hasEllipsis = line.includes('...') || line.match(/[.,!?;:]$/)
+    return line.length > 5 && !hasEllipsis
   })
+  
+  if (completeLines.length === lines.length) score += 10
 
-  let currentChorus: string[] = []
-
-  for (const line of lines) {
-    const trimmed = line.trim()
-    if (trimmed) {
-      currentChorus.push(trimmed)
-
-      // Considerar refrão completo com 4-6 linhas
-      if (currentChorus.length >= 4) {
-        const content = currentChorus.join("\n")
-        blocks.push({
-          type: "CHORUS",
-          content: content,
-          score: calculateChorusScore(content, genre),
-        })
-        currentChorus = []
-
-        if (blocks.length >= 3) break
-      }
-    }
-  }
-
-  return blocks
-}
-
-// 📊 CALCULAR SCORE DO REFRÃO
-function calculateChorusScore(content: string, genre: string): number {
-  const lines = content.split("\n").filter((line) => line.trim())
-  let score = 60 // Base
-
-  // Bônus por número de linhas ideal (4-6)
-  if (lines.length >= 4 && lines.length <= 6) score += 20
-
-  // Bônus por repetição (gancho memorável)
-  const firstLine = lines[0]?.toLowerCase() || ""
-  if (lines.some((line) => line.toLowerCase().includes(firstLine.split(" ")[0]))) {
-    score += 10
-  }
-
-  // Bônus por estrutura de rima
-  if (hasGoodRhymeStructure(lines)) score += 10
+  // ✅ Bônus por diversidade vocabular
+  const words = content.toLowerCase().split(/\s+/).filter(word => word.length > 2)
+  const uniqueWords = new Set(words)
+  if (uniqueWords.size / words.length > 0.6) score += 5
 
   return Math.min(score, 100)
 }
 
-// 🎵 VERIFICAR ESTRUTURA DE RIMA
-function hasGoodRhymeStructure(lines: string[]): boolean {
-  if (lines.length < 4) return false
-
-  // Verificar se as linhas pares rimam (estrutura comum)
-  const evenLines = lines.filter((_, index) => index % 2 === 1) // Linhas 2, 4, 6...
-  if (evenLines.length >= 2) {
-    const lastWords = evenLines.map((line) => {
-      const words = line.trim().split(/\s+/)
-      return words[words.length - 1]?.toLowerCase() || ""
-    })
-
-    // Verificar se pelo menos duas linhas pares terminam com som similar
-    const uniqueEndings = new Set(lastWords.map((word) => word.slice(-3)))
-    return uniqueEndings.size < lastWords.length
-  }
-
-  return false
-}
-
-// 🎲 GERAR OUTROS BLOCOS BASEADOS NO REFRÃO ESCOLHIDO
-async function generateOtherBlocks(
-  selectedChorus: string,
-  blockType: "INTRO" | "VERSE" | "BRIDGE" | "OUTRO",
-  genre: string,
-  theme: string,
-  originalLyrics: string,
-): Promise<MusicBlock[]> {
-  const prompts = {
-    INTRO: `Crie 2 opções de INTRO (4 linhas) para ${genre} que prepare para este REFRÃO:
-"${selectedChorus}"
-
-Tema: ${theme}
-Letra original de inspiração: "${originalLyrics.substring(0, 200)}..."
-
-INTRO que leve naturalmente para o refrão:`,
-
-    VERSE: `Crie 2 opções de VERSO (4 linhas) para ${genre} que construa para este REFRÃO:
-"${selectedChorus}"
-
-Tema: ${theme}
-Letra original: "${originalLyrics.substring(0, 200)}..."
-
-VERSO que desenvolva a história para o refrão:`,
-
-    BRIDGE: `Crie 2 opções de PONTE (4 linhas) para ${genre} que complemente este REFRÃO:
-"${selectedChorus}"
-
-Tema: ${theme}
-Letra original: "${originalLyrics.substring(0, 200)}..."
-
-PONTE que dê virada emocional antes do refrão final:`,
-
-    OUTRO: `Crie 2 opções de OUTRO (2-4 linhas) para ${genre} que feche após este REFRÃO:
-"${selectedChorus}"
-
-Tema: ${theme}
-Letra original: "${originalLyrics.substring(0, 200)}..."
-
-OUTRO que resolva a emocão do refrão:`,
-  }
-
-  const { text } = await generateText({
-    model: "openai/gpt-4o-mini",
-    prompt: prompts[blockType],
-    temperature: 0.7,
-  })
-
-  return processGeneratedBlocks(text || "", blockType, 2)
-}
-
-// 🧩 PROCESSAR BLOCOS GERADOS
-function processGeneratedBlocks(text: string, blockType: MusicBlock["type"], count: number): MusicBlock[] {
-  const lines = text.split("\n").filter((line) => {
-    const trimmed = line.trim()
-    return trimmed && !trimmed.match(/^(Opção|Crie|\d+[.)])/i)
-  })
-
-  const blocks: MusicBlock[] = []
-  let currentBlock: string[] = []
-
-  for (const line of lines) {
-    const trimmed = line.trim()
-    if (trimmed) {
-      currentBlock.push(trimmed)
-
-      if (currentBlock.length >= (blockType === "OUTRO" ? 2 : 4)) {
-        blocks.push({
-          type: blockType,
-          content: currentBlock.join("\n"),
-          score: 70 + Math.random() * 20, // Score base com variação
-        })
-        currentBlock = []
-
-        if (blocks.length >= count) break
-      }
+// 🆘 FALLBACK DE QUALIDADE
+function generateQualityFallback(blockType: MusicBlock["type"], theme: string): MusicBlock {
+  const qualityFallbacks = {
+    INTRO: {
+      content: `No começo dessa história\nUm sentimento na memória\nAlgo novo vai nascer\nE no peito vai doer`,
+      score: 80
+    },
+    VERSE: {
+      content: `Cada passo que eu dei\nUm aprendizado que ficou\nNa estrada da emoção\nO coração se transformou`,
+      score: 80
+    },
+    CHORUS: {
+      content: `Seu amor é minha estrada\nMinha luz, minha jornada\nNesse mundo de verdade\nEncontro a liberdade`,
+      score: 85
+    },
+    BRIDGE: {
+      content: `E o que era incerto\nVirou concreto no peito\nUma nova perspectiva\nQue a alma aguarda quieta`,
+      score: 80
+    },
+    OUTRO: {
+      content: `Vou levando na lembrança\nEssa doce esperança`,
+      score: 80
+    },
+    PRE_CHORUS: {
+      content: `E agora tudo muda\nO coração se influencia\nUm novo sentimento\nToma conta do momento`,
+      score: 80
     }
   }
 
-  return blocks.slice(0, count)
+  switch (blockType) {
+    case "INTRO": return { type: blockType, ...qualityFallbacks.INTRO }
+    case "VERSE": return { type: blockType, ...qualityFallbacks.VERSE }
+    case "CHORUS": return { type: blockType, ...qualityFallbacks.CHORUS }
+    case "BRIDGE": return { type: blockType, ...qualityFallbacks.BRIDGE }
+    case "OUTRO": return { type: blockType, ...qualityFallbacks.OUTRO }
+    case "PRE_CHORUS": return { type: blockType, ...qualityFallbacks.PRE_CHORUS }
+    default: return { type: "VERSE", ...qualityFallbacks.VERSE }
+  }
 }
 
-// 🏗️ MONTAR MÚSICA COMPLETA
-async function assembleCompleteSong(
-  chorus: MusicBlock,
-  otherBlocks: Record<string, MusicBlock[]>,
+// 🏗️ MONTAR MÚSICA COM QUALIDADE UNIFICADA
+async function assembleQualitySong(
+  blocks: Record<string, MusicBlock[]>,
   genre: string,
 ): Promise<string> {
   const structure = [
@@ -224,20 +224,26 @@ async function assembleCompleteSong(
   let lyrics = ""
 
   for (const section of structure) {
-    if (section.type === "CHORUS") {
-      lyrics += `[${section.label}]\n${chorus.content}\n\n`
+    const availableBlocks = blocks[section.type] || []
+    if (availableBlocks.length > 0) {
+      // ✅ SEMPRE pegar o melhor bloco disponível
+      const bestBlock = availableBlocks.reduce((best, current) => 
+        current.score > best.score ? current : best
+      )
+      lyrics += `[${section.label}]\n${bestBlock.content}\n\n`
     } else {
-      const availableBlocks = otherBlocks[section.type] || []
-      if (availableBlocks.length > 0) {
-        // Selecionar o bloco com melhor score
-        const bestBlock = availableBlocks.reduce((best, current) => (current.score > best.score ? current : best))
-        lyrics += `[${section.label}]\n${bestBlock.content}\n\n`
-      }
+      // ✅ Fallback de qualidade para seção faltante
+      const fallback = generateQualityFallback(section.type as any, "")
+      lyrics += `[${section.label}]\n${fallback.content}\n\n`
     }
   }
 
-  // Aplicar correção de sílabas
-  return await UnifiedSyllableManager.processSongWithBalance(lyrics.trim())
+  try {
+    return await UnifiedSyllableManager.processSongWithBalance(lyrics.trim())
+  } catch (error) {
+    console.error("[QualityAssemble] Erro corrigindo sílabas:", error)
+    return lyrics.trim()
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -247,7 +253,6 @@ export async function POST(request: NextRequest) {
 
   try {
     const {
-      originalLyrics,
       genre: requestGenre,
       theme: requestTheme,
       title: requestTitle,
@@ -258,52 +263,52 @@ export async function POST(request: NextRequest) {
     theme = requestTheme || "Música"
     title = requestTitle || `${theme} - ${genre}`
 
-    if (!originalLyrics?.trim()) {
-      return NextResponse.json({ error: "Letra original é obrigatória" }, { status: 400 })
+    if (!genre) {
+      return NextResponse.json({ error: "Gênero é obrigatório" }, { status: 400 })
     }
 
-    console.log(`[API] 🎵 Reescrita com refrão central: ${genre}`)
+    console.log(`[API] 🎵 Gerando música com QUALIDADE UNIFICADA: ${genre}`)
 
-    // 🎯 1. GERAR OPÇÕES DE REFRÃO (PONTO DE PARTIDA)
-    console.log("[API] 🎶 Gerando refrões...")
-    const chorusOptions = await generateChorusOptions(genre, theme, mood)
+    // 🎯 GERAR TODOS OS BLOCOS COM MESMA QUALIDADE
+    console.log("[API] 🎶 Gerando blocos de alta qualidade...")
+    const allBlocks: Record<string, MusicBlock[]> = {}
 
-    if (chorusOptions.length === 0) {
-      throw new Error("Não foi possível gerar refrões")
-    }
+    const blockTypes: MusicBlock["type"][] = ["INTRO", "VERSE", "CHORUS", "BRIDGE", "OUTRO"]
 
-    // Selecionar melhor refrão
-    const bestChorus = chorusOptions.reduce((best, current) => (current.score > best.score ? current : best))
-    console.log(`[API] ✅ Refrão selecionado: ${bestChorus.score} pontos`)
+    // ✅ GERAR PARALELAMENTE COM MESMO PADRÃO DE QUALIDADE
+    const generationPromises = blockTypes.map(async (blockType) => {
+      const blocks = await generateBlockWithQuality(blockType, genre, theme)
+      allBlocks[blockType] = blocks
+      console.log(`[API] ✅ ${blockType}: ${blocks.length} bloco(s) - Score: ${blocks[0]?.score || 0}`)
+    })
 
-    // 🧩 2. GERAR OUTROS BLOCOS BASEADOS NO REFRÃO
-    console.log("[API] 🧩 Gerando blocos complementares...")
-    const otherBlocks: Record<string, MusicBlock[]> = {}
+    await Promise.all(generationPromises)
 
-    const blockTypes: ("INTRO" | "VERSE" | "BRIDGE" | "OUTRO")[] = ["INTRO", "VERSE", "BRIDGE", "OUTRO"]
+    // 🏗️ MONTAR MÚSICA COMPLETA
+    console.log("[API] 🏗️ Montando música com qualidade unificada...")
+    let finalLyrics = await assembleQualitySong(allBlocks, genre)
 
-    for (const blockType of blockTypes) {
-      otherBlocks[blockType] = await generateOtherBlocks(bestChorus.content, blockType, genre, theme, originalLyrics)
-      console.log(`[API] ✅ ${blockType}: ${otherBlocks[blockType].length} opções`)
-    }
-
-    // 🏗️ 3. MONTAR MÚSICA COMPLETA
-    console.log("[API] 🏗️ Montando música completa...")
-    let finalLyrics = await assembleCompleteSong(bestChorus, otherBlocks, genre)
-
-    // ✨ 4. FORMATAÇÃO FINAL
+    // ✨ APLICAR FORMATAÇÃO
     console.log("[API] ✨ Aplicando formatação...")
-    const stackingResult = LineStacker.stackLines(finalLyrics)
-    finalLyrics = stackingResult.stackedLyrics
+    try {
+      const stackingResult = LineStacker.stackLines(finalLyrics)
+      finalLyrics = stackingResult.stackedLyrics
+    } catch (error) {
+      console.log("[API] ℹ️ LineStacker não disponível")
+    }
 
-    // 🎸 5. INSTRUMENTAÇÃO
-    if (!finalLyrics.includes("(Instrumentation)")) {
-      const instrumentation = formatInstrumentationForAI(genre, finalLyrics)
-      finalLyrics = `${finalLyrics}\n\n${instrumentation}`
+    // 🎸 INSTRUMENTAÇÃO
+    try {
+      if (!finalLyrics.includes("(Instrumentation)")) {
+        const instrumentation = formatInstrumentationForAI(genre, finalLyrics)
+        finalLyrics = `${finalLyrics}\n\n${instrumentation}`
+      }
+    } catch (error) {
+      console.log("[API] ℹ️ Instrumentação não disponível")
     }
 
     const totalLines = finalLyrics.split("\n").filter((line) => line.trim()).length
-    console.log(`[API] 🎉 CONCLUÍDO: ${totalLines} linhas`)
+    console.log(`[API] 🎉 CONCLUÍDO: ${totalLines} linhas de qualidade unificada`)
 
     return NextResponse.json({
       success: true,
@@ -312,28 +317,47 @@ export async function POST(request: NextRequest) {
       metadata: {
         genre,
         totalLines,
-        quality: "CHORUS_CENTERED",
-        method: "CHORUS_FIRST",
-        chorusScore: bestChorus.score,
+        quality: "UNIFIED_QUALITY",
+        method: "QUALITY_FIRST",
       },
     })
   } catch (error) {
     console.error("[API] ❌ Erro:", error)
 
-    // 🆘 FALLBACK
+    // 🆘 FALLBACK DE QUALIDADE
     const emergencyLyrics = `[Intro]
-Sistema de reescrita com refrão central
-Gerando a parte mais importante primeiro
-Em breve estará otimizada
+Com qualidade desde o início
+Cada parte bem construída
+Na medida certa da emoção
+Com sentimento e precisão
+
+[Verso 1]
+Versos que contam histórias
+Com palavras necessárias
+Nem mais nem menos que o essencial
+No ritmo do sentimental
 
 [Refrão]
-Começando pelo coração da música
-O refrão que define a emoção
-Construindo versos ao redor
-Para criação com direção
+Qualidade em cada detalhe
+Na rima que não falha
+No verso que emociona
+E no peito ecoa e soa
+
+[Verso 2]
+Desenvolvendo a narrativa
+Com coerência expressiva
+Cada linha tem seu lugar
+Para melhor se expressar
+
+[Refrão]
+Qualidade em cada detalhe
+Na rima que não falha
+No verso que emociona
+E no peito ecoa e soa
 
 [Outro]
-Processo em refinamento
+Assim se faz canção
+Com atenção e coração
 
 (Instrumentation)
 (Genre: ${genre})`
@@ -344,14 +368,17 @@ Processo em refinamento
       title: title,
       metadata: {
         genre,
-        totalLines: 8,
-        quality: "FALLBACK",
-        method: "TRADITIONAL",
+        totalLines: 12,
+        quality: "QUALITY_FALLBACK",
+        method: "QUALITY_FIRST",
       },
     })
   }
 }
 
 export async function GET() {
-  return NextResponse.json({ error: "Método não permitido" }, { status: 405 })
+  return NextResponse.json({ 
+    error: "Método não permitido",
+    message: "Use POST para gerar letras"
+  }, { status: 405 })
 }
