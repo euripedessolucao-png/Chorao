@@ -1,4 +1,4 @@
-// app/api/rewrite-lyrics/route.ts - VERSÃO MELHORADA
+// app/api/rewrite-lyrics/route.ts - VERSÃO CORRIGIDA
 import { type NextRequest, NextResponse } from "next/server"
 import { openai } from "@ai-sdk/openai"
 import { generateText } from "ai"
@@ -35,14 +35,32 @@ async function generateBlockVariations(
     OUTRO: 3
   }
 
-  // PROMPTS MELHORADOS - PRESERVANDO ELEMENTOS ORIGINAIS
+  // CORREÇÃO: ADICIONAR TODOS OS TIPOS DE PROMPTS
   const prompts = {
+    INTRO: `Reescreva esta INTRO ORIGINAL mantendo a ATMOSFERA, mas no estilo ${genre}:
+
+INTRO ORIGINAL:
+"${originalSection}"
+
+INSTRUÇÕES:
+- MANTENHA a atmosfera: "${extractKeyElements(originalSection)}"
+- Estilo: ${genre}
+- ${lineTargets.INTRO} linhas no máximo
+- Máximo 10 sílabas por linha
+- Crie clima emocional
+
+FORMATO:
+Linha 1 (atmosfera)
+Linha 2 (contexto)
+Linha 3 (emoção)
+Linha 4 (transição)`,
+
     VERSE: `Reescreva esta SEÇÃO ORIGINAL mantendo os MESMOS ELEMENTOS CHAVE, mas no estilo ${genre}:
 
 SEÇÃO ORIGINAL (preserve estas ideias):
 "${originalSection}"
 
-INSTRUÇÕES CRÍTICAS:
+INSTRUÇÕES:
 - MANTENHA: "${extractKeyElements(originalSection)}"
 - Estilo: ${genre} 
 - ${lineTargets.VERSE} linhas no máximo
@@ -56,12 +74,30 @@ Linha 2 (desenvolvendo a ideia)
 Linha 3 (com emoção genuína)
 Linha 4 (conclusão natural)`,
 
+    PRE_CHORUS: `Reescreva este PRÉ-REFRÃO ORIGINAL mantendo a TENSÃO, mas no estilo ${genre}:
+
+PRÉ-REFRÃO ORIGINAL:
+"${originalSection}"
+
+INSTRUÇÕES:
+- MANTENHA a tensão emocional
+- Estilo: ${genre}
+- ${lineTargets.PRE_CHORUS} linhas no máximo
+- Máximo 11 sílabas por linha
+- Prepare para o refrão
+- Crie expectativa
+
+FORMATO:
+Linha 1 (preparação)
+Linha 2 (tensão)
+Linha 3 (clímax)`,
+
     CHORUS: `Reescreva este REFRÃO ORIGINAL mantendo a ESSÊNCIA EMOCIONAL, mas no estilo ${genre}:
 
 REFRÃO ORIGINAL (preserve o sentimento):
 "${originalSection}"
 
-INSTRUÇÕES CRÍTICAS:
+INSTRUÇÕES:
 - MANTENHA o sentimento: "${extractEmotionalCore(originalSection)}"
 - Estilo: ${genre}
 - ${lineTargets.CHORUS} linhas no máximo  
@@ -80,7 +116,7 @@ Linha 4 (conclusão forte)`,
 PONTE ORIGINAL (preserve a virada):
 "${originalSection}"
 
-INSTRUÇÕES CRÍTICAS:
+INSTRUÇÕES:
 - MANTENHA: "${extractPerspectiveShift(originalSection)}"
 - Estilo: ${genre}
 - ${lineTargets.BRIDGE} linhas no máximo
@@ -92,7 +128,25 @@ FORMATO:
 Linha 1 (nova perspectiva)
 Linha 2 (reflexão)
 Linha 3 (insight)
-Linha 4 (preparação para final)`
+Linha 4 (preparação para final)`,
+
+    OUTRO: `Reescreva este OUTRO ORIGINAL mantendo o FECHO EMOCIONAL, mas no estilo ${genre}:
+
+OUTRO ORIGINAL:
+"${originalSection}"
+
+INSTRUÇÕES:
+- MANTENHA o fecho emocional
+- Estilo: ${genre}
+- ${lineTargets.OUTRO} linhas no máximo
+- Máximo 9 sílabas por linha
+- Sensação de conclusão
+- Deixe marca emocional
+
+FORMATO:
+Linha 1 (resumo)
+Linha 2 (emoção final)
+Linha 3 (despedida)`
   }
 
   // Fallback para tipos não especificados
@@ -107,12 +161,13 @@ INSTRUÇÕES:
 - Linguagem natural brasileira`
 
   try {
+    // CORREÇÃO: Agora todos os tipos têm prompts
     const prompt = prompts[blockType] || defaultPrompt
     
     const { text } = await generateText({
       model: openai("gpt-4o-mini"),
       prompt,
-      temperature: 0.8, // Mais criativo
+      temperature: 0.8,
     })
 
     console.log(`[BlockGen] ${blockType} reescrito:`, text?.substring(0, 150))
@@ -124,13 +179,12 @@ INSTRUÇÕES:
   }
 }
 
-// 🧠 FUNÇÕES PARA EXTRAIR ELEMENTOS CHAVE
+// 🧠 FUNÇÕES PARA EXTRAIR ELEMENTOS CHAVE (mantidas iguais)
 function extractKeyElements(section: string): string {
   const lines = section.split('\n').filter(line => 
     line.trim() && !line.startsWith('[') && !line.startsWith('(')
   )
   
-  // Extrai palavras concretas e emocionais
   const keyWords = lines.flatMap(line => 
     line.split(/\s+/).filter(word => 
       word.length > 3 && 
@@ -159,7 +213,7 @@ function extractPerspectiveShift(section: string): string {
   return 'nova perspectiva'
 }
 
-// 🧩 PROCESSAR BLOCO COM CONTEXTO
+// 🧩 PROCESSAR BLOCO COM CONTEXTO (mantido igual)
 function processGeneratedBlocks(
   text: string, 
   blockType: MusicBlock["type"], 
@@ -180,10 +234,8 @@ function processGeneratedBlocks(
   let currentBlock: string[] = []
 
   for (const line of lines) {
-    // Pula linhas de instrução e marcadores
     if (line.match(/^(Linha|Opção|Option|Versão)/i)) continue
     
-    // Adiciona linha se for conteúdo real
     if (line.length > 10 && !line.match(/^\d/)) {
       currentBlock.push(line)
       
@@ -202,7 +254,6 @@ function processGeneratedBlocks(
     }
   }
 
-  // Adiciona bloco incompleto se for bom
   if (currentBlock.length >= 2 && blocks.length < count) {
     blocks.push({
       type: blockType,
@@ -216,12 +267,11 @@ function processGeneratedBlocks(
   return blocks.slice(0, count)
 }
 
-// 📊 SCORE MELHORADO - AVALIA CONTEXTO
+// 📊 SCORE MELHORADO - AVALIA CONTEXTO (mantido igual)
 function calculateContextualScore(content: string, originalContext: string): number {
   const lines = content.split("\n").filter(line => line.trim())
-  let score = 50 // Base
+  let score = 50
 
-  // Bônus por preservação de contexto
   const originalWords = originalContext.toLowerCase().split(/\s+/).filter(w => w.length > 3)
   const contentWords = content.toLowerCase().split(/\s+/)
   
@@ -231,12 +281,10 @@ function calculateContextualScore(content: string, originalContext: string): num
   
   score += Math.min(preservedWords * 8, 30)
 
-  // Bônus por estrutura adequada
   if (lines.length >= 3 && lines.length <= 6) {
     score += 15
   }
 
-  // Penalidade por repetição excessiva
   const allWords = content.toLowerCase().split(/\s+/)
   const uniqueWords = new Set(allWords.filter(w => w.length > 2))
   const repetitionRatio = uniqueWords.size / allWords.length
@@ -247,7 +295,7 @@ function calculateContextualScore(content: string, originalContext: string): num
   return Math.min(100, Math.max(20, score))
 }
 
-// 🆘 FALLBACK CONTEXTUAL
+// 🆘 FALLBACK CONTEXTUAL (mantido igual)
 function generateContextualFallbackBlocks(
   blockType: MusicBlock["type"], 
   originalSection: string,
@@ -256,14 +304,21 @@ function generateContextualFallbackBlocks(
 ): MusicBlock[] {
   const blocks: MusicBlock[] = []
   
-  // Extrai elementos da seção original para fallback inteligente
   const keyElements = extractKeyElements(originalSection)
   const emotionalCore = extractEmotionalCore(originalSection)
   
   const templates = {
+    INTRO: [
+      `No começo dessa história\nO ${emotionalCore} surgiu\nTransformando a ${keyElements.split(',')[0] || 'vida'}\nQue em mim sempre existiu`,
+      `Iniciando essa jornada\nCom ${emotionalCore} no olhar\nA ${keyElements.split(',')[0] || 'estrada'} se abre\nPronta pra me levar`
+    ],
     VERSE: [
       `Lembrando da ${keyElements.split(',')[0] || 'história'}\nDo ${emotionalCore} que ficou\nCada momento guardado\nNo peito que se abriu`,
       `No caminho da ${keyElements.split(',')[0] || 'vida'}\nO ${emotionalCore} renasceu\nTrazendo nova esperança\nPro coração que cresceu`
+    ],
+    PRE_CHORUS: [
+      `E agora o coração\nPrepara pro momento\nDo ${emotionalCore} que vem\nCom novo sentimento`,
+      `O instante chegou\nTudo vai mudar\nO ${emotionalCore} transforma\nE faz renovar`
     ],
     CHORUS: [
       `É ${emotionalCore} que me guia\nNessa estrada da vida\nSeu ${keyElements.split(',')[0] || 'olhar'} me ilumina\nE a dor é esquecida`,
@@ -272,6 +327,10 @@ function generateContextualFallbackBlocks(
     BRIDGE: [
       `E o ${emotionalCore} que era sonho\nVirou realidade agora\nTransformou meu ${keyElements.split(',')[0] || 'caminho'}\nNuma linda aurora`,
       `Pensando no ${keyElements.split(',')[0] || 'passado'}\nVejo como mudou\nO ${emotionalCore} trouxe\nO amor que me salvou`
+    ],
+    OUTRO: [
+      `E assim termina\nEssa melodia\nCom ${emotionalCore} no peito\nPra sempre em meu dia`,
+      `Até a próxima vez\nCom ${emotionalCore} e paz\nA música continua\nNo coração demais`
     ]
   }
 
@@ -283,7 +342,7 @@ function generateContextualFallbackBlocks(
       type: blockType,
       content: template[i],
       lines,
-      score: 65, // Score decente para fallback
+      score: 65,
       originalContext: originalSection
     })
   }
@@ -291,7 +350,7 @@ function generateContextualFallbackBlocks(
   return blocks
 }
 
-// 🏗️ MONTAR COMBINAÇÕES PRESERVANDO ESTRUTURA ORIGINAL
+// 🏗️ MONTAR COMBINAÇÕES PRESERVANDO ESTRUTURA ORIGINAL (mantido igual)
 function assembleCombinations(
   blocks: Record<string, MusicBlock[]>, 
   originalStructure: string[]
@@ -307,7 +366,6 @@ function assembleCombinations(
     OUTRO: "Outro"
   }
 
-  // Usa a estrutura original como base
   for (let combo = 0; combo < 2; combo++) {
     let lyrics = ""
     let verseCount = 1
@@ -316,14 +374,12 @@ function assembleCombinations(
     for (const sectionType of originalStructure) {
       const availableBlocks = blocks[sectionType] || []
       if (availableBlocks.length > 0) {
-        // Seleciona baseado no score de contexto
         const bestBlock = availableBlocks.reduce((best, current) => 
           current.score > best.score ? current : best
         )
 
         let label = sectionLabels[sectionType] || sectionType
         
-        // Numera adequadamente
         if (sectionType === "VERSE") {
           label = `Verso ${verseCount}`
           verseCount++
@@ -344,7 +400,7 @@ function assembleCombinations(
   return combinations.length > 0 ? combinations : [generateSimpleFallbackLyric()]
 }
 
-// 🎼 DETECTAR ESTRUTURA ORIGINAL
+// 🎼 DETECTAR ESTRUTURA ORIGINAL (mantido igual)
 function detectOriginalStructure(lyrics: string): string[] {
   const sections = parseLyricSections(lyrics)
   const structure: string[] = []
@@ -356,7 +412,7 @@ function detectOriginalStructure(lyrics: string): string[] {
   return structure.length > 0 ? structure : ["INTRO", "VERSE", "CHORUS", "VERSE", "CHORUS", "BRIDGE", "CHORUS", "OUTRO"]
 }
 
-// 🏆 SELECIONAR MELHOR COMBINAÇÃO (MELHORADO)
+// 🏆 SELECIONAR MELHOR COMBINAÇÃO (mantido igual)
 async function selectBestCombination(combinations: string[], genre: string, originalLyrics: string): Promise<string> {
   if (combinations.length === 0) {
     return generateSimpleFallbackLyric()
@@ -369,7 +425,6 @@ async function selectBestCombination(combinations: string[], genre: string, orig
     try {
       const validated = await UnifiedSyllableManager.processSongWithBalance(lyrics)
       
-      // Score por preservação de elementos originais
       const originalWords = originalLyrics.toLowerCase().split(/\s+/).filter(w => w.length > 3)
       const currentWords = validated.toLowerCase().split(/\s+/)
       const preserved = originalWords.filter(ow => 
@@ -378,7 +433,6 @@ async function selectBestCombination(combinations: string[], genre: string, orig
       
       const preservationScore = Math.min((preserved / originalWords.length) * 40, 40)
       
-      // Score por estrutura
       const sections = parseLyricSections(validated)
       const structureScore = Math.min(sections.length * 5, 30)
       
@@ -393,11 +447,11 @@ async function selectBestCombination(combinations: string[], genre: string, orig
     }
   }
 
-  console.log(`🎯 Melhor combinação selecionada: ${bestScore} pontos (preservação: ${bestScore})`)
+  console.log(`🎯 Melhor combinação selecionada: ${bestScore} pontos`)
   return bestLyrics
 }
 
-// 🎼 GERAR LETRA SIMPLES DE FALLBACK (mantido)
+// 🎼 GERAR LETRA SIMPLES DE FALLBACK (mantido igual)
 function generateSimpleFallbackLyric(): string {
   return `[Intro]
 Começando essa canção
@@ -419,6 +473,7 @@ E nunca vai acabar
 Até a próxima vez`
 }
 
+// ✅ POST E GET (mantidos iguais)
 export async function POST(request: NextRequest) {
   let genre = "Sertanejo"
   let theme = "Música"
@@ -437,14 +492,10 @@ export async function POST(request: NextRequest) {
 
     console.log(`[API] 🎵 Iniciando reescrita INTELIGENTE: ${genre}`)
 
-    // 🎯 1. ANALISAR ESTRUTURA ORIGINAL
-    console.log("[API] 🔍 Analisando estrutura original...")
     const originalSections = parseLyricSections(originalLyrics)
     const originalStructure = detectOriginalStructure(originalLyrics)
     console.log(`[API] 📊 Estrutura detectada:`, originalStructure)
 
-    // 🎯 2. GERAR BLOCOS COM CONTEXTO
-    console.log("[API] 🎲 Gerando blocos contextuais...")
     const allBlocks: Record<string, MusicBlock[]> = {}
 
     for (const section of originalSections) {
@@ -456,7 +507,7 @@ export async function POST(request: NextRequest) {
           genre, 
           theme, 
           originalLyrics,
-          section.raw, // Passa a seção original completa
+          section.raw,
           2
         )
         console.log(`[API] ✅ ${blockType}: ${allBlocks[blockType].length} opções contextuais`)
@@ -466,18 +517,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 🧩 3. MONTAR COMBINAÇÕES PRESERVANDO ESTRUTURA
-    console.log("[API] 🧩 Montando combinações contextuais...")
     const combinations = assembleCombinations(allBlocks, originalStructure)
     console.log(`[API] ✅ ${combinations.length} combinações criadas`)
 
-    // 🏆 4. SELECIONAR MELHOR (COM PRESERVAÇÃO)
-    console.log("[API] 🏆 Selecionando melhor combinação...")
     let finalLyrics = await selectBestCombination(combinations, genre, originalLyrics)
 
-    // ✨ 5. APLICAR MELHORIAS
-    console.log("[API] ✨ Aplicando melhorias finais...")
-    
     try {
       const stackingResult = LineStacker.stackLines(finalLyrics)
       finalLyrics = stackingResult.stackedLyrics
@@ -485,7 +529,6 @@ export async function POST(request: NextRequest) {
       console.log("[API] ℹ️ LineStacker não disponível")
     }
 
-    // 🎸 6. INSTRUMENTAÇÃO
     try {
       if (!finalLyrics.includes("(Instrumentation)")) {
         const instrumentation = formatInstrumentationForAI(genre, finalLyrics)
