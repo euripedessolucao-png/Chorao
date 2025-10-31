@@ -49,11 +49,11 @@ export class LyricsAuditor {
     if (config) {
       const rules = config.prosody_rules.syllable_count
       if ("absolute_max" in rules) {
-        maxSyllables = rules.absolute_max
+        maxSyllables = (rules as any).absolute_max
         minSyllables = Math.max(4, maxSyllables - 5)
       } else if ("without_comma" in rules) {
-        maxSyllables = rules.without_comma.acceptable_up_to
-        minSyllables = rules.without_comma.min
+        maxSyllables = (rules as any).without_comma.acceptable_up_to
+        minSyllables = (rules as any).without_comma.min
       }
     }
 
