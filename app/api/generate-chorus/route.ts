@@ -1,4 +1,4 @@
-// app/api/generate-chorus/route.ts - VERSÃO CORRIGIDA E FUNCIONAL
+// app/api/generate-chorus/route.ts - VERSÃO CORRIGIDA
 import { type NextRequest, NextResponse } from "next/server"
 import { openai } from "@ai-sdk/openai"
 import { generateText } from "ai"
@@ -64,7 +64,7 @@ Encontro paz e sentimento
       model: openai("gpt-4o-mini"),
       prompt,
       temperature: 0.8, // Aumentado para mais criatividade
-      maxTokens: 200,
+      // maxTokens removido - não é suportado pelo AI SDK
     })
 
     console.log(`[Chorus] Resposta bruta da IA:`, text)
