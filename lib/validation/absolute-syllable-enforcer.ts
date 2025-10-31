@@ -27,10 +27,10 @@ export function validateSyllablesByGenre(
     const rules = config.prosody_rules.syllable_count
     if ("absolute_max" in rules) {
       maxSyllables = rules.absolute_max
-    } else if ("with_comma" in rules && rules.with_comma.total_max) {
-      maxSyllables = rules.with_comma.total_max
-    } else if ("without_comma" in rules && rules.without_comma.acceptable_up_to) {
-      maxSyllables = rules.without_comma.acceptable_up_to
+    } else if ("with_comma" in rules && (rules as any).with_comma.total_max) {
+      maxSyllables = (rules as any).with_comma.total_max
+    } else if ("without_comma" in rules && (rules as any).without_comma.acceptable_up_to) {
+      maxSyllables = (rules as any).without_comma.acceptable_up_to
     }
   }
 
