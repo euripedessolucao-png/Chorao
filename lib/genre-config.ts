@@ -1,6 +1,7 @@
-// lib/genre-config.ts
-import { countPoeticSyllables } from "./validation/syllable-counter-brasileiro"
+import { validateLyricsSyllables } from "./validation/syllable-counter-brasileiro"
+import { validateSertanejoModerno } from "./validation/sertanejo-moderno-validator"
 
+// ✅ CONFIGURAÇÕES COMPLETAS E ATUALIZADAS
 export const GENRE_CONFIGS = {
   "Sertanejo Moderno Feminino": {
     year_range: "2024-2025",
@@ -54,6 +55,8 @@ export const GENRE_CONFIGS = {
     prosody_rules: {
       syllable_count: {
         absolute_max: 12,
+        ideal_min: 8,
+        ideal_max: 10,
         rule: "NUNCA exceder 12 sílabas poéticas por verso - limite humano de canto",
       },
       breathability: "Toda linha deve caber em um fôlego natural ao cantar (máximo 12 sílabas)",
@@ -67,6 +70,7 @@ export const GENRE_CONFIGS = {
       rhythm_style: "Sertanejo pop com groove moderado",
     },
   },
+
   "Sertanejo Moderno Masculino": {
     year_range: "2024-2025",
     reference_artists: [
@@ -128,6 +132,8 @@ export const GENRE_CONFIGS = {
     prosody_rules: {
       syllable_count: {
         absolute_max: 12,
+        ideal_min: 8,
+        ideal_max: 10,
         rule: "NUNCA exceder 12 sílabas poéticas por verso - limite humano de canto",
       },
       breathability: "Toda linha deve caber em um fôlego natural ao cantar (máximo 12 sílabas)",
@@ -141,6 +147,7 @@ export const GENRE_CONFIGS = {
       rhythm_style: "Sertanejo moderno com groove marcado",
     },
   },
+
   "Sertanejo Universitário": {
     year_range: "2010-2025",
     reference_artists: ["Jorge & Mateus", "Henrique & Juliano", "Marília Mendonça"],
@@ -170,11 +177,11 @@ export const GENRE_CONFIGS = {
     },
     prosody_rules: {
       syllable_count: {
-        with_comma: { max_before_comma: 7, max_after_comma: 5, total_max: 12 },
-        without_comma: { min: 5, max: 8, acceptable_up_to: 9 },
+        absolute_max: 12,
+        ideal_min: 7,
+        ideal_max: 11,
       },
-      verse_counting_rule:
-        "Uma linha com vírgula (ex: 6+6, 7+5 ou 5+7 sílabas) conta como 2 VERSOS na estrutura total, não 1 verso",
+      breathability: "Toda linha deve caber em um fôlego natural ao cantar",
     },
     harmony_and_rhythm: {
       key: "G major",
@@ -183,15 +190,14 @@ export const GENRE_CONFIGS = {
       rhythm_style: "Sertanejo universitário com groove animado",
     },
   },
+
   "Sertanejo Raiz": {
     year_range: "2024-2025",
     reference_artists: ["Almir Sater", "Gabriel Sater", "Chitãozinho & Xororó", "Sérgio Reis", "Renato Teixeira"],
     core_principles: {
-      theme:
-        "Vida rural autêntica, natureza, tradições do campo, saudade da terra, histórias genuínas do sertão, preservação das raízes",
+      theme: "Vida rural autêntica, natureza, tradições do campo, saudade da terra, histórias genuínas do sertão",
       tone: "Nostálgico, autêntico, respeitoso com as tradições, poético mas acessível, com alma caipira",
-      narrative_arc:
-        "Situação do campo ou memória → Reflexão sobre tradições ou natureza → Mensagem de preservação ou saudade saudável",
+      narrative_arc: "Situação do campo ou memória → Reflexão sobre tradições ou natureza → Mensagem de preservação",
     },
     language_rules: {
       allowed: {
@@ -223,7 +229,6 @@ export const GENRE_CONFIGS = {
           "trabalhar",
           "amanhecer",
           "anoitecer",
-          "cavalgar",
         ],
         phrases: [
           "modão das antigas",
@@ -233,7 +238,6 @@ export const GENRE_CONFIGS = {
           "terra querida",
           "vida simples",
           "tradição que não se perde",
-          "alma caipira",
         ],
       },
       forbidden: {
@@ -241,94 +245,39 @@ export const GENRE_CONFIGS = {
         electric_instruments: ["guitarra elétrica", "sintetizador", "bateria eletrônica", "808"],
         pop_slang: ["tô na vibe", "manda o papo", "tá ligado", "tipo assim"],
       },
-      style:
-        "Poético, com vocabulário rural autêntico, respeitando o linguajar caipira tradicional. Evita gírias urbanas modernas.",
+      style: "Poético, com vocabulário rural autêntico, respeitando o linguajar caipira tradicional.",
     },
     structure_rules: {
-      verse: {
-        lines: 4,
-        purpose: "Contar história do campo, memórias rurais, ou reflexões sobre a vida simples com autenticidade",
-      },
+      verse: { lines: 4, purpose: "Contar história do campo, memórias rurais, ou reflexões sobre a vida simples" },
       chorus: {
         lines_options: [2, 4],
         forbidden_lines: 3,
-        required_elements: [
-          "Melodia tradicional marcante",
-          "Fácil de cantar em dupla (harmonias)",
-          "Mensagem de preservação ou saudade",
-        ],
+        required_elements: ["Melodia tradicional marcante", "Fácil de cantar em dupla", "Mensagem de preservação"],
       },
-      bridge: {
-        lines_min: 2,
-        lines_max: 4,
-        purpose: "Momento de reflexão sobre tradições ou natureza — pode ter solo de viola",
-      },
+      bridge: { lines_min: 2, lines_max: 4, purpose: "Momento de reflexão sobre tradições ou natureza" },
     },
     prosody_rules: {
       syllable_count: {
-        with_comma: { max_before_comma: 7, max_after_comma: 5, total_max: 12 },
-        without_comma: { min: 6, max: 10, acceptable_up_to: 12 },
+        absolute_max: 12,
+        ideal_min: 8,
+        ideal_max: 11,
       },
       breathability: "Toda linha deve caber em um fôlego natural ao cantar, respeitando o ritmo da moda de viola",
-      verse_counting_rule:
-        "Uma linha com vírgula (ex: 6+6, 7+5 ou 5+7 sílabas) conta como 2 VERSOS na estrutura total, não 1 verso",
     },
     harmony_and_rhythm: {
       key: "G major",
       allowed_chords: ["G", "C", "D", "Em", "Am", "A7", "D7"],
       forbidden_chords: ["Acordes com 7M", "9", "11", "13", "diminutos", "aumentados"],
       bpm_range: { min: 80, max: 100, ideal: 90 },
-      rhythm_style:
-        "Moda de viola tradicional com viola caipira de 10 cordas, sanfona, violão acústico. SEM instrumentos elétricos ou eletrônicos. Pode ter influências de blues e rock acústico (estilo Almir Sater) mas mantendo a essência raiz.",
+      rhythm_style: "Moda de viola tradicional com viola caipira de 10 cordas, sanfona, violão acústico",
     },
   },
-  "Forró Pé de Serra": {
-    year_range: "1940-2025",
-    reference_artists: ["Luiz Gonzaga", "Dominguinhos", "Trio Nordestino"],
-    core_principles: {
-      theme: "Nordeste, saudade, amor, festa junina",
-      tone: "Alegre, nostálgico, regional",
-      narrative_arc: "História do sertão com emoção autêntica",
-    },
-    language_rules: {
-      allowed: {
-        concrete_objects: ["sanfona", "xote", "baião", "sertão", "lua", "forró"],
-        actions: ["dançar", "tocar", "cantar", "lembrar", "voltar"],
-        phrases: ["meu sertão", "terra querida", "forró bom", "sanfona chora"],
-      },
-      forbidden: {
-        modern_slang: ["tô na vibe", "manda o pix", "story"],
-      },
-      style: "Regional nordestino, poético mas acessível",
-    },
-    structure_rules: {
-      verse: { lines: 4, purpose: "Contar história do nordeste" },
-      chorus: {
-        lines_options: [2, 4],
-        forbidden_lines: 3,
-        required_elements: ["Melodia marcante", "Fácil de dançar"],
-      },
-    },
-    prosody_rules: {
-      syllable_count: {
-        with_comma: { max_before_comma: 7, max_after_comma: 5, total_max: 12 },
-        without_comma: { min: 5, max: 8, acceptable_up_to: 9 },
-      },
-      verse_counting_rule: "Uma linha com vírgula (6+6, 7+5 ou 5+7 sílabas) conta como 2 VERSOS na estrutura total",
-    },
-    harmony_and_rhythm: {
-      key: "A major",
-      allowed_chords: ["A", "D", "E", "F#m", "Bm"],
-      bpm_range: { min: 110, max: 130, ideal: 120 },
-      rhythm_style: "Forró tradicional com zabumba, triângulo e sanfona",
-    },
-  },
+
   "Funk Carioca": {
     year_range: "2024-2025",
     reference_artists: ["MC Ryan SP", "MC Hariel", "MC IG", "Ludmilla", "Anitta"],
     core_principles: {
-      theme:
-        "Autoestima, empoderamento, conquista, celebração da quebrada, respeito — NUNCA apologia à violência ou objetificação",
+      theme: "Autoestima, empoderamento, conquista, celebração da quebrada, respeito — NUNCA apologia à violência",
       tone: "Ritmo marcado, frases curtas, repetitivo e grudento, confiante",
       narrative_arc: "Afirmação de valor → Convite ou desafio → Celebração ou conquista",
     },
@@ -381,7 +330,7 @@ export const GENRE_CONFIGS = {
         ],
         generic_cliches: ["põe a mão no alto", "vamos curtir a noite", "a festa tá bombando", "todo mundo junto"],
       },
-      style: "Direto, repetitivo, com gírias urbanas atuais ('mano', 'tropa', 'bonde'). Tom confiante e empoderado.",
+      style: "Direto, repetitivo, com gírias urbanas atuais. Tom confiante e empoderado.",
     },
     structure_rules: {
       verse: { lines: 4, purpose: "Versos curtos e diretos, estabelecendo atitude e contexto" },
@@ -393,10 +342,10 @@ export const GENRE_CONFIGS = {
     },
     prosody_rules: {
       syllable_count: {
-        with_comma: { max_before_comma: 6, max_after_comma: 6, total_max: 12 },
-        without_comma: { min: 3, max: 6, acceptable_up_to: 6 },
+        absolute_max: 12,
+        ideal_min: 3,
+        ideal_max: 6,
       },
-      verse_counting_rule: "Funk usa versos curtos. Uma linha com vírgula (6+6) conta como 2 VERSOS",
     },
     harmony_and_rhythm: {
       key: "C minor",
@@ -405,123 +354,10 @@ export const GENRE_CONFIGS = {
       rhythm_style: "Batida marcada do funk com graves pesados (paredão) ou funk 150 BPM para TikTok",
     },
   },
-  "Funk Melody": {
-    year_range: "2024-2025",
-    reference_artists: ["MC Ryan SP", "MC Hariel", "MC IG", "Ludmilla", "Anitta"],
-    core_principles: {
-      theme:
-        "Autoestima, empoderamento, conquista, celebração da quebrada, respeito — NUNCA apologia à violência ou objetificação",
-      tone: "Ritmo marcado, frases curtas, repetitivo e grudento, confiante",
-      narrative_arc: "Afirmação de valor → Convite ou desafio → Celebração ou conquista",
-    },
-    language_rules: {
-      allowed: {
-        concrete_objects: ["paredão", "rolê", "zap", "story", "look", "beat", "flow", "baile", "favela", "quebrada"],
-        actions: [
-          "mandar ver",
-          "chamar pra dançar",
-          "brilhar",
-          "mandar o flow",
-          "jogar o cabelo",
-          "rebolar",
-          "dominar a pista",
-        ],
-        phrases: [
-          "Tô no meu flow",
-          "Meu beat é pesado",
-          "Respeita meu espaço",
-          "Sou dona de mim",
-          "Vim pra brilhar",
-          "Tô no comando",
-        ],
-      },
-      forbidden: {
-        toxic_content: [
-          "mulher objeto",
-          "violência",
-          "drogas explícitas",
-          "machismo",
-          "apologia ao crime",
-          "objetificação",
-        ],
-        generic_cliches: ["põe a mão no alto", "vamos curtir a noite", "a festa tá bombando", "todo mundo junto"],
-      },
-      style: "Direto, repetitivo, com gírias urbanas ('mano', 'véio', 'bicho'). Tom confiante e empoderado.",
-    },
-    structure_rules: {
-      verse: { lines: 4, purpose: "Versos curtos e diretos, estabelecendo atitude e contexto" },
-      chorus: {
-        lines_options: [2],
-        forbidden_lines: [3, 4],
-        required_elements: ["Grudento e repetitivo", "Máximo 6 sílabas por linha", "Frase de impacto", "Sem vírgulas"],
-      },
-    },
-    prosody_rules: {
-      syllable_count: {
-        with_comma: { max_before_comma: 6, max_after_comma: 6, total_max: 12 },
-        without_comma: { min: 3, max: 6, acceptable_up_to: 6 },
-      },
-      verse_counting_rule: "Funk usa versos curtos. Uma linha com vírgula (6+6) conta como 2 VERSOS",
-    },
-    harmony_and_rhythm: {
-      key: "C minor",
-      allowed_chords: ["Cm", "Fm", "Gm", "Ab", "Bb"],
-      bpm_range: { min: 120, max: 140, ideal: 128 },
-      rhythm_style: "Batida marcada do funk com graves pesados (paredão)",
-    },
-  },
-  "Funk Consciente": {
-    year_range: "2024-2025",
-    reference_artists: ["MC Ryan SP", "MC Hariel", "MC IG", "Ludmilla", "Anitta"],
-    core_principles: {
-      theme:
-        "Temas sociais, empoderamento da quebrada, superação, respeito, consciência social — NUNCA apologia à violência",
-      tone: "Ritmo marcado, mensagem forte, repetitivo e grudento, consciente",
-      narrative_arc: "Realidade da quebrada → Reflexão ou luta → Superação ou mensagem social",
-    },
-    language_rules: {
-      allowed: {
-        concrete_objects: ["quebrada", "favela", "comunidade", "luta", "sonho", "conquista", "respeito"],
-        actions: ["lutar", "vencer", "resistir", "conquistar", "evoluir", "respeitar", "representar"],
-        phrases: [
-          "Da quebrada pro mundo",
-          "Respeita a origem",
-          "Evoluí sem esquecer",
-          "Consciência é poder",
-          "Quebrada unida",
-        ],
-      },
-      forbidden: {
-        toxic_content: ["apologia ao crime", "violência explícita", "drogas explícitas", "machismo", "objetificação"],
-        generic_cliches: ["põe a mão no alto", "vamos curtir a noite"],
-      },
-      style: "Direto, com mensagem social forte, gírias urbanas conscientes. Tom de superação e orgulho da origem.",
-    },
-    structure_rules: {
-      verse: { lines: 4, purpose: "Versos com mensagem social, realidade da quebrada, superação" },
-      chorus: {
-        lines_options: [2],
-        forbidden_lines: [3, 4],
-        required_elements: ["Grudento e repetitivo", "Mensagem social clara", "Frase de impacto"],
-      },
-    },
-    prosody_rules: {
-      syllable_count: {
-        with_comma: { max_before_comma: 6, max_after_comma: 6, total_max: 12 },
-        without_comma: { min: 3, max: 6, acceptable_up_to: 6 },
-      },
-      verse_counting_rule: "Funk usa versos curtos. Uma linha com vírgula (6+6) conta como 2 VERSOS",
-    },
-    harmony_and_rhythm: {
-      key: "C minor",
-      allowed_chords: ["Cm", "Fm", "Gm", "Ab", "Bb"],
-      bpm_range: { min: 120, max: 140, ideal: 130 },
-      rhythm_style: "Batida marcada do funk com graves pesados, mensagem forte",
-    },
-  },
+
   "Pagode Romântico": {
     year_range: "2024-2025",
-    reference_artists: ["Menos É Mais", "Thiaguinho", "Sorriso Maroto", "Ferrugem", "Dilsinho"],
+    reference_artists: ["Menos É Mais", "Thiaguino", "Sorriso Maroto", "Ferrugem", "Dilsinho"],
     core_principles: {
       theme: "Amor autêntico, saudade saudável, superação, celebração da vida, nostalgia positiva",
       tone: "Romântico, sincero, emotivo mas não dramático, com leveza e autenticidade",
@@ -537,7 +373,7 @@ export const GENRE_CONFIGS = {
         aggressive_tone: ["odeio", "vingança", "destruir", "te odeio"],
         excessive_drama: ["morro sem você", "não vivo mais", "meu mundo acabou"],
       },
-      style: "Poético mas acessível, com emoção genuína e autenticidade. Linguagem do dia-a-dia com toque romântico.",
+      style: "Poético mas acessível, com emoção genuína e autenticidade.",
     },
     structure_rules: {
       verse: { lines: 4, purpose: "Contar história de amor com detalhes autênticos e emoção real" },
@@ -549,10 +385,10 @@ export const GENRE_CONFIGS = {
     },
     prosody_rules: {
       syllable_count: {
-        with_comma: { max_before_comma: 7, max_after_comma: 5, total_max: 12 },
-        without_comma: { min: 5, max: 8, acceptable_up_to: 9 },
+        absolute_max: 12,
+        ideal_min: 5,
+        ideal_max: 9,
       },
-      verse_counting_rule: "Uma linha com vírgula (6+6, 7+5 ou 5+7 sílabas) conta como 2 VERSOS na estrutura total",
     },
     harmony_and_rhythm: {
       key: "D major",
@@ -561,6 +397,7 @@ export const GENRE_CONFIGS = {
       rhythm_style: "Pagode com cavaquinho, pandeiro e tantã - ritmo contagiante",
     },
   },
+
   "Gospel Contemporâneo": {
     year_range: "2024-2025",
     reference_artists: ["Gabriela Rocha", "Isadora Pompeo", "Thalles Roberto", "Valesca Mayssa", "Kailane Frauches"],
@@ -585,8 +422,7 @@ export const GENRE_CONFIGS = {
         negative_theology: ["Deus castiga", "merecimento por obras", "Deus pune"],
         manipulation: ["dê dinheiro para ser abençoado", "prosperidade garantida"],
       },
-      style:
-        "Inspirador, poético mas acessível, com linguagem jovem e atual. Produção sofisticada com elementos modernos.",
+      style: "Inspirador, poético mas acessível, com linguagem jovem e atual.",
     },
     structure_rules: {
       verse: { lines: 4, purpose: "Contar testemunho, louvor ou situação de fé" },
@@ -598,20 +434,20 @@ export const GENRE_CONFIGS = {
     },
     prosody_rules: {
       syllable_count: {
-        with_comma: { max_before_comma: 7, max_after_comma: 5, total_max: 12 },
-        without_comma: { min: 5, max: 8, acceptable_up_to: 9 },
+        absolute_max: 12,
+        ideal_min: 5,
+        ideal_max: 9,
       },
       breathability: "Toda linha deve caber em um fôlego natural ao cantar",
-      verse_counting_rule:
-        "Uma linha com vírgula (ex: 6+6, 7+5 ou 5+7 sílabas) conta como 2 VERSOS na estrutura total, não 1 verso",
     },
     harmony_and_rhythm: {
       key: "C major",
       allowed_chords: ["C", "F", "G", "Am", "Dm", "Em"],
       bpm_range: { min: 80, max: 95, ideal: 88 },
-      rhythm_style: "Pop gospel com instrumentação moderna, elementos eletrônicos sutis, produção sofisticada",
+      rhythm_style: "Pop gospel com instrumentação moderna, elementos eletrônicos sutis",
     },
   },
+
   MPB: {
     year_range: "2024-2025",
     reference_artists: ["Djavan", "Marisa Monte", "Gilberto Gil", "Caetano Veloso", "Gal Costa"],
@@ -630,7 +466,7 @@ export const GENRE_CONFIGS = {
         simplistic_cliches: ["amor perfeito", "felizes para sempre"],
         commercial_pop: ["hit do verão", "balada top"],
       },
-      style: "Poético, sofisticado, com riqueza lírica e fusão de estilos. Linguagem elevada mas acessível.",
+      style: "Poético, sofisticado, com riqueza lírica e fusão de estilos.",
     },
     structure_rules: {
       verse: { lines: 4, purpose: "Desenvolver narrativa ou reflexão com profundidade lírica" },
@@ -642,147 +478,23 @@ export const GENRE_CONFIGS = {
     },
     prosody_rules: {
       syllable_count: {
-        with_comma: { max_before_comma: 7, max_after_comma: 5, total_max: 12 },
-        without_comma: { min: 5, max: 10, acceptable_up_to: 12 },
+        absolute_max: 13,
+        ideal_min: 5,
+        ideal_max: 11,
       },
-      verse_counting_rule: "Uma linha com vírgula (6+6, 7+5 ou 5+7 sílabas) conta como 2 VERSOS na estrutura total",
     },
     harmony_and_rhythm: {
       key: "Variable",
       allowed_chords: ["Complexos e jazzísticos permitidos"],
       bpm_range: { min: 70, max: 120, ideal: 90 },
-      rhythm_style: "Fusão de samba, bossa nova, tropicália, rock, pop, eletrônico - ecleticismo característico",
-    },
-  },
-  Bachata: {
-    year_range: "2024-2025",
-    reference_artists: ["Romeo Santos", "Prince Royce", "Aventura", "Grupo Extra", "Pinto Picasso"],
-    core_principles: {
-      theme: "Amor romântico, saudade, paixão, relacionamentos modernos, bachata urbana",
-      tone: "Romântico, sensual, emotivo, com toque urbano contemporâneo",
-      narrative_arc: "Situação amorosa → Sentimento profundo → Declaração ou resolução",
-    },
-    language_rules: {
-      allowed: {
-        concrete_objects: ["corazón", "amor", "besos", "noche", "luna", "baile"],
-        actions: ["amar", "bailar", "sentir", "extrañar", "soñar", "besar"],
-        phrases: ["mi amor", "te extraño", "eres mi vida", "bachata del alma"],
-      },
-      forbidden: {
-        aggressive_tone: ["odio", "venganza"],
-        modern_slang_excess: ["emoji", "selfie", "viral"],
-      },
-      style: "Romântico, poético, com sensualidade elegante. Pode ter toque urbano mas mantém romantismo.",
-    },
-    structure_rules: {
-      verse: { lines: 4, purpose: "Desenvolver história de amor com emoção" },
-      chorus: {
-        lines_options: [2, 4],
-        forbidden_lines: 3,
-        required_elements: ["Melodia romântica marcante", "Fácil de dançar"],
-      },
-    },
-    prosody_rules: {
-      syllable_count: {
-        with_comma: { max_before_comma: 7, max_after_comma: 5, total_max: 12 },
-        without_comma: { min: 6, max: 9, acceptable_up_to: 10 },
-      },
-      verse_counting_rule: "Uma linha com vírgula (6+6, 7+5 ou 5+7 sílabas) conta como 2 VERSOS na estrutura total",
-    },
-    harmony_and_rhythm: {
-      key: "A minor",
-      allowed_chords: ["Am", "Dm", "E", "F", "G", "C"],
-      bpm_range: { min: 120, max: 140, ideal: 128 },
-      rhythm_style: "Bachata tradicional ou urbana com guitarra característica e bongô",
-    },
-  },
-  Arrocha: {
-    year_range: "2024-2025",
-    reference_artists: ["Pablo", "Nadson Ferinha", "Thiago Aquino", "Unha Pintada", "Tierry"],
-    core_principles: {
-      theme: "Traição, desilusão amorosa, sofrimento romântico, arrependimento, saudade intensa",
-      tone: "Melancólico, emotivo, dramático mas autêntico, com sofrimento genuíno",
-      narrative_arc: "Traição ou perda → Sofrimento e reflexão → Aceitação ou esperança de volta",
-    },
-    language_rules: {
-      allowed: {
-        concrete_objects: ["cama", "foto", "celular", "mensagem", "bebida", "bar", "madrugada"],
-        actions: ["sofrer", "chorar", "lembrar", "perdoar", "voltar", "errar", "trair"],
-        phrases: ["quem ama não machuca", "você me traiu", "saudade dói", "volta pra mim", "te perdoo"],
-      },
-      forbidden: {
-        violence: ["vou te matar", "vingança violenta"],
-        excessive_vulgarity: ["palavrões pesados"],
-      },
-      style: "Emotivo, direto, com drama autêntico. Linguagem do dia-a-dia com carga emocional forte.",
-    },
-    structure_rules: {
-      verse: { lines: 4, purpose: "Contar história de traição ou desilusão com detalhes emocionais" },
-      chorus: {
-        lines_options: [2, 4],
-        forbidden_lines: 3,
-        required_elements: ["Gancho emocional forte", "Fácil de cantar junto", "Carga dramática"],
-      },
-    },
-    prosody_rules: {
-      syllable_count: {
-        with_comma: { max_before_comma: 7, max_after_comma: 5, total_max: 12 },
-        without_comma: { min: 5, max: 8, acceptable_up_to: 9 },
-      },
-      verse_counting_rule: "Uma linha com vírgula (6+6, 7+5 ou 5+7 sílabas) conta como 2 VERSOS na estrutura total",
-    },
-    harmony_and_rhythm: {
-      key: "E minor",
-      allowed_chords: ["Em", "Am", "D", "G", "C", "B7"],
-      bpm_range: { min: 70, max: 85, ideal: 75 },
-      rhythm_style: "Arrocha lento e melódico com teclado e guitarra",
-    },
-  },
-  Samba: {
-    year_range: "2024-2025",
-    reference_artists: ["Alcione", "Zeca Pagodinho", "Diogo Nogueira", "Martinho da Vila", "Beth Carvalho"],
-    core_principles: {
-      theme: "Vida, alegria, saudade, amor, resistência cultural, celebração da cultura brasileira",
-      tone: "Alegre, nostálgico, autêntico, com swing característico",
-      narrative_arc: "Situação cotidiana → Reflexão ou celebração → Mensagem de vida ou alegria",
-    },
-    language_rules: {
-      allowed: {
-        concrete_objects: ["pandeiro", "cavaquinho", "roda de samba", "mesa de bar", "cerveja", "feijoada"],
-        actions: ["sambar", "cantar", "dançar", "celebrar", "resistir", "viver"],
-        phrases: ["samba é vida", "roda de samba", "alegria do povo", "cultura brasileira"],
-      },
-      forbidden: {
-        modern_excess: ["viral", "trending", "hashtag"],
-      },
-      style: "Autêntico, com swing, linguagem do povo mas poética. Celebração da cultura brasileira.",
-    },
-    structure_rules: {
-      verse: { lines: 4, purpose: "Contar história de vida, amor ou celebração cultural" },
-      chorus: {
-        lines_options: [2, 4],
-        forbidden_lines: 3,
-        required_elements: ["Melodia marcante", "Fácil de cantar em roda", "Swing característico"],
-      },
-    },
-    prosody_rules: {
-      syllable_count: {
-        with_comma: { max_before_comma: 7, max_after_comma: 5, total_max: 12 },
-        without_comma: { min: 5, max: 8, acceptable_up_to: 9 },
-      },
-      verse_counting_rule: "Uma linha com vírgula (6+6, 7+5 ou 5+7 sílabas) conta como 2 VERSOS na estrutura total",
-    },
-    harmony_and_rhythm: {
-      key: "C major",
-      allowed_chords: ["C", "G", "Am", "F", "Dm", "E7", "A7", "D7"],
-      bpm_range: { min: 100, max: 130, ideal: 115 },
-      rhythm_style: "Samba tradicional com pandeiro, cavaquinho, surdo e tamborim",
+      rhythm_style: "Fusão de samba, bossa nova, tropicália, rock, pop, eletrônico",
     },
   },
 } as const
 
 export type GenreConfig = (typeof GENRE_CONFIGS)[keyof typeof GENRE_CONFIGS]
 
+// ✅ FUNÇÃO PRINCIPAL ATUALIZADA
 export function getGenreConfig(genre: string): GenreConfig & { name: string } {
   const config = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS]
 
@@ -790,17 +502,17 @@ export function getGenreConfig(genre: string): GenreConfig & { name: string } {
     return {
       name: genre,
       year_range: "2024-2025",
-      reference_artists: [] as any,
+      reference_artists: [],
       core_principles: {
-        theme: "Música brasileira contemporânea" as any,
-        tone: "Autêntico e natural" as any,
-        narrative_arc: "Início → Desenvolvimento → Conclusão" as any,
+        theme: "Música brasileira contemporânea",
+        tone: "Autêntico e natural",
+        narrative_arc: "Início → Desenvolvimento → Conclusão",
       },
       language_rules: {
         allowed: {
-          concrete_objects: [] as any,
-          actions: [] as any,
-          phrases: [] as any,
+          concrete_objects: [],
+          actions: [],
+          phrases: [],
         },
         forbidden: {},
         style: "Coloquial, brasileiro, com palavras simples do dia-a-dia",
@@ -815,15 +527,14 @@ export function getGenreConfig(genre: string): GenreConfig & { name: string } {
       },
       prosody_rules: {
         syllable_count: {
-          with_comma: { max_before_comma: 7, max_after_comma: 5, total_max: 12 },
-          without_comma: { min: 5, max: 8, acceptable_up_to: 9 },
+          absolute_max: 12,
+          ideal_min: 7,
+          ideal_max: 10,
         },
         breathability: "Toda linha deve caber em um fôlego natural ao cantar",
-        verse_counting_rule:
-          "Uma linha com vírgula (ex: 6+6, 7+5 ou 5+7 sílabas) conta como 2 VERSOS na estrutura total, não 1 verso",
       },
       harmony_and_rhythm: {
-        key: "C major" as any,
+        key: "C major",
         allowed_chords: ["C", "F", "G", "Am", "Dm", "Em"],
         bpm_range: { min: 90, max: 110, ideal: 100 },
         rhythm_style: "Ritmo brasileiro moderno",
@@ -837,6 +548,31 @@ export function getGenreConfig(genre: string): GenreConfig & { name: string } {
   }
 }
 
+// ✅ FUNÇÃO DE LIMITES DE SÍLABAS ATUALIZADA
+export function getSyllableLimitsForGenre(genre: string): { min: number; ideal: number; max: number } {
+  const config = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS]
+
+  if (!config) {
+    // ✅ PADRÃO DO SISTEMA UNIFICADO
+    return { min: 7, ideal: 9, max: 12 }
+  }
+
+  const rules = config.prosody_rules.syllable_count
+
+  // ✅ COMPATÍVEL COM TODOS OS FORMATOS
+  if ("absolute_max" in rules) {
+    return {
+      min: "ideal_min" in rules ? rules.ideal_min : 7,
+      ideal: "ideal_max" in rules ? Math.floor((rules.ideal_min + rules.ideal_max) / 2) : 9,
+      max: rules.absolute_max,
+    }
+  }
+
+  // ✅ FALLBACK UNIFICADO
+  return { min: 7, ideal: 9, max: 12 }
+}
+
+// ✅ VALIDAÇÃO COMPLETA ATUALIZADA
 export function validateLyrics(
   lyrics: string,
   genre: string,
@@ -853,55 +589,66 @@ export function validateLyrics(
     return { valid: true, errors: [], warnings: ["Gênero não encontrado nas configurações"] }
   }
 
-  // Validar palavras proibidas
+  // ✅ VALIDAÇÃO DE PALAVRAS PROIBIDAS
   const lyricsLower = lyrics.toLowerCase()
   if (config.language_rules.forbidden) {
     Object.entries(config.language_rules.forbidden).forEach(([category, words]) => {
-      words.forEach((word: string) => {
-        if (lyricsLower.includes(word.toLowerCase())) {
-          errors.push(`Palavra/frase proibida encontrada (${category}): "${word}"`)
-        }
-      })
+      if (Array.isArray(words)) {
+        words.forEach((word: string) => {
+          if (lyricsLower.includes(word.toLowerCase())) {
+            errors.push(`Palavra/frase proibida encontrada (${category}): "${word}"`)
+          }
+        })
+      }
     })
   }
 
-  // Validar contagem de sílabas - USANDO O NOVO SISTEMA
-  const lines = lyrics.split("\n").filter((line) => line.trim() && !line.startsWith("["))
-  lines.forEach((line, index) => {
-    const syllables = countPoeticSyllables(line) // ← CORRIGIDO: usa o novo sistema
-    const rules = config.prosody_rules.syllable_count
+  // ✅ VALIDAÇÃO DE SÍLABAS (SISTEMA UNIFICADO)
+  const syllableLimits = getSyllableLimitsForGenre(genre)
+  const syllableValidation = validateLyricsSyllables(
+    lyrics,
+    syllableLimits.min,
+    syllableLimits.ideal,
+    syllableLimits.max,
+  )
 
-    if ("with_comma" in rules && line.includes(",")) {
-      const [before, after] = line.split(",")
-      const beforeCount = countPoeticSyllables(before) // ← CORRIGIDO
-      const afterCount = countPoeticSyllables(after) // ← CORRIGIDO
+  if (!syllableValidation.valid) {
+    syllableValidation.violations.forEach((violation) => {
+      errors.push(
+        `Linha ${violation.lineNumber}: ${violation.syllables} sílabas (máx: ${syllableLimits.max}) - "${violation.line}"`,
+      )
+    })
+  }
 
-      if (beforeCount > rules.with_comma.max_before_comma) {
-        warnings.push(`Linha ${index + 1}: Muitas sílabas antes da vírgula (${beforeCount})`)
+  // ✅ VALIDAÇÃO ESPECÍFICA POR GÊNERO
+  if (genre.toLowerCase().includes("sertanejo")) {
+    try {
+      const sertanejoValidation = validateSertanejoModerno(lyrics)
+      if (!sertanejoValidation.isValid) {
+        errors.push(...sertanejoValidation.errors)
       }
-      if (afterCount > rules.with_comma.max_after_comma) {
-        warnings.push(`Linha ${index + 1}: Muitas sílabas depois da vírgula (${afterCount})`)
+      if (sertanejoValidation.warnings.length > 0) {
+        warnings.push(...sertanejoValidation.warnings)
       }
-    } else if ("absolute_max" in rules) {
-      // For Sertanejo Moderno genres with absolute_max rule
-      if (syllables > rules.absolute_max) {
-        errors.push(`Linha ${index + 1}: Excede o limite de ${rules.absolute_max} sílabas (${syllables})`)
+      if (sertanejoValidation.suggestions.length > 0) {
+        warnings.push(...sertanejoValidation.suggestions.slice(0, 2)) // Limita sugestões
       }
-    } else if ("without_comma" in rules) {
-      // For genres with without_comma rules
-      if (syllables < rules.without_comma.min || syllables > rules.without_comma.acceptable_up_to) {
-        warnings.push(`Linha ${index + 1}: Contagem de sílabas fora do ideal (${syllables})`)
-      }
+    } catch (error) {
+      console.warn(`[GenreConfig] Erro na validação sertanejo: ${error}`)
     }
-  })
+  }
 
   return {
     valid: errors.length === 0,
     errors,
-    warnings,
+    warnings: [
+      ...warnings,
+      ...syllableValidation.violations.map((v) => `Sílabas linha ${v.lineNumber}: ${v.syllables}`),
+    ],
   }
 }
 
+// ✅ CONFIGURAÇÕES DE INSTRUMENTAÇÃO (MANTIDAS)
 export const INSTRUMENTATION_RULES = {
   "Sertanejo Moderno Feminino": {
     required: "(Instrumental: acoustic guitar, electric guitar, drums, bass)",
@@ -918,22 +665,12 @@ export const INSTRUMENTATION_RULES = {
     optional: ["keyboard", "harmonica", "backing vocals"],
     format: "Sempre entre parênteses, em inglês, após o nome da seção",
   },
-  "Forró Pé de Serra": {
-    required: "(Instrumental: zabumba, triângulo, sanfona)",
-    optional: ["percussion", "vocals"],
+  "Sertanejo Raiz": {
+    required: "(Instrumental: viola caipira, acoustic guitar, sanfona)",
+    optional: ["harmonica", "light percussion"],
     format: "Sempre entre parênteses, em inglês, após o nome da seção",
   },
   "Funk Carioca": {
-    required: "(Instrumental: 808 bass, percussion, synth)",
-    optional: ["vocals", "samples", "effects"],
-    format: "Sempre entre parênteses, em inglês, após o nome da seção",
-  },
-  "Funk Melody": {
-    required: "(Instrumental: 808 bass, percussion, synth)",
-    optional: ["vocals", "samples", "effects"],
-    format: "Sempre entre parênteses, em inglês, após o nome da seção",
-  },
-  "Funk Consciente": {
     required: "(Instrumental: 808 bass, percussion, synth)",
     optional: ["vocals", "samples", "effects"],
     format: "Sempre entre parênteses, em inglês, após o nome da seção",
@@ -948,10 +685,15 @@ export const INSTRUMENTATION_RULES = {
     optional: ["keyboard", "vocals"],
     format: "Sempre entre parênteses, em inglês, após o nome da seção",
   },
+  MPB: {
+    required: "(Instrumental: acoustic guitar, percussion, bass)",
+    optional: ["keyboard", "wind instruments", "strings"],
+    format: "Sempre entre parênteses, em inglês, após o nome da seção",
+  },
 } as const
 
+// ✅ FUNÇÕES AUXILIARES (MANTIDAS)
 export const SUB_GENRE_INSTRUMENTS = {
-  // Sertanejo sub-genres
   arrocha: {
     instruments: "keyboard, acoustic guitar, bass, light percussion",
     bpm_range: { min: 70, max: 85, ideal: 75 },
@@ -963,40 +705,6 @@ export const SUB_GENRE_INSTRUMENTS = {
     bpm_range: { min: 110, max: 130, ideal: 120 },
     rhythm: "Vanera",
     style_note: "Vanera dançante",
-  },
-  modão: {
-    instruments: "acoustic guitar, electric guitar, bass, drums, harmonica",
-    bpm_range: { min: 85, max: 95, ideal: 90 },
-    rhythm: "Modão",
-    style_note: "Modão tradicional",
-  },
-
-  // Forró sub-genres
-  xote: {
-    instruments: "zabumba, triangle, accordion",
-    bpm_range: { min: 100, max: 120, ideal: 110 },
-    rhythm: "Xote",
-    style_note: "Xote tradicional",
-  },
-  baião: {
-    instruments: "zabumba, triangle, accordion, guitar",
-    bpm_range: { min: 120, max: 140, ideal: 130 },
-    rhythm: "Baião",
-    style_note: "Baião animado",
-  },
-
-  // Pagode sub-genres
-  "pagode 90": {
-    instruments: "cavaquinho, pandeiro, tantã, surdo, acoustic guitar",
-    bpm_range: { min: 95, max: 110, ideal: 100 },
-    rhythm: "Pagode 90",
-    style_note: "Pagode anos 90",
-  },
-  "pagode romântico": {
-    instruments: "cavaquinho, pandeiro, tantã, acoustic guitar",
-    bpm_range: { min: 90, max: 105, ideal: 95 },
-    rhythm: "Pagode Romântico",
-    style_note: "Pagode romântico",
   },
 } as const
 
@@ -1033,48 +741,12 @@ export const GENRE_RHYTHMS = {
   "Sertanejo Moderno Masculino": "Sertanejo Moderno",
   "Sertanejo Universitário": "Sertanejo Universitário",
   "Sertanejo Raiz": "Toada",
-  "Forró Pé de Serra": "Forró Pé de Serra",
   "Funk Carioca": "Funk Carioca",
-  "Funk Melody": "Funk Melody",
-  "Funk Consciente": "Funk Consciente",
   "Pagode Romântico": "Pagode Romântico",
   "Gospel Contemporâneo": "Gospel Pop",
   MPB: "MPB",
-  Bachata: "Bachata",
-  Arrocha: "Arrocha",
-  Samba: "Samba de Raiz",
 } as const
 
 export function getGenreRhythm(genre: string): string {
   return GENRE_RHYTHMS[genre as keyof typeof GENRE_RHYTHMS] || genre
-}
-
-export function getSyllableLimitsForGenre(genre: string) {
-  const config = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS]
-
-  if (!config) {
-    // Fallback seguro
-    return { min: 5, max: 12, ideal: 9 }
-  }
-
-  const rules = config.prosody_rules.syllable_count
-
-  if ("absolute_max" in rules) {
-    return {
-      min: Math.max(4, rules.absolute_max - 5),
-      max: rules.absolute_max,
-      ideal: Math.min(11, Math.floor((Math.max(4, rules.absolute_max - 5) + rules.absolute_max) / 2)),
-    }
-  }
-
-  if ("without_comma" in rules) {
-    return {
-      min: rules.without_comma.min,
-      max: rules.without_comma.acceptable_up_to,
-      ideal: Math.floor((rules.without_comma.min + rules.without_comma.max) / 2),
-    }
-  }
-
-  // Fallback para regras com vírgula
-  return { min: 5, max: 12, ideal: 9 }
 }

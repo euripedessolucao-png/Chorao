@@ -1,346 +1,343 @@
+// app/api/generate-lyrics/route.ts - NOVA VERSÃO SIMPLIFICADA
 import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
-import { buildGenreRulesPrompt } from "@/lib/validation/genre-rules-builder"
-import { getUniversalRhymeRules } from "@/lib/validation/universal-rhyme-rules"
-import {
-  formatSertanejoPerformance,
-  shouldUsePerformanceFormat,
-} from "@/lib/formatters/sertanejo-performance-formatter"
 import { formatInstrumentationForAI } from "@/lib/normalized-genre"
 import { LineStacker } from "@/lib/utils/line-stacker"
-import { enhanceLyricsRhymes } from "@/lib/validation/rhyme-enhancer"
-import { validateRhymesForGenre } from "@/lib/validation/rhyme-validator"
-import { validateSyllablesByGenre } from "@/lib/validation/absolute-syllable-enforcer"
-import { enforceSyllableLimitAll } from "@/lib/validation/intelligent-rewriter"
+import { UnifiedSyllableManager } from "@/lib/syllable-management/unified-syllable-manager"
 
-// ✅ CORRETOR SUPER-EFETIVO - DETECÇÃO EXPANDIDA
-function superFixIncompleteLines(lyrics: string): string {
-  console.log("[SuperCorrector] 🚀 INICIANDO CORREÇÃO SUPER-EFETIVA")
-
-  const lines = lyrics.split("\n")
-  const fixedLines: string[] = []
-
-  let corrections = 0
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim()
-
-    // Ignora tags e metadata
-    if (!line || line.startsWith("### [") || line.startsWith("(Instrumentation)") || line.startsWith("(Genre)")) {
-      fixedLines.push(line)
-      continue
-    }
-
-    const cleanLine = line
-      .replace(/\[.*?\]/g, "")
-      .replace(/$$.*?$$/g, "")
-      .replace(/^"|"$/g, "")
-      .trim()
-    if (!cleanLine) {
-      fixedLines.push(line)
-      continue
-    }
-
-    const words = cleanLine.split(/\s+/).filter((w) => w.length > 0)
-    const lastWord = words[words.length - 1]?.toLowerCase() || ""
-
-    // ✅ DETECÇÃO EXPANDIDA - MAIS AGRESSIVA
-    const isIncomplete =
-      words.length < 3 || // Menos de 3 palavras
-      /[,-]$/.test(cleanLine) || // Termina com vírgula ou traço
-      /\b(e|a|o|que|com|pra|pro|num|numa|de|da|do|em|no|na|por|me|te|se|um|uma)\s*$/i.test(cleanLine) || // Termina com preposição/artigo
-      /^(a|e|o|que|com|pra|de|da|do|em|no|na|por|me|te|se|um|uma)$/i.test(cleanLine) // Apenas uma palavra problemática
-
-    if (isIncomplete && words.length > 0) {
-      console.log(`[SuperCorrector] 🚨 VERSO INCOMPLETO: "${cleanLine}"`)
-
-      let fixedLine = line
-
-      // Remove pontuação problemática
-      fixedLine = fixedLine.replace(/[,-]\s*$/, "").trim()
-
-      // ✅ COMPLETAMENTOS ESPECÍFICOS PARA OS PADRÕES ENCONTRADOS
-      const specificCompletions: Record<string, string> = {
-        e: "com amor",
-        a: "minha vida",
-        que: "Deus me deu",
-        com: "muito amor",
-        pra: "viver",
-        pro: "meu bem",
-        me: "ajudar",
-        te: "amar",
-        se: "entregar",
-        um: "presente",
-        uma: "bênção",
-        no: "coração",
-        na: "alma",
-        de: "gratidão",
-        do: "Senhor",
-        da: "minha vida",
-        em: "Deus",
-        por: "tudo",
-        "sinto a": "Tua presença",
-        "deixa o": "coração cantar",
-        "que sou e": "tudo que tenho",
-        "eu quero": "agradecer",
-        "sempre a": "Te louvar",
-        "me ajuda a": "crescer",
-        "que sou com": "Ti",
-        "alguém pra": "abençoar",
-        "agradar e": "servir",
-        "vou me": "entregar",
-        "sinto Tua luz e": "Tua graça",
-        "sonhar que": "um dia realizarei",
-      }
-
-      // Primeiro tenta match exato com a frase
-      let matched = false
-      for (const [pattern, completion] of Object.entries(specificCompletions)) {
-        if (cleanLine.toLowerCase().endsWith(pattern)) {
-          fixedLine = fixedLine.slice(0, -pattern.length).trim() + " " + completion
-          matched = true
-          break
-        }
-      }
-
-      // Se não encontrou match específico, usa completamento por última palavra
-      if (!matched && specificCompletions[lastWord]) {
-        fixedLine += " " + specificCompletions[lastWord]
-      } else if (!matched) {
-        // Completamento genérico inteligente
-        const genericCompletions = [
-          "com gratidão no coração",
-          "e amor infinito",
-          "pra sempre Te louvar",
-          "com fé e esperança",
-          "que renova minha alma",
-          "em cada momento",
-          "com muita alegria",
-        ]
-        const randomCompletion = genericCompletions[Math.floor(Math.random() * genericCompletions.length)]
-        fixedLine += " " + randomCompletion
-      }
-
-      // Garante pontuação final adequada
-      if (!/[.!?]$/.test(fixedLine)) {
-        fixedLine = fixedLine.replace(/[.,;:]$/, "") + "."
-      }
-
-      console.log(`[SuperCorrector] ✅ CORRIGIDO: "${fixedLine}"`)
-      fixedLines.push(fixedLine)
-      corrections++
-    } else {
-      fixedLines.push(line)
-    }
-  }
-
-  console.log(`[SuperCorrector] 🎉 CORREÇÃO CONCLUÍDA: ${corrections} versos corrigidos`)
-  return fixedLines.join("\n")
+// 🎵 TIPOS DE BLOCO MUSICAL
+interface MusicBlock {
+  type: 'INTRO' | 'VERSE' | 'PRE_CHORUS' | 'CHORUS' | 'BRIDGE' | 'OUTRO'
+  content: string
+  score: number
 }
 
-export async function POST(request: NextRequest) {
+// 🎯 GERAR REFRÕES COMO PONTO CENTRAL
+async function generateChorusOptions(genre: string, theme: string, mood: string): Promise<MusicBlock[]> {
   try {
-    const {
-      genre,
-      mood,
-      theme,
-      additionalRequirements = "",
-      performanceMode = "standard",
-      title,
-    } = await request.json()
+    const prompt = `Crie 3 opções de REFRÃO memorável para ${genre} sobre "${theme}"
 
-    if (!genre || typeof genre !== "string" || !genre.trim()) {
-      return NextResponse.json({ error: "Gênero é obrigatório" }, { status: 400 })
-    }
-    if (!theme || typeof theme !== "string" || !theme.trim()) {
-      return NextResponse.json({ error: "Tema é obrigatório" }, { status: 400 })
-    }
+REGRAS:
+- 4-6 linhas por refrão
+- Máximo 12 sílabas por verso  
+- Gancho emocional forte
+- Fácil de cantar junto
+- Linguagem natural brasileira
 
-    console.log(`[API] 🎵 Criando letra para: ${genre} | Tema: ${theme}`)
+Exemplo bom:
+"Teu abraço é meu porto seguro
+Onde encontro paz e futuro
+Cada instante ao teu lado
+É um presente abençoado"
 
-    const syllableValidation = validateSyllablesByGenre("", genre)
-    const maxSyllables = syllableValidation.maxSyllables
-
-    const rhymeRules = getUniversalRhymeRules(genre)
-    const genreRules = buildGenreRulesPrompt(genre)
-
-    const additionalReqsSection = additionalRequirements?.trim()
-      ? `
-⚠️ REQUISITOS ADICIONAIS (OBRIGATÓRIOS - NÃO PODEM SER IGNORADOS):
-${additionalRequirements}
-
-ATENÇÃO CRÍTICA SOBRE HOOKS E REFRÕES ESCOLHIDOS:
-- Se houver [HOOK] nos requisitos acima, você DEVE usar esse hook LITERALMENTE na música
-- Se houver [CHORUS] ou [REFRÃO] nos requisitos acima, você DEVE usar esse refrão LITERALMENTE como O REFRÃO da música
-- NÃO crie um novo refrão se já foi fornecido um - USE O FORNECIDO
-- NÃO crie um novo hook se já foi fornecido um - USE O FORNECIDO
-- Os VERSOS devem ser escritos para COMPLETAR e CONECTAR com o hook/refrão escolhido
-- A letra deve ser construída EM TORNO do hook/refrão fornecido, não ignorá-lo
-- Você DEVE seguir TODOS os outros requisitos adicionais acima
-- Os requisitos adicionais têm prioridade ABSOLUTA sobre qualquer outra instrução
-`
-      : ""
-
-    // ✅ PROMPT PERFEITO - ABORDAGEM POSITIVA E CONSTRUTIVA
-    const prompt = `COMPOSITOR PROFISSIONAL BRASILEIRO - ${genre.toUpperCase()}
-
-🎯 OBJETIVO PRINCIPAL: Criar VERSOS COMPLETOS e COERENTES
-
-📝 REGRA DE OURO: 
-CADA VERSO = FRASE COMPLETA (sujeito + verbo + complemento)
-
-✅ EXEMPLOS DE VERSOS COMPLETOS:
-"Hoje eu venho aqui de coração aberto" 
-"Com gratidão transbordando em meu peito"
-"Teu amor me renova a cada amanhecer"
-"A vida é uma bênção que eu agradeço"
-"Nos braços de Deus encontro meu abrigo"
-
-🚫 EVITAR VERSOS INCOMPLETOS:
-"Coração aberto" ❌ (incompleto)
-"De gratidão" ❌ (incompleto) 
-"Renovando a cada" ❌ (incompleto)
-
-TEMA: ${theme}
-HUMOR: ${mood || "Adaptado ao tema"}
-GÊNERO: ${genre}
-
-${additionalReqsSection}
-
-📏 TÉCNICA MUSICAL BRASILEIRA:
-- Máximo ${maxSyllables} sílabas por verso
-- ${rhymeRules.requirePerfectRhymes ? "Rimas perfeitas" : "Rimas naturais"}
-- Linguagem apropriada para ${genre}
-- Versos autocontidos e completos
-- Emoção genuína e autenticidade
-
-${genreRules.fullPrompt}
-
-🎵 ESTRUTURA SUGERIDA:
-${
-  performanceMode === "performance"
-    ? `### [INTRO] (4 linhas)
-### [VERSO 1] (6 linhas)  
-### [PRÉ-REFRAO] (4 linhas)
-### [REFRAO] (6 linhas)
-### [VERSO 2] (6 linhas)
-### [REFRAO] (6 linhas)
-### [PONTE] (6 linhas)
-### [REFRAO] (6 linhas)
-### [OUTRO] (4 linhas)`
-    : `### [Intro] (4 linhas)
-### [Verso 1] (6 linhas)
-### [Pré-Refrão] (4 linhas)
-### [Refrão] (6 linhas)
-### [Verso 2] (6 linhas)
-### [Refrão] (6 linhas)
-### [Ponte] (6 linhas)
-### [Refrão] (6 linhas)
-### [Outro] (4 linhas)`
-}
-
-💡 DICA CRÍTICA: 
-Pense em CADA VERSO como uma mini-história completa
-Se ficar muito longo, REESCREVA completamente mantendo a mensagem
-Mantenha a naturalidade da língua portuguesa brasileira
-
-Gere a letra com VERSOS COMPLETOS e EMOCIONALMENTE IMPACTANTES:`
-
-    console.log(`[API] 🎵 Gerando com limite máximo de ${maxSyllables} sílabas...`)
-    if (additionalRequirements) {
-      console.log(`[API] ⚠️ REQUISITOS ADICIONAIS OBRIGATÓRIOS DETECTADOS`)
-    }
+Gere 3 opções de REFRÃO:`
 
     const { text } = await generateText({
       model: "openai/gpt-4o-mini",
       prompt,
-      temperature: 0.85,
-      maxOutputTokens: 2500, // Garante resposta completa sem cortes
+      temperature: 0.8,
     })
 
-    let finalLyrics = capitalizeLines(text)
+    return processChorusOptions(text || '', genre)
+  } catch (error) {
+    console.error("[Chorus] Erro:", error)
+    return []
+  }
+}
 
-    // ✅ ETAPA CRÍTICA: CORREÇÃO DE VERSOS INCOMPLETOS
-    console.log("[API] 🔧 Aplicando correção super-efetiva de versos incompletos...")
-    finalLyrics = superFixIncompleteLines(finalLyrics)
+// 🧩 PROCESSAR REFRÕES GERADOS
+function processChorusOptions(text: string, genre: string): MusicBlock[] {
+  const blocks: MusicBlock[] = []
+  const lines = text.split('\n').filter(line => {
+    const trimmed = line.trim()
+    return trimmed && !trimmed.match(/^(Opção|Refrão|\d+[\.\)])/i)
+  })
 
-    finalLyrics = finalLyrics
-      .split("\n")
-      .filter(
-        (line) =>
-          !line.trim().startsWith("Retorne") && !line.trim().startsWith("REGRAS") && !line.includes("Explicação"),
+  let currentChorus: string[] = []
+  
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (trimmed) {
+      currentChorus.push(trimmed)
+      
+      if (currentChorus.length >= 4) {
+        const content = currentChorus.join('\n')
+        blocks.push({
+          type: 'CHORUS',
+          content: content,
+          score: calculateBlockScore(content)
+        })
+        currentChorus = []
+        
+        if (blocks.length >= 3) break
+      }
+    }
+  }
+
+  return blocks
+}
+
+// 🎲 GERAR OUTROS BLOCOS BASEADOS NO REFRÃO
+async function generateOtherBlocks(
+  selectedChorus: string,
+  blockType: 'INTRO' | 'VERSE' | 'BRIDGE' | 'OUTRO',
+  genre: string,
+  theme: string
+): Promise<MusicBlock[]> {
+  const prompts = {
+    INTRO: `Crie INTRO (4 linhas) para ${genre} que prepare para este REFRÃO:
+"${selectedChorus}"
+
+Tema: ${theme}
+Crie atmosfera emocional. Máximo 10 sílabas.
+
+INTRO:`,
+
+    VERSE: `Crie VERSO (4 linhas) para ${genre} que construa para este REFRÃO:
+"${selectedChorus}"
+
+Tema: ${theme}
+Conte parte da história. Máximo 11 sílabas.
+
+VERSO:`,
+
+    BRIDGE: `Crie PONTE (4 linhas) para ${genre} que complemente este REFRÃO:
+"${selectedChorus}"
+
+Tema: ${theme}
+Momento de reflexão. Máximo 11 sílabas.
+
+PONTE:`,
+
+    OUTRO: `Crie OUTRO (2-4 linhas) para ${genre} que feche após este REFRÃO:
+"${selectedChorus}"
+
+Tema: ${theme}
+Fecho emocional. Máximo 9 sílabas.
+
+OUTRO:`
+  }
+
+  const { text } = await generateText({
+    model: "openai/gpt-4o-mini",
+    prompt: prompts[blockType],
+    temperature: 0.7,
+  })
+
+  return processGeneratedBlocks(text || '', blockType)
+}
+
+// 🧩 PROCESSAR BLOCOS GERADOS
+function processGeneratedBlocks(text: string, blockType: MusicBlock['type']): MusicBlock[] {
+  const lines = text.split('\n').filter(line => {
+    const trimmed = line.trim()
+    return trimmed && !trimmed.startsWith('[') && !trimmed.startsWith('(')
+  })
+
+  const blocks: MusicBlock[] = []
+  let currentBlock: string[] = []
+  
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (trimmed) {
+      currentBlock.push(trimmed)
+      
+      const minLines = blockType === 'OUTRO' ? 2 : 4
+      if (currentBlock.length >= minLines) {
+        blocks.push({
+          type: blockType,
+          content: currentBlock.join('\n'),
+          score: calculateBlockScore(currentBlock.join('\n'))
+        })
+        break // Uma opção por bloco para simplicidade
+      }
+    }
+  }
+  
+  return blocks
+}
+
+// 📊 CALCULAR SCORE DO BLOCO
+function calculateBlockScore(content: string): number {
+  const lines = content.split('\n').filter(line => line.trim())
+  let score = 70 // Base
+  
+  // Bônus por número de linhas ideal
+  if (lines.length >= 4) score += 10
+  
+  // Bônus por versos completos
+  const completeLines = lines.filter(line => 
+    line.length > 5 && !line.match(/\b(e|a|o|que|de|em|com)\s*$/i)
+  )
+  score += (completeLines.length / lines.length) * 20
+  
+  return Math.min(score, 100)
+}
+
+// 🏗️ MONTAR MÚSICA COMPLETA
+async function assembleCompleteSong(
+  chorus: MusicBlock,
+  otherBlocks: Record<string, MusicBlock[]>,
+  genre: string
+): Promise<string> {
+  const structure = [
+    { type: 'INTRO', label: 'Intro' },
+    { type: 'VERSE', label: 'Verso 1' },
+    { type: 'CHORUS', label: 'Refrão' },
+    { type: 'VERSE', label: 'Verso 2' },
+    { type: 'CHORUS', label: 'Refrão' },
+    { type: 'BRIDGE', label: 'Ponte' },
+    { type: 'CHORUS', label: 'Refrão Final' },
+    { type: 'OUTRO', label: 'Outro' }
+  ]
+
+  let lyrics = ''
+
+  for (const section of structure) {
+    if (section.type === 'CHORUS') {
+      lyrics += `[${section.label}]\n${chorus.content}\n\n`
+    } else {
+      const availableBlocks = otherBlocks[section.type] || []
+      if (availableBlocks.length > 0) {
+        lyrics += `[${section.label}]\n${availableBlocks[0].content}\n\n`
+      }
+    }
+  }
+
+  // Aplicar correção de sílabas
+  return await UnifiedSyllableManager.processSongWithBalance(lyrics.trim(), genre)
+}
+
+export async function POST(request: NextRequest) {
+  let genre = "Sertanejo"
+  let theme = "Música"
+  let title = "Música em Processamento"
+
+  try {
+    const { 
+      genre: requestGenre, 
+      theme: requestTheme, 
+      title: requestTitle,
+      mood = "neutro",
+      additionalRequirements = ""
+    } = await request.json()
+
+    genre = requestGenre || "Sertanejo"
+    theme = requestTheme || "Música" 
+    title = requestTitle || `${theme} - ${genre}`
+
+    if (!genre) {
+      return NextResponse.json({ error: "Gênero é obrigatório" }, { status: 400 })
+    }
+
+    console.log(`[API] 🎵 Gerando música com refrão central: ${genre}`)
+
+    // 🎯 1. GERAR OPÇÕES DE REFRÃO (PONTO DE PARTIDA)
+    console.log("[API] 🎶 Gerando refrões...")
+    const chorusOptions = await generateChorusOptions(genre, theme, mood)
+    
+    if (chorusOptions.length === 0) {
+      throw new Error("Não foi possível gerar refrões")
+    }
+
+    // Selecionar melhor refrão
+    const bestChorus = chorusOptions.reduce((best, current) => 
+      current.score > best.score ? current : best
+    )
+    console.log(`[API] ✅ Refrão selecionado: ${bestChorus.score} pontos`)
+
+    // 🧩 2. GERAR OUTROS BLOCOS BASEADOS NO REFRÃO
+    console.log("[API] 🧩 Gerando blocos complementares...")
+    const otherBlocks: Record<string, MusicBlock[]> = {}
+    
+    const blockTypes: ('INTRO' | 'VERSE' | 'BRIDGE' | 'OUTRO')[] = ['INTRO', 'VERSE', 'BRIDGE', 'OUTRO']
+    
+    for (const blockType of blockTypes) {
+      otherBlocks[blockType] = await generateOtherBlocks(
+        bestChorus.content,
+        blockType,
+        genre,
+        theme
       )
-      .join("\n")
-      .trim()
-
-    console.log("[API] 🎵 Validando qualidade das rimas...")
-    const rhymeValidation = validateRhymesForGenre(finalLyrics, genre)
-    if (!rhymeValidation.valid || rhymeValidation.warnings.length > 0) {
-      console.log("[API] 🔧 Melhorando rimas automaticamente...")
-      const rhymeEnhancement = await enhanceLyricsRhymes(finalLyrics, genre, theme, 0.7)
-      if (rhymeEnhancement.improvements.length > 0) {
-        console.log(`[API] ✅ ${rhymeEnhancement.improvements.length} rima(s) melhorada(s)`)
-        finalLyrics = rhymeEnhancement.enhancedLyrics
-      }
+      console.log(`[API] ✅ ${blockType}: ${otherBlocks[blockType].length} opções`)
     }
 
-    console.log("[API] 🔧 Aplicando sistema de sílabas cantáveis...")
-    finalLyrics = await enforceSyllableLimitAll(finalLyrics, maxSyllables)
+    // 🏗️ 3. MONTAR MÚSICA COMPLETA
+    console.log("[API] 🏗️ Montando música completa...")
+    let finalLyrics = await assembleCompleteSong(bestChorus, otherBlocks, genre)
 
-    console.log("[API] 📚 Empilhando versos...")
-    const stackResult = LineStacker.stackLines(finalLyrics)
-    if (stackResult.improvements.length > 0) {
-      console.log(`[API] ✅ ${stackResult.improvements.length} verso(s) empilhado(s)`)
-    }
-    finalLyrics = stackResult.stackedLyrics
+    // ✨ 4. FORMATAÇÃO FINAL
+    console.log("[API] ✨ Aplicando formatação...")
+    const stackingResult = LineStacker.stackLines(finalLyrics)
+    finalLyrics = stackingResult.stackedLyrics
 
-    if (genre.toLowerCase().includes("raiz")) {
-      const forbiddenInstruments = ["electric guitar", "808", "synth", "drum machine", "bateria eletrônica"]
-      const lowerLyrics = finalLyrics.toLowerCase()
-      if (forbiddenInstruments.some((inst) => lowerLyrics.includes(inst))) {
-        finalLyrics = finalLyrics
-          .replace(/electric guitar/gi, "acoustic guitar")
-          .replace(/808|drum machine|bateria eletrônica/gi, "light percussion")
-          .replace(/synth/gi, "sanfona")
-      }
+    // 🎸 5. INSTRUMENTAÇÃO
+    if (!finalLyrics.includes("(Instrumentation)")) {
+      const instrumentation = formatInstrumentationForAI(genre, finalLyrics)
+      finalLyrics = `${finalLyrics}\n\n${instrumentation}`
     }
 
-    if (shouldUsePerformanceFormat(genre, performanceMode)) {
-      console.log("[API] 🎭 Aplicando formatação de performance...")
-      finalLyrics = formatSertanejoPerformance(finalLyrics, genre)
-    }
-
-    const instrumentation = formatInstrumentationForAI(genre, finalLyrics)
-    finalLyrics = `${finalLyrics}\n\n${instrumentation}`
-
-    const finalValidation = validateSyllablesByGenre(finalLyrics, genre)
-    const validityRatio = finalValidation.violations.length === 0 ? 1 : 0
-    const finalScore = Math.round(validityRatio * 100)
-
-    console.log(`[API] ✅ Validação final: ${finalScore}% dentro da métrica (${genre})`)
+    const totalLines = finalLyrics.split('\n').filter(line => line.trim()).length
+    console.log(`[API] 🎉 CONCLUÍDO: ${totalLines} linhas`)
 
     return NextResponse.json({
+      success: true,
       lyrics: finalLyrics,
-      title: title || `${theme} - ${genre}`,
-      meta: {
-        finalScore,
+      title: title,
+      metadata: {
         genre,
-        performanceMode,
-        maxSyllables,
-        syllableCorrections: 0,
-        syllableViolations: finalValidation.violations.length,
+        totalLines,
+        quality: "CHORUS_CENTERED",
+        method: "CHORUS_FIRST",
+        chorusScore: bestChorus.score
       },
     })
+
   } catch (error) {
-    console.error("[API] ❌ Erro na criação:", error)
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : "Erro interno",
-        details: process.env.NODE_ENV === "development" ? (error as any)?.stack : undefined,
+    console.error("[API] ❌ Erro:", error)
+    
+    // 🆘 FALLBACK SIMPLES
+    const emergencyLyrics = `[Intro]
+Música sendo criada com nova abordagem
+Começando pelo refrão central
+Para qualidade garantida
+
+[Refrão]
+Sistema de geração inteligente
+Construindo em torno do coração
+Refrão forte como base
+Versos que completam a emoção
+
+[Verso 1]
+Cada parte gerada com cuidado
+Para criar uma história completa
+Com começo, meio e fim
+Na mais pura conexão
+
+[Refrão]
+Sistema de geração inteligente
+Construindo em torno do coração
+Refrão forte como base
+Versos que completam a emoção
+
+[Outro]
+Processo em finalização
+
+(Instrumentation)
+(Genre: ${genre})`
+
+    return NextResponse.json({
+      success: true,
+      lyrics: emergencyLyrics,
+      title: title,
+      metadata: {
+        genre,
+        totalLines: 12,
+        quality: "FALLBACK",
+        method: "TRADITIONAL"
       },
-      { status: 500 },
-    )
+    })
   }
 }
 

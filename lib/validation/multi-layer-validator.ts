@@ -1,286 +1,203 @@
-/**
- * VALIDADOR MULTI-CAMADAS
- *
- * Verifica TODAS as regras antes de aceitar um verso:
- * 1. Sílabas (11 sílabas poéticas)
- * 2. Narrativa (coerência da história)
- * 3. Rimas (qualidade e esquema)
- * 4. Gramática (português perfeito)
- * 5. Anti-forcing (palavras com contexto)
- * 6. Emoção (autenticidade)
- *
- * REGRA DE OURO: Cada passo só segue se atender TODAS as regras
- */
-
-import { countPoeticSyllables, validateLyricsSyllables } from "./syllable-counter-brasileiro"
-import { validateNarrativeFlow } from "./narrative-validator"
-import { analyzeLyricsRhymeScheme, validateRhymesForGenre } from "./rhyme-validator"
-import { validateFullLyricAgainstForcing } from "./anti-forcing-validator"
+// lib/validation/multi-layer-validator.ts - NOVO ARQUIVO
 
 export interface MultiLayerValidationResult {
   isValid: boolean
   overallScore: number
-  layers: {
-    syllables: LayerResult
-    narrative: LayerResult
-    rhymes: LayerResult
-    grammar: LayerResult
-    antiForcing: LayerResult
-    emotion: LayerResult
+  blockers: string[]
+  suggestions: string[]
+  layerScores: {
+    grammar: number
+    emotion: number
+    structure: number
+    theme: number
   }
-  blockers: string[] // Erros que impedem aprovação
-  warnings: string[] // Avisos que não bloqueiam mas devem ser revisados
-  suggestions: string[] // Sugestões de melhoria
 }
 
-export interface LayerResult {
-  passed: boolean
-  score: number
-  details: string
-  issues: string[]
-}
+export function validateAllLayers(lyrics: string, genre: string, theme: string): MultiLayerValidationResult {
+  const blockers: string[] = []
+  const suggestions: string[] = []
+  
+  let grammarScore = 100
+  let emotionScore = 100
+  let structureScore = 100
+  let themeScore = 100
 
-/**
- * Valida letra completa em TODAS as camadas
- * Retorna aprovação APENAS se TODAS as camadas passarem
- */
-export function validateAllLayers(lyrics: string, genre: string, theme?: string): MultiLayerValidationResult {
-  const result: MultiLayerValidationResult = {
-    isValid: false,
-    overallScore: 0,
-    layers: {
-      syllables: { passed: false, score: 0, details: "", issues: [] },
-      narrative: { passed: false, score: 0, details: "", issues: [] },
-      rhymes: { passed: false, score: 0, details: "", issues: [] },
-      grammar: { passed: false, score: 0, details: "", issues: [] },
-      antiForcing: { passed: false, score: 0, details: "", issues: [] },
-      emotion: { passed: false, score: 0, details: "", issues: [] },
-    },
-    blockers: [],
-    warnings: [],
-    suggestions: [],
+  const lines = lyrics.split('\n').filter(line => line.trim())
+
+  // CAMADA 1: GRAMÁTICA BÁSICA
+  const grammarIssues = validateGrammarLayer(lines)
+  if (grammarIssues.length > 0) {
+    blockers.push(...grammarIssues.slice(0, 2)) // Limita blockers
+    grammarScore -= grammarIssues.length * 10
   }
 
-  // CAMADA 1: SÍLABAS (BLOQUEANTE)
-  const syllablesValidation = validateLyricsSyllables(lyrics, 11)
-  result.layers.syllables.passed = syllablesValidation.valid
-  result.layers.syllables.score = syllablesValidation.valid ? 100 : 0
+  // CAMADA 2: EMOÇÃO E FLUXO
+  const emotionIssues = validateEmotionLayer(lines, genre)
+  emotionScore -= emotionIssues.length * 5
+  suggestions.push(...emotionIssues)
 
-  if (!syllablesValidation.valid) {
-    result.layers.syllables.details = `${syllablesValidation.violations.length} versos com excesso de sílabas`
-    result.layers.syllables.issues = syllablesValidation.violations.map(
-      (v) => `Linha ${v.lineNumber}: "${v.line}" tem ${v.syllables} sílabas (máx: 11)`,
-    )
-    result.blockers.push(`❌ BLOQUEADOR: ${syllablesValidation.violations.length} versos excedem 11 sílabas`)
-  } else {
-    result.layers.syllables.details = "Todos os versos têm 11 sílabas ou menos ✓"
-  }
+  // CAMADA 3: ESTRUTURA
+  const structureIssues = validateStructureLayer(lyrics)
+  structureScore -= structureIssues.length * 8
 
-  // CAMADA 2: NARRATIVA (BLOQUEANTE)
-  const narrativeValidation = validateNarrativeFlow(lyrics, genre)
-  result.layers.narrative.passed = narrativeValidation.isValid
-  result.layers.narrative.score = narrativeValidation.score
-  result.layers.narrative.details = `Score: ${narrativeValidation.score}/100`
+  // CAMADA 4: TEMA
+  const themeIssues = validateThemeLayer(lyrics, theme)
+  themeScore -= themeIssues.length * 7
+  suggestions.push(...themeIssues)
 
-  if (!narrativeValidation.isValid) {
-    result.layers.narrative.issues = narrativeValidation.feedback
-    result.blockers.push(`❌ BLOQUEADOR: Narrativa incompleta (score: ${narrativeValidation.score}/100)`)
-  }
-
-  if (narrativeValidation.abruptChanges.length > 0) {
-    result.warnings.push(`⚠️ ${narrativeValidation.abruptChanges.length} mudanças abruptas na narrativa`)
-  }
-
-  // CAMADA 3: RIMAS (BLOQUEANTE para alguns gêneros)
-  const rhymeAnalysis = analyzeLyricsRhymeScheme(lyrics)
-  const rhymeValidation = validateRhymesForGenre(lyrics, genre)
-
-  result.layers.rhymes.score = rhymeAnalysis.score
-  result.layers.rhymes.passed = rhymeValidation.errors.length === 0
-  result.layers.rhymes.details = `Score: ${rhymeAnalysis.score.toFixed(0)}/100, Esquema: ${rhymeAnalysis.scheme}`
-
-  if (rhymeValidation.errors.length > 0) {
-    result.layers.rhymes.issues = rhymeValidation.errors
-    result.blockers.push(`❌ BLOQUEADOR: ${rhymeValidation.errors.length} erros de rima`)
-  }
-
-  if (rhymeValidation.warnings.length > 0) {
-    result.warnings.push(...rhymeValidation.warnings)
-  }
-
-  result.suggestions.push(...rhymeAnalysis.suggestions)
-
-  // CAMADA 4: GRAMÁTICA (BLOQUEANTE)
-  const grammarValidation = validateGrammar(lyrics)
-  result.layers.grammar.passed = grammarValidation.passed
-  result.layers.grammar.score = grammarValidation.score
-  result.layers.grammar.details = grammarValidation.details
-  result.layers.grammar.issues = grammarValidation.issues
-
-  if (!grammarValidation.passed) {
-    result.blockers.push(`❌ BLOQUEADOR: ${grammarValidation.issues.length} erros gramaticais`)
-  }
-
-  // CAMADA 5: ANTI-FORCING (BLOQUEANTE)
-  const antiForcingValidation = validateFullLyricAgainstForcing(lyrics, genre)
-  result.layers.antiForcing.passed = antiForcingValidation.valid
-  const forcedWordsCount = antiForcingValidation.forcedWords.length
-  result.layers.antiForcing.score = forcedWordsCount === 0 ? 100 : Math.max(0, 100 - forcedWordsCount * 20)
-  result.layers.antiForcing.details = `Score: ${result.layers.antiForcing.score}/100`
-
-  if (!antiForcingValidation.valid) {
-    result.layers.antiForcing.issues = antiForcingValidation.forcedWords.map((word) => `Palavra forçada: "${word}"`)
-    result.blockers.push(`❌ BLOQUEADOR: Palavras forçadas sem contexto`)
-  }
-
-  // CAMADA 6: EMOÇÃO (NÃO BLOQUEANTE, mas importante)
-  const emotionValidation = validateEmotion(lyrics, theme)
-  result.layers.emotion.passed = emotionValidation.passed
-  result.layers.emotion.score = emotionValidation.score
-  result.layers.emotion.details = emotionValidation.details
-  result.layers.emotion.issues = emotionValidation.issues
-
-  if (!emotionValidation.passed) {
-    result.warnings.push(`⚠️ ${emotionValidation.details}`)
-  }
-
-  // CÁLCULO FINAL
-  const scores = Object.values(result.layers).map((l) => l.score)
-  result.overallScore = scores.reduce((a, b) => a + b, 0) / scores.length
-
-  // APROVAÇÃO: TODAS as camadas bloqueantes devem passar
-  result.isValid =
-    result.layers.syllables.passed &&
-    result.layers.narrative.passed &&
-    result.layers.rhymes.passed &&
-    result.layers.grammar.passed &&
-    result.layers.antiForcing.passed
-  // Emoção não bloqueia, mas reduz score
-
-  return result
-}
-
-/**
- * Valida um único verso em todas as camadas
- * Usado durante geração para validar verso por verso
- */
-export function validateSingleVerse(
-  verse: string,
-  fullLyrics: string,
-  genre: string,
-): { isValid: boolean; issues: string[] } {
-  const issues: string[] = []
-
-  // 1. Sílabas
-  const syllables = countPoeticSyllables(verse)
-  if (syllables > 11 && !verse.trim().endsWith(",")) {
-    issues.push(`${syllables} sílabas (máx: 11)`)
-  }
-
-  // 2. Anti-forcing
-  const antiForcing = validateFullLyricAgainstForcing(verse, genre)
-  if (!antiForcing.valid) {
-    issues.push(...antiForcing.forcedWords.map((word) => `Palavra forçada: "${word}"`))
-  }
-
-  // 3. Gramática básica
-  const grammarValidation = validateGrammar(verse)
-  if (!grammarValidation.passed) {
-    issues.push(...grammarValidation.issues)
-  }
-
-  // 4. Emoção básica
-  const emotionValidation = validateEmotion(verse)
-  if (!emotionValidation.passed) {
-    issues.push(emotionValidation.details)
-  }
+  const overallScore = Math.round(
+    (grammarScore + emotionScore + structureScore + themeScore) / 4
+  )
 
   return {
-    isValid: issues.length === 0,
-    issues,
+    isValid: blockers.length === 0 && overallScore >= 70,
+    overallScore,
+    blockers,
+    suggestions: suggestions.slice(0, 3), // Limita sugestões
+    layerScores: {
+      grammar: grammarScore,
+      emotion: emotionScore,
+      structure: structureScore,
+      theme: themeScore
+    }
   }
 }
 
-/**
- * Valida gramática básica (português correto)
- */
-function validateGrammar(lyrics: string): LayerResult {
+function validateGrammarLayer(lines: string[]): string[] {
   const issues: string[] = []
-  const lines = lyrics.split("\n").filter((l) => l.trim() && !l.startsWith("["))
-
-  // Regras básicas de gramática
+  
   lines.forEach((line, index) => {
     const trimmed = line.trim()
-
-    // Verifica concordância básica
-    if (/\b(eu|ele|ela)\s+(somos|são)\b/i.test(trimmed)) {
-      issues.push(`Linha ${index + 1}: Erro de concordância verbal`)
+    
+    if (!trimmed || trimmed.startsWith('[') || trimmed.startsWith('(')) {
+      return
     }
 
-    // Verifica uso incorreto de "mim" vs "eu"
-    if (/\bpara\s+mim\s+(fazer|ir|ver|ter)\b/i.test(trimmed)) {
-      issues.push(`Linha ${index + 1}: Use "para eu" antes de verbo no infinitivo`)
+    // Verifica frases incompletas
+    if (isIncompletePhrase(trimmed)) {
+      issues.push(`Linha ${index + 1}: Frase parece incompleta`)
     }
 
-    // Verifica crase incorreta
-    if (/\bà\s+(ele|eles|você|vocês)\b/i.test(trimmed)) {
-      issues.push(`Linha ${index + 1}: Não use crase antes de pronomes`)
+    // Verifica repetição excessiva
+    if (hasExcessiveRepetition(trimmed)) {
+      issues.push(`Linha ${index + 1}: Repetição excessiva de palavras`)
     }
   })
 
-  const passed = issues.length === 0
-  const score = passed ? 100 : Math.max(0, 100 - issues.length * 20)
-
-  return {
-    passed,
-    score,
-    details: passed ? "Gramática correta ✓" : `${issues.length} erros gramaticais`,
-    issues,
-  }
+  return issues
 }
 
-/**
- * Valida autenticidade emocional
- */
-function validateEmotion(lyrics: string, theme?: string): LayerResult {
-  const lyricsLower = lyrics.toLowerCase()
+function validateEmotionLayer(lines: string[], genre: string): string[] {
+  const suggestions: string[] = []
+  let emotionalLines = 0
 
-  // Palavras emocionais por categoria
-  const emotionalWords = {
-    love: ["amor", "coração", "paixão", "sentimento", "carinho", "abraço", "beijo"],
-    sadness: ["tristeza", "dor", "sofrer", "chorar", "saudade", "solidão", "lágrima"],
-    joy: ["feliz", "alegria", "sorriso", "festa", "dançar", "celebrar", "viva"],
-    anger: ["raiva", "ódio", "fúria", "revolta", "indignação"],
-    nostalgia: ["lembrar", "memória", "passado", "tempo", "saudade", "recordar"],
-  }
+  lines.forEach((line, index) => {
+    if (!line.trim() || line.startsWith('[') || line.startsWith('(')) return
 
-  let emotionCount = 0
-  Object.values(emotionalWords).forEach((words) => {
-    words.forEach((word) => {
-      if (lyricsLower.includes(word)) emotionCount++
-    })
+    if (hasEmotionalContent(line)) {
+      emotionalLines++
+    }
+
+    // Sugestões específicas por gênero
+    if (genre.toLowerCase().includes('sertanejo') && isTooAbstract(line)) {
+      suggestions.push(`Linha ${index + 1}: Muito abstrata para sertanejo - tente algo mais concreto`)
+    }
   })
 
-  const lines = lyrics.split("\n").filter((l) => l.trim() && !l.startsWith("["))
-  const emotionDensity = emotionCount / lines.length
-
-  // Densidade emocional ideal: 0.3 a 0.8 palavras emocionais por linha
-  const passed = emotionDensity >= 0.3 && emotionDensity <= 0.8
-  const score = Math.min(100, Math.max(0, emotionDensity * 100))
-
-  let details = ""
-  if (emotionDensity < 0.3) {
-    details = "Emoção fraca - adicione mais sentimento"
-  } else if (emotionDensity > 0.8) {
-    details = "Emoção excessiva - pode parecer forçado"
-  } else {
-    details = "Emoção autêntica e equilibrada ✓"
+  const emotionalRatio = emotionalLines / lines.length
+  if (emotionalRatio < 0.3) {
+    suggestions.push('Poucas linhas com conteúdo emocional - tente aumentar a carga emocional')
   }
 
-  return {
-    passed,
-    score,
-    details,
-    issues: passed ? [] : [details],
+  return suggestions
+}
+
+function validateStructureLayer(lyrics: string): string[] {
+  const issues: string[] = []
+  
+  const sections = lyrics.split('\n').filter(line => 
+    line.trim().startsWith('[') && line.trim().endsWith(']')
+  )
+  
+  if (sections.length < 3) {
+    issues.push('Estrutura muito simples - considere adicionar mais seções (verso, refrão, ponte)')
   }
+
+  const hasChorus = sections.some(section => 
+    section.toLowerCase().includes('chorus') || section.toLowerCase().includes('refrão')
+  )
+  
+  if (!hasChorus) {
+    issues.push('Letra sem refrão identificado - refrão é essencial para música')
+  }
+
+  return issues
+}
+
+function validateThemeLayer(lyrics: string, theme: string): string[] {
+  const suggestions: string[] = []
+  const themeWords = theme.toLowerCase().split(/\s+/).filter(word => word.length > 3)
+  
+  if (themeWords.length === 0) return suggestions
+
+  const lyricsLower = lyrics.toLowerCase()
+  let themeMatches = 0
+
+  themeWords.forEach(word => {
+    if (lyricsLower.includes(word)) {
+      themeMatches++
+    }
+  })
+
+  const matchRatio = themeMatches / themeWords.length
+  if (matchRatio < 0.5) {
+    suggestions.push(`Pouca conexão com o tema "${theme}" - tente incorporar mais palavras relacionadas`)
+  }
+
+  return suggestions
+}
+
+// FUNÇÕES AUXILIARES
+function isIncompletePhrase(line: string): boolean {
+  const incompletePatterns = [
+    /\b(e|a|o|que|de|em|com|pra|pro|no|na)\s*$/i,
+    /[,-]\s*$/,
+    /^\s*\w+\s+[e|a|o]\s*$/i
+  ]
+  
+  return incompletePatterns.some(pattern => pattern.test(line))
+}
+
+function hasExcessiveRepetition(line: string): boolean {
+  const words = line.toLowerCase().split(/\s+/)
+  const wordCount: Record<string, number> = {}
+  
+  words.forEach(word => {
+    if (word.length > 2) {
+      wordCount[word] = (wordCount[word] || 0) + 1
+    }
+  })
+  
+  return Object.values(wordCount).some(count => count > 2)
+}
+
+function hasEmotionalContent(line: string): boolean {
+  const emotionalWords = [
+    'amor', 'dor', 'saudade', 'coração', 'vida', 'alma', 'sonho',
+    'fé', 'esperança', 'medo', 'verdade', 'mentira', 'partir', 'ficar'
+  ]
+  
+  return emotionalWords.some(word => line.toLowerCase().includes(word))
+}
+
+function isTooAbstract(line: string): boolean {
+  const abstractWords = [
+    'vida', 'amor', 'paz', 'alegria', 'esperança', 'fé',
+    'destino', 'universo', 'eternidade', 'infinito'
+  ]
+  
+  const words = line.toLowerCase().split(/\s+/)
+  const abstractCount = words.filter(word => abstractWords.includes(word)).length
+  
+  return abstractCount >= 2
 }

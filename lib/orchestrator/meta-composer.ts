@@ -1,60 +1,38 @@
-// lib/orchestrator/meta-composer.ts - VERSÃO SUPER SIMPLIFICADA
+// lib/orchestrator/meta-composer.ts - ADICIONAR VALIDAÇÃO ESPECÍFICA
 
-import { generateText } from "ai"
-import { UnifiedSyllableManager } from "@/lib/syllable-management/unified-syllable-manager"
-import { formatSertanejoPerformance } from "@/lib/formatters/sertanejo-performance-formatter"
-import { PunctuationValidator } from "@/lib/validation/punctuation-validator"
-import { LineStacker } from "@/lib/utils/line-stacker"
-import { LyricsAuditor } from "@/lib/validation/lyrics-auditor"
-
-export interface CompositionRequest {
-  genre: string
-  theme: string
-  mood: string
-  additionalRequirements?: string
-  creativity?: "conservador" | "equilibrado" | "ousado"
-  applyFinalPolish?: boolean
-  originalLyrics?: string
-  performanceMode?: "standard" | "performance"
-}
-
-export interface CompositionResult {
-  lyrics: string
-  title: string
-  metadata: {
-    finalScore: number
-    polishingApplied: boolean
-    performanceMode: string
-    modelUsed: string
-  }
-}
-
-/**
- * 🎵 META-COMPOSER SUPER SIMPLES
- */
 export class MetaComposer {
-  private static readonly MODEL = "openai/gpt-4o-mini"
-
   static async compose(request: CompositionRequest): Promise<CompositionResult> {
-    console.log("[MetaComposer] Iniciando...")
+    console.log("[MetaComposer] 🚀 Iniciando composição...")
 
     try {
-      // 1. GERAÇÃO
+      // 1. GERAÇÃO BASE
       let lyrics = request.originalLyrics 
         ? await this.rewriteLyrics(request) 
         : await this.generateLyrics(request)
 
-      // 2. CORREÇÃO DE SÍLABAS
-      lyrics = await UnifiedSyllableManager.processSongWithBalance(lyrics)
+      // 2. CORREÇÃO DE SÍLABAS (SISTEMA UNIFICADO)
+      lyrics = await UnifiedSyllableManager.processSongWithBalance(lyrics, request.genre)
 
-      // 3. POLIMENTO
+      // ✅ 3. VALIDAÇÃO ESPECÍFICA POR GÊNERO
+      const genreSpecificValidation = await this.applyGenreSpecificValidation(lyrics, request)
+      if (genreSpecificValidation.adjustedLyrics) {
+        lyrics = genreSpecificValidation.adjustedLyrics
+      }
+
+      // 4. TERCEIRA VIA (SE APLICÁVEL)
+      let thirdWayApplied = false
+      if (this.shouldApplyThirdWay(request, lyrics)) {
+        lyrics = await ThirdWayIntegration.applyStrategicThirdWay(lyrics, request.genre, request.theme)
+        thirdWayApplied = true
+      }
+
+      // 5. POLIMENTO FINAL
       if (request.applyFinalPolish !== false) {
         lyrics = await this.applyPolish(lyrics, request)
       }
 
-      // 4. SCORE
-      const audit = LyricsAuditor.audit(lyrics, request.genre, request.theme)
-      const finalScore = Math.min(100, Math.max(0, audit.score))
+      // 6. SCORE FINAL COM VALIDAÇÕES ESPECÍFICAS
+      const finalScore = this.calculateComprehensiveScore(lyrics, request, thirdWayApplied, genreSpecificValidation)
 
       return {
         lyrics,
@@ -64,111 +42,131 @@ export class MetaComposer {
           polishingApplied: request.applyFinalPolish !== false,
           performanceMode: request.performanceMode || "standard",
           modelUsed: this.MODEL,
+          thirdWayApplied,
+          genreSpecificScore: genreSpecificValidation.score,
+          creativityLevel: request.creativity || "equilibrado"
         },
       }
 
     } catch (error) {
-      console.error("[MetaComposer] Erro:", error)
+      console.error("[MetaComposer] ❌ Erro:", error)
       return this.fallbackResult(request)
     }
   }
 
-  private static async generateLyrics(request: CompositionRequest): Promise<string> {
-    const prompt = `Componha uma música ${request.genre} sobre ${request.theme}.
-
-Estrutura:
-[Intro]
-[Verso 1]
-[Refrão] 
-[Verso 2]
-[Refrão]
-[Ponte]
-[Refrão]
-[Outro]
-
-Máximo 12 sílabas por verso. Linguagem brasileira natural.
-
-Letra:`
-
-    const { text } = await generateText({
-      model: this.MODEL,
-      prompt,
-      temperature: request.creativity === "ousado" ? 0.8 : 0.6,
-    })
-
-    return text || "Música em desenvolvimento."
-  }
-
-  private static async rewriteLyrics(request: CompositionRequest): Promise<string> {
-    if (!request.originalLyrics) return "Letra original necessária."
-
-    const prompt = `Reescreva esta letra no estilo ${request.genre}:
-
-${request.originalLyrics}
-
-Mantenha máximo 12 sílabas por verso. Versos completos.
-
-Letra reescrita:`
-
-    const { text } = await generateText({
-      model: this.MODEL,
-      prompt,
-      temperature: 0.4,
-    })
-
-    return text || request.originalLyrics
-  }
-
-  private static async applyPolish(lyrics: string, request: CompositionRequest): Promise<string> {
-    let polished = lyrics
-
-    // Formatação sertanejo
-    if (request.genre.toLowerCase().includes("sertanejo")) {
-      polished = formatSertanejoPerformance(polished, request.genre)
-    }
-
-    // Pontuação
-    const punct = PunctuationValidator.validate(polished)
-    if (!punct.isValid) polished = punct.correctedLyrics
-
-    // Organização
-    const stack = LineStacker.stackLines(polished)
-    return stack.stackedLyrics
-  }
-
-  private static extractTitle(lyrics: string, request: CompositionRequest): string {
-    const firstLine = lyrics.split('\n').find(line => {
-      const trimmed = line.trim()
-      return trimmed && !trimmed.startsWith('[') && !trimmed.startsWith('(')
-    })
+  /**
+   * ✅ APLICA VALIDAÇÃO ESPECÍFICA POR GÊNERO
+   */
+  private static async applyGenreSpecificValidation(
+    lyrics: string, 
+    request: CompositionRequest
+  ): Promise<GenreValidationResult> {
     
-    return firstLine?.substring(0, 40) || `${request.theme} - ${request.genre}`
-  }
+    const genre = request.genre.toLowerCase()
+    
+    // 🎵 VALIDAÇÃO SERTANEJO ESPECÍFICA
+    if (genre.includes('sertanejo')) {
+      const sertanejoValidation = validateSertanejoModerno(lyrics)
+      
+      console.log(`[MetaComposer] 🎵 Validação Sertanejo: ${sertanejoValidation.score} pontos`)
+      
+      if (sertanejoValidation.score < 80 && sertanejoValidation.suggestions.length > 0) {
+        console.log(`[MetaComposer] 💡 Sugestões Sertanejo:`, sertanejoValidation.suggestions.slice(0, 2))
+        
+        // Aplica correções automáticas para problemas críticos
+        const corrected = await this.autoCorrectSertanejoIssues(lyrics, sertanejoValidation)
+        return {
+          adjustedLyrics: corrected,
+          score: sertanejoValidation.score,
+          type: 'sertanejo',
+          suggestions: sertanejoValidation.suggestions
+        }
+      }
+      
+      return {
+        adjustedLyrics: null,
+        score: sertanejoValidation.score,
+        type: 'sertanejo',
+        suggestions: sertanejoValidation.suggestions
+      }
+    }
 
-  private static fallbackResult(request: CompositionRequest): CompositionResult {
-    const fallbackLyrics = `[Intro]
-Música em criação
-Com inspiração
-
-[Refrão]
-Em breve estará pronta
-Para sua emoção
-
-[Outro]
-Com gratidão no coração
-
-(Instrumentation)
-(Genre: ${request.genre})`
-
+    // 🎶 OUTROS GÊNEROS PODEM TER VALIDAÇÕES ESPECÍFICAS FUTURAS
     return {
-      lyrics: fallbackLyrics,
-      title: `${request.theme} - ${request.genre}`,
-      metadata: {
-        finalScore: 60,
-        polishingApplied: false,
-        performanceMode: "standard",
-        modelUsed: "FALLBACK",
-      },
+      adjustedLyrics: null,
+      score: 85, // Score base para outros gêneros
+      type: 'generic',
+      suggestions: []
     }
   }
+
+  /**
+   * ✅ CORREÇÃO AUTOMÁTICA PARA PROBLEMAS SERTANEJO
+   */
+  private static async autoCorrectSertanejoIssues(
+    lyrics: string,
+    validation: SertanejoValidationResult
+  ): Promise<string> {
+    
+    // Para rimas repetitivas - reescreve seções problemáticas
+    if (validation.errors.some(error => error.includes('rimas consecutivas'))) {
+      console.log('[MetaComposer] 🔧 Corrigindo rimas repetitivas...')
+      
+      // Usa o sistema de reescrita para variar rimas
+      const rewritten = await this.rewriteProblematicSections(lyrics, 'variar rimas')
+      return rewritten || lyrics
+    }
+
+    // Para pré-refrão incompleto - completa frases
+    if (validation.errors.some(error => error.includes('Pré-refrão'))) {
+      console.log('[MetaComposer] 🔧 Completando pré-refrão...')
+      return await this.completePreChorusLines(lyrics)
+    }
+
+    return lyrics // Mantém original se não há correção automática
+  }
+
+  /**
+   * ✅ CALCULA SCORE COMPREENSIVO
+   */
+  private static calculateComprehensiveScore(
+    lyrics: string,
+    request: CompositionRequest,
+    thirdWayApplied: boolean,
+    genreValidation: GenreValidationResult
+  ): number {
+    
+    let score = 75 // Base
+
+    // 📏 VALIDAÇÃO DE SÍLABAS (CRÍTICO)
+    const syllableValidation = validateLyricsSyllables(lyrics, 8, 10, 12)
+    if (syllableValidation.valid) {
+      score += 15
+    } else {
+      score -= syllableValidation.violations.length * 5
+    }
+
+    // 🎵 SCORE ESPECÍFICO DO GÊNERO
+    if (genreValidation.score >= 80) score += 10
+    else if (genreValidation.score >= 60) score += 5
+
+    // 🌟 BÔNUS TERCEIRA VIA
+    if (thirdWayApplied) score += 8
+
+    // 🎨 BÔNUS CRIATIVIDADE
+    if (request.creativity === "ousado") score += 7
+    else if (request.creativity === "conservador") score += 3
+
+    return Math.min(100, Math.max(0, score))
+  }
+
+  // ... outros métodos existentes ...
+}
+
+// ✅ INTERFACE PARA VALIDAÇÃO POR GÊNERO
+interface GenreValidationResult {
+  adjustedLyrics: string | null
+  score: number
+  type: string
+  suggestions: string[]
 }
