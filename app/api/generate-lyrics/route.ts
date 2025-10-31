@@ -1,4 +1,4 @@
-// app/api/generate-lyrics/route.ts - VERSÃO CORRIGIDA
+// app/api/generate-lyrics/route.ts - VERSÃO COMPLETAMENTE CORRIGIDA
 import { type NextRequest, NextResponse } from "next/server"
 import { openai } from "@ai-sdk/openai"
 import { generateText } from "ai"
@@ -13,7 +13,7 @@ interface MusicBlock {
   score: number
 }
 
-// 🎯 GERAR REFRÕES COMO PONTO CENTRAL - CORRIGIDO
+// 🎯 GERAR REFRÕES COMO PONTO CENTRAL
 async function generateChorusOptions(genre: string, theme: string, mood: string): Promise<MusicBlock[]> {
   try {
     const prompt = `Crie 3 opções de REFRÃO memorável para ${genre} sobre "${theme}"
@@ -26,16 +26,10 @@ REGRAS:
 - Linguagem natural brasileira
 - APENAS as linhas do refrão, sem explicações
 
-Exemplo bom:
-Teu abraço é meu porto seguro
-Onde encontro paz e futuro
-Cada instante ao teu lado
-É um presente abençoado
-
 Gere 3 opções de REFRÃO (apenas as linhas):`
 
     const { text } = await generateText({
-      model: openai("gpt-4o-mini"), // ✅ CORREÇÃO: openai wrapper
+      model: openai("gpt-4o-mini"),
       prompt,
       temperature: 0.8,
     })
@@ -47,7 +41,7 @@ Gere 3 opções de REFRÃO (apenas as linhas):`
   }
 }
 
-// 🧩 PROCESSAR REFRÕES GERADOS - CORRIGIDO
+// 🧩 PROCESSAR REFRÕES GERADOS
 function processChorusOptions(text: string, genre: string): MusicBlock[] {
   const blocks: MusicBlock[] = []
   
@@ -107,7 +101,7 @@ function generateFallbackChoruses(genre: string, theme: string): MusicBlock[] {
   }))
 }
 
-// 🎲 GERAR OUTROS BLOCOS BASEADOS NO REFRÃO - CORRIGIDO
+// 🎲 GERAR OUTROS BLOCOS BASEADOS NO REFRÃO
 async function generateOtherBlocks(
   selectedChorus: string,
   blockType: "INTRO" | "VERSE" | "BRIDGE" | "OUTRO",
@@ -147,7 +141,7 @@ LINHAS FINAIS APENAS:`,
 
   try {
     const { text } = await generateText({
-      model: openai("gpt-4o-mini"), // ✅ CORREÇÃO: openai wrapper
+      model: openai("gpt-4o-mini"),
       prompt: prompts[blockType],
       temperature: 0.7,
     })
@@ -159,7 +153,7 @@ LINHAS FINAIS APENAS:`,
   }
 }
 
-// 🧩 PROCESSAR BLOCOS GERADOS - CORRIGIDO
+// 🧩 PROCESSAR BLOCOS GERADOS
 function processGeneratedBlocks(text: string, blockType: MusicBlock["type"]): MusicBlock[] {
   
   // Limpeza agressiva
@@ -180,7 +174,7 @@ function processGeneratedBlocks(text: string, blockType: MusicBlock["type"]): Mu
              !line.match(/^(NOVO|VERSO|INTRO|PONTE|OUTRO|APENAS|LINHAS)/i) &&
              !line.includes('**')
     })
-    .slice(0, blockType === "OUTRO" ? 4 : 4) // Máximo 4 linhas
+    .slice(0, blockType === "OUTRO" ? 4 : 4)
 
   if (lines.length >= (blockType === "OUTRO" ? 2 : 3)) {
     return [{
@@ -193,37 +187,56 @@ function processGeneratedBlocks(text: string, blockType: MusicBlock["type"]): Mu
   return [generateFallbackBlock(blockType, "")]
 }
 
-// 🆘 FALLBACK PARA BLOCOS
+// 🆘 FALLBACK PARA BLOCOS - CORREÇÃO DEFINITIVA
 function generateFallbackBlock(blockType: MusicBlock["type"], theme: string): MusicBlock {
-  const fallbacks = {
-    INTRO: {
-      content: `Pensando em você\nNo silêncio da emoção\nUm sentimento que nasce\nDentro do coração`,
-      score: 65
-    },
-    VERSE: {
-      content: `A vida me mostrou\nCaminhos a seguir\nCom você ao meu lado\nSou capaz de sorrir`,
-      score: 65
-    },
-    BRIDGE: {
-      content: `E o tempo vai passando\nTrazendo aprendizado\nCada momento contigo\nÉ um sonho realizado`,
-      score: 65
-    },
-    OUTRO: {
-      content: `Até amanhã\nMeu amor sem fim`,
-      score: 65
-    }
-  }
-
-  const fallback = fallbacks[blockType] || fallbacks.VERSE
-  
-  return {
-    type: blockType,
-    content: fallback.content,
-    score: fallback.score
+  // ✅ CORREÇÃO: Usar switch case em vez de objeto para evitar problemas de tipo
+  switch (blockType) {
+    case "INTRO":
+      return {
+        type: blockType,
+        content: `Pensando em você\nNo silêncio da emoção\nUm sentimento que nasce\nDentro do coração`,
+        score: 65
+      }
+    case "VERSE":
+      return {
+        type: blockType,
+        content: `A vida me mostrou\nCaminhos a seguir\nCom você ao meu lado\nSou capaz de sorrir`,
+        score: 65
+      }
+    case "PRE_CHORUS":
+      return {
+        type: blockType,
+        content: `E agora o coração\nPrepara pra emoção\nDo que está por vir\nNesse novo amor`,
+        score: 65
+      }
+    case "BRIDGE":
+      return {
+        type: blockType,
+        content: `E o tempo vai passando\nTrazendo aprendizado\nCada momento contigo\nÉ um sonho realizado`,
+        score: 65
+      }
+    case "OUTRO":
+      return {
+        type: blockType,
+        content: `Até amanhã\nMeu amor sem fim`,
+        score: 65
+      }
+    case "CHORUS":
+      return {
+        type: blockType,
+        content: `Seu amor me transforma\nMinha vida se reforma\nNesse sentimento puro\nQue no peito fica duro`,
+        score: 65
+      }
+    default:
+      return {
+        type: "VERSE",
+        content: `A vida segue em frente\nCom novos aprendizados\nCada dia é diferente\nCheio de sentimentos`,
+        score: 65
+      }
   }
 }
 
-// 📊 CALCULAR SCORE DO BLOCO (mantido igual)
+// 📊 CALCULAR SCORE DO BLOCO
 function calculateBlockScore(content: string): number {
   const lines = content.split("\n").filter((line) => line.trim())
   let score = 70 // Base
@@ -236,7 +249,7 @@ function calculateBlockScore(content: string): number {
   return Math.min(score, 100)
 }
 
-// 🏗️ MONTAR MÚSICA COMPLETA - CORRIGIDO
+// 🏗️ MONTAR MÚSICA COMPLETA
 async function assembleCompleteSong(
   chorus: MusicBlock,
   otherBlocks: Record<string, MusicBlock[]>,
