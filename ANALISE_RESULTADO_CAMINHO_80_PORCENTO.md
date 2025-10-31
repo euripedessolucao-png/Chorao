@@ -26,7 +26,7 @@
 
 **[CHORUS]**
 1. ❌ "Tenho a chave do carro, mas não sei ir" = 12 sílabas
-   - **CORREÇÃO:** "Chave do carro, mas não sei ir" = 11 sílabas
+   - **CORREÇÃO:** "Chave do carro, mas não sei ir" = 11 s��labas
    - **TÉCNICA:** Remover "Tenho a"
 2. ❌ "Tenho casa nobre e não posso sair" = 12 sílabas
    - **CORREÇÃO:** "Casa nobre, mas não posso sair" = 11 sílabas
