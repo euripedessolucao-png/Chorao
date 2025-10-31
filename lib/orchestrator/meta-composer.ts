@@ -1,6 +1,6 @@
 // lib/orchestrator/meta-composer.ts - ADICIONAR VALIDAÇÃO ESPECÍFICA
 
-import { UnifiedSyllableManager } from "./unified-syllable-manager" // Import declaration for UnifiedSyllableManager
+import { UnifiedSyllableManager } from "../syllable-management/unified-syllable-manager" // Import declaration for UnifiedSyllableManager
 
 export interface CompositionRequest {
   genre: string
