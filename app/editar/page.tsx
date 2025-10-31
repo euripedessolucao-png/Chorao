@@ -1,5 +1,8 @@
+// app/editar/page.tsx - VERSÃO CORRIGIDA COM LAYOUT DO EDITOR
 "use client"
+
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -12,19 +15,9 @@ import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
 import { toast } from "sonner"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-// ✅ CORREÇÃO: Remover ChorusGenerator temporariamente ou ajustar
-// import { ChorusGenerator } from "@/components/chorus-generator"
-import { Wand2 } from "lucide-react"
+import { Wand2, Copy, Trash2, Save, ArrowLeft, Sparkles } from "lucide-react"
 
-const MOODS = ["Feliz", "Triste", "Nostálgico", "Romântico", "Animado", "Melancólicico"]
+const MOODS = ["Feliz", "Triste", "Nostálgico", "Romântico", "Animado", "Melancólico"]
 const EMOTIONS = [
   "Alegria", "Alívio", "Amor", "Ansiedade", "Confusão", "Conexão", "Coragem", "Culpa",
   "Desapego", "Desilusão", "Desprezo", "Empolgação", "Empoderamento", "Encantamento",
@@ -34,79 +27,36 @@ const EMOTIONS = [
 ]
 
 const GENRES = [
-  "Sertanejo",
-  "Sertanejo Moderno", 
+  "Sertanejo Moderno Masculino",
+  "Sertanejo Moderno Feminino", 
   "Sertanejo Universitário",
-  "Sertanejo Sofrência",
   "Sertanejo Raiz",
-  "MPB",
-  "Bossa Nova",
-  "Funk",
-  "Pagode",
-  "Samba",
-  "Forró",
-  "Axé",
-  "Rock",
-  "Pop",
-  "Gospel"
+  "Pagode Romântico",
+  "Funk Carioca",
+  "Gospel Contemporâneo",
+  "MPB"
 ]
 
-const GENRE_QUALITY_CONFIG = {
-  "Sertanejo": { max: 12, ideal: 9, min: 7, rhymeQuality: 0.5 },
-  "Sertanejo Moderno": { max: 12, ideal: 9, min: 7, rhymeQuality: 0.5 },
-  "Sertanejo Universitário": { max: 12, ideal: 9, min: 7, rhymeQuality: 0.5 },
-  "Sertanejo Sofrência": { max: 12, ideal: 9, min: 7, rhymeQuality: 0.5 },
-  "Sertanejo Raiz": { max: 12, ideal: 10, min: 8, rhymeQuality: 0.6 },
-  "MPB": { max: 13, ideal: 10, min: 7, rhymeQuality: 0.7 },
-  "Bossa Nova": { max: 12, ideal: 9, min: 7, rhymeQuality: 0.6 },
-  "Funk": { max: 12, ideal: 6, min: 3, rhymeQuality: 0.3 },
-  "Pagode": { max: 12, ideal: 9, min: 7, rhymeQuality: 0.4 },
-  "Samba": { max: 12, ideal: 9, min: 7, rhymeQuality: 0.4 },
-  "Forró": { max: 12, ideal: 9, min: 7, rhymeQuality: 0.4 },
-  "Axé": { max: 12, ideal: 8, min: 6, rhymeQuality: 0.3 },
-  "Rock": { max: 12, ideal: 10, min: 7, rhymeQuality: 0.4 },
-  "Pop": { max: 12, ideal: 9, min: 7, rhymeQuality: 0.4 },
-  "Gospel": { max: 12, ideal: 9, min: 7, rhymeQuality: 0.5 },
-  "default": { max: 12, ideal: 9, min: 7, rhymeQuality: 0.4 },
-}
-
 export default function EditarPage() {
+  const router = useRouter()
   const [genre, setGenre] = useState("")
-  const [subgenre, setSubgenre] = useState("")
   const [mood, setMood] = useState("")
   const [theme, setTheme] = useState("")
   const [inspirationText, setInspirationText] = useState("")
-  const [literaryGenre, setLiteraryGenre] = useState("")
-  const [metaphorSearch, setMetaphorSearch] = useState("")
   const [selectedEmotions, setSelectedEmotions] = useState<string[]>([])
   const [title, setTitle] = useState("")
   const [lyrics, setLyrics] = useState("")
-  const [projectId, setProjectId] = useState<number | null>(null)
   const [additionalReqs, setAdditionalReqs] = useState("")
-  const [advancedMode, setAdvancedMode] = useState(false)
   const [creativity, setCreativity] = useState([80])
-  const [formattingStyle, setFormattingStyle] = useState<"padrao" | "performatico">("performatico")
   const [universalPolish, setUniversalPolish] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
   const [savedInspirations, setSavedInspirations] = useState<Array<{ text: string; timestamp: number }>>([])
-  const [showChorusDialog, setShowChorusDialog] = useState(false)
-  const [selectedChoruses, setSelectedChoruses] = useState<any[]>([])
-
-  const getSyllableConfig = (selectedGenre: string) => {
-    const config = GENRE_QUALITY_CONFIG[selectedGenre as keyof typeof GENRE_QUALITY_CONFIG] || GENRE_QUALITY_CONFIG.default
-    return {
-      max: config.max,
-      ideal: config.ideal,
-      min: config.min
-    }
-  }
 
   useEffect(() => {
     const editingProject = localStorage.getItem("editingProject")
     if (editingProject) {
       try {
         const project = JSON.parse(editingProject)
-        setProjectId(project.id)
         setTitle(project.title || "")
         setLyrics(project.lyrics || "")
         setGenre(project.genre || "")
@@ -150,18 +100,13 @@ export default function EditarPage() {
     setIsEditing(true)
 
     try {
-      const fullRequirements = subgenre ? 
-        `${additionalReqs}\n\nRitmo/Subgênero: ${subgenre}` : 
-        additionalReqs
-
       const requestBody = {
         originalLyrics: lyrics,
         genre,
         mood: mood || "Romântico",
         theme: theme || "Amor",
-        additionalRequirements: fullRequirements,
+        additionalRequirements: additionalReqs,
         title,
-        performanceMode: formattingStyle === "performatico" ? "performance" : "standard",
         creativity: getCreativityLevel(creativity[0]),
         applyFinalPolish: universalPolish
       }
@@ -178,17 +123,17 @@ export default function EditarPage() {
         throw new Error(data.error || `Erro ${response.status} na API`)
       }
 
-      if (!data.lyrics && !data.letra) {
+      if (!data.lyrics) {
         throw new Error("Resposta da API não contém letra")
       }
 
-      setLyrics(data.lyrics || data.letra)
+      setLyrics(data.lyrics)
       if (data.title && !title) {
         setTitle(data.title)
       }
 
       toast.success("Letra editada com sucesso!", {
-        description: `Reescrita no estilo ${genre}`,
+        description: `Reescrita no estilo ${genre} com ${universalPolish ? 'polimento universal' : 'melhorias básicas'}`,
       })
     } catch (error) {
       console.error("Erro na edição:", error)
@@ -207,29 +152,16 @@ export default function EditarPage() {
     }
 
     const projects = JSON.parse(localStorage.getItem("projects") || "[]")
+    const projectId = Date.now()
 
-    if (projectId) {
-      const index = projects.findIndex((p: any) => p.id === projectId)
-      if (index !== -1) {
-        projects[index] = {
-          ...projects[index],
-          title,
-          lyrics,
-          genre,
-          date: new Date().toISOString(),
-        }
-      }
-    } else {
-      const newProject = {
-        id: Date.now(),
-        title,
-        genre,
-        lyrics,
-        date: new Date().toISOString(),
-      }
-      projects.push(newProject)
-      setProjectId(newProject.id)
+    const newProject = {
+      id: projectId,
+      title,
+      genre,
+      lyrics,
+      date: new Date().toISOString(),
     }
+    projects.push(newProject)
 
     localStorage.setItem("projects", JSON.stringify(projects))
 
@@ -260,297 +192,289 @@ export default function EditarPage() {
     }
   }
 
-  // ✅ CORREÇÃO: Simplificar função de gerar refrões
-  const handleGenerateChorus = () => {
-    if (!genre || !theme) {
-      toast.error("Selecione gênero e tema antes de gerar o refrão")
-      return
-    }
-    
-    // ✅ CORREÇÃO: Mostrar mensagem informativa em vez do dialog problemático
-    toast.info("Funcionalidade de refrões em desenvolvimento", {
-      description: "Em breve você poderá gerar refrões automaticamente!",
-    })
-    
-    // ✅ CORREÇÃO: Adicionar um exemplo simples aos requisitos
-    const exampleChorus = `[REFRAO_EXEMPLO]
-Teu amor me transformou
-Minha vida renovou
-Nesse sentimento puro
-Que no peito guardou`
+  const loadExample = () => {
+    setLyrics(`[Intro]
+Quando a noite vem e a lua brilha,
+Teu olhar ilumina meu coração,
+Nos ritmos que a paixão entende,
+Nessa dança, somos só emoção.
 
-    const updatedReqs = additionalReqs ? 
-      `${additionalReqs}\n\n${exampleChorus}` : 
-      exampleChorus
+[Verso 1]
+Nos teus olhos, um mar profundo,
+Navego em sonhos, me perco no mundo,
+Teu perfume é a brisa suave,
+Que embala d'amor, me faz tão leve.
 
-    setAdditionalReqs(updatedReqs)
+[Refrão]
+Teu sorriso é meu abrigo,
+Teu abraço, meu amanhecer, 
+No ritmo do amor, eu sigo,
+Com você, eu quero viver.`)
+    setTitle("Nosso Amor")
+    setTheme("amor e paixão")
+    setGenre("Sertanejo Moderno Masculino")
   }
 
-  // ✅ CORREÇÃO: Remover funções não utilizadas
-  // const handleSelectChoruses = (choruses: any[]) => {
-  //   setSelectedChoruses(choruses)
-  // }
-
-  // const handleApplyChoruses = () => {
-  //   if (selectedChoruses.length === 0) {
-  //     toast.error("Selecione pelo menos um refrão")
-  //     return
-  //   }
-
-  //   const chorusText = selectedChoruses.map((c) => c.chorus.replace(/\s\/\s/g, "\n")).join("\n\n")
-  //   const updatedReqs = additionalReqs ? 
-  //     `${additionalReqs}\n\n[CHORUS]\n${chorusText}` : 
-  //     `[CHORUS]\n${chorusText}`
-
-  //   setAdditionalReqs(updatedReqs)
-  //   setShowChorusDialog(false)
-
-  //   toast.success("Refrão(ões) adicionado(s) aos requisitos!")
-  // }
-
-  const getCreativityLevel = (sliderValue: number): "conservador" | "equilibrado" | "ousado" => {
-    if (sliderValue < 40) return "conservador"
-    if (sliderValue < 70) return "equilibrado"
-    return "ousado"
+  const getCreativityLevel = (sliderValue: number): "conservador" | "equilibrado" | "criativo" => {
+    if (sliderValue < 60) return "conservador"
+    if (sliderValue < 80) return "equilibrado"
+    return "criativo"
   }
 
   const getCreativityLabel = (value: number) => {
-    if (value < 40) return "Muito Conservador"
-    if (value < 70) return "Equilibrado"
-    return "Muito Criativo"
+    if (value < 60) return "Conservador"
+    if (value < 80) return "Equilibrado"
+    return "Criativo"
   }
 
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
       
-      <main className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex justify-between items-center mb-8">
+      <main className="container mx-auto px-4 py-8 pt-20">
+        <div className="max-w-7xl mx-auto">
+          {/* Cabeçalho */}
+          <div className="flex items-center gap-4 mb-8">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.push("/criar")}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
             <div>
-              <h1 className="text-4xl font-bold text-foreground">Editor de Letras</h1>
-              <p className="text-muted-foreground mt-2">
-                Edite e refine suas letras com inteligência artificial
+              <h1 className="text-3xl font-bold">Editor de Letras</h1>
+              <p className="text-muted-foreground">
+                Edite e refine suas letras com rimas naturais e estrutura profissional
               </p>
-            </div>
-            
-            <div className="flex gap-4">
-              <Button variant="outline" onClick={handleCopy}>
-                Copiar Letra
-              </Button>
-              <Button variant="outline" onClick={handleClear}>
-                Limpar Tudo
-              </Button>
-              <Button onClick={handleSave}>
-                Salvar Projeto
-              </Button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* COLUNA ESQUERDA - CONFIGURAÇÕES */}
-            <div className="lg:col-span-1 space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* COLUNA 1: INSPIRAÇÃO & CONFIGURAÇÕES */}
+            <div className="space-y-6">
+              {/* Card de Inspiração */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Configurações Básicas</CardTitle>
+                  <CardTitle className="text-lg">Inspiração & Sensações</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    <Label>Diário de Inspiração</Label>
+                    <Tabs defaultValue="text">
+                      <TabsList className="grid w-full grid-cols-3">
+                        <TabsTrigger value="text" className="text-xs">
+                          Texto
+                        </TabsTrigger>
+                        <TabsTrigger value="audio" className="text-xs">
+                          Áudio
+                        </TabsTrigger>
+                        <TabsTrigger value="link" className="text-xs">
+                          Link
+                        </TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="text" className="space-y-2">
+                        <Textarea
+                          placeholder="Adicione uma inspiração textual..."
+                          value={inspirationText}
+                          onChange={(e) => setInspirationText(e.target.value)}
+                          rows={3}
+                          className="text-sm"
+                        />
+                        <Button size="sm" onClick={addInspiration} className="w-full">
+                          Adicionar Inspiração
+                        </Button>
+                      </TabsContent>
+                    </Tabs>
+                  </div>
+
                   <div className="space-y-2">
-                    <Label htmlFor="title">Título da Música</Label>
+                    <Label>Sensações & Emoções</Label>
+                    <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
+                      {EMOTIONS.map((emotion) => (
+                        <Badge
+                          key={emotion}
+                          variant={selectedEmotions.includes(emotion) ? "default" : "outline"}
+                          className="cursor-pointer text-xs"
+                          onClick={() => toggleEmotion(emotion)}
+                        >
+                          {emotion}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Card de Configurações */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Configurações</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    <div className="space-y-2">
+                      <Label>Gênero Musical</Label>
+                      <Select value={genre} onValueChange={setGenre}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o gênero" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {GENRES.map((genreOption) => (
+                            <SelectItem key={genreOption} value={genreOption}>
+                              {genreOption}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Clima da Música</Label>
+                      <Select value={mood} onValueChange={setMood}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o clima" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {MOODS.map((moodOption) => (
+                            <SelectItem key={moodOption} value={moodOption}>
+                              {moodOption}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Tema Principal</Label>
+                      <Input
+                        placeholder="Ex: Amor, Saudade, Superação..."
+                        value={theme}
+                        onChange={(e) => setTheme(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 pt-4 border-t">
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <Label>Criatividade da IA</Label>
+                        <Badge variant="outline">
+                          {getCreativityLabel(creativity[0])}
+                        </Badge>
+                      </div>
+                      <Slider
+                        value={creativity}
+                        onValueChange={setCreativity}
+                        max={100}
+                        step={10}
+                      />
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="polish"
+                        checked={universalPolish}
+                        onCheckedChange={(checked) => setUniversalPolish(checked as boolean)}
+                      />
+                      <Label htmlFor="polish" className="text-sm">
+                        Aplicar polimento universal
+                      </Label>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* COLUNA 2 & 3: EDITOR PRINCIPAL */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Card do Editor */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">Editor de Letras</CardTitle>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" onClick={loadExample}>
+                        <Sparkles className="h-4 w-4 mr-1" />
+                        Exemplo
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={handleClear}>
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Limpar
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    <Label>Título da Música</Label>
                     <Input
-                      id="title"
-                      placeholder="Digite o título..."
+                      placeholder="Digite o título da música..."
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label>Gênero Musical</Label>
-                    <Select value={genre} onValueChange={setGenre}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o gênero" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {GENRES.map((genreOption) => (
-                          <SelectItem key={genreOption} value={genreOption}>
-                            {genreOption}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Subgênero/Ritmo</Label>
-                    <Input
-                      placeholder="Ex: Arrocha, Piseiro, etc..."
-                      value={subgenre}
-                      onChange={(e) => setSubgenre(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Tema Principal</Label>
-                    <Input
-                      placeholder="Ex: Amor, Saudade, Superação..."
-                      value={theme}
-                      onChange={(e) => setTheme(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Clima da Música</Label>
-                    <Select value={mood} onValueChange={setMood}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o clima" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {MOODS.map((moodOption) => (
-                          <SelectItem key={moodOption} value={moodOption}>
-                            {moodOption}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Configurações Avançadas</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Nível de Criatividade</Label>
-                    <div className="space-y-4">
-                      <Slider
-                        value={creativity}
-                        onValueChange={setCreativity}
-                        max={100}
-                        step={1}
-                        className="w-full"
-                      />
-                      <div className="text-sm text-muted-foreground text-center">
-                        {getCreativityLabel(creativity[0])}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Formatação</Label>
-                    <Select value={formattingStyle} onValueChange={(value: "padrao" | "performatico") => setFormattingStyle(value)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="performatico">Performática (Recomendado)</SelectItem>
-                        <SelectItem value="padrao">Padrão</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="polish"
-                      checked={universalPolish}
-                      onCheckedChange={(checked) => setUniversalPolish(checked as boolean)}
-                    />
-                    <Label htmlFor="polish">Aplicar polimento final</Label>
-                  </div>
-
-                  <Button 
-                    variant="outline" 
-                    className="w-full" 
-                    onClick={handleGenerateChorus}
-                  >
-                    <Wand2 className="w-4 h-4 mr-2" />
-                    Gerar Refrões
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Requisitos Adicionais</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Textarea
-                    placeholder="Instruções específicas, referências, elementos a incluir..."
-                    value={additionalReqs}
-                    onChange={(e) => setAdditionalReqs(e.target.value)}
-                    rows={6}
-                  />
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* COLUNA DIREITA - EDITOR */}
-            <div className="lg:col-span-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Editor de Letras</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
+                  <div className="space-y-3">
+                    <Label>Letra Original</Label>
                     <Textarea
-                      placeholder="Cole ou digite sua letra aqui..."
+                      placeholder="Cole aqui a letra que deseja editar..."
                       value={lyrics}
                       onChange={(e) => setLyrics(e.target.value)}
-                      rows={20}
+                      rows={16}
                       className="font-mono text-sm"
                     />
-                    
-                    <div className="flex justify-between">
-                      <div className="text-sm text-muted-foreground">
-                        {lyrics.length} caracteres • {lyrics.split('\n').length} linhas
-                      </div>
-                      
-                      <Button 
-                        onClick={handleEditLyrics} 
-                        disabled={isEditing || !lyrics.trim() || !genre}
-                        className="min-w-32"
-                      >
-                        {isEditing ? "Editando..." : "Editar Letra"}
-                      </Button>
-                    </div>
                   </div>
+
+                  <div className="space-y-3">
+                    <Label>Instruções de Edição (Opcional)</Label>
+                    <Textarea
+                      placeholder="Descreva as mudanças que deseja: rimas, estrutura, emoção..."
+                      value={additionalReqs}
+                      onChange={(e) => setAdditionalReqs(e.target.value)}
+                      rows={3}
+                    />
+                  </div>
+
+                  <div className="flex gap-3 pt-4">
+                    <Button 
+                      onClick={handleEditLyrics}
+                      disabled={isEditing || !lyrics.trim() || !genre}
+                      className="flex-1"
+                      size="lg"
+                    >
+                      <Wand2 className="h-4 w-4 mr-2" />
+                      {isEditing ? "Editando..." : "Editar Letra"}
+                    </Button>
+                    
+                    <Button variant="outline" onClick={handleCopy} disabled={!lyrics}>
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copiar
+                    </Button>
+                    
+                    <Button variant="outline" onClick={handleSave} disabled={!title || !lyrics}>
+                      <Save className="h-4 w-4 mr-2" />
+                      Salvar
+                    </Button>
+                  </div>
+
+                  {universalPolish && genre && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-700">
+                      <div className="font-semibold">🎯 Sistema Universal Ativo</div>
+                      <div>Polimento específico para {genre} será aplicado</div>
+                      <div className="text-xs mt-1">
+                        • Versos completos e coerentes<br/>
+                        • Rimas naturais e fluentes<br/>
+                        • Estrutura profissional A-B-A-B
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
           </div>
         </div>
       </main>
-
-      {/* ✅ CORREÇÃO: Remover dialog problemático temporariamente */}
-      {/* <Dialog open={showChorusDialog} onOpenChange={setShowChorusDialog}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
-          <DialogHeader>
-            <DialogTitle>Gerador de Refrões</DialogTitle>
-            <DialogDescription>
-              Gere e selecione refrões para sua música no estilo {genre}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="overflow-y-auto max-h-[60vh]">
-            <ChorusGenerator
-              genre={genre}
-              theme={theme}
-              onChorusesGenerated={handleSelectChoruses}
-            />
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowChorusDialog(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleApplyChoruses}>
-              Aplicar Refrões Selecionados
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog> */}
     </div>
   )
 }
