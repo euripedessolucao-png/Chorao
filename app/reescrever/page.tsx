@@ -1,4 +1,4 @@
-// app/reescrever/page.tsx - COM DEFAULT EXPORT CORRIGIDO
+// app/reescrever/page.tsx - SEM EXPORTS EXTRAS
 "use client"
 
 import { useState } from "react"
@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Music, Wand2, Download, Copy, AlertCircle } from "lucide-react"
 import { toast } from "sonner"
 
-// ✅ COMPONENTE PRINCIPAL COM DEFAULT EXPORT
+// ✅ APENAS DEFAULT EXPORT - SEM EXPORTS NOMEADOS EXTRAS
 export default function ReescreverPage() {
   const [originalLyrics, setOriginalLyrics] = useState("")
   const [rewrittenLyrics, setRewrittenLyrics] = useState("")
@@ -245,9 +245,4 @@ Minha vida era vazia sem você...`}
       </Card>
     </div>
   )
-}
-
-// ✅ COMPONENTES ADICIONAIS (se necessário) com export named
-export function AdditionalComponent() {
-  return null
 }
