@@ -55,10 +55,9 @@ ${context ? `Contexto: ${context}` : ""}
     )
 
     const { text } = await generateText({
-      model: getModel(), // Use the helper function
+      model: getModel(),
       prompt,
       temperature: 0.7,
-      maxTokens: 200,
     })
 
     console.log("[v0] Received text response:", text?.substring(0, 100))
