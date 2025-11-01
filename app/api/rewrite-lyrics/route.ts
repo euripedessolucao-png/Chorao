@@ -2,7 +2,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { openai } from "@ai-sdk/openai"
 import { generateText } from "ai"
-import { countPoeticSyllables } from '@/lib/validation/syllable-counter-brasileiro'
+import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro"
 
 // 🎵 TIPOS DE BLOCO MUSICAL
 interface MusicBlock {
@@ -12,9 +12,9 @@ interface MusicBlock {
 }
 
 // ✅ CONFIGURAÇÕES CORRIGIDAS DE SÍLABAS COM TIPOS
-type GenreKey = 
+type GenreKey =
   | "Sertanejo Moderno Masculino"
-  | "Sertanejo Moderno Feminino" 
+  | "Sertanejo Moderno Feminino"
   | "Sertanejo Universitário"
   | "Sertanejo Raiz"
   | "Pagode Romântico"
@@ -36,25 +36,25 @@ const GENRE_SYLLABLE_CONFIG: Record<GenreKey, SyllableConfig> = {
   "Pagode Romântico": { max: 12, ideal: 9, min: 7 },
   "Funk Carioca": { max: 10, ideal: 6, min: 3 },
   "Gospel Contemporâneo": { max: 12, ideal: 9, min: 7 },
-  "MPB": { max: 13, ideal: 10, min: 7 },
+  MPB: { max: 13, ideal: 10, min: 7 },
 }
 
 // ✅ FUNÇÃO SEGURA PARA OBTER CONFIGURAÇÃO
 function getSyllableConfig(genre: string): SyllableConfig {
-  const validGenre = Object.keys(GENRE_SYLLABLE_CONFIG).includes(genre) 
-    ? genre as GenreKey 
+  const validGenre = Object.keys(GENRE_SYLLABLE_CONFIG).includes(genre)
+    ? (genre as GenreKey)
     : "Sertanejo Moderno Masculino"
-  
+
   return GENRE_SYLLABLE_CONFIG[validGenre]
 }
 
 // ✅ CORREÇÃO: REMOVER ASPAS E VALIDAR SÍLABAS
 function removeQuotesAndClean(text: string): string {
   return text
-    .replace(/^"|"$/g, '') // Remove aspas no início e fim
-    .replace(/"\s*$/gm, '') // Remove aspas no final das linhas
-    .replace(/^\s*"/gm, '') // Remove aspas no início das linhas
-    .replace(/"/g, '') // Remove todas as aspas restantes
+    .replace(/^"|"$/g, "") // Remove aspas no início e fim
+    .replace(/"\s*$/gm, "") // Remove aspas no final das linhas
+    .replace(/^\s*"/gm, "") // Remove aspas no início das linhas
+    .replace(/"/g, "") // Remove todas as aspas restantes
     .trim()
 }
 
@@ -62,23 +62,24 @@ function removeQuotesAndClean(text: string): string {
 function validateAdvancedSyllables(line: string, maxSyllables: number): boolean {
   const syllables = countPoeticSyllables(line)
   const isValid = syllables <= maxSyllables
-  
+
   if (!isValid) {
     console.log(`[SyllableCheck] ❌ "${line}" - ${syllables} sílabas (máx: ${maxSyllables})`)
   } else {
     console.log(`[SyllableCheck] ✅ "${line}" - ${syllables} sílabas`)
   }
-  
+
   return isValid
 }
 
 // ✅ CONTADOR SIMPLIFICADO DE SÍLABAS (fallback)
 function countBasicSyllables(text: string): number {
-  const cleanText = text.toLowerCase()
+  const cleanText = text
+    .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z\s]/g, "")
-  
+
   const vowels = cleanText.match(/[aeiou]/gi)
   return vowels ? vowels.length : 0
 }
@@ -92,11 +93,11 @@ function validateSyllableCount(line: string, maxSyllables: number): boolean {
     // Fallback para contagem básica se o motor falhar
     const syllableCount = countBasicSyllables(line)
     const isValid = syllableCount <= maxSyllables
-    
+
     if (!isValid) {
       console.log(`[SyllableCheck] ❌ "${line}" - ${syllableCount} sílabas (fallback)`)
     }
-    
+
     return isValid
   }
 }
@@ -106,9 +107,8 @@ async function rewriteSectionWithQuality(
   originalSection: string,
   blockType: MusicBlock["type"],
   genre: string,
-  theme: string
+  theme: string,
 ): Promise<MusicBlock[]> {
-  
   const syllableConfig = getSyllableConfig(genre)
   const structure = "A-B-A-B"
 
@@ -202,12 +202,12 @@ Teu amor me completou
 Juntos vamos seguir
 O amor nos guiou
 
-LINHAS FINAIS SEM ASPAS:`
+LINHAS FINAIS SEM ASPAS:`,
   }
 
   try {
     const prompt = rewritePrompts[blockType as keyof typeof rewritePrompts]
-    
+
     const { text } = await generateText({
       model: openai("gpt-4o-mini"),
       prompt,
@@ -223,51 +223,57 @@ LINHAS FINAIS SEM ASPAS:`
 
 // ✅ PROCESSAMENTO COM VALIDAÇÃO AVANÇADA DE SÍLABAS
 function processRewrittenBlock(
-  text: string, 
+  text: string,
   blockType: MusicBlock["type"],
   genre: string,
-  maxSyllables: number
+  maxSyllables: number,
 ): MusicBlock[] {
-  
   // ✅ PRIMEIRO: Remover todas as aspas
   const cleanText = removeQuotesAndClean(text)
-  
-  const lines = cleanText.split("\n")
-    .map(line => line.trim())
-    .filter(line => {
-      return line && 
-             line.length >= 5 &&
-             !line.startsWith("EXEMPLO") &&
-             !line.startsWith("REGRAS") &&
-             !line.startsWith("LINHAS") &&
-             !line.includes("sílabas")
+
+  const lines = cleanText
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => {
+      return (
+        line &&
+        line.length >= 5 &&
+        !line.startsWith("EXEMPLO") &&
+        !line.startsWith("REGRAS") &&
+        !line.startsWith("LINHAS") &&
+        !line.includes("sílabas")
+      )
     })
     .slice(0, blockType === "OUTRO" ? 4 : 4)
 
   // ✅ VALIDAR SÍLABAS COM MOTOR AVANÇADO
-  const validLines = lines.filter(line => validateSyllableCount(line, maxSyllables))
-  
+  const validLines = lines.filter((line) => validateSyllableCount(line, maxSyllables))
+
   if (validLines.length >= (blockType === "OUTRO" ? 2 : 3)) {
     const content = validLines.join("\n")
-    
-    return [{
-      type: blockType,
-      content: content,
-      score: calculateBlockScore(content, maxSyllables),
-    }]
+
+    return [
+      {
+        type: blockType,
+        content: content,
+        score: calculateBlockScore(content, maxSyllables),
+      },
+    ]
   } else {
-    console.log(`[Validation] ❌ ${blockType} rejeitado - ${lines.length - validLines.length} linhas com sílabas excessivas`)
+    console.log(
+      `[Validation] ❌ ${blockType} rejeitado - ${lines.length - validLines.length} linhas com sílabas excessivas`,
+    )
     return [generateQualityFallback(blockType, "", maxSyllables)]
   }
 }
 
 // ✅ SCORE BASEADO NA CONFORMIDADE DAS SÍLABAS
 function calculateBlockScore(content: string, maxSyllables: number): number {
-  const lines = content.split("\n").filter(line => line.trim())
+  const lines = content.split("\n").filter((line) => line.trim())
   let score = 80 // Base alta para conteúdo validado
 
   // Bônus por todas as linhas dentro do limite
-  const allLinesValid = lines.every(line => validateSyllableCount(line, maxSyllables))
+  const allLinesValid = lines.every((line) => validateSyllableCount(line, maxSyllables))
   if (allLinesValid) score += 15
 
   // Bônus por estrutura completa
@@ -281,32 +287,32 @@ function generateQualityFallback(blockType: MusicBlock["type"], theme: string, m
   const fallbacks = {
     INTRO: {
       content: `Quando a noite chega suave\nTeu sorriso acende na mente\nNos braços do destino danço\nE nosso amor segue em frente`,
-      score: 85
+      score: 85,
     },
     VERSE: {
       content: `Nos teus olhos vejo esperança\nQue transforma minha lembrança\nTeu perfume é brisa calma\nQue aquece e acalma a alma`,
-      score: 85
+      score: 85,
     },
     CHORUS: {
       content: `Teu sorriso é meu abrigo\nTeu abraço é meu amigo\nNo compasso desse ritmo\nEncontro paz e seu mimo`,
-      score: 90
+      score: 90,
     },
     BRIDGE: {
       content: `Nos teus olhos vejo novo dia\nCada promessa traz harmonia\nEntre risos e novas histórias\nNosso amor conta vitórias`,
-      score: 85
+      score: 85,
     },
     OUTRO: {
       content: `Nos teus olhos me encontrei\nTeu amor me completou\nJuntos vamos seguir\nO amor nos guiou`,
-      score: 85
-    }
+      score: 85,
+    },
   }
 
   const fallback = fallbacks[blockType as keyof typeof fallbacks] || fallbacks.VERSE
-  
+
   // ✅ GARANTIR que o fallback está dentro do limite com motor avançado
   const lines = fallback.content.split("\n")
-  const validLines = lines.filter(line => validateSyllableCount(line, maxSyllables))
-  
+  const validLines = lines.filter((line) => validateSyllableCount(line, maxSyllables))
+
   if (validLines.length < lines.length) {
     console.log(`[Fallback] Ajustando ${blockType} para respeitar ${maxSyllables} sílabas`)
     // Se precisar, ajustar linhas problemáticas
@@ -321,9 +327,8 @@ function generateQualityFallback(blockType: MusicBlock["type"], theme: string, m
 async function assembleRewrittenSong(
   blocks: Record<string, MusicBlock[]>,
   genre: string,
-  theme: string
+  theme: string,
 ): Promise<{ lyrics: string; improvements: string[] }> {
-  
   const structure = [
     { type: "INTRO", label: "Intro" },
     { type: "VERSE", label: "Verso 1" },
@@ -341,9 +346,7 @@ async function assembleRewrittenSong(
   for (const section of structure) {
     const availableBlocks = blocks[section.type] || []
     if (availableBlocks.length > 0) {
-      const bestBlock = availableBlocks.reduce((best, current) => 
-        current.score > best.score ? current : best
-      )
+      const bestBlock = availableBlocks.reduce((best, current) => (current.score > best.score ? current : best))
       lyrics += `[${section.label}]\n${bestBlock.content}\n\n`
     } else {
       const syllableConfig = getSyllableConfig(genre)
@@ -365,15 +368,15 @@ async function assembleRewrittenSong(
 
   return {
     lyrics: lyrics.trim(),
-    improvements
+    improvements,
   }
 }
 
 // ✅ DETECTAR ESTRUTURA ORIGINAL
-function extractSectionsToRewrite(lyrics: string): Array<{type: MusicBlock["type"], content: string}> {
+function extractSectionsToRewrite(lyrics: string): Array<{ type: MusicBlock["type"]; content: string }> {
   const lines = lyrics.split("\n")
-  const result: Array<{type: MusicBlock["type"], content: string}> = []
-  let currentSection: {type: MusicBlock["type"], content: string} | null = null
+  const result: Array<{ type: MusicBlock["type"]; content: string }> = []
+  let currentSection: { type: MusicBlock["type"]; content: string } | null = null
 
   for (const line of lines) {
     if (line.startsWith("[Intro]")) {
@@ -398,9 +401,7 @@ function extractSectionsToRewrite(lyrics: string): Array<{type: MusicBlock["type
 
   if (currentSection) result.push(currentSection)
 
-  return result.length > 0 ? result : [
-    { type: "VERSE", content: lyrics }
-  ]
+  return result.length > 0 ? result : [{ type: "VERSE", content: lyrics }]
 }
 
 // 🚀 API PRINCIPAL
@@ -410,42 +411,47 @@ export async function POST(request: NextRequest) {
   let title = "Música Resscrita"
 
   try {
-    const { 
-      originalLyrics, 
-      genre: requestGenre, 
-      theme: requestTheme, 
-      title: requestTitle 
-    } = await request.json()
+    const body = await request.json()
+    console.log("[v0] Received request body:", JSON.stringify(body, null, 2))
+
+    const { originalLyrics, genre: requestGenre, theme: requestTheme, title: requestTitle } = body
 
     genre = requestGenre || "Sertanejo Moderno Masculino"
     theme = requestTheme || "Música"
     title = requestTitle || `${theme} - ${genre}`
 
+    console.log("[v0] Parsed parameters:", { genre, theme, title, hasLyrics: !!originalLyrics })
+
     if (!originalLyrics?.trim()) {
+      console.log("[v0] Error: No original lyrics provided")
       return NextResponse.json({ error: "Letra original é obrigatória" }, { status: 400 })
     }
 
     const syllableConfig = getSyllableConfig(genre)
-    
-    console.log(`[API] 🎵 Iniciando reescrita para: ${genre}`)
-    console.log(`[API] 📏 Configuração: ${syllableConfig.max} sílabas máximas`)
-    console.log(`[API] 🔧 Motor de sílabas: PoeticSyllableEngine`)
+
+    console.log(`[v0] Starting rewrite for genre: ${genre}`)
+    console.log(`[v0] Syllable config: max=${syllableConfig.max}, ideal=${syllableConfig.ideal}`)
+    console.log(`[v0] Using PoeticSyllableEngine`)
 
     // Analisar estrutura
     const originalSections = extractSectionsToRewrite(originalLyrics)
-    console.log(`[API] 📊 Seções encontradas:`, originalSections.map(s => s.type))
+    console.log(
+      `[v0] Found ${originalSections.length} sections:`,
+      originalSections.map((s) => s.type),
+    )
 
     const rewrittenBlocks: Record<string, MusicBlock[]> = {}
 
     // Reescrever cada seção
     const rewritePromises = originalSections.map(async (section) => {
       try {
+        console.log(`[v0] Rewriting section: ${section.type}`)
         const blocks = await rewriteSectionWithQuality(section.content, section.type, genre, theme)
         rewrittenBlocks[section.type] = blocks
         const score = blocks[0]?.score || 0
-        console.log(`[API] ✅ ${section.type} - Score: ${score}`)
+        console.log(`[v0] Section ${section.type} completed with score: ${score}`)
       } catch (error) {
-        console.error(`[API] ❌ Erro em ${section.type}:`, error)
+        console.error(`[v0] Error rewriting ${section.type}:`, error)
         const syllableConfig = getSyllableConfig(genre)
         rewrittenBlocks[section.type] = [generateQualityFallback(section.type, theme, syllableConfig.max)]
       }
@@ -453,17 +459,21 @@ export async function POST(request: NextRequest) {
 
     await Promise.all(rewritePromises)
 
+    console.log("[v0] All sections rewritten, assembling song...")
+
     // Montar música
     const assemblyResult = await assembleRewrittenSong(rewrittenBlocks, genre, theme)
     const finalLyrics = assemblyResult.lyrics
 
     const totalLines = finalLyrics.split("\n").filter((line) => line.trim()).length
-    console.log(`[API] 🎉 CONCLUÍDO: ${totalLines} linhas | Melhorias: ${assemblyResult.improvements.join(', ')}`)
+    console.log(`[v0] Rewrite completed: ${totalLines} lines, improvements: ${assemblyResult.improvements.join(", ")}`)
 
     return NextResponse.json({
       success: true,
       lyrics: finalLyrics,
+      letra: finalLyrics, // Adicionando campo 'letra' para compatibilidade
       title: title,
+      titulo: title, // Adicionando campo 'titulo' para compatibilidade
       metadata: {
         genre,
         theme,
@@ -471,12 +481,13 @@ export async function POST(request: NextRequest) {
         improvements: assemblyResult.improvements,
         syllableConfig: syllableConfig,
         method: "QUALIDADE_GARANTIDA",
-        syllableEngine: "PoeticSyllableEngine"
+        syllableEngine: "PoeticSyllableEngine",
+        polishingApplied: true, // Adicionando flag de polimento
       },
     })
-
   } catch (error) {
-    console.error("[API] ❌ Erro na reescrita:", error)
+    console.error("[v0] Critical error in rewrite:", error)
+    console.error("[v0] Error stack:", error instanceof Error ? error.stack : "No stack trace")
 
     // Fallback de emergência dentro do limite
     const emergencyLyrics = `[Intro]
@@ -509,7 +520,9 @@ O amor nos guiar
     return NextResponse.json({
       success: true,
       lyrics: emergencyLyrics,
+      letra: emergencyLyrics, // Adicionando campo 'letra' para compatibilidade
       title: title,
+      titulo: title, // Adicionando campo 'titulo' para compatibilidade
       metadata: {
         genre,
         theme: "amor",
@@ -517,15 +530,19 @@ O amor nos guiar
         improvements: ["Fallback de qualidade aplicado"],
         syllableConfig: syllableConfig,
         method: "FALLBACK_SEGURO",
-        syllableEngine: "PoeticSyllableEngine"
+        syllableEngine: "PoeticSyllableEngine",
+        polishingApplied: false, // Adicionando flag de polimento
       },
     })
   }
 }
 
 export async function GET() {
-  return NextResponse.json({ 
-    error: "Método não permitido",
-    message: "Use POST para reescrever letras"
-  }, { status: 405 })
+  return NextResponse.json(
+    {
+      error: "Método não permitido",
+      message: "Use POST para reescrever letras",
+    },
+    { status: 405 },
+  )
 }
