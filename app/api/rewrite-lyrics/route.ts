@@ -1,6 +1,5 @@
-// app/api/generate-chorus/route.ts - VERSÃO CORRIGIDA DEFINITIVA
+// app/api/generate-chorus/route.ts - VERSÃO CORRIGIDA COM AI GATEWAY
 import { type NextRequest, NextResponse } from "next/server"
-import { createOpenAI } from "@ai-sdk/openai"
 import { generateText } from "ai"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro"
@@ -11,17 +10,6 @@ interface ChorusVariation {
   style: string
   score: number
   justification: string
-}
-
-// ✅ CORREÇÃO CRÍTICA: MESMA getModel() DA REESCRITA
-function getModel() {
-  if (process.env.OPENAI_API_KEY) {
-    const openai = createOpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    })
-    return openai("gpt-4o-mini")
-  }
-  return "openai/gpt-4o-mini"
 }
 
 async function generateNaturalChorus(genre: string, theme: string, context?: string): Promise<string[]> {
@@ -52,7 +40,7 @@ ${context ? `Contexto: ${context}` : ""}
 
   try {
     const { text } = await generateText({
-      model: getModel(), // ✅ CORRIGIDO: usa getModel() igual à reescrita
+      model: "openai/gpt-4o-mini",
       prompt,
       temperature: 0.7,
     })
@@ -89,7 +77,7 @@ function processChorusResult(text: string, genre: string): string[] {
       )
     })
     .slice(0, 4)
-    .map((line) => capitalizeLines(line))
+    .map((line) => capitalizeLines(line)) // Capitalizando cada linha
 
   console.log(`[Chorus] Linhas geradas:`, lines)
 
@@ -101,6 +89,7 @@ function processChorusResult(text: string, genre: string): string[] {
   }
 }
 
+// ✅ VALIDAÇÃO DE COMPLETUDE (igual à que funcionou)
 function areChorusLinesComplete(lines: string[]): boolean {
   const incompletePatterns = [
     /\b(eu|me|te|se|nos|vos|o|a|os|as|um|uma|em|no|na|de|da|do|por|pra|que|se|mas|meu|minha|teu|tua)\s*$/i,
@@ -129,22 +118,12 @@ function generateChorusFallback(genre: string, theme: string): string[] {
   return randomFallback.split(" / ").map((line) => capitalizeLines(line))
 }
 
-// 🚀 API PRINCIPAL - COM CORREÇÃO DO MODEL
+// 🚀 API PRINCIPAL
 export async function POST(request: NextRequest) {
-  console.log("[Chorus] ========== INÍCIO GERAÇÃO 5 REFRÕES ==========")
-
   try {
-    const body = await request.json()
-    console.log("[Chorus] Body recebido:", JSON.stringify(body, null, 2))
-
-    const { genre, theme, mood, lyrics, advancedMode } = body
-
-    console.log("[Chorus] Gênero:", genre)
-    console.log("[Chorus] Tema:", theme)
-    console.log("[Chorus] Letra (primeiros 100 chars):", lyrics?.substring(0, 100))
+    const { genre, theme, mood, lyrics, advancedMode } = await request.json() // Recebendo lyrics
 
     if (!theme) {
-      console.log("[Chorus] ❌ ERRO: Tema é obrigatório")
       return NextResponse.json({ error: "Tema é obrigatório" }, { status: 400 })
     }
 
@@ -219,18 +198,16 @@ Retorne APENAS o JSON, sem markdown.`
       attempts++
 
       const { text } = await generateText({
-        model: getModel(), // ✅ CORREÇÃO CRÍTICA: getModel() igual à reescrita
+        model: "openai/gpt-4o-mini",
         prompt,
         temperature: 0.85,
       })
 
-      console.log("[Chorus] Resposta IA:", text?.substring(0, 200))
-
       try {
         const cleanText = text
-          ?.replace(/```json\n?/g, "")
-          ?.replace(/```\n?/g, "")
-          ?.trim() || ""
+          .replace(/```json\n?/g, "")
+          .replace(/```\n?/g, "")
+          .trim()
         parsedResult = JSON.parse(cleanText)
       } catch (parseError) {
         console.error("[Chorus] Erro ao parsear JSON:", parseError)
@@ -295,28 +272,11 @@ Retorne APENAS o JSON, sem markdown.`
 
     return NextResponse.json(safeResult)
   } catch (error) {
-    console.error("[Chorus] ❌ ERRO:", error)
-    
-    // ✅ FALLBACK GARANTIDO
-    const fallbackResult = {
-      variations: [
-        {
-          chorus: "Teu sorriso é meu porto seguro / Teu abraço é meu aquecimento / No ritmo desse amor tão puro / Encontro paz e sentimento",
-          style: "Romântico Intenso",
-          score: 9,
-          justification: "Refrão comercial com estrutura A-B-A-B perfeita e gancho emocional forte"
-        },
-        {
-          chorus: "Teu olhar é a luz do meu caminho / Teu carinho é o sol do meu dia / Em teus braços eu encontro sentido / Teu amor é a minha melodia",
-          style: "Sertanejo Poético", 
-          score: 8,
-          justification: "Metáforas poéticas que criam imagens fortes e conexão emocional"
-        }
-      ],
-      bestCommercialOptionIndex: 0
-    }
-    
-    return NextResponse.json(fallbackResult)
+    console.error("[Chorus] ❌ Erro:", error)
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Erro ao gerar refrão" },
+      { status: 500 },
+    )
   }
 }
 
