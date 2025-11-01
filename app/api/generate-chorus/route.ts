@@ -121,7 +121,7 @@ function generateChorusFallback(genre: string, theme: string): string[] {
 // 🚀 API PRINCIPAL
 export async function POST(request: NextRequest) {
   try {
-    const { genre, theme, mood, advancedMode } = await request.json()
+    const { genre, theme, mood, lyrics, advancedMode } = await request.json() // Recebendo lyrics
 
     if (!theme) {
       return NextResponse.json({ error: "Tema é obrigatório" }, { status: 400 })
@@ -134,6 +134,8 @@ export async function POST(request: NextRequest) {
     const prompt = `Você é um especialista em criar refrões comerciais para música brasileira.
 
 TAREFA: Crie 5 variações de refrão memoráveis sobre "${theme}".
+
+${lyrics ? `LETRA ORIGINAL PARA REFERÊNCIA:\n${lyrics}\n\nUSE A LETRA ACIMA COMO CONTEXTO E INSPIRAÇÃO. Mantenha o estilo, vocabulário e essência da letra original.\n` : ""}
 
 GÊNERO: ${genreText}
 ${mood ? `MOOD: ${mood}` : ""}
@@ -150,6 +152,7 @@ REGRAS DE REFRÃO DE HIT:
 - Fácil de cantar e repetir
 - 100% em PORTUGUÊS BRASILEIRO
 - Emocionalmente impactante
+${lyrics ? "- MANTENHA O ESTILO E VOCABULÁRIO DA LETRA ORIGINAL" : ""}
 
 ${
   advancedMode
@@ -181,10 +184,11 @@ IMPORTANTE:
 - Cada linha deve ter ${minSyllables}-${maxSyllables} sílabas
 - Crie exatamente 5 variações diferentes
 - Indique qual é a melhor opção comercial no bestCommercialOptionIndex
+${lyrics ? "- USE A LETRA ORIGINAL COMO REFERÊNCIA DE ESTILO E VOCABULÁRIO" : ""}
 
 Retorne APENAS o JSON, sem markdown.`
 
-    console.log(`[Chorus] Gerando 5 refrões para ${genreText} - ${theme}`)
+    console.log(`[Chorus] Gerando 5 refrões para ${genreText} - ${theme}${lyrics ? " (com letra de referência)" : ""}`)
 
     let attempts = 0
     let parsedResult: any = null

@@ -17,6 +17,7 @@ interface ChorusGeneratorProps {
   genre: string
   theme: string
   mood?: string
+  lyrics?: string // Adicionando prop para letra original
   onSelectChorus?: (choruses: ChorusVariation[]) => void
   showSelectionMode?: boolean
   maxSelection?: number
@@ -26,6 +27,7 @@ export function ChorusGenerator({
   genre,
   theme,
   mood = "",
+  lyrics = "", // Adicionando lyrics com valor padrão
   onSelectChorus,
   showSelectionMode = false,
   maxSelection = 2,
@@ -60,6 +62,7 @@ export function ChorusGenerator({
           genre,
           theme,
           mood,
+          lyrics, // Enviando letra original para a API
           advancedMode: true,
         }),
       })

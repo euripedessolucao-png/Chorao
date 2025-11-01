@@ -164,13 +164,18 @@ export default function ReescreverPage() {
       return
     }
 
-    const hookText = `[HOOK]\n${selectedHook}`
-    const updatedReqs = additionalReqs ? `${additionalReqs}\n\n${hookText}` : hookText
-
-    setAdditionalReqs(updatedReqs)
-    setShowHookDialog(false)
-
-    toast.success("Hook adicionado aos requisitos!")
+    if (lyrics.trim()) {
+      const hookText = `\n\n[HOOK]\n${selectedHook}\n`
+      setLyrics(lyrics + hookText)
+      setShowHookDialog(false)
+      toast.success("Hook inserido na letra!")
+    } else {
+      const hookText = `[HOOK SELECIONADO]\n${selectedHook}`
+      const updatedReqs = additionalReqs ? `${additionalReqs}\n\n${hookText}` : hookText
+      setAdditionalReqs(updatedReqs)
+      setShowHookDialog(false)
+      toast.success("Hook adicionado! Será usado na reescrita da letra.")
+    }
   }
 
   const handleClearLyrics = () => {
@@ -194,13 +199,23 @@ export default function ReescreverPage() {
       return
     }
 
-    const chorusText = selectedChoruses.map((c) => c.chorus.replace(/\s\/\s/g, "\n")).join("\n\n")
-    const updatedReqs = additionalReqs ? `${additionalReqs}\n\n[CHORUS]\n${chorusText}` : `[CHORUS]\n${chorusText}`
+    const chorusText = selectedChoruses
+      .map((c, idx) => {
+        const lines = c.chorus.replace(/\s\/\s/g, "\n")
+        return `[REFRÃO ${idx + 1}]\n${lines}`
+      })
+      .join("\n\n")
 
-    setAdditionalReqs(updatedReqs)
-    setShowChorusDialog(false)
-
-    toast.success("Refrão(ões) adicionado(s) aos requisitos!")
+    if (lyrics.trim()) {
+      setLyrics(lyrics + "\n\n" + chorusText + "\n")
+      setShowChorusDialog(false)
+      toast.success(`${selectedChoruses.length} refrão(ões) inserido(s) na letra!`)
+    } else {
+      const updatedReqs = additionalReqs ? `${additionalReqs}\n\n${chorusText}` : chorusText
+      setAdditionalReqs(updatedReqs)
+      setShowChorusDialog(false)
+      toast.success(`${selectedChoruses.length} refrão(ões) adicionado(s)! Serão usados na reescrita.`)
+    }
   }
 
   const currentSyllableConfig = genre ? getSyllableConfig(genre) : null
@@ -316,12 +331,15 @@ export default function ReescreverPage() {
               <div className="space-y-2">
                 <Label className="text-xs">Requisitos Adicionais</Label>
                 <Textarea
-                  placeholder="Mudanças específicas que você quer..."
+                  placeholder="Mudanças específicas, hooks ou refrões selecionados..."
                   value={additionalReqs}
                   onChange={(e) => setAdditionalReqs(e.target.value)}
-                  rows={2}
-                  className="text-xs"
+                  rows={4}
+                  className="text-xs font-mono"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Hooks e refrões selecionados aparecerão aqui e serão usados pela IA na reescrita.
+                </p>
               </div>
 
               <div className="flex items-start space-x-2">
@@ -533,7 +551,7 @@ export default function ReescreverPage() {
                   className="w-full bg-transparent justify-start"
                   size="sm"
                   onClick={() => setShowHookDialog(true)}
-                  disabled={isRewriting}
+                  disabled={isRewriting || !originalLyrics}
                 >
                   <Zap className="h-4 w-4 mr-2" />
                   Gerador de Hook
@@ -544,7 +562,7 @@ export default function ReescreverPage() {
                   className="w-full bg-transparent justify-start"
                   size="sm"
                   onClick={() => setShowChorusDialog(true)}
-                  disabled={!genre || !theme || isRewriting}
+                  disabled={!genre || !theme || isRewriting || !originalLyrics}
                 >
                   <Wand2 className="h-4 w-4 mr-2" />
                   Gerar Refrão
@@ -652,7 +670,7 @@ export default function ReescreverPage() {
                     variant="outline"
                     className="flex-1 bg-transparent"
                     onClick={handleClearLyrics}
-                    disabled={!lyrics && !title && !chords}
+                    disabled={!title && !lyrics && !chords}
                   >
                     <Trash2 className="h-3 w-3 mr-1" />
                     Limpar
@@ -708,6 +726,7 @@ export default function ReescreverPage() {
             genre={genre}
             theme={theme}
             mood={mood}
+            lyrics={originalLyrics} // Passando letra original para o gerador de refrão
             onSelectChorus={handleSelectChoruses}
             showSelectionMode={true}
             maxSelection={2}

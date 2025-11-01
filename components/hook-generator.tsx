@@ -133,7 +133,7 @@ export function HookGenerator({
           </CardTitle>
           <p className="text-sm text-muted-foreground">
             {initialLyrics
-              ? "Gerando automaticamente 3 hooks da letra..."
+              ? "Letra detectada! Clique no botão abaixo para gerar 3 hooks automaticamente"
               : "Analise sua letra e gere 3 variações de hooks comerciais com pontuação de viralidade"}
           </p>
         </CardHeader>
@@ -153,35 +153,30 @@ export function HookGenerator({
 
           {initialLyrics && (
             <div className="p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
-              <p className="text-sm text-green-800 dark:text-green-200">
-                ✓ Usando letra já colada ({lyrics.split("\n").filter((l) => l.trim()).length} linhas)
-                {genre && ` • Gênero: ${genre}`}
-                {theme && ` • Tema: ${theme}`} {/* ✅ MOSTRANDO TEMA SE EXISTIR */}
+              <p className="text-sm text-green-800 dark:text-green-200 font-medium">
+                ✓ Letra original detectada ({lyrics.split("\n").filter((l) => l.trim()).length} linhas)
               </p>
+              <div className="mt-2 text-xs text-green-700 dark:text-green-300">
+                {genre && `Gênero: ${genre}`}
+                {theme && ` • Tema: ${theme}`}
+              </div>
             </div>
           )}
 
-          {!initialLyrics && (
-            <Button onClick={generateHook} disabled={isGenerating || !lyrics.trim()} className="w-full">
+          {(initialLyrics || lyrics.trim()) && (
+            <Button onClick={generateHook} disabled={isGenerating} className="w-full">
               {isGenerating ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Analisando Gancho...
+                  Analisando e Gerando Hooks...
                 </>
               ) : (
                 <>
                   <Sparkles className="h-4 w-4 mr-2" />
-                  Gerar 3 Hooks & Ganchômetro
+                  {result ? "Gerar Novos Hooks" : "Gerar 3 Hooks & Ganchômetro"}
                 </>
               )}
             </Button>
-          )}
-
-          {initialLyrics && isGenerating && (
-            <div className="flex items-center justify-center p-4">
-              <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
-              <span className="text-sm">Gerando 3 hooks automaticamente...</span>
-            </div>
           )}
         </CardContent>
       </Card>
