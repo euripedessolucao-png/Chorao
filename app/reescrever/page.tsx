@@ -1,248 +1,807 @@
-// app/reescrever/page.tsx - SEM EXPORTS EXTRAS
 "use client"
 
 import { useState } from "react"
+import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { Music, Wand2, Download, Copy, AlertCircle } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Slider } from "@/components/ui/slider"
+import { RefreshCw, Save, Search, Loader2, Zap, Copy, Trash2, Wand2 } from "lucide-react"
 import { toast } from "sonner"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { EMOTIONS } from "@/lib/genres"
+import { GenreSelect } from "@/components/genre-select"
+import { HookGenerator } from "@/components/hook-generator"
+import { SyllableValidatorEditable } from "@/components/syllable-validator-editable"
+import { RhymeAnalyzer } from "@/components/rhyme-analyzer"
+import { validateSyllablesByGenre } from "@/lib/validation/absolute-syllable-enforcer"
+import { ChorusGenerator } from "@/components/chorus-generator"
+import { SubgenreSelect } from "@/components/subgenre-select"
 
-// ✅ APENAS DEFAULT EXPORT - SEM EXPORTS NOMEADOS EXTRAS
+// Interfaces
+export interface CorrectionResult {
+  original: string
+  corrected: string
+  syllablesBefore: number
+  syllablesAfter: number
+  method: "contraction" | "simplification" | "semantic" | "manual"
+}
+
+// Configurações por gênero
+const GENRE_QUALITY_CONFIG = {
+  Sertanejo: { max: 12, ideal: 10, rhymeQuality: 0.5 },
+  "Sertanejo Moderno": { max: 12, ideal: 10, rhymeQuality: 0.5 },
+  "Sertanejo Universitário": { max: 12, ideal: 10, rhymeQuality: 0.5 },
+  "Sertanejo Sofrência": { max: 12, ideal: 10, rhymeQuality: 0.5 },
+  "Sertanejo Raiz": { max: 12, ideal: 10, rhymeQuality: 0.5 },
+  MPB: { max: 12, ideal: 9, rhymeQuality: 0.6 },
+  "Bossa Nova": { max: 12, ideal: 9, rhymeQuality: 0.6 },
+  Funk: { max: 12, ideal: 8, rhymeQuality: 0.3 },
+  Pagode: { max: 12, ideal: 9, rhymeQuality: 0.4 },
+  Samba: { max: 12, ideal: 9, rhymeQuality: 0.4 },
+  Forró: { max: 12, ideal: 9, rhymeQuality: 0.4 },
+  Axé: { max: 12, ideal: 8, rhymeQuality: 0.3 },
+  Rock: { max: 12, ideal: 9, rhymeQuality: 0.4 },
+  Pop: { max: 12, ideal: 9, rhymeQuality: 0.4 },
+  Gospel: { max: 12, ideal: 9, rhymeQuality: 0.5 },
+  default: { max: 12, ideal: 9, rhymeQuality: 0.4 },
+} as const
+
+// Funções auxiliares para correção silábica
+function simplifyLineSemantically(line: string, maxSyllables: number): string {
+  const simplifications: [RegExp, string][] = [
+    [/\bsem\s+rumo\s+e\s+cansado\b/g, "coração cansado"],
+    [/\blembranças\s+de\s+dor\b/g, "marcas de dor"],
+    [/\bseu\s+brilho\s+encantado\b/g, "teu brilho raro"],
+    [/\bsilêncio\s+profundo\b/g, "silêncio mudo"],
+    [/\bsaudade\s+a\s+vagar\b/g, "saudade no ar"],
+    [/\bnão\s+podia\s+falar\b/g, "não disse ainda"],
+    [/\binstante\s+passageiro\b/g, "instante breve"],
+    [/\bdesespero\b/g, "sofrer"],
+  ]
+
+  let result = line
+  for (const [pattern, replacement] of simplifications) {
+    result = result.replace(pattern, replacement)
+    // Esta função precisa da countPoeticSyllables para funcionar corretamente
+    // Como não está disponível neste escopo, retornamos o resultado atual
+    break // Remover quando a validação silábica estiver implementada
+  }
+
+  return result
+}
+
+function applyFallbackCorrection(line: string, maxSyllables: number): string {
+  const words = line.split(/\s+/)
+  let result = line
+  
+  const removableWords = ["que", "um", "uma", "o", "a", "os", "as", "de", "da", "do", "em", "no", "na"]
+  
+  for (const word of removableWords) {
+    const testLine = result.replace(new RegExp(`\\s+${word}\\s+`, 'g'), ' ')
+    // Validação silábica seria necessária aqui
+    return testLine.trim()
+  }
+  
+  return result.trim()
+}
+
 export default function ReescreverPage() {
+  // Estados para os parâmetros de reescrita
   const [originalLyrics, setOriginalLyrics] = useState("")
-  const [rewrittenLyrics, setRewrittenLyrics] = useState("")
-  const [genre, setGenre] = useState("Sertanejo Moderno Masculino")
+  const [genre, setGenre] = useState("")
+  const [subgenre, setSubgenre] = useState("")
+  const [mood, setMood] = useState("")
   const [theme, setTheme] = useState("")
+  const [avoidWords, setAvoidWords] = useState("")
+  const [additionalReqs, setAdditionalReqs] = useState("")
+  const [useDiary, setUseDiary] = useState(true)
+  const [advancedMode, setAdvancedMode] = useState(false)
+  const [creativity, setCreativity] = useState([80])
+  const [inspirationText, setInspirationText] = useState("")
+  const [literaryGenre, setLiteraryGenre] = useState("")
+  const [literaryEmotion, setLiteraryEmotion] = useState("")
+  const [metaphorSearch, setMetaphorSearch] = useState("")
+  const [selectedEmotions, setSelectedEmotions] = useState<string[]>([])
+  
+  // Estados para o resultado
   const [title, setTitle] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
+  const [chords, setChords] = useState("")
+  const [lyrics, setLyrics] = useState("")
+  
+  // Estados de UI e controle
+  const [isRewriting, setIsRewriting] = useState(false)
+  const [showHookDialog, setShowHookDialog] = useState(false)
+  const [selectedHook, setSelectedHook] = useState<string | null>(null)
+  const [formattingStyle, setFormattingStyle] = useState("performatico")
+  const [universalPolish, setUniversalPolish] = useState(true)
+  const [showChorusDialog, setShowChorusDialog] = useState(false)
+  const [selectedChoruses, setSelectedChoruses] = useState<any[]>([])
 
-  const handleRewrite = async () => {
+  // Funções auxiliares
+  const getSyllableConfig = (selectedGenre: string) => {
+    const config = GENRE_QUALITY_CONFIG[selectedGenre as keyof typeof GENRE_QUALITY_CONFIG] || GENRE_QUALITY_CONFIG.default
+    return {
+      max: config.max,
+      ideal: config.ideal,
+    }
+  }
+
+  const toggleEmotion = (emotion: string) => {
+    setSelectedEmotions((prev) => 
+      prev.includes(emotion) ? prev.filter((e) => e !== emotion) : [...prev, emotion]
+    )
+  }
+
+  const getTemperatureValue = (sliderValue: number) => {
+    return (sliderValue / 100).toFixed(2)
+  }
+
+  const getTemperatureLabel = (temp: number) => {
+    if (temp < 0.5) return "Muito Conservador"
+    if (temp < 0.7) return "Conservador"
+    if (temp < 0.85) return "Equilibrado"
+    if (temp < 0.95) return "Criativo"
+    return "Muito Criativo"
+  }
+
+  // Handlers principais
+  const handleRewriteLyrics = async () => {
     if (!originalLyrics.trim()) {
-      toast.error("Por favor, cole a letra original")
+      toast.error("Por favor, cole a letra original para reescrever")
       return
     }
 
-    setIsLoading(true)
-    setRewrittenLyrics("")
+    if (!genre) {
+      toast.error("Por favor, selecione um gênero musical")
+      return
+    }
+
+    setIsRewriting(true)
 
     try {
+      const syllableValidation = validateSyllablesByGenre("", genre)
+      const syllableConfig = {
+        max: syllableValidation.maxSyllables,
+        ideal: syllableValidation.maxSyllables,
+      }
+
+      const fullRequirements = subgenre ? 
+        `${additionalReqs}\n\nRitmo/Subgênero: ${subgenre}` : 
+        additionalReqs
+
       const response = await fetch("/api/rewrite-lyrics", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           originalLyrics,
-          genre,
-          theme: theme || "amor",
-          title: title || `${theme || "Música"} - ${genre}`,
+          genre: genre,
+          mood: mood,
+          theme: theme,
+          additionalRequirements: fullRequirements,
+          title: title,
+          syllableTarget: syllableConfig,
+          performanceMode: formattingStyle === "performatico" ? "performance" : "standard",
+          temperature: Number.parseFloat(getTemperatureValue(creativity[0])),
         }),
       })
 
       const data = await response.json()
 
-      if (data.success) {
-        setRewrittenLyrics(data.lyrics)
-        toast.success("Letra reescrita com sucesso!")
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao reescrever letra")
+      }
+
+      setLyrics(data.letra || data.lyrics)
+      if (data.titulo && !title) {
+        setTitle(data.titulo)
+      }
+
+      if (data.metadata?.polishingApplied) {
+        toast.success("Letra reescrita com Sistema Universal de Qualidade!", {
+          description: `Polimento específico para ${genre} aplicado com sucesso`,
+        })
       } else {
-        toast.error(data.error || "Erro ao reescrever letra")
+        toast.success("Letra reescrita com sucesso!")
       }
     } catch (error) {
-      console.error("Erro:", error)
-      toast.error("Erro de conexão")
+      console.error("[v0] Error rewriting lyrics:", error)
+      toast.error(error instanceof Error ? error.message : "Erro ao reescrever letra")
     } finally {
-      setIsLoading(false)
+      setIsRewriting(false)
     }
   }
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(rewrittenLyrics)
-    toast.success("Letra copiada para a área de transferência!")
+  const handleSelectHook = (hook: string) => {
+    setSelectedHook(hook)
   }
 
-  const handleDownload = () => {
-    const element = document.createElement("a")
-    const file = new Blob([rewrittenLyrics], { type: "text/plain" })
-    element.href = URL.createObjectURL(file)
-    element.download = `letra-${title || "reescrita"}.txt`
-    document.body.appendChild(element)
-    element.click()
-    document.body.removeChild(element)
-    toast.success("Letra baixada com sucesso!")
+  const handleApplyHook = () => {
+    if (!selectedHook) {
+      toast.error("Selecione um hook")
+      return
+    }
+
+    if (lyrics.trim()) {
+      const hookText = `\n\n[HOOK]\n${selectedHook}\n`
+      setLyrics(lyrics + hookText)
+      setShowHookDialog(false)
+      toast.success("Hook inserido na letra!")
+    } else {
+      const hookText = `[HOOK SELECIONADO]\n${selectedHook}`
+      const updatedReqs = additionalReqs ? `${additionalReqs}\n\n${hookText}` : hookText
+      setAdditionalReqs(updatedReqs)
+      setShowHookDialog(false)
+      toast.success("Hook adicionado! Será usado na reescrita da letra.")
+    }
   }
+
+  const handleClearLyrics = () => {
+    if (window.confirm("Limpar letra? Esta ação irá limpar o título, letra e acordes. Esta ação não pode ser desfeita.")) {
+      setLyrics("")
+      setTitle("")
+      setChords("")
+      toast.success("Letra limpa com sucesso!")
+    }
+  }
+
+  const handleSelectChoruses = (choruses: any[]) => {
+    setSelectedChoruses(choruses)
+  }
+
+  const handleApplyChoruses = () => {
+    if (selectedChoruses.length === 0) {
+      toast.error("Selecione pelo menos um refrão")
+      return
+    }
+
+    const chorusText = selectedChoruses
+      .map((c, idx) => {
+        const lines = c.chorus.replace(/\s\/\s/g, "\n")
+        return `[REFRÃO ${idx + 1}]\n${lines}`
+      })
+      .join("\n\n")
+
+    if (lyrics.trim()) {
+      setLyrics(lyrics + "\n\n" + chorusText + "\n")
+      setShowChorusDialog(false)
+      toast.success(`${selectedChoruses.length} refrão(ões) inserido(s) na letra!`)
+    } else {
+      const updatedReqs = additionalReqs ? `${additionalReqs}\n\n${chorusText}` : chorusText
+      setAdditionalReqs(updatedReqs)
+      setShowChorusDialog(false)
+      toast.success(`${selectedChoruses.length} refrão(ões) adicionado(s)! Serão usados na reescrita.`)
+    }
+  }
+
+  const currentSyllableConfig = genre ? getSyllableConfig(genre) : null
 
   return (
-    <div className="container mx-auto p-6 max-w-6xl">
-      <div className="text-center mb-8">
-        <div className="flex items-center justify-center gap-3 mb-4">
-          <Music className="h-8 w-8 text-primary" />
-          <h1 className="text-3xl font-bold">Reescrever Letras</h1>
-        </div>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
-          Transforme suas letras com IA. Melhore a qualidade poética, métrica e estrutura mantendo a essência original.
-        </p>
-      </div>
+    <div className="bg-background">
+      <Navigation />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* COLUNA ESQUERDA - ENTRADA */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5" />
-              Letra Original
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="container mx-auto px-4 py-4 pt-20">
+        <h1 className="text-2xl font-bold text-left mb-4">Reescrever Letra</h1>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Coluna 1: Parâmetros de Reescrita */}
+          <Card className="order-1 h-fit">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Parâmetros de Reescrita</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Gênero Musical</label>
-                <select
-                  value={genre}
-                  onChange={(e) => setGenre(e.target.value)}
-                  className="w-full p-2 border rounded-md"
-                >
-                  <option value="Sertanejo Moderno Masculino">Sertanejo Moderno Masculino</option>
-                  <option value="Sertanejo Moderno Feminino">Sertanejo Moderno Feminino</option>
-                  <option value="Sertanejo Universitário">Sertanejo Universitário</option>
-                  <option value="Pagode Romântico">Pagode Romântico</option>
-                  <option value="Funk Carioca">Funk Carioca</option>
-                  <option value="MPB">MPB</option>
-                  <option value="Gospel Contemporâneo">Gospel Contemporâneo</option>
-                </select>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Tema Principal</label>
-                <Input
-                  placeholder="ex: amor, saudade, superação..."
-                  value={theme}
-                  onChange={(e) => setTheme(e.target.value)}
+                <Label className="text-xs">Letra Original</Label>
+                <Textarea
+                  placeholder="Cole aqui a letra que deseja reescrever..."
+                  value={originalLyrics}
+                  onChange={(e) => setOriginalLyrics(e.target.value)}
+                  rows={8}
+                  className="font-mono text-xs"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Cole a letra que você quer melhorar. A IA vai reescrevê-la mantendo a essência.
+                </p>
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Título (opcional)</label>
-              <Input
-                placeholder="Título da música..."
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Cole sua letra aqui</label>
-              <Textarea
-                placeholder={`[Intro]
-Eu estava só, caminhando na estrada...
-[Verso 1]
-Minha vida era vazia sem você...`}
-                value={originalLyrics}
-                onChange={(e) => setOriginalLyrics(e.target.value)}
-                rows={12}
-                className="resize-none font-mono text-sm"
-              />
-            </div>
-
-            <Button 
-              onClick={handleRewrite} 
-              disabled={isLoading || !originalLyrics.trim()}
-              className="w-full"
-            >
-              {isLoading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Reescrevendo...
-                </>
-              ) : (
-                <>
-                  <Wand2 className="h-4 w-4 mr-2" />
-                  Reescrever Letra
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* COLUNA DIREITA - RESULTADO */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Music className="h-5 w-5" />
-                Letra Reescrita
-              </div>
-              {rewrittenLyrics && (
-                <Badge variant="secondary" className="bg-green-100 text-green-800">
-                  Pronto
-                </Badge>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {rewrittenLyrics ? (
-              <>
-                <div className="relative">
-                  <Textarea
-                    value={rewrittenLyrics}
-                    readOnly
-                    rows={16}
-                    className="resize-none font-mono text-sm bg-muted/50"
+              <div className="space-y-3 border rounded-lg p-3 bg-blue-50/30">
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">1. Gênero Musical</Label>
+                  <GenreSelect
+                    value={genre}
+                    onValueChange={(value) => {
+                      setGenre(value)
+                      setSubgenre("")
+                    }}
+                    className="h-9"
                   />
                 </div>
-                
-                <div className="flex gap-2">
-                  <Button onClick={handleCopy} variant="outline" className="flex-1">
-                    <Copy className="h-4 w-4 mr-2" />
-                    Copiar
-                  </Button>
-                  <Button onClick={handleDownload} className="flex-1">
-                    <Download className="h-4 w-4 mr-2" />
-                    Baixar
-                  </Button>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">2. Ritmo/Subgênero</Label>
+                  <SubgenreSelect genre={genre} value={subgenre} onValueChange={setSubgenre} />
+                  {!genre && (
+                    <p className="text-xs text-muted-foreground italic">Selecione um gênero primeiro</p>
+                  )}
+                  {genre && subgenre && (
+                    <div className="bg-green-50 border border-green-200 rounded p-2 text-xs text-green-700">
+                      <div className="font-semibold">Ritmo selecionado: {subgenre}</div>
+                    </div>
+                  )}
                 </div>
 
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-                  <p className="text-sm text-blue-800">
-                    💡 <strong>Dica:</strong> A letra foi otimizada com correção automática de sílabas, 
-                    rimas naturais e estrutura poética melhorada.
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">3. Tema</Label>
+                  <Input
+                    placeholder="Amor, Perda, Jornada, etc."
+                    value={theme}
+                    onChange={(e) => setTheme(e.target.value)}
+                    className="h-9"
+                  />
+                </div>
+              </div>
+
+              {currentSyllableConfig && (
+                <div className="bg-blue-50 border border-blue-200 rounded p-2 text-xs">
+                  <div className="font-semibold text-blue-800">Configuração {genre}:</div>
+                  <div className="text-blue-700">
+                    Máximo: {currentSyllableConfig.max} sílabas (ideal: {currentSyllableConfig.ideal})
+                  </div>
+                  <div className="text-blue-700">
+                    Rimas: {GENRE_QUALITY_CONFIG[genre as keyof typeof GENRE_QUALITY_CONFIG]?.rhymeQuality * 100 || 40}%
+                    mínimas
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label className="text-xs">Humor</Label>
+                <Input
+                  placeholder="Ex: Feliz, Triste, Nostálgico..."
+                  value={mood}
+                  onChange={(e) => setMood(e.target.value)}
+                  className="h-9"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Evitar palavras (separe por vírgula)</Label>
+                <Input
+                  placeholder="Ex: coraçãozinho, saudadezinha"
+                  value={avoidWords}
+                  onChange={(e) => setAvoidWords(e.target.value)}
+                  className="h-9"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Requisitos Adicionais</Label>
+                <Textarea
+                  placeholder="Mudanças específicas, hooks ou refrões selecionados..."
+                  value={additionalReqs}
+                  onChange={(e) => setAdditionalReqs(e.target.value)}
+                  rows={4}
+                  className="text-xs font-mono"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Hooks e refrões selecionados aparecerão aqui e serão usados pela IA na reescrita.
+                </p>
+              </div>
+
+              <div className="flex items-start space-x-2">
+                <Checkbox
+                  id="useDiary"
+                  checked={useDiary}
+                  onCheckedChange={(checked) => setUseDiary(checked as boolean)}
+                />
+                <div>
+                  <Label htmlFor="useDiary" className="text-xs cursor-pointer">
+                    Usar inspirações do Diário
+                  </Label>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-2">
+                <Checkbox
+                  id="advancedMode"
+                  checked={advancedMode}
+                  onCheckedChange={(checked) => setAdvancedMode(checked as boolean)}
+                />
+                <div>
+                  <Label htmlFor="advancedMode" className="text-xs cursor-pointer font-semibold">
+                    Modo Avançado
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Rimas perfeitas, métrica rigorosa, ganchos premium em PT-BR, linguagem limpa e fidelidade de estilo.
                   </p>
                 </div>
-              </>
-            ) : (
-              <div className="text-center py-12 text-muted-foreground">
-                <Music className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Letra reescrita aparecerá aqui</p>
-                <p className="text-sm mt-2">Cole uma letra e clique em "Reescrever Letra"</p>
               </div>
-            )}
-          </CardContent>
-        </Card>
+
+              <div className="flex items-start space-x-2">
+                <Checkbox
+                  id="universalPolish"
+                  checked={universalPolish}
+                  onCheckedChange={(checked) => setUniversalPolish(checked as boolean)}
+                />
+                <div>
+                  <Label htmlFor="universalPolish" className="text-xs cursor-pointer font-semibold text-green-600">
+                    Sistema Universal de Polimento
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Aplica polimento específico por gênero, correção automática de rimas e instrumentos em inglês.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3 border rounded-lg p-3">
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center mb-2">
+                    <Label className="text-xs font-semibold">Temperatura da IA</Label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-mono font-bold text-primary">
+                        {getTemperatureValue(creativity[0])}
+                      </span>
+                      <Badge variant="outline" className="text-xs">
+                        {getTemperatureLabel(Number.parseFloat(getTemperatureValue(creativity[0])))}
+                      </Badge>
+                    </div>
+                  </div>
+                  <Slider
+                    value={creativity}
+                    onValueChange={setCreativity}
+                    min={50}
+                    max={100}
+                    step={1}
+                    className="cursor-pointer"
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>0.50</span>
+                    <span>0.70</span>
+                    <span className="font-semibold text-primary">0.80 (padrão)</span>
+                    <span>1.00</span>
+                  </div>
+                  <div className="bg-amber-50 border border-amber-200 rounded p-2 text-xs text-amber-800">
+                    <div className="font-semibold flex items-center gap-1">⚠️ Controle Sensível</div>
+                    <div className="mt-1">
+                      {Number.parseFloat(getTemperatureValue(creativity[0])) < 0.7 &&
+                        "Reescrita conservadora mantendo estrutura original. Mudanças mínimas."}
+                      {Number.parseFloat(getTemperatureValue(creativity[0])) >= 0.7 &&
+                        Number.parseFloat(getTemperatureValue(creativity[0])) < 0.85 &&
+                        "Equilíbrio entre preservação e inovação. Recomendado para reescritas."}
+                      {Number.parseFloat(getTemperatureValue(creativity[0])) >= 0.85 &&
+                        Number.parseFloat(getTemperatureValue(creativity[0])) < 0.95 &&
+                        "Reescrita criativa com mudanças significativas mantendo essência."}
+                      {Number.parseFloat(getTemperatureValue(creativity[0])) >= 0.95 &&
+                        "Reescrita experimental com máxima liberdade criativa."}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs">Estilo de Formatação</Label>
+                  <Select value={formattingStyle} onValueChange={setFormattingStyle}>
+                    <SelectTrigger className="h-8">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="padrao">Padrão</SelectItem>
+                      <SelectItem value="performatico">Performático</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Coluna 2: Inspiração & Sensações */}
+          <Card className="order-2 h-fit">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Inspiração & Sensações</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              <div className="border rounded-lg p-3 bg-purple-50/50 space-y-2">
+                <Label className="text-xs font-semibold">Diário de Inspiração</Label>
+                <Tabs defaultValue="text">
+                  <TabsList className="grid w-full grid-cols-4 h-8">
+                    <TabsTrigger value="text" className="text-xs">
+                      Texto
+                    </TabsTrigger>
+                    <TabsTrigger value="image" className="text-xs">
+                      Imagem
+                    </TabsTrigger>
+                    <TabsTrigger value="audio" className="text-xs">
+                      Áudio
+                    </TabsTrigger>
+                    <TabsTrigger value="link" className="text-xs">
+                      Link
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="text" className="space-y-2">
+                    <Textarea
+                      placeholder="Adicione uma inspiração textual..."
+                      value={inspirationText}
+                      onChange={(e) => setInspirationText(e.target.value)}
+                      rows={3}
+                      className="text-xs"
+                    />
+                    <Button size="sm" variant="secondary" className="w-full">
+                      Adicionar Inspiração
+                    </Button>
+                  </TabsContent>
+                </Tabs>
+              </div>
+
+              <div className="border rounded-lg p-3 bg-purple-50/50 space-y-2">
+                <Label className="text-xs font-semibold">Inspiração Literária Global</Label>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Gênero musical"
+                    value={literaryGenre}
+                    onChange={(e) => setLiteraryGenre(e.target.value)}
+                    className="h-8 text-xs"
+                  />
+                  <Input
+                    placeholder="Emoção (opcional)"
+                    value={literaryEmotion}
+                    onChange={(e) => setLiteraryEmotion(e.target.value)}
+                    className="h-8 text-xs"
+                  />
+                  <Button size="sm" className="h-8">
+                    Buscar
+                  </Button>
+                </div>
+              </div>
+
+              <div className="border rounded-lg p-3 bg-purple-50/50 space-y-2">
+                <Label className="text-xs font-semibold">Metáforas Inteligentes</Label>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Buscar metáfora por tema..."
+                    value={metaphorSearch}
+                    onChange={(e) => setMetaphorSearch(e.target.value)}
+                    className="h-8 text-xs"
+                  />
+                  <Button size="sm" variant="secondary" className="h-8">
+                    <Search className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="border rounded-lg p-3 bg-purple-50/50 space-y-2">
+                <Label className="text-xs font-semibold">Sensações & Emoções</Label>
+                <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
+                  {EMOTIONS.map((emotion) => (
+                    <Badge
+                      key={emotion}
+                      variant={selectedEmotions.includes(emotion) ? "default" : "outline"}
+                      className="cursor-pointer text-xs"
+                      onClick={() => toggleEmotion(emotion)}
+                    >
+                      {emotion}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Coluna 3: Ferramentas e Resultado */}
+          <div className="order-3 space-y-4">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Ferramentas</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Button
+                  variant="outline"
+                  className="w-full bg-transparent justify-start"
+                  size="sm"
+                  onClick={() => setShowHookDialog(true)}
+                  disabled={isRewriting || !originalLyrics}
+                >
+                  <Zap className="h-4 w-4 mr-2" />
+                  Gerador de Hook
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="w-full bg-transparent justify-start"
+                  size="sm"
+                  onClick={() => setShowChorusDialog(true)}
+                  disabled={!genre || !theme || isRewriting || !originalLyrics}
+                >
+                  <Wand2 className="h-4 w-4 mr-2" />
+                  Gerar Refrão
+                </Button>
+
+                <Button
+                  className="w-full justify-start"
+                  size="sm"
+                  onClick={handleRewriteLyrics}
+                  disabled={isRewriting || !originalLyrics || !genre}
+                >
+                  {isRewriting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Reescrevendo...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      {universalPolish ? "Reescrever com Polimento Universal" : "Reescrever Letra"}
+                    </>
+                  )}
+                </Button>
+
+                {universalPolish && genre && (
+                  <div className="bg-green-50 border border-green-200 rounded p-2 text-xs text-green-700">
+                    <div className="font-semibold">Sistema Universal Ativo</div>
+                    <div>Polimento específico para {genre} habilitado</div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Resultado</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                <Input
+                  placeholder="Título da música..."
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="h-9"
+                />
+
+                <div className="space-y-2">
+                  <Label className="text-xs">Acordes</Label>
+                  <Textarea
+                    placeholder="Os acordes gerados aparecerão aqui..."
+                    value={chords}
+                    onChange={(e) => setChords(e.target.value)}
+                    rows={3}
+                    className="font-mono text-xs"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs">Letra Reescrita</Label>
+                  <Textarea
+                    placeholder="Sua letra reescrita aparecerá aqui..."
+                    value={lyrics}
+                    onChange={(e) => setLyrics(e.target.value)}
+                    rows={12}
+                    className="font-mono text-xs"
+                  />
+
+                  <SyllableValidatorEditable
+                    lyrics={lyrics}
+                    onLyricsChange={setLyrics}
+                    maxSyllables={currentSyllableConfig?.max || 12}
+                    genre={genre}
+                  />
+
+                  <RhymeAnalyzer
+                    lyrics={lyrics}
+                    genre={genre}
+                    onAnalysis={(report) => {
+                      if (report.overallScore < 60) {
+                        toast.warning(`Rimas precisam de melhoria (Score: ${report.overallScore})`)
+                      }
+                    }}
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 bg-transparent"
+                    onClick={() => {
+                      if (!lyrics.trim()) {
+                        toast.error("Nada para copiar")
+                        return
+                      }
+                      navigator.clipboard.writeText(lyrics)
+                      toast.success("Letra copiada!")
+                    }}
+                    disabled={!lyrics}
+                  >
+                    <Copy className="h-3 w-3 mr-1" />
+                    Copiar
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 bg-transparent"
+                    onClick={handleClearLyrics}
+                    disabled={!title && !lyrics && !chords}
+                  >
+                    <Trash2 className="h-3 w-3 mr-1" />
+                    Limpar
+                  </Button>
+                  <Button size="sm" className="flex-1" disabled={!title || !lyrics}>
+                    <Save className="h-3 w-3 mr-1" />
+                    Salvar
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
 
-      {/* INFORMACOES ADICIONAIS */}
-      <Card className="mt-6">
-        <CardContent className="p-6">
-          <h3 className="font-semibold mb-3">🎵 Como funciona:</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-            <div className="space-y-2">
-              <Badge variant="outline" className="bg-purple-100">1. Análise</Badge>
-              <p>O sistema analisa a estrutura e métrica da letra original</p>
-            </div>
-            <div className="space-y-2">
-              <Badge variant="outline" className="bg-blue-100">2. Reescrever</Badge>
-              <p>IA especializada reescreve mantendo a essência mas melhorando a qualidade</p>
-            </div>
-            <div className="space-y-2">
-              <Badge variant="outline" className="bg-green-100">3. Corrigir</Badge>
-              <p>Correção automática de sílabas para garantir a métrica perfeita</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Dialog para Hook Generator */}
+      <Dialog open={showHookDialog} onOpenChange={setShowHookDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Gerador de Hook & Ganchômetro</DialogTitle>
+            <DialogDescription>
+              {originalLyrics
+                ? "Analise a letra original e escolha o melhor hook entre 3 variações"
+                : "Cole uma letra para gerar hooks comerciais"}
+            </DialogDescription>
+          </DialogHeader>
+          <HookGenerator
+            onSelectHook={handleSelectHook}
+            showSelectionMode={true}
+            initialLyrics={originalLyrics}
+            initialGenre={genre}
+            initialTheme={theme}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowHookDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleApplyHook} disabled={!selectedHook}>
+              Adicionar Hook à Letra
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para Chorus Generator */}
+      <Dialog open={showChorusDialog} onOpenChange={setShowChorusDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Gerador de Refrão</DialogTitle>
+            <DialogDescription>
+              A IA gerará automaticamente 5 refrões com notas. Selecione até 2 para adicionar aos requisitos.
+            </DialogDescription>
+          </DialogHeader>
+          <ChorusGenerator
+            genre={genre}
+            theme={theme}
+            mood={mood}
+            lyrics={originalLyrics}
+            onSelectChorus={handleSelectChoruses}
+            showSelectionMode={true}
+            maxSelection={2}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowChorusDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleApplyChoruses} disabled={selectedChoruses.length === 0}>
+              Adicionar aos Requisitos ({selectedChoruses.length})
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
