@@ -12,7 +12,8 @@ import { formatInstrumentationForAI } from "@/lib/normalized-genre"
 import { LineStacker } from "@/lib/utils/line-stacker"
 import { enhanceLyricsRhymes } from "@/lib/validation/rhyme-enhancer"
 import { validateRhymesForGenre } from "@/lib/validation/rhyme-validator"
-import { GENRE_CONFIGS } from "@/lib/genre-config"
+import { GENRE_CONFIGS, getSyllableLimitsForGenre } from "@/lib/genre-config"
+import { cleanLyricsFromAI } from "@/lib/utils/remove-quotes-and-clean"
 
 function getMaxSyllables(genre: string): number {
   const genreConfig = (GENRE_CONFIGS as any)[genre]
@@ -144,7 +145,10 @@ export async function POST(request: NextRequest) {
 
     console.log(`[API] 🎵 Criando letra para: ${genre} | Tema: ${theme}`)
 
-    const maxSyllables = getMaxSyllables(genre)
+    const syllableLimits = getSyllableLimitsForGenre(genre)
+    const maxSyllables = syllableLimits.max
+    const idealSyllables = syllableLimits.ideal
+
     const rhymeRules = getUniversalRhymeRules(genre)
     const genreRules = buildGenreRulesPrompt(genre)
 
@@ -157,22 +161,23 @@ ${additionalRequirements}
 
     const prompt = `COMPOSITOR PROFISSIONAL BRASILEIRO - ${genre.toUpperCase()}
 
-🎯 OBJETIVO PRINCIPAL: Criar VERSOS COMPLETOS e COERENTES
+🎯 ESTRATÉGIA: VERSOS COMPLETOS PRIMEIRO, RIMAS DEPOIS
 
 📝 REGRA DE OURO: 
 CADA VERSO = FRASE COMPLETA (sujeito + verbo + complemento)
+NUNCA use aspas nas linhas
 
-✅ EXEMPLOS DE VERSOS COMPLETOS:
-"Hoje eu venho aqui de coração aberto" 
-"Com gratidão transbordando em meu peito"
-"Teu amor me renova a cada amanhecer"
-"A vida é uma bênção que eu agradeço"
-"Nos braços de Deus encontro meu abrigo"
+✅ EXEMPLOS DE VERSOS COMPLETOS (SEM ASPAS):
+Hoje eu venho aqui de coração aberto
+Com gratidão transbordando em meu peito
+Teu amor me renova a cada amanhecer
+A vida é uma bênção que eu agradeço
+Nos braços de Deus encontro meu abrigo
 
-🚫 EVITAR VERSOS INCOMPLETOS:
-"Coração aberto" ❌ (incompleto)
-"De gratidão" ❌ (incompleto) 
-"Renovando a cada" ❌ (incompleto)
+🚫 NUNCA FAÇA ISSO:
+"Coração aberto" ❌ (incompleto + aspas)
+"De gratidão" ❌ (incompleto + aspas)
+"Renovando a cada" ❌ (incompleto + aspas)
 
 TEMA: ${theme}
 HUMOR: ${mood || "Adaptado ao tema"}
@@ -180,16 +185,18 @@ GÊNERO: ${genre}
 
 ${additionalReqsSection}
 
-📏 TÉCNICA MUSICAL BRASILEIRA:
-- Máximo ${maxSyllables} sílabas por verso
-- ${rhymeRules.requirePerfectRhymes ? "Rimas perfeitas" : "Rimas naturais"}
+📏 MÉTRICA MUSICAL:
+- Ideal: ${idealSyllables} sílabas por verso
+- Máximo ABSOLUTO: ${maxSyllables} sílabas (NUNCA ultrapassar)
+- Mínimo: ${syllableLimits.min} sílabas
+- ${rhymeRules.requirePerfectRhymes ? "Rimas perfeitas quando possível" : "Rimas naturais (bônus, não obrigação)"}
 - Linguagem apropriada para ${genre}
 - Versos autocontidos e completos
-- Emoção genuína e autenticidade
+- NUNCA use aspas nas linhas
 
 ${genreRules.fullPrompt}
 
-🎵 ESTRUTURA SUGERIDA:
+🎵 ESTRUTURA:
 ${
   performanceMode === "performance"
     ? `### [INTRO] (4 linhas)
@@ -212,14 +219,16 @@ ${
 ### [Outro] (4 linhas)`
 }
 
-💡 DICA CRÍTICA: 
-Pense em CADA VERSO como uma mini-história completa
-Se ficar muito longo, REESCREVA completamente mantendo a mensagem
-Mantenha a naturalidade da língua portuguesa brasileira
+💡 PRIORIDADES (EM ORDEM):
+1. VERSOS COMPLETOS (mais importante)
+2. Dentro do limite de ${maxSyllables} sílabas
+3. Rimas naturais (bônus)
 
-Gere a letra com VERSOS COMPLETOS e EMOCIONALMENTE IMPACTANTES:`
+IMPORTANTE: Retorne APENAS as linhas da letra, SEM aspas, SEM explicações.
 
-    console.log(`[API] 🎵 Gerando com limite máximo de ${maxSyllables} sílabas...`)
+Gere a letra agora:`
+
+    console.log(`[API] 🎵 Gerando com ideal ${idealSyllables} e máximo ${maxSyllables} sílabas...`)
 
     const { text } = await generateText({
       model: "openai/gpt-4o-mini",
@@ -227,7 +236,8 @@ Gere a letra com VERSOS COMPLETOS e EMOCIONALMENTE IMPACTANTES:`
       temperature: 0.85,
     })
 
-    let finalLyrics = capitalizeLines(text)
+    let finalLyrics = cleanLyricsFromAI(text)
+    finalLyrics = capitalizeLines(finalLyrics)
 
     console.log("[API] 🔧 Aplicando correção super-efetiva de versos incompletos...")
     finalLyrics = superFixIncompleteLines(finalLyrics)
@@ -291,9 +301,9 @@ Gere a letra com VERSOS COMPLETOS e EMOCIONALMENTE IMPACTANTES:`
         genre,
         performanceMode,
         maxSyllables,
+        idealSyllables,
         totalLines,
-        syllableCorrections: 0, // Agora feito pelo intelligent-rewriter
-        quality: "PROCESSED",
+        quality: "COMPLETE_VERSES_FIRST",
       },
     })
   } catch (error) {

@@ -284,4 +284,3 @@ function validateEmotion(lyrics: string, theme?: string): LayerResult {
     issues: passed ? [] : [details],
   }
 }
-

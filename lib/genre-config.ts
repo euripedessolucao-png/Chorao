@@ -1053,17 +1053,16 @@ export function getSyllableLimitsForGenre(genre: string) {
   const config = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS]
 
   if (!config) {
-    // Fallback seguro
-    return { min: 5, max: 12, ideal: 9 }
+    return { min: 4, max: 12, ideal: 10 }
   }
 
   const rules = config.prosody_rules.syllable_count
 
   if ("absolute_max" in rules) {
     return {
-      min: Math.max(4, rules.absolute_max - 5),
+      min: 4,
       max: rules.absolute_max,
-      ideal: Math.min(11, Math.floor((Math.max(4, rules.absolute_max - 5) + rules.absolute_max) / 2)),
+      ideal: Math.min(10, rules.absolute_max - 2), // ideal is 2 less than max
     }
   }
 
@@ -1071,10 +1070,9 @@ export function getSyllableLimitsForGenre(genre: string) {
     return {
       min: rules.without_comma.min,
       max: rules.without_comma.acceptable_up_to,
-      ideal: Math.floor((rules.without_comma.min + rules.without_comma.max) / 2),
+      ideal: Math.min(rules.without_comma.max, rules.without_comma.acceptable_up_to - 2),
     }
   }
 
-  // Fallback para regras com vírgula
-  return { min: 5, max: 12, ideal: 9 }
+  return { min: 4, max: 12, ideal: 10 }
 }
