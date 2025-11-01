@@ -839,7 +839,6 @@ export default function CriarPage() {
             onSelectChorus={handleSelectChoruses}
             showSelectionMode={true}
             maxSelection={1}
-            autoSelectBest={true}
           />
 
           <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
