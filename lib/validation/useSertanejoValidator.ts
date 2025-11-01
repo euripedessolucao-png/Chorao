@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react"
 import { validateSertanejoLyrics } from "./validateLyrics"
-import { validateChorusBatch } from "./validateChorus"
+import { validateChorusBatch, type ChorusOption as ValidateChorusOption } from "./validateChorus"
 import { parseLyricSections, parseChorusOptions } from "./parser"
 
 export function useSertanejoValidator() {
@@ -15,7 +15,7 @@ export function useSertanejoValidator() {
 
   const validateChoruses = useCallback((rawChoruses: string) => {
     const chorusOptions = parseChorusOptions(rawChoruses)
-    return validateChorusBatch(chorusOptions)
+    return validateChorusBatch(chorusOptions as ValidateChorusOption[])
   }, [])
 
   return {
