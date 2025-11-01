@@ -2,14 +2,17 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
+import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro"
 
 // 🎵 TIPOS
-interface ChorusBlock {
-  content: string
+interface ChorusVariation {
+  chorus: string
+  style: string
   score: number
+  justification: string
 }
 
-async function generateNaturalChorus(genre: string, theme: string, context?: string): Promise<ChorusBlock[]> {
+async function generateNaturalChorus(genre: string, theme: string, context?: string): Promise<string[]> {
   const prompt = `Escreva 4 linhas completas para um REFRÃO de ${genre} sobre "${theme}".
 
 ${context ? `Contexto: ${context}` : ""}
@@ -52,11 +55,11 @@ ${context ? `Contexto: ${context}` : ""}
     return processChorusResult(text, genre)
   } catch (error) {
     console.error("[Chorus] Erro na geração:", error)
-    return [generateChorusFallback(genre, theme)]
+    return generateChorusFallback(genre, theme)
   }
 }
 
-function processChorusResult(text: string, genre: string): ChorusBlock[] {
+function processChorusResult(text: string, genre: string): string[] {
   const lines = text
     .split("\n")
     .map((line) => line.trim())
@@ -79,17 +82,10 @@ function processChorusResult(text: string, genre: string): ChorusBlock[] {
   console.log(`[Chorus] Linhas geradas:`, lines)
 
   if (lines.length === 4 && areChorusLinesComplete(lines)) {
-    const content = lines.join("\n")
-
-    return [
-      {
-        content: content,
-        score: 90,
-      },
-    ]
+    return lines
   } else {
     console.log(`[Chorus] Refrão inválido - usando fallback`)
-    return [generateChorusFallback("Sertanejo Moderno Masculino", "amor")]
+    return generateChorusFallback("Sertanejo Moderno Masculino", "amor")
   }
 }
 
@@ -110,120 +106,173 @@ function areChorusLinesComplete(lines: string[]): boolean {
   return true
 }
 
-function generateChorusFallback(genre: string, theme: string): ChorusBlock {
+function generateChorusFallback(genre: string, theme: string): string[] {
   const chorusFallbacks = [
-    {
-      content: capitalizeLines(
-        `Teu sorriso é meu porto seguro\nTeu abraço é meu aquecimento\nNo ritmo desse amor tão puro\nEncontro paz e sentimento`,
-      ),
-      score: 95,
-    },
-    {
-      content: capitalizeLines(
-        `Teu olhar é a luz do meu caminho\nTeu carinho é o sol do meu dia\nEm teus braços eu encontro sentido\nTeu amor é a minha melodia`,
-      ),
-      score: 95,
-    },
-    {
-      content: capitalizeLines(
-        `Seu amor é minha estrada\nMinha luz, minha jornada\nNesse mundo de verdade\nEncontro a liberdade`,
-      ),
-      score: 90,
-    },
-    {
-      content: capitalizeLines(
-        `No compasso do teu abraço\nEncontro todo o meu espaço\nTeu amor é meu refúgio\nMeu porto, meu vestígio`,
-      ),
-      score: 90,
-    },
+    `Teu sorriso é meu porto seguro / Teu abraço é meu aquecimento / No ritmo desse amor tão puro / Encontro paz e sentimento`,
+    `Teu olhar é a luz do meu caminho / Teu carinho é o sol do meu dia / Em teus braços eu encontro sentido / Teu amor é a minha melodia`,
+    `Seu amor é minha estrada / Minha luz, minha jornada / Nesse mundo de verdade / Encontro a liberdade`,
+    `No compasso do teu abraço / Encontro todo o meu espaço / Teu amor é meu refúgio / Meu porto, meu vestígio`,
   ]
 
   const randomFallback = chorusFallbacks[Math.floor(Math.random() * chorusFallbacks.length)]
-  return randomFallback
-}
-
-// ✅ GERAR MÚLTIPLOS REFRÕES PARA ESCOLHA
-async function generateMultipleChoruses(
-  genre: string,
-  theme: string,
-  context?: string,
-  count = 3,
-): Promise<ChorusBlock[]> {
-  const choruses: ChorusBlock[] = []
-
-  for (let i = 0; i < count; i++) {
-    try {
-      const chorus = await generateNaturalChorus(genre, theme, context)
-      choruses.push(...chorus)
-    } catch (error) {
-      console.error(`[Chorus] Erro na geração ${i + 1}:`, error)
-      // Adicionar fallback se a geração falhar
-      choruses.push(generateChorusFallback(genre, theme))
-    }
-  }
-
-  // Remover duplicados e ordenar por score
-  const uniqueChoruses = choruses.filter(
-    (chorus, index, self) => index === self.findIndex((c) => c.content === chorus.content),
-  )
-
-  return uniqueChoruses.sort((a, b) => b.score - a.score)
+  return randomFallback.split(" / ").map((line) => capitalizeLines(line))
 }
 
 // 🚀 API PRINCIPAL
 export async function POST(request: NextRequest) {
-  let genre = "Sertanejo Moderno Masculino"
-  let theme = "amor"
-  let title = "Refrão Gerado"
-
   try {
-    const { genre: requestGenre, theme: requestTheme, title: requestTitle, context, count = 3 } = await request.json()
+    const { genre, theme, mood, advancedMode } = await request.json()
 
-    genre = requestGenre || "Sertanejo Moderno Masculino"
-    theme = requestTheme || "amor"
-    title = requestTitle || `Refrão sobre ${theme}`
+    if (!theme) {
+      return NextResponse.json({ error: "Tema é obrigatório" }, { status: 400 })
+    }
 
-    console.log(`[API] 🎵 Gerando refrões naturais para: ${genre} - ${theme}`)
+    const genreText = genre || "Sertanejo Moderno Masculino"
+    const maxSyllables = 12
+    const minSyllables = 8
 
-    // Gerar múltiplos refrões
-    const choruses = await generateMultipleChoruses(genre, theme, context, count)
+    const prompt = `Você é um especialista em criar refrões comerciais para música brasileira.
 
-    console.log(`[API] 🎉 ${choruses.length} refrões gerados com sucesso`)
+TAREFA: Crie 5 variações de refrão memoráveis sobre "${theme}".
 
-    return NextResponse.json({
-      success: true,
-      choruses: choruses,
-      title: title,
-      metadata: {
-        genre,
-        theme,
-        totalChoruses: choruses.length,
-        method: "GERACAO_NATURAL",
-        strategy: "VERSOS_COMPLETOS_PRIMEIRO",
-      },
-    })
+GÊNERO: ${genreText}
+${mood ? `MOOD: ${mood}` : ""}
+
+⚠️ REGRA DE SÍLABAS:
+- Cada linha: ${minSyllables}–${maxSyllables} SÍLABAS POÉTICAS
+- 4 linhas por refrão
+- Estrutura A-B-A-B (linha 1 rima com linha 3, linha 2 rima com linha 4)
+
+REGRAS DE REFRÃO DE HIT:
+- ${minSyllables}-${maxSyllables} sílabas por linha
+- Gancho memorável e repetitivo
+- Linguagem coloquial brasileira
+- Fácil de cantar e repetir
+- 100% em PORTUGUÊS BRASILEIRO
+- Emocionalmente impactante
+
+${
+  advancedMode
+    ? `
+🔥 MODO AVANÇADO - REFRÃO PREMIUM:
+- Gancho instantâneo (gruda em 3 segundos)
+- Linguagem limpa (adequado para rádio)
+- Potencial de bordão viral
+- Score mínimo: 85/100
+`
+    : ""
+}
+
+FORMATO JSON:
+{
+  "variations": [
+    {
+      "chorus": "linha 1 / linha 2 / linha 3 / linha 4",
+      "style": "descrição do estilo (ex: Romântico Intenso)",
+      "score": 9,
+      "justification": "por que este refrão funciona"
+    }
+  ],
+  "bestCommercialOptionIndex": 0
+}
+
+IMPORTANTE:
+- Separe as linhas com " / " (espaço barra espaço)
+- Cada linha deve ter ${minSyllables}-${maxSyllables} sílabas
+- Crie exatamente 5 variações diferentes
+- Indique qual é a melhor opção comercial no bestCommercialOptionIndex
+
+Retorne APENAS o JSON, sem markdown.`
+
+    console.log(`[Chorus] Gerando 5 refrões para ${genreText} - ${theme}`)
+
+    let attempts = 0
+    let parsedResult: any = null
+    let allValid = false
+
+    while (attempts < 2 && !allValid) {
+      attempts++
+
+      const { text } = await generateText({
+        model: "openai/gpt-4o-mini",
+        prompt,
+        temperature: 0.85,
+      })
+
+      try {
+        const cleanText = text
+          .replace(/```json\n?/g, "")
+          .replace(/```\n?/g, "")
+          .trim()
+        parsedResult = JSON.parse(cleanText)
+      } catch (parseError) {
+        console.error("[Chorus] Erro ao parsear JSON:", parseError)
+        if (attempts === 2) {
+          throw new Error("Erro ao processar resposta da IA")
+        }
+        continue
+      }
+
+      if (!parsedResult.variations || !Array.isArray(parsedResult.variations)) {
+        console.error("[Chorus] Formato inválido:", parsedResult)
+        if (attempts === 2) {
+          throw new Error("Resposta da IA em formato inválido")
+        }
+        continue
+      }
+
+      allValid = true
+      const violations: string[] = []
+
+      parsedResult.variations.forEach((variation: ChorusVariation, index: number) => {
+        const lines = variation.chorus.split(" / ")
+
+        if (lines.length !== 4) {
+          allValid = false
+          violations.push(`Variação ${index + 1}: ${lines.length} linhas (esperado: 4)`)
+          return
+        }
+
+        lines.forEach((line: string, lineIndex: number) => {
+          const syllables = countPoeticSyllables(line)
+          if (syllables < minSyllables || syllables > maxSyllables) {
+            allValid = false
+            violations.push(
+              `Var ${index + 1}, Linha ${lineIndex + 1}: "${line}" = ${syllables}s (alvo: ${minSyllables}-${maxSyllables})`,
+            )
+          }
+        })
+      })
+
+      if (!allValid && attempts < 2) {
+        console.log(`[Chorus] 🔄 Regenerando... (${violations.length} violações)`)
+      }
+    }
+
+    if (parsedResult.variations) {
+      parsedResult.variations = parsedResult.variations.map((v: ChorusVariation) => ({
+        ...v,
+        chorus: v.chorus
+          .split(" / ")
+          .map((line) => capitalizeLines(line))
+          .join(" / "),
+      }))
+    }
+
+    const safeResult = {
+      variations: parsedResult.variations || [],
+      bestCommercialOptionIndex: parsedResult.bestCommercialOptionIndex ?? 0,
+    }
+
+    console.log(`[Chorus] ✅ ${safeResult.variations.length} refrões gerados com sucesso`)
+
+    return NextResponse.json(safeResult)
   } catch (error) {
-    console.error("[API] ❌ Erro na geração de refrões:", error)
-
-    // Fallback garantido
-    const fallbackChoruses = [
-      generateChorusFallback("Sertanejo Moderno Masculino", "amor"),
-      generateChorusFallback("Sertanejo Moderno Masculino", "amor"),
-      generateChorusFallback("Sertanejo Moderno Masculino", "amor"),
-    ]
-
-    return NextResponse.json({
-      success: true,
-      choruses: fallbackChoruses,
-      title: "Refrões de Fallback",
-      metadata: {
-        genre: "Sertanejo Moderno Masculino",
-        theme: "amor",
-        totalChoruses: fallbackChoruses.length,
-        method: "FALLBACK_GARANTIDO",
-        strategy: "VERSOS_COMPLETOS",
-      },
-    })
+    console.error("[Chorus] ❌ Erro:", error)
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Erro ao gerar refrão" },
+      { status: 500 },
+    )
   }
 }
 
