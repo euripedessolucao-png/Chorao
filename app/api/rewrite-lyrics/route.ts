@@ -1,280 +1,129 @@
-// app/api/generate-chorus/route.ts - VERSÃO CORRIGIDA COM AI GATEWAY
+// app/api/rewrite-lyrics/route.ts - MELHORIA SEGURA MANTENDO SUA ESTRUTURA
 import { type NextRequest, NextResponse } from "next/server"
+import { createOpenAI } from "@ai-sdk/openai"
 import { generateText } from "ai"
-import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
-import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro"
 
-// 🎵 TIPOS
-interface ChorusVariation {
-  chorus: string
-  style: string
-  score: number
-  justification: string
+function getModel() {
+  if (process.env.OPENAI_API_KEY) {
+    const openai = createOpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    })
+    return openai("gpt-4o-mini")
+  }
+  return "openai/gpt-4o-mini"
 }
 
-async function generateNaturalChorus(genre: string, theme: string, context?: string): Promise<string[]> {
-  const prompt = `Escreva 4 linhas completas para um REFRÃO de ${genre} sobre "${theme}".
+// ✅ MELHORIA 1: Prompt mais inteligente para versos completos
+function createImprovedPrompt(originalLyrics: string, genre: string, theme: string, mood?: string, additionalRequirements?: string): string {
+  return `Você é um compositor profissional de ${genre || "música brasileira"}.
 
-${context ? `Contexto: ${context}` : ""}
+TAREFA: Reescreva a letra abaixo melhorando a qualidade poética e musical.
 
-**REGRAS IMPORTANTES:**
-1. 4 linhas COMPLETAS (nunca cortar versos)
-2. Máximo 12 sílabas por linha
-3. Estrutura A-B-A-B (linha 1 rima com linha 3, linha 2 rima com linha 4)
-4. Gancho memorável e repetitivo
-5. Linguagem natural e emocional
+LETRA ORIGINAL:
+${originalLyrics}
 
-**EXEMPLOS QUE FUNCIONAM:**
+REGRAS IMPORTANTES:
+1. Mantenha a MESMA ESTRUTURA (Intro, Versos, Refrão, Ponte, Outro)
+2. Versos devem ser COMPLETOS (nunca cortados no meio)
+3. Rimas naturais e fluidez poética
+4. Linguagem rica mas acessível
+5. Mantenha o tema: ${theme || "o tema original"}
+${mood ? `6. Tom emocional: ${mood}` : ""}
+${additionalRequirements ? `7. Requisitos extras: ${additionalRequirements}` : ""}
 
-"Teu sorriso é meu porto seguro"
-"Teu abraço é meu aquecimento"  
-"No ritmo desse amor tão puro"
-"Encontro paz e sentimento"
+DICAS PARA VERSOS COMPLETOS:
+- Evite versos que terminem com: "e", "o", "a", "de", "que", "me", "te"
+- Cada verso deve ter sentido completo
+- Prefira frases com sujeito + verbo + complemento
 
-"Teu olhar é a luz do meu caminho" 
-"Teu carinho é o sol do meu dia"
-"Em teus braços eu encontro sentido"
-"Teu amor é a minha melodia"
+EXEMPLOS DE VERSOS COMPLETOS:
+❌ "E eu me..." → ✅ "E eu me encontro em teus braços"
+❌ "No teu olhar, um..." → ✅ "No teu olhar vejo esperança"
+❌ "Que me faz..." → ✅ "Que me faz sentir renovado"
 
-**AGORA ESCREVA 4 LINHAS COMPLETAS PARA O REFRÃO:**`
+Retorne APENAS a letra reescrita, sem explicações.`
+}
+
+export async function POST(request: NextRequest) {
+  console.log("[v1] ========== INÍCIO DA REESCRITA MELHORADA ==========")
 
   try {
+    const body = await request.json()
+    console.log("[v1] Body recebido:", JSON.stringify(body, null, 2))
+
+    const { originalLyrics, genre, theme, title, mood, additionalRequirements } = body
+
+    console.log("[v1] Letra original (primeiros 100 chars):", originalLyrics?.substring(0, 100))
+    console.log("[v1] Gênero:", genre)
+    console.log("[v1] Tema:", theme)
+    console.log("[v1] Título:", title)
+
+    if (!originalLyrics?.trim()) {
+      console.log("[v1] ❌ ERRO: Letra original vazia")
+      return NextResponse.json({ error: "Letra original é obrigatória" }, { status: 400 })
+    }
+
+    // ✅ USANDO PROMPT MELHORADO
+    const prompt = createImprovedPrompt(originalLyrics, genre, theme, mood, additionalRequirements)
+
+    console.log("[v1] Prompt melhorado criado")
+    console.log("[v1] Chamando generateText...")
+
     const { text } = await generateText({
-      model: "openai/gpt-4o-mini",
+      model: getModel(),
       prompt,
       temperature: 0.7,
     })
 
-    console.log("[Chorus] Texto recebido:", text?.substring(0, 100))
+    console.log("[v1] Resposta recebida (primeiros 200 chars):", text?.substring(0, 200))
+    console.log("[v1] Tamanho da resposta:", text?.length)
 
-    if (!text || typeof text !== "string") {
-      console.error("[Chorus] Resposta inválida da IA:", text)
-      throw new Error("Resposta inválida da IA")
+    if (!text || text.trim().length === 0) {
+      console.log("[v1] ❌ ERRO: Resposta vazia da IA")
+      throw new Error("IA retornou resposta vazia")
     }
 
-    return processChorusResult(text, genre)
-  } catch (error) {
-    console.error("[Chorus] Erro na geração:", error)
-    return generateChorusFallback(genre, theme)
-  }
-}
+    // ✅ MELHORIA 2: Limpeza mais robusta
+    const cleanedLyrics = text
+      .replace(/^"|"$/g, "")
+      .replace(/"\s*$/gm, "") 
+      .replace(/^\s*"/gm, "")
+      .replace(/^(?:Explicação|Análise|Letra reescrita):/gi, "")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim()
 
-function processChorusResult(text: string, genre: string): string[] {
-  const lines = text
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => {
-      return (
-        line &&
-        line.length >= 5 &&
-        line.length <= 70 &&
-        !line.startsWith("**") &&
-        !line.startsWith("Exemplo") &&
-        !line.startsWith("Regras") &&
-        !line.startsWith("Contexto") &&
-        !line.startsWith("Agora") &&
-        !line.includes("sílabas")
-      )
+    console.log("[v1] Letra limpa (primeiros 200 chars):", cleanedLyrics.substring(0, 200))
+    
+    // ✅ MELHORIA 3: Log de qualidade básica
+    const lines = cleanedLyrics.split('\n').filter(line => line.trim().length > 0)
+    console.log(`[v1] 📊 Estatísticas: ${lines.length} linhas, ${cleanedLyrics.length} caracteres`)
+
+    console.log("[v1] ========== FIM DA REESCRITA MELHORADA ==========")
+
+    return NextResponse.json({
+      success: true,
+      lyrics: cleanedLyrics,
+      letra: cleanedLyrics,
+      title: title || `${theme || "Música"} - ${genre || "Reescrita"}`,
+      titulo: title || `${theme || "Música"} - ${genre || "Reescrita"}`,
+      metadata: {
+        genre,
+        theme,
+        method: "REESCRITA_MELHORADA",
+        polishingApplied: true,
+        linesCount: lines.length,
+        version: "v1-improved"
+      },
     })
-    .slice(0, 4)
-    .map((line) => capitalizeLines(line)) // Capitalizando cada linha
-
-  console.log(`[Chorus] Linhas geradas:`, lines)
-
-  if (lines.length === 4 && areChorusLinesComplete(lines)) {
-    return lines
-  } else {
-    console.log(`[Chorus] Refrão inválido - usando fallback`)
-    return generateChorusFallback("Sertanejo Moderno Masculino", "amor")
-  }
-}
-
-// ✅ VALIDAÇÃO DE COMPLETUDE (igual à que funcionou)
-function areChorusLinesComplete(lines: string[]): boolean {
-  const incompletePatterns = [
-    /\b(eu|me|te|se|nos|vos|o|a|os|as|um|uma|em|no|na|de|da|do|por|pra|que|se|mas|meu|minha|teu|tua)\s*$/i,
-  ]
-
-  for (const line of lines) {
-    for (const pattern of incompletePatterns) {
-      if (pattern.test(line)) {
-        console.log(`[Chorus] Linha incompleta: "${line}"`)
-        return false
-      }
-    }
-  }
-  return true
-}
-
-function generateChorusFallback(genre: string, theme: string): string[] {
-  const chorusFallbacks = [
-    `Teu sorriso é meu porto seguro / Teu abraço é meu aquecimento / No ritmo desse amor tão puro / Encontro paz e sentimento`,
-    `Teu olhar é a luz do meu caminho / Teu carinho é o sol do meu dia / Em teus braços eu encontro sentido / Teu amor é a minha melodia`,
-    `Seu amor é minha estrada / Minha luz, minha jornada / Nesse mundo de verdade / Encontro a liberdade`,
-    `No compasso do teu abraço / Encontro todo o meu espaço / Teu amor é meu refúgio / Meu porto, meu vestígio`,
-  ]
-
-  const randomFallback = chorusFallbacks[Math.floor(Math.random() * chorusFallbacks.length)]
-  return randomFallback.split(" / ").map((line) => capitalizeLines(line))
-}
-
-// 🚀 API PRINCIPAL
-export async function POST(request: NextRequest) {
-  try {
-    const { genre, theme, mood, lyrics, advancedMode } = await request.json() // Recebendo lyrics
-
-    if (!theme) {
-      return NextResponse.json({ error: "Tema é obrigatório" }, { status: 400 })
-    }
-
-    const genreText = genre || "Sertanejo Moderno Masculino"
-    const maxSyllables = 12
-    const minSyllables = 8
-
-    const prompt = `Você é um especialista em criar refrões comerciais para música brasileira.
-
-TAREFA: Crie 5 variações de refrão memoráveis sobre "${theme}".
-
-${lyrics ? `LETRA ORIGINAL PARA REFERÊNCIA:\n${lyrics}\n\nUSE A LETRA ACIMA COMO CONTEXTO E INSPIRAÇÃO. Mantenha o estilo, vocabulário e essência da letra original.\n` : ""}
-
-GÊNERO: ${genreText}
-${mood ? `MOOD: ${mood}` : ""}
-
-⚠️ REGRA DE SÍLABAS:
-- Cada linha: ${minSyllables}–${maxSyllables} SÍLABAS POÉTICAS
-- 4 linhas por refrão
-- Estrutura A-B-A-B (linha 1 rima com linha 3, linha 2 rima com linha 4)
-
-REGRAS DE REFRÃO DE HIT:
-- ${minSyllables}-${maxSyllables} sílabas por linha
-- Gancho memorável e repetitivo
-- Linguagem coloquial brasileira
-- Fácil de cantar e repetir
-- 100% em PORTUGUÊS BRASILEIRO
-- Emocionalmente impactante
-${lyrics ? "- MANTENHA O ESTILO E VOCABULÁRIO DA LETRA ORIGINAL" : ""}
-
-${
-  advancedMode
-    ? `
-🔥 MODO AVANÇADO - REFRÃO PREMIUM:
-- Gancho instantâneo (gruda em 3 segundos)
-- Linguagem limpa (adequado para rádio)
-- Potencial de bordão viral
-- Score mínimo: 85/100
-`
-    : ""
-}
-
-FORMATO JSON:
-{
-  "variations": [
-    {
-      "chorus": "linha 1 / linha 2 / linha 3 / linha 4",
-      "style": "descrição do estilo (ex: Romântico Intenso)",
-      "score": 9,
-      "justification": "por que este refrão funciona"
-    }
-  ],
-  "bestCommercialOptionIndex": 0
-}
-
-IMPORTANTE:
-- Separe as linhas com " / " (espaço barra espaço)
-- Cada linha deve ter ${minSyllables}-${maxSyllables} sílabas
-- Crie exatamente 5 variações diferentes
-- Indique qual é a melhor opção comercial no bestCommercialOptionIndex
-${lyrics ? "- USE A LETRA ORIGINAL COMO REFERÊNCIA DE ESTILO E VOCABULÁRIO" : ""}
-
-Retorne APENAS o JSON, sem markdown.`
-
-    console.log(`[Chorus] Gerando 5 refrões para ${genreText} - ${theme}${lyrics ? " (com letra de referência)" : ""}`)
-
-    let attempts = 0
-    let parsedResult: any = null
-    let allValid = false
-
-    while (attempts < 2 && !allValid) {
-      attempts++
-
-      const { text } = await generateText({
-        model: "openai/gpt-4o-mini",
-        prompt,
-        temperature: 0.85,
-      })
-
-      try {
-        const cleanText = text
-          .replace(/```json\n?/g, "")
-          .replace(/```\n?/g, "")
-          .trim()
-        parsedResult = JSON.parse(cleanText)
-      } catch (parseError) {
-        console.error("[Chorus] Erro ao parsear JSON:", parseError)
-        if (attempts === 2) {
-          throw new Error("Erro ao processar resposta da IA")
-        }
-        continue
-      }
-
-      if (!parsedResult.variations || !Array.isArray(parsedResult.variations)) {
-        console.error("[Chorus] Formato inválido:", parsedResult)
-        if (attempts === 2) {
-          throw new Error("Resposta da IA em formato inválido")
-        }
-        continue
-      }
-
-      allValid = true
-      const violations: string[] = []
-
-      parsedResult.variations.forEach((variation: ChorusVariation, index: number) => {
-        const lines = variation.chorus.split(" / ")
-
-        if (lines.length !== 4) {
-          allValid = false
-          violations.push(`Variação ${index + 1}: ${lines.length} linhas (esperado: 4)`)
-          return
-        }
-
-        lines.forEach((line: string, lineIndex: number) => {
-          const syllables = countPoeticSyllables(line)
-          if (syllables < minSyllables || syllables > maxSyllables) {
-            allValid = false
-            violations.push(
-              `Var ${index + 1}, Linha ${lineIndex + 1}: "${line}" = ${syllables}s (alvo: ${minSyllables}-${maxSyllables})`,
-            )
-          }
-        })
-      })
-
-      if (!allValid && attempts < 2) {
-        console.log(`[Chorus] 🔄 Regenerando... (${violations.length} violações)`)
-      }
-    }
-
-    if (parsedResult.variations) {
-      parsedResult.variations = parsedResult.variations.map((v: ChorusVariation) => ({
-        ...v,
-        chorus: v.chorus
-          .split(" / ")
-          .map((line) => capitalizeLines(line))
-          .join(" / "),
-      }))
-    }
-
-    const safeResult = {
-      variations: parsedResult.variations || [],
-      bestCommercialOptionIndex: parsedResult.bestCommercialOptionIndex ?? 0,
-    }
-
-    console.log(`[Chorus] ✅ ${safeResult.variations.length} refrões gerados com sucesso`)
-
-    return NextResponse.json(safeResult)
   } catch (error) {
-    console.error("[Chorus] ❌ Erro:", error)
+    console.error("[v1] ❌ ERRO FATAL:", error)
+    console.error("[v1] Stack trace:", error instanceof Error ? error.stack : "N/A")
+
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Erro ao gerar refrão" },
+      {
+        error: "Erro ao reescrever letra",
+        details: error instanceof Error ? error.message : "Erro desconhecido",
+      },
       { status: 500 },
     )
   }
@@ -284,7 +133,7 @@ export async function GET() {
   return NextResponse.json(
     {
       error: "Método não permitido",
-      message: "Use POST para gerar refrões",
+      message: "Use POST para processar letras",
     },
     { status: 405 },
   )
