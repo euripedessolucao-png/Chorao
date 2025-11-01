@@ -1,8 +1,9 @@
-// app/api/generate-chorus/route.ts - VERSÃO CORRIGIDA COM 5 REFRÕES
+// app/api/generate-chorus/route.ts - USANDO A MESMA API DA REESCRITA
 import { type NextRequest, NextResponse } from "next/server"
 import { createOpenAI } from "@ai-sdk/openai"
 import { generateText } from "ai"
 
+// ✅ MESMA FUNÇÃO getModel() DA REESCRITA
 function getModel() {
   if (process.env.OPENAI_API_KEY) {
     const openai = createOpenAI({
@@ -14,93 +15,81 @@ function getModel() {
 }
 
 export async function POST(request: NextRequest) {
-  console.log("[Chorus] ========== INÍCIO GERAÇÃO 5 REFRÕES ==========")
+  console.log("[Chorus] ========== INÍCIO GERAÇÃO REFRÕES ==========")
 
   try {
-    const { genre, theme, lyrics } = await request.json()
+    const body = await request.json()
+    console.log("[Chorus] Body recebido:", JSON.stringify(body, null, 2))
 
-    console.log("[Chorus] Parâmetros:", { genre, theme })
+    const { genre, theme, lyrics } = body
+
+    console.log("[Chorus] Gênero:", genre)
+    console.log("[Chorus] Tema:", theme)
+    console.log("[Chorus] Letra (primeiros 100 chars):", lyrics?.substring(0, 100))
 
     if (!theme) {
+      console.log("[Chorus] ❌ ERRO: Tema é obrigatório")
       return NextResponse.json({ error: "Tema é obrigatório" }, { status: 400 })
     }
 
     const genreText = genre || "Sertanejo Moderno Masculino"
 
-    // ✅ PROMPT ESPECÍFICO PARA 5 REFRÕES AVALIADOS
-    const prompt = `Você é um produtor musical experiente. Crie 5 variações de refrão para ${genreText} sobre "${theme}".
+    // ✅ PROMPT SIMPLES E DIRETO - IGUAL AO DA REESCRITA
+    const prompt = `Você é um compositor profissional de ${genreText}.
 
-${lyrics ? `CONTEXTO DA MÚSICA:\n${lyrics}\n\nUse como referência de estilo.` : ''}
+TAREFA: Crie 5 variações de refrão sobre "${theme}".
 
-CRITÉRIOS PARA BONS REFRÕES:
-- CHICLETES: Fáceis de lembrar e repetir
-- COMERCIAIS: Potencial para rádio e streaming  
-- EMOCIONAIS: Conectam com o público
-- CANTÁVEIS: Fluem naturalmente na melodia
-- ORIGINAIS: Evitem clichês muito batidos
+${lyrics ? `CONTEXTO DA LETRA:\n${lyrics}\n\nUse esta letra como inspiração.` : ''}
 
-FORMATO DE RESPOSTA - USE EXATAMENTE ESTE FORMATO:
+INSTRUÇÕES:
+- Cada refrão deve ter 4 linhas completas
+- Versos devem ser cantáveis e naturais  
+- Linguagem emocional brasileira
+- Diferentes abordagens (romântico, chiclete, profundo, etc.)
 
-REFRAO 1 (Nota: 9/10 - Comercial)
-Linha 1
-Linha 2  
-Linha 3
-Linha 4
-Justificativa: Este refrão funciona porque...
+Retorne APENAS os refrões no formato:
 
-REFRAO 2 (Nota: 8/10 - Chiclete)
-Linha 1
-Linha 2
-Linha 3
-Linha 4  
-Justificativa: Este refrão é chiclete porque...
-
-REFRAO 3 (Nota: 9/10 - Emocional)
+1. NOME DO REFRÃO
 Linha 1
 Linha 2
 Linha 3
 Linha 4
-Justificativa: Este refrão emociona porque...
 
-REFRAO 4 (Nota: 8/10 - Repetitivo)
+2. NOME DO REFRÃO  
 Linha 1
 Linha 2
 Linha 3
 Linha 4
-Justificativa: Este refrão gruda porque...
 
-REFRAO 5 (Nota: 7/10 - Alternativo)
-Linha 1
-Linha 2
-Linha 3
-Linha 4
-Justificativa: Este refrão oferece...
+... até 5 refrões`
 
-Retorne APENAS os 5 refrões no formato acima, sem explicações extras.`
+    console.log("[Chorus] Prompt criado (primeiros 200 chars):", prompt.substring(0, 200))
+    console.log("[Chorus] Chamando generateText...")
 
-    console.log("[Chorus] Prompt criado, chamando IA...")
-
+    // ✅ MESMA CHAMADA generateText DA REESCRITA
     const { text } = await generateText({
-      model: getModel(),
+      model: getModel(), // ✅ MESMA FUNÇÃO
       prompt,
-      temperature: 0.8,
+      temperature: 0.7, // ✅ MESMA TEMPERATURA
     })
 
-    console.log("[Chorus] Resposta IA completa:\n", text)
+    console.log("[Chorus] Resposta recebida (primeiros 200 chars):", text?.substring(0, 200))
+    console.log("[Chorus] Tamanho da resposta:", text?.length)
 
-    if (!text) {
-      throw new Error("IA não retornou resposta")
+    if (!text || text.trim().length === 0) {
+      console.log("[Chorus] ❌ ERRO: Resposta vazia da IA")
+      throw new Error("IA retornou resposta vazia")
     }
 
-    // ✅ EXTRAÇÃO DOS 5 REFRÕES
-    const choruses = extractFiveChoruses(text)
+    // ✅ PROCESSAMENTO SIMPLES - PEGA TODAS AS LINHAS QUE PARECEM VERSOS
+    const choruses = extractChoruses(text)
     
     console.log(`[Chorus] ${choruses.length} refrões extraídos`)
 
-    // ✅ SEMPRE RETORNA PELO MENOS 5 REFRÕES
+    // ✅ GARANTE QUE TEM PELO MENOS 3 REFRÕES
     const finalChoruses = choruses.length >= 3 ? choruses : getFallbackChoruses()
 
-    console.log("[Chorus] ========== FIM GERAÇÃO REFRÕES ==========")
+    console.log("[Chorus] ========== FIM DA GERAÇÃO ==========")
 
     return NextResponse.json({
       success: true,
@@ -109,102 +98,79 @@ Retorne APENAS os 5 refrões no formato acima, sem explicações extras.`
         genre: genreText,
         theme,
         totalChoruses: finalChoruses.length,
-        method: "5_REFROES_AVALIADOS"
-      }
+        method: "GERACAO_SIMPLES"
+      },
     })
 
   } catch (error) {
-    console.error("[Chorus] ❌ ERRO:", error)
-    
-    // ✅ FALLBACK COM 5 REFRÕES GARANTIDOS
+    console.error("[Chorus] ❌ ERRO FATAL:", error)
+    console.error("[Chorus] Stack trace:", error instanceof Error ? error.stack : "N/A")
+
+    // ✅ FALLBACK GARANTIDO
     const fallbackChoruses = getFallbackChoruses()
     
     return NextResponse.json({
       success: true,
       choruses: fallbackChoruses,
       metadata: {
-        genre: "Sertanejo Moderno Masculino", 
-        theme: "amor",
+        genre: "Sertanejo Moderno Masculino",
+        theme: "amor", 
         totalChoruses: fallbackChoruses.length,
-        method: "FALLBACK_5_REFROES"
-      }
+        method: "FALLBACK_GARANTIDO"
+      },
     })
   }
 }
 
-// ✅ FUNÇÃO PARA EXTRAIR 5 REFRÕES DO TEXTO
-function extractFiveChoruses(text: string): Array<{chorus: string, evaluation: string}> {
-  const choruses: Array<{chorus: string, evaluation: string}> = []
-  
-  // Divide o texto em seções por "REFRAO"
-  const sections = text.split(/REFRAO\s+\d+/i).filter(section => section.trim())
-  
-  console.log("[Chorus] Seções encontradas:", sections.length)
+// ✅ FUNÇÃO SIMPLES DE EXTRAÇÃO - PEGA TODAS AS LINHAS VÁLIDAS E AGRUPA EM GRUPOS DE 4
+function extractChoruses(text: string): string[] {
+  const lines = text.split('\n')
+    .map(line => line.trim())
+    .filter(line => {
+      return line && 
+             line.length >= 5 && 
+             line.length <= 70 &&
+             !line.match(/^\d+\./) && // Remove números
+             !line.includes('NOME DO') &&
+             !line.includes('INSTRUÇÕES') &&
+             !line.includes('TAREFA:') &&
+             !line.includes('CONTEXTO:')
+    })
 
-  for (const section of sections) {
-    if (choruses.length >= 5) break
+  console.log("[Chorus] Linhas filtradas:", lines)
+
+  // Agrupa em refrões de 4 linhas
+  const choruses: string[] = []
+  let currentChorus: string[] = []
+
+  for (const line of lines) {
+    currentChorus.push(line)
     
-    const lines = section.split('\n').map(line => line.trim()).filter(line => line)
-    
-    // Encontra as 4 linhas do refrão (antes de "Justificativa")
-    const chorusLines: string[] = []
-    let foundJustification = false
-    
-    for (const line of lines) {
-      if (line.toLowerCase().includes('justificativa')) {
-        foundJustification = true
-        break
-      }
-      if (line && !line.toLowerCase().includes('nota') && !line.includes('(')) {
-        chorusLines.push(line)
-      }
-    }
-    
-    // Pega as primeiras 4 linhas que parecem versos
-    const verseLines = chorusLines.filter(line => 
-      line.length > 3 && 
-      line.length < 70 &&
-      !line.toLowerCase().includes('este refrão')
-    ).slice(0, 4)
-    
-    if (verseLines.length === 4) {
-      const evaluation = section.split('Justificativa:')[1]?.split('\n')[0]?.trim() || "Refrão comercial e cantável"
+    if (currentChorus.length === 4) {
+      choruses.push(currentChorus.join('\n'))
+      currentChorus = []
       
-      choruses.push({
-        chorus: verseLines.join('\n'),
-        evaluation: evaluation.substring(0, 100) // Limita tamanho
-      })
-      
-      console.log(`[Chorus] Refrão ${choruses.length} extraído:`, verseLines[0])
+      // Para após 5 refrões
+      if (choruses.length >= 5) break
     }
+  }
+
+  // Se sobrou um refrão incompleto, adiciona se tiver pelo menos 3 linhas
+  if (currentChorus.length >= 3 && choruses.length < 5) {
+    choruses.push(currentChorus.join('\n'))
   }
 
   return choruses
 }
 
-// ✅ FALLBACKS COM 5 REFRÕES AVALIADOS
-function getFallbackChoruses(): Array<{chorus: string, evaluation: string}> {
+// ✅ FALLBACKS GARANTIDOS
+function getFallbackChoruses(): string[] {
   return [
-    {
-      chorus: `Teu sorriso é meu porto seguro\nTeu abraço é meu aquecimento\nNo ritmo desse amor tão puro\nEncontro paz e sentimento`,
-      evaluation: "Nota 9/10 - Comercial: Refrão romântico com gancho forte e estrutura A-B-A-B perfeita"
-    },
-    {
-      chorus: `Teu olhar é a luz do meu caminho\nTeu carinho é o sol do meu dia\nEm teus braços eu encontro sentido\nTeu amor é a minha melodia`,
-      evaluation: "Nota 8/10 - Chiclete: Fácil de memorizar, metáforas claras e fluência natural"
-    },
-    {
-      chorus: `Seu amor é minha estrada\nMinha luz, minha jornada\nNesse mundo de verdade\nEncontro a liberdade`,
-      evaluation: "Nota 9/10 - Emocional: Conecta com busca por significado e liberdade emocional"
-    },
-    {
-      chorus: `No compasso do teu abraço\nEncontro todo o meu espaço\nTeu amor é meu refúgio\nMeu porto, meu vestígio`,
-      evaluation: "Nota 8/10 - Repetitivo: Estrutura repetitiva que gruda na memória do ouvinte"
-    },
-    {
-      chorus: `Quando a vida me surpreende\nTeu amor me defende e estende\nNa dança desse amor que incende\nMinha alma se rende e depende`,
-      evaluation: "Nota 7/10 - Alternativo: Abordagem mais poética com rimas internas sofisticadas"
-    }
+    `Teu sorriso é meu porto seguro\nTeu abraço é meu aquecimento\nNo ritmo desse amor tão puro\nEncontro paz e sentimento`,
+    `Teu olhar é a luz do meu caminho\nTeu carinho é o sol do meu dia\nEm teus braços eu encontro sentido\nTeu amor é a minha melodia`,
+    `Seu amor é minha estrada\nMinha luz, minha jornada\nNesse mundo de verdade\nEncontro a liberdade`,
+    `No compasso do teu abraço\nEncontro todo o meu espaço\nTeu amor é meu refúgio\nMeu porto, meu vestígio`,
+    `Quando a vida me surpreende\nTeu amor me defende e estende\nNa dança desse amor que incende\nMinha alma se rende e depende`
   ]
 }
 
@@ -214,6 +180,6 @@ export async function GET() {
       error: "Método não permitido",
       message: "Use POST para gerar refrões",
     },
-    { status: 405 }
+    { status: 405 },
   )
 }
