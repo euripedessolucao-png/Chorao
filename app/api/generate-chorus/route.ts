@@ -1,7 +1,7 @@
 // app/api/generate-chorus/route.ts - VERSÃO CORRIGIDA COM AI GATEWAY
 import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
-import { openai } from "@ai-sdk/openai"
+import { createOpenAI } from "@ai-sdk/openai"
 
 // 🎵 TIPOS
 interface ChorusBlock {
@@ -12,9 +12,10 @@ interface ChorusBlock {
 function getModel() {
   // Use user's OpenAI API key if available to avoid rate limits
   if (process.env.OPENAI_API_KEY) {
-    return openai("gpt-4o-mini", {
+    const openai = createOpenAI({
       apiKey: process.env.OPENAI_API_KEY,
     })
+    return openai("gpt-4o-mini")
   }
   // Fallback to Vercel AI Gateway
   return "openai/gpt-4o-mini"
