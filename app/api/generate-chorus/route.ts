@@ -1,7 +1,7 @@
 // app/api/generate-chorus/route.ts - VERSÃO CORRIGIDA COM AI GATEWAY
 import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
-import { createOpenAI } from "@ai-sdk/openai"
+import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 
 // 🎵 TIPOS
 interface ChorusBlock {
@@ -9,19 +9,6 @@ interface ChorusBlock {
   score: number
 }
 
-function getModel() {
-  // Use user's OpenAI API key if available to avoid rate limits
-  if (process.env.OPENAI_API_KEY) {
-    const openai = createOpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    })
-    return openai("gpt-4o-mini")
-  }
-  // Fallback to Vercel AI Gateway
-  return "openai/gpt-4o-mini"
-}
-
-// ✅ ESTRATÉGIA SIMPLES E EFETIVA (igual à que funcionou)
 async function generateNaturalChorus(genre: string, theme: string, context?: string): Promise<ChorusBlock[]> {
   const prompt = `Escreva 4 linhas completas para um REFRÃO de ${genre} sobre "${theme}".
 
@@ -49,43 +36,27 @@ ${context ? `Contexto: ${context}` : ""}
 **AGORA ESCREVA 4 LINHAS COMPLETAS PARA O REFRÃO:**`
 
   try {
-    console.log(
-      "[v0] Calling generateText with model:",
-      process.env.OPENAI_API_KEY ? "User's OpenAI API" : "Vercel AI Gateway",
-    )
-
     const { text } = await generateText({
-      model: getModel(),
+      model: "openai/gpt-4o-mini",
       prompt,
       temperature: 0.7,
     })
 
-    console.log("[v0] Received text response:", text?.substring(0, 100))
+    console.log("[Chorus] Texto recebido:", text?.substring(0, 100))
 
     if (!text || typeof text !== "string") {
-      console.error("[v0] Invalid text response from AI:", text)
-      throw new Error("Invalid text response from AI")
+      console.error("[Chorus] Resposta inválida da IA:", text)
+      throw new Error("Resposta inválida da IA")
     }
 
     return processChorusResult(text, genre)
   } catch (error) {
     console.error("[Chorus] Erro na geração:", error)
-    console.error("[v0] Error details:", {
-      message: error instanceof Error ? error.message : "Unknown error",
-      stack: error instanceof Error ? error.stack : undefined,
-    })
-
-    if (error instanceof Error && (error.message.includes("rate_limit") || error.message.includes("429"))) {
-      console.error("[Chorus] Rate limit atingido - usando fallback")
-    }
-
     return [generateChorusFallback(genre, theme)]
   }
 }
 
-// ✅ PROCESSAMENTO SIMPLES (igual ao que funcionou)
 function processChorusResult(text: string, genre: string): ChorusBlock[] {
-  // Extrair apenas linhas que parecem versos
   const lines = text
     .split("\n")
     .map((line) => line.trim())
@@ -102,22 +73,22 @@ function processChorusResult(text: string, genre: string): ChorusBlock[] {
         !line.includes("sílabas")
       )
     })
-    .slice(0, 4) // Apenas 4 linhas para refrão
+    .slice(0, 4)
+    .map((line) => capitalizeLines(line)) // Capitalizando cada linha
 
   console.log(`[Chorus] Linhas geradas:`, lines)
 
-  // Validação básica de completude
   if (lines.length === 4 && areChorusLinesComplete(lines)) {
     const content = lines.join("\n")
 
     return [
       {
         content: content,
-        score: 90, // Score alto para refrão válido
+        score: 90,
       },
     ]
   } else {
-    console.log(`[Chorus] ❌ Refrão inválido - usando fallback`)
+    console.log(`[Chorus] Refrão inválido - usando fallback`)
     return [generateChorusFallback("Sertanejo Moderno Masculino", "amor")]
   }
 }
@@ -139,28 +110,34 @@ function areChorusLinesComplete(lines: string[]): boolean {
   return true
 }
 
-// ✅ FALLBACKS NATURAIS PARA REFRÃO (testados e aprovados)
 function generateChorusFallback(genre: string, theme: string): ChorusBlock {
   const chorusFallbacks = [
     {
-      content: `Teu sorriso é meu porto seguro\nTeu abraço é meu aquecimento\nNo ritmo desse amor tão puro\nEncontro paz e sentimento`,
+      content: capitalizeLines(
+        `Teu sorriso é meu porto seguro\nTeu abraço é meu aquecimento\nNo ritmo desse amor tão puro\nEncontro paz e sentimento`,
+      ),
       score: 95,
     },
     {
-      content: `Teu olhar é a luz do meu caminho\nTeu carinho é o sol do meu dia\nEm teus braços eu encontro sentido\nTeu amor é a minha melodia`,
+      content: capitalizeLines(
+        `Teu olhar é a luz do meu caminho\nTeu carinho é o sol do meu dia\nEm teus braços eu encontro sentido\nTeu amor é a minha melodia`,
+      ),
       score: 95,
     },
     {
-      content: `Seu amor é minha estrada\nMinha luz, minha jornada\nNesse mundo de verdade\nEncontro a liberdade`,
+      content: capitalizeLines(
+        `Seu amor é minha estrada\nMinha luz, minha jornada\nNesse mundo de verdade\nEncontro a liberdade`,
+      ),
       score: 90,
     },
     {
-      content: `No compasso do teu abraço\nEncontro todo o meu espaço\nTeu amor é meu refúgio\nMeu porto, meu vestígio`,
+      content: capitalizeLines(
+        `No compasso do teu abraço\nEncontro todo o meu espaço\nTeu amor é meu refúgio\nMeu porto, meu vestígio`,
+      ),
       score: 90,
     },
   ]
 
-  // Escolher um fallback aleatório para variedade
   const randomFallback = chorusFallbacks[Math.floor(Math.random() * chorusFallbacks.length)]
   return randomFallback
 }
