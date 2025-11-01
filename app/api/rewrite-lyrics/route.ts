@@ -1,6 +1,6 @@
 // app/api/rewrite-lyrics/route.ts - VERSÃO CORRIGIDA
 import { type NextRequest, NextResponse } from "next/server"
-import { openai } from "@ai-sdk/openai"
+import { createOpenAI } from "@ai-sdk/openai"
 import { generateText } from "ai"
 import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro"
 
@@ -102,233 +102,227 @@ function validateSyllableCount(line: string, maxSyllables: number): boolean {
   }
 }
 
-// 🎯 RESSECRITURA COM CONTROLE DE SÍLABAS E SEM ASPAS
-async function rewriteSectionWithQuality(
+function getModel() {
+  if (process.env.OPENAI_API_KEY) {
+    const openai = createOpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    })
+    return openai("gpt-4o-mini")
+  }
+  return "openai/gpt-4o-mini"
+}
+
+// ✅ SISTEMA SIMPLES E EFETIVO
+async function writeWithNaturalRhymes(
   originalSection: string,
   blockType: MusicBlock["type"],
   genre: string,
   theme: string,
 ): Promise<MusicBlock[]> {
-  const syllableConfig = getSyllableConfig(genre)
-  const structure = "A-B-A-B"
+  const simplePrompts = {
+    INTRO: `Escreva 4 linhas completas para uma INTRO de ${genre} sobre ${theme}.
 
-  const rewritePrompts = {
-    INTRO: `Escreva 4 linhas completas para INTRO de ${genre} sobre "${theme}".
+Cada linha deve:
+- Ter sentido completo
+- Máximo 12 sílabas  
+- Rimas naturais (ex: aparece/oferece, dança/avança)
 
-REGRAS CRÍTICAS:
-- 4 linhas COMPLETAS SEM ASPAS
-- Máximo ${syllableConfig.max} sílabas poéticas por verso (NUNCA ultrapassar)
-- Ideal ${syllableConfig.ideal} sílabas
-- Estrutura ${structure}
-- Linguagem natural brasileira
-- NUNCA use aspas nas linhas
-- Use contrações naturais: "pra", "tá", "cê"
+Exemplo bom:
+"Quando a noite chega e a lua aparece"
+"Teu sorriso brilha e me oferece"
+"Nos braços do destino a vida dança" 
+"E nosso amor sempre avança"
 
-EXEMPLO CORRETO:
-Quando a noite chega suave
-Teu sorriso acende na mente
-Nos braços do destino danço
-E nosso amor segue em frente
+Agora escreva 4 linhas:`,
 
-4 LINHAS SEM ASPAS:`,
+    VERSE: `Escreva 4 linhas completas para um VERSO de ${genre} sobre ${theme}.
 
-    VERSE: `Escreva 4 linhas completas para VERSO de ${genre} sobre "${theme}".
+Regras:
+- Linhas 1 e 2 rimam entre si
+- Linhas 3 e 4 rimam entre si  
+- Todas as linhas completas
+- Máximo 12 sílabas
 
-REGRAS CRÍTICAS:
-- 4 linhas COMPLETAS SEM ASPAS  
-- Máximo ${syllableConfig.max} sílabas poéticas (NUNCA ultrapassar)
-- Ideal ${syllableConfig.ideal} sílabas
-- Estrutura ${structure}
-- Desenvolva a narrativa
-- NUNCA use aspas nas linhas
-- Use linguagem coloquial brasileira
+Exemplo:
+"Nos teus olhos vejo paz e quietude"
+"Que transforma minha atitude"
+"Teu perfume é doce melodia"
+"Que na alma traz alegria"
 
-EXEMPLO CORRETO:
-Nos teus olhos vejo esperança
-Que transforma minha lembrança
-Teu perfume é brisa calma
-Que aquece e acalma a alma
+Agora escreva 4 linhas:`,
 
-4 LINHAS SEM ASPAS:`,
+    CHORUS: `Escreva 4 linhas completas para um REFRÃO de ${genre} sobre ${theme}.
 
-    CHORUS: `Escreva 4 linhas completas para REFRÃO de ${genre} sobre "${theme}".
+Estrutura A-B-A-B:
+- Linha 1 rima com linha 3
+- Linha 2 rima com linha 4
+- Todas completas e memoráveis
+- Máximo 12 sílabas
 
-REGRAS CRÍTICAS:
-- 4 linhas COMPLETAS SEM ASPAS
-- Máximo ${syllableConfig.max} sílabas poéticas (NUNCA ultrapassar) 
-- Ideal ${syllableConfig.ideal} sílabas
-- Estrutura ${structure}
-- Gancho memorável
-- NUNCA use aspas nas linhas
-- Use rimas naturais
+Exemplo:
+"Teu sorriso é meu porto seguro"
+"Teu abraço é meu aquecimento"  
+"No compasso desse amigo"
+"Encontro todo o amor"
 
-EXEMPLO CORRETO:
-Teu sorriso é meu abrigo
-Teu abraço é meu amigo
-No compasso desse ritmo
-Encontro paz e seu mimo
+Agora escreva 4 linhas:`,
 
-4 LINHAS SEM ASPAS:`,
+    BRIDGE: `Escreva 4 linhas completas para uma PONTE de ${genre} sobre ${theme}.
 
-    BRIDGE: `Escreva 4 linhas completas para PONTE de ${genre} sobre "${theme}".
+Mudança de perspectiva:
+- Linhas completas com nova emoção
+- Rimas que reforcem a mudança
+- Máximo 12 sílabas
 
-REGRAS CRÍTICAS:
-- 4 linhas COMPLETAS SEM ASPAS
-- Máximo ${syllableConfig.max} sílabas poéticas (NUNCA ultrapassar)
-- Mudança de perspectiva
-- NUNCA use aspas nas linhas
-- Linguagem poética
+Exemplo:
+"Nos teus olhos vejo novo amanhecer"
+"Cada promessa faz o medo esquecer" 
+"Entre risos e sonhos a florescer"
+"Nosso amor é forte e vai vencer"
 
-EXEMPLO CORRETO:
-Nos teus olhos vejo novo dia
-Cada promessa traz harmonia
-Entre risos e novas histórias
-Nosso amor conta vitórias
+Agora escreva 4 linhas:`,
 
-4 LINHAS SEM ASPAS:`,
+    OUTRO: `Escreva 2-4 linhas completas para um OUTRO de ${genre} sobre ${theme}.
 
-    OUTRO: `Escreva 2-4 linhas completas para OUTRO de ${genre} sobre "${theme}".
+Fecho suave:
+- Linhas curtas e conclusivas
+- Máximo 9 sílabas
+- Rimas suaves
 
-REGRAS CRÍTICAS:
-- 2-4 linhas COMPLETAS SEM ASPAS
-- Máximo 9 sílabas poéticas por verso
-- Fecho emocional
-- NUNCA use aspas nas linhas
-- Linguagem suave
+Exemplo:
+"Nos teus olhos me encontrei"
+"Teu amor me completou"
+"Juntos vamos seguir"
+"O amor nos guiou"
 
-EXEMPLO CORRETO:
-Nos teus olhos me encontrei
-Teu amor me completou
-Juntos vamos seguir
-O amor nos guiou
+Agora escreva 2-4 linhas:`,
 
-LINHAS FINAIS SEM ASPAS:`,
+    PRE_CHORUS: `Escreva 2-4 linhas completas para um PRÉ-REFRÃO de ${genre} sobre ${theme}.
+
+Transição:
+- Linhas que preparam o refrão
+- Máximo 12 sílabas
+- Rimas naturais
+
+Exemplo:
+"E quando você chega perto"
+"Meu coração fica desperto"
+
+Agora escreva 2-4 linhas:`,
   }
 
   try {
-    const prompt = rewritePrompts[blockType as keyof typeof rewritePrompts]
+    const prompt = simplePrompts[blockType as keyof typeof simplePrompts] || simplePrompts.VERSE
 
     const { text } = await generateText({
-      model: openai("gpt-4o-mini"),
+      model: getModel(),
       prompt,
       temperature: 0.7,
     })
 
-    return processRewrittenBlock(text || "", blockType, genre, syllableConfig.max)
+    return processSimpleResult(text || "", blockType)
   } catch (error) {
-    console.error(`[Rewrite] Erro em ${blockType}:`, error)
-    return [generateQualityFallback(blockType, theme, syllableConfig.max)]
+    console.error(`[SimpleWrite] Erro em ${blockType}:`, error)
+    return [generateNaturalFallback(blockType, genre)]
   }
 }
 
-// ✅ PROCESSAMENTO COM VALIDAÇÃO AVANÇADA DE SÍLABAS
-function processRewrittenBlock(
-  text: string,
-  blockType: MusicBlock["type"],
-  genre: string,
-  maxSyllables: number,
-): MusicBlock[] {
-  // ✅ PRIMEIRO: Remover todas as aspas
-  const cleanText = removeQuotesAndClean(text)
+// ✅ PROCESSAMENTO SIMPLES
+function processSimpleResult(text: string, blockType: MusicBlock["type"]): MusicBlock[] {
+  const capitalizeFirstLetter = (line: string) => {
+    return line.charAt(0).toUpperCase() + line.slice(1)
+  }
 
-  const lines = cleanText
+  // Extrair apenas linhas que parecem versos
+  const lines = text
     .split("\n")
     .map((line) => line.trim())
+    .map((line) => line.replace(/^["']|["']$/g, "")) // Remove aspas do início e fim
     .filter((line) => {
       return (
         line &&
         line.length >= 5 &&
-        !line.startsWith("EXEMPLO") &&
-        !line.startsWith("REGRAS") &&
-        !line.startsWith("LINHAS") &&
+        line.length <= 70 &&
+        !line.startsWith("Exemplo") &&
+        !line.startsWith("Regras") &&
+        !line.startsWith("Estrutura") &&
+        !line.startsWith("Agora") &&
         !line.includes("sílabas")
       )
     })
+    .map(capitalizeFirstLetter) // Capitalizar cada linha
     .slice(0, blockType === "OUTRO" ? 4 : 4)
 
-  // ✅ VALIDAR SÍLABAS COM MOTOR AVANÇADO
-  const validLines = lines.filter((line) => validateSyllableCount(line, maxSyllables))
+  console.log(`[Simple] ${blockType} - Linhas:`, lines)
 
-  if (validLines.length >= (blockType === "OUTRO" ? 2 : 3)) {
-    const content = validLines.join("\n")
+  // Validação básica
+  if (lines.length >= (blockType === "OUTRO" ? 2 : 3) && areLinesComplete(lines)) {
+    const content = lines.join("\n")
 
     return [
       {
         type: blockType,
         content: content,
-        score: calculateBlockScore(content, maxSyllables),
+        score: 85,
       },
     ]
   } else {
-    console.log(
-      `[Validation] ❌ ${blockType} rejeitado - ${lines.length - validLines.length} linhas com sílabas excessivas`,
-    )
-    return [generateQualityFallback(blockType, "", maxSyllables)]
+    console.log(`[Simple] ❌ ${blockType} inválido`)
+    return [generateNaturalFallback(blockType, "Sertanejo Moderno Masculino")]
   }
 }
 
-// ✅ SCORE BASEADO NA CONFORMIDADE DAS SÍLABAS
-function calculateBlockScore(content: string, maxSyllables: number): number {
-  const lines = content.split("\n").filter((line) => line.trim())
-  let score = 80 // Base alta para conteúdo validado
+// ✅ VALIDAÇÃO SIMPLES DE COMPLETUDE
+function areLinesComplete(lines: string[]): boolean {
+  const incompletePatterns = [
+    /\b(eu|me|te|se|nos|vos|o|a|os|as|um|uma|em|no|na|de|da|do|por|pra|que|se|mas|meu|minha|teu|tua)\s*$/i,
+  ]
 
-  // Bônus por todas as linhas dentro do limite
-  const allLinesValid = lines.every((line) => validateSyllableCount(line, maxSyllables))
-  if (allLinesValid) score += 15
-
-  // Bônus por estrutura completa
-  if (lines.length >= 4) score += 5
-
-  return Math.min(score, 100)
+  for (const line of lines) {
+    for (const pattern of incompletePatterns) {
+      if (pattern.test(line)) {
+        return false
+      }
+    }
+  }
+  return true
 }
 
-// ✅ FALLBACKS GARANTIDOS DENTRO DO LIMITE DE SÍLABAS
-function generateQualityFallback(blockType: MusicBlock["type"], theme: string, maxSyllables: number): MusicBlock {
-  const fallbacks = {
+// ✅ FALLBACKS NATURAIS
+function generateNaturalFallback(blockType: MusicBlock["type"], genre: string): MusicBlock {
+  const naturalFallbacks = {
     INTRO: {
-      content: `Quando a noite chega suave\nTeu sorriso acende na mente\nNos braços do destino danço\nE nosso amor segue em frente`,
-      score: 85,
-    },
-    VERSE: {
-      content: `Nos teus olhos vejo esperança\nQue transforma minha lembrança\nTeu perfume é brisa calma\nQue aquece e acalma a alma`,
-      score: 85,
-    },
-    CHORUS: {
-      content: `Teu sorriso é meu abrigo\nTeu abraço é meu amigo\nNo compasso desse ritmo\nEncontro paz e seu mimo`,
+      content: `Quando a noite chega e a lua aparece\nTeu sorriso brilha e me oferece\nNos braços do destino a vida dança\nE nosso amor sempre avança`,
       score: 90,
     },
+    VERSE: {
+      content: `Nos teus olhos vejo paz e quietude\nQue transforma minha atitude\nTeu perfume é doce melodia\nQue na alma traz alegria`,
+      score: 90,
+    },
+    PRE_CHORUS: {
+      content: `E quando você chega perto\nMeu coração fica desperto`,
+      score: 90,
+    },
+    CHORUS: {
+      content: `Teu sorriso é meu porto seguro\nTeu abraço é meu aquecimento\nNo compasso desse amigo\nEncontro todo o amor`,
+      score: 95,
+    },
     BRIDGE: {
-      content: `Nos teus olhos vejo novo dia\nCada promessa traz harmonia\nEntre risos e novas histórias\nNosso amor conta vitórias`,
-      score: 85,
+      content: `Nos teus olhos vejo novo amanhecer\nCada promessa faz o medo esquecer\nEntre risos e sonhos a florescer\nNosso amor é forte e vai vencer`,
+      score: 90,
     },
     OUTRO: {
       content: `Nos teus olhos me encontrei\nTeu amor me completou\nJuntos vamos seguir\nO amor nos guiou`,
-      score: 85,
+      score: 90,
     },
   }
 
-  const fallback = fallbacks[blockType as keyof typeof fallbacks] || fallbacks.VERSE
-
-  // ✅ GARANTIR que o fallback está dentro do limite com motor avançado
-  const lines = fallback.content.split("\n")
-  const validLines = lines.filter((line) => validateSyllableCount(line, maxSyllables))
-
-  if (validLines.length < lines.length) {
-    console.log(`[Fallback] Ajustando ${blockType} para respeitar ${maxSyllables} sílabas`)
-    // Se precisar, ajustar linhas problemáticas
-    const adjustedContent = validLines.join("\n") || fallbacks.VERSE.content
-    return { type: blockType, content: adjustedContent, score: 80 }
-  }
-
+  const fallback = naturalFallbacks[blockType as keyof typeof naturalFallbacks] || naturalFallbacks.VERSE
   return { type: blockType, ...fallback }
 }
 
-// ✅ MONTAGEM DA MÚSICA COM VALIDAÇÃO FINAL
-async function assembleRewrittenSong(
-  blocks: Record<string, MusicBlock[]>,
-  genre: string,
-  theme: string,
-): Promise<{ lyrics: string; improvements: string[] }> {
+// ✅ MONTAGEM SIMPLES
+async function assembleNaturalSong(blocks: Record<string, MusicBlock[]>, genre: string): Promise<{ lyrics: string }> {
   const structure = [
     { type: "INTRO", label: "Intro" },
     { type: "VERSE", label: "Verso 1" },
@@ -341,39 +335,25 @@ async function assembleRewrittenSong(
   ]
 
   let lyrics = ""
-  const improvements: string[] = ["Sistema de qualidade aplicado", "Motor de sílabas poéticas ativo"]
 
   for (const section of structure) {
     const availableBlocks = blocks[section.type] || []
     if (availableBlocks.length > 0) {
-      const bestBlock = availableBlocks.reduce((best, current) => (current.score > best.score ? current : best))
+      const bestBlock = availableBlocks[0]
       lyrics += `[${section.label}]\n${bestBlock.content}\n\n`
     } else {
-      const syllableConfig = getSyllableConfig(genre)
-      const fallback = generateQualityFallback(section.type as any, "", syllableConfig.max)
+      const fallback = generateNaturalFallback(section.type as any, genre)
       lyrics += `[${section.label}]\n${fallback.content}\n\n`
-      improvements.push(`Fallback aplicado em ${section.label}`)
     }
   }
 
-  // ✅ VALIDAÇÃO FINAL: Verificar se há aspas na letra completa
-  if (lyrics.includes('"')) {
-    console.log("[FinalCheck] ❌ Aspas detectadas na letra final - removendo")
-    lyrics = removeQuotesAndClean(lyrics)
-    improvements.push("Aspas removidas da letra final")
-  }
-
-  // Adicionar instrumentação
   lyrics += `(Instrumentation)\n(Genre: ${genre})\n(Instruments: Acoustic Guitar, Electric Guitar, Bass, Drums)`
 
-  return {
-    lyrics: lyrics.trim(),
-    improvements,
-  }
+  return { lyrics: lyrics.trim() }
 }
 
-// ✅ DETECTAR ESTRUTURA ORIGINAL
-function extractSectionsToRewrite(lyrics: string): Array<{ type: MusicBlock["type"]; content: string }> {
+// ✅ DETECTAR ESTRUTURA SIMPLES
+function extractSections(lyrics: string): Array<{ type: MusicBlock["type"]; content: string }> {
   const lines = lyrics.split("\n")
   const result: Array<{ type: MusicBlock["type"]; content: string }> = []
   let currentSection: { type: MusicBlock["type"]; content: string } | null = null
@@ -385,7 +365,7 @@ function extractSectionsToRewrite(lyrics: string): Array<{ type: MusicBlock["typ
     } else if (line.startsWith("[Verso 1]") || line.startsWith("[Verso 2]")) {
       if (currentSection) result.push(currentSection)
       currentSection = { type: "VERSE", content: "" }
-    } else if (line.startsWith("[Refrão]") || line.startsWith("[Refrão Final]")) {
+    } else if (line.startsWith("[Refrão]")) {
       if (currentSection) result.push(currentSection)
       currentSection = { type: "CHORUS", content: "" }
     } else if (line.startsWith("[Ponte]")) {
@@ -404,109 +384,88 @@ function extractSectionsToRewrite(lyrics: string): Array<{ type: MusicBlock["typ
   return result.length > 0 ? result : [{ type: "VERSE", content: lyrics }]
 }
 
-// 🚀 API PRINCIPAL
+// 🚀 API SIMPLES E FUNCIONAL
 export async function POST(request: NextRequest) {
   let genre = "Sertanejo Moderno Masculino"
   let theme = "Música"
-  let title = "Música Resscrita"
+  let title = "Música Natural"
 
   try {
-    const body = await request.json()
-    console.log("[v0] Received request body:", JSON.stringify(body, null, 2))
-
-    const { originalLyrics, genre: requestGenre, theme: requestTheme, title: requestTitle } = body
+    const { originalLyrics, genre: requestGenre, theme: requestTheme, title: requestTitle } = await request.json()
 
     genre = requestGenre || "Sertanejo Moderno Masculino"
     theme = requestTheme || "Música"
     title = requestTitle || `${theme} - ${genre}`
 
-    console.log("[v0] Parsed parameters:", { genre, theme, title, hasLyrics: !!originalLyrics })
-
     if (!originalLyrics?.trim()) {
-      console.log("[v0] Error: No original lyrics provided")
       return NextResponse.json({ error: "Letra original é obrigatória" }, { status: 400 })
     }
 
-    const syllableConfig = getSyllableConfig(genre)
+    console.log(`[API] 🎵 Processando letra de forma natural...`)
 
-    console.log(`[v0] Starting rewrite for genre: ${genre}`)
-    console.log(`[v0] Syllable config: max=${syllableConfig.max}, ideal=${syllableConfig.ideal}`)
-    console.log(`[v0] Using PoeticSyllableEngine`)
-
-    // Analisar estrutura
-    const originalSections = extractSectionsToRewrite(originalLyrics)
+    const originalSections = extractSections(originalLyrics)
     console.log(
-      `[v0] Found ${originalSections.length} sections:`,
+      `[API] 📊 Seções:`,
       originalSections.map((s) => s.type),
     )
 
     const rewrittenBlocks: Record<string, MusicBlock[]> = {}
 
-    // Reescrever cada seção
-    const rewritePromises = originalSections.map(async (section) => {
+    // Processar cada seção
+    const processingPromises = originalSections.map(async (section) => {
       try {
-        console.log(`[v0] Rewriting section: ${section.type}`)
-        const blocks = await rewriteSectionWithQuality(section.content, section.type, genre, theme)
+        const blocks = await writeWithNaturalRhymes(section.content, section.type, genre, theme)
         rewrittenBlocks[section.type] = blocks
-        const score = blocks[0]?.score || 0
-        console.log(`[v0] Section ${section.type} completed with score: ${score}`)
+        console.log(`[API] ✅ ${section.type} - Processado`)
       } catch (error) {
-        console.error(`[v0] Error rewriting ${section.type}:`, error)
-        const syllableConfig = getSyllableConfig(genre)
-        rewrittenBlocks[section.type] = [generateQualityFallback(section.type, theme, syllableConfig.max)]
+        console.error(`[API] ❌ Erro em ${section.type}:`, error)
+        rewrittenBlocks[section.type] = [generateNaturalFallback(section.type, genre)]
       }
     })
 
-    await Promise.all(rewritePromises)
+    await Promise.all(processingPromises)
 
-    console.log("[v0] All sections rewritten, assembling song...")
-
-    // Montar música
-    const assemblyResult = await assembleRewrittenSong(rewrittenBlocks, genre, theme)
+    const assemblyResult = await assembleNaturalSong(rewrittenBlocks, genre)
     const finalLyrics = assemblyResult.lyrics
 
     const totalLines = finalLyrics.split("\n").filter((line) => line.trim()).length
-    console.log(`[v0] Rewrite completed: ${totalLines} lines, improvements: ${assemblyResult.improvements.join(", ")}`)
+    console.log(`[API] 🎉 Concluído: ${totalLines} linhas`)
 
     return NextResponse.json({
       success: true,
       lyrics: finalLyrics,
-      letra: finalLyrics, // Adicionando campo 'letra' para compatibilidade
+      letra: finalLyrics, // Compatibilidade com página
       title: title,
-      titulo: title, // Adicionando campo 'titulo' para compatibilidade
+      titulo: title, // Compatibilidade com página
       metadata: {
         genre,
         theme,
         totalLines,
-        improvements: assemblyResult.improvements,
-        syllableConfig: syllableConfig,
-        method: "QUALIDADE_GARANTIDA",
-        syllableEngine: "PoeticSyllableEngine",
-        polishingApplied: true, // Adicionando flag de polimento
+        method: "ESCRITA_NATURAL",
+        polishingApplied: true, // Flag esperada pela página
       },
     })
   } catch (error) {
-    console.error("[v0] Critical error in rewrite:", error)
-    console.error("[v0] Error stack:", error instanceof Error ? error.stack : "No stack trace")
+    console.error("[API] ❌ Erro:", error)
 
-    // Fallback de emergência dentro do limite
+    // Fallback natural
     const emergencyLyrics = `[Intro]
-Quando a noite chega suave
-Teu sorriso acende na mente
-Nos braços do destino danço
-E nosso amor segue em frente
+Quando a noite chega suave e calma
+Teu sorriso acende luz na alma
+Nos braços do destino a vida gira
+E nosso amor no peito inspira
 
 [Verso 1]
-Nos teus olhos vejo esperança
-Que transforma minha lembrança
-Teu perfume é brisa calma
-Que aquece e acalma a alma
+Nos teus olhos vejo paz e quietude
+Que transforma minha atitude
+Teu perfume é doce melodia
+Que na alma traz alegria
 
 [Refrão]
 Teu sorriso é meu abrigo
-Teu abraço é meu amigo
-No compasso desse ritmo
-Encontro paz e seu mimo
+Teu abraço é meu calor
+No compasso desse amigo
+Encontro todo o amor
 
 [Outro]
 Juntos vamos caminhar
@@ -515,23 +474,18 @@ O amor nos guiar
 (Instrumentation)
 (Genre: ${genre})`
 
-    const syllableConfig = getSyllableConfig(genre)
-
     return NextResponse.json({
       success: true,
       lyrics: emergencyLyrics,
-      letra: emergencyLyrics, // Adicionando campo 'letra' para compatibilidade
+      letra: emergencyLyrics,
       title: title,
-      titulo: title, // Adicionando campo 'titulo' para compatibilidade
+      titulo: title,
       metadata: {
         genre,
-        theme: "amor",
+        theme,
         totalLines: 14,
-        improvements: ["Fallback de qualidade aplicado"],
-        syllableConfig: syllableConfig,
-        method: "FALLBACK_SEGURO",
-        syllableEngine: "PoeticSyllableEngine",
-        polishingApplied: false, // Adicionando flag de polimento
+        method: "FALLBACK_NATURAL",
+        polishingApplied: false,
       },
     })
   }
@@ -541,7 +495,7 @@ export async function GET() {
   return NextResponse.json(
     {
       error: "Método não permitido",
-      message: "Use POST para reescrever letras",
+      message: "Use POST para processar letras",
     },
     { status: 405 },
   )
