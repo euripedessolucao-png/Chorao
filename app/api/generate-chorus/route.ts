@@ -1,5 +1,6 @@
-// app/api/generate-chorus/route.ts - VERSÃO CORRIGIDA COM AI GATEWAY
+// app/api/generate-chorus/route.ts - CORREÇÃO DO MODEL
 import { type NextRequest, NextResponse } from "next/server"
+import { createOpenAI } from "@ai-sdk/openai"
 import { generateText } from "ai"
 import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro"
@@ -10,6 +11,17 @@ interface ChorusVariation {
   style: string
   score: number
   justification: string
+}
+
+// ✅ MESMA FUNÇÃO getModel() DA SUA REESCRITA QUE FUNCIONA
+function getModel() {
+  if (process.env.OPENAI_API_KEY) {
+    const openai = createOpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    })
+    return openai("gpt-4o-mini")
+  }
+  return "openai/gpt-4o-mini"
 }
 
 async function generateNaturalChorus(genre: string, theme: string, context?: string): Promise<string[]> {
@@ -40,7 +52,7 @@ ${context ? `Contexto: ${context}` : ""}
 
   try {
     const { text } = await generateText({
-      model: "openai/gpt-4o-mini",
+      model: getModel(), // ✅ CORRIGIDO: usa a função getModel()
       prompt,
       temperature: 0.7,
     })
@@ -77,7 +89,7 @@ function processChorusResult(text: string, genre: string): string[] {
       )
     })
     .slice(0, 4)
-    .map((line) => capitalizeLines(line)) // Capitalizando cada linha
+    .map((line) => capitalizeLines(line))
 
   console.log(`[Chorus] Linhas geradas:`, lines)
 
@@ -89,7 +101,6 @@ function processChorusResult(text: string, genre: string): string[] {
   }
 }
 
-// ✅ VALIDAÇÃO DE COMPLETUDE (igual à que funcionou)
 function areChorusLinesComplete(lines: string[]): boolean {
   const incompletePatterns = [
     /\b(eu|me|te|se|nos|vos|o|a|os|as|um|uma|em|no|na|de|da|do|por|pra|que|se|mas|meu|minha|teu|tua)\s*$/i,
@@ -121,7 +132,7 @@ function generateChorusFallback(genre: string, theme: string): string[] {
 // 🚀 API PRINCIPAL
 export async function POST(request: NextRequest) {
   try {
-    const { genre, theme, mood, lyrics, advancedMode } = await request.json() // Recebendo lyrics
+    const { genre, theme, mood, lyrics, advancedMode } = await request.json()
 
     if (!theme) {
       return NextResponse.json({ error: "Tema é obrigatório" }, { status: 400 })
@@ -198,7 +209,7 @@ Retorne APENAS o JSON, sem markdown.`
       attempts++
 
       const { text } = await generateText({
-        model: "openai/gpt-4o-mini",
+        model: getModel(), // ✅ CORRIGIDO: usa a função getModel()
         prompt,
         temperature: 0.85,
       })
