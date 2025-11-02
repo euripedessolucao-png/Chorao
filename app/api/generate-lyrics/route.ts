@@ -4,6 +4,7 @@ import { capitalizeLines } from "@/lib/utils/capitalize-lyrics"
 import { buildGenreRulesPrompt } from "@/lib/validation/genre-rules-builder"
 import { getUniversalRhymeRules } from "@/lib/validation/universal-rhyme-rules"
 import { enforceSyllableLimitAll } from "@/lib/validation/intelligent-rewriter"
+import { reviewAndFixAllLines } from "@/lib/validation/auto-syllable-fixer"
 import {
   formatSertanejoPerformance,
   shouldUsePerformanceFormat,
@@ -271,6 +272,13 @@ Gere a letra agora:`
       console.log(`[API] ✅ ${stackResult.improvements.length} verso(s) empilhado(s)`)
     }
     finalLyrics = stackResult.stackedLyrics
+
+    console.log("[API] 🔍 Revisão final: corrigindo palavras cortadas e versos longos...")
+    const autoFixResult = reviewAndFixAllLines(finalLyrics, maxSyllables)
+    if (autoFixResult.corrections.length > 0) {
+      console.log(`[API] ✅ ${autoFixResult.corrections.length} correção(ões) automática(s) aplicada(s)`)
+      finalLyrics = autoFixResult.fixedLyrics
+    }
 
     if (genre.toLowerCase().includes("raiz")) {
       const forbiddenInstruments = ["electric guitar", "808", "synth", "drum machine", "bateria eletrônica"]

@@ -14,6 +14,7 @@ import { enhanceLyricsRhymes } from "@/lib/validation/rhyme-enhancer"
 import { validateRhymesForGenre } from "@/lib/validation/rhyme-validator"
 import { GENRE_CONFIGS, getSyllableLimitsForGenre } from "@/lib/genre-config"
 import { cleanLyricsFromAI } from "@/lib/utils/remove-quotes-and-clean"
+import { reviewAndFixAllLines } from "@/lib/validation/auto-syllable-fixer"
 
 function getMaxSyllables(genre: string): number {
   const genreConfig = (GENRE_CONFIGS as any)[genre]
@@ -249,6 +250,13 @@ Gere a letra agora:`
     console.log("[API] 📚 Aplicando empilhamento...")
     const stackingResult = LineStacker.stackLines(finalLyrics)
     finalLyrics = stackingResult.stackedLyrics
+
+    console.log("[API] 🔍 Revisão final: corrigindo palavras cortadas e versos longos...")
+    const autoFixResult = reviewAndFixAllLines(finalLyrics, maxSyllables)
+    if (autoFixResult.corrections.length > 0) {
+      console.log(`[API] ✅ ${autoFixResult.corrections.length} correção(ões) automática(s) aplicada(s)`)
+      finalLyrics = autoFixResult.fixedLyrics
+    }
 
     if (shouldUsePerformanceFormat(genre, performanceMode)) {
       finalLyrics = formatSertanejoPerformance(finalLyrics, genre)
