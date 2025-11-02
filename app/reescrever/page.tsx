@@ -25,7 +25,7 @@ import {
 import { EMOTIONS } from "@/lib/genres"
 import { GenreSelect } from "@/components/genre-select"
 import { HookGenerator } from "@/components/hook-generator"
-import { SyllableValidator } from "@/components/syllable-validator"
+import { SyllableValidatorEditable } from "@/components/syllable-validator-editable"
 import { RhymeAnalyzer } from "@/components/rhyme-analyzer"
 import { getGenreMetrics } from "@/lib/metrics/brazilian-metrics"
 
@@ -668,16 +668,12 @@ export default function ReescreverPage() {
                     className="font-mono text-xs"
                   />
 
-                  <SyllableValidator
+                  <SyllableValidatorEditable
                     lyrics={lyrics}
-                    maxSyllables={currentSyllableConfig?.max || 11}
-                    onValidate={(result) => {
-                      if (!result.valid) {
-                        toast.warning(`${result.linesWithIssues} versos fora do padrão ${genre}`, {
-                          description: `Use ${currentSyllableConfig?.min}-${currentSyllableConfig?.max} sílabas`,
-                          duration: 5000,
-                        })
-                      }
+                    maxSyllables={currentSyllableConfig?.max || 12}
+                    onLyricsChange={(newLyrics) => {
+                      setLyrics(newLyrics)
+                      toast.success("Letra atualizada com correções!")
                     }}
                   />
 
