@@ -230,7 +230,7 @@ export function formatSertanejoPerformance(lyrics: string, genre: string): strin
 /**
  * Verifica se deve usar formato de performance PART A/B/C (apenas Sertanejo Moderno)
  */
-export function shouldUsePerformanceFormat(genre: string): boolean {
+export function shouldUsePerformanceFormat(genre: string, performanceMode?: string): boolean {
   const genreLower = genre.toLowerCase()
-  return genreLower.includes("sertanejo moderno")
+  return genreLower.includes("sertanejo moderno") && performanceMode === "performance"
 }
