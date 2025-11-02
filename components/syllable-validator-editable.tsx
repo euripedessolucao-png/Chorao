@@ -1,5 +1,3 @@
-// components/syllable-validator-editable.tsx - VERSÃO FINAL CORRIGIDA
-
 "use client"
 
 import { useState } from "react"
@@ -8,7 +6,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { CheckCircle, AlertTriangle, XCircle, Edit2, Check, X } from "lucide-react"
-import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro"; // ✅ CORRETO
+import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro"
+import { fixLineToMaxSyllables } from "@/lib/validation/local-syllable-fixer"
 import { toast } from "sonner"
 
 interface LineValidation {
@@ -31,45 +30,80 @@ export function SyllableValidatorEditable({
 }: SyllableValidatorEditableProps) {
   const [editingLines, setEditingLines] = useState<Set<number>>(new Set())
 
-  // Função para gerar sugestões básicas
-  const generateBasicSuggestions = (line: string, maxSyllables: number): string[] => {
+  // Função para gerar sugestões inteligentes
+  const generateSmartSuggestions = (line: string, maxSyllables: number): string[] => {
     const suggestions: string[] = []
-    const words = line.split(" ")
 
-    // Sugestão 1: Remover última palavra se tiver mais de maxSyllables + 2
-    if (words.length > 1) {
-      const withoutLastWord = words.slice(0, -1).join(" ")
-      const syllablesWithoutLast = countPoeticSyllables(withoutLastWord)
-      if (syllablesWithoutLast <= maxSyllables && syllablesWithoutLast > 0) {
-        suggestions.push(withoutLastWord)
+    // Sugestão 1: Usar o local-syllable-fixer (correção semântica inteligente)
+    const fixedLine = fixLineToMaxSyllables(line, maxSyllables)
+    if (fixedLine !== line && countPoeticSyllables(fixedLine) <= maxSyllables) {
+      suggestions.push(fixedLine)
+    }
+
+    // Sugestão 2: Contrações naturais expandidas (40+ padrões)
+    const contractions: [RegExp, string][] = [
+      // Pronomes e verbos comuns
+      [/\bvocê\b/gi, "cê"],
+      [/\bvocês\b/gi, "cês"],
+      [/\bestou\b/gi, "tô"],
+      [/\bestá\b/gi, "tá"],
+      [/\bestava\b/gi, "tava"],
+      [/\bestavam\b/gi, "tavam"],
+      [/\bestão\b/gi, "tão"],
+      [/\bvamos\b/gi, "vamo"],
+
+      // Preposições e artigos
+      [/\bpara\s+o\b/gi, "pro"],
+      [/\bpara\s+a\b/gi, "pra"],
+      [/\bpara\b/gi, "pra"],
+      [/\bpelo\b/gi, "pro"],
+      [/\bpela\b/gi, "pra"],
+      [/\bde\s+o\b/gi, "do"],
+      [/\bde\s+a\b/gi, "da"],
+      [/\bem\s+o\b/gi, "no"],
+      [/\bem\s+a\b/gi, "na"],
+      [/\bcom\s+o\b/gi, "co"],
+      [/\bcom\s+a\b/gi, "ca"],
+
+      // Conjunções e advérbios
+      [/\bporque\b/gi, "que"],
+      [/\bquando\b/gi, "quano"],
+      [/\bquanto\b/gi, "quanto"],
+      [/\bagora\b/gi, "gora"],
+      [/\bembora\b/gi, "bora"],
+
+      // Elisões naturais do canto (sinalefa)
+      [/\bde\s+amor\b/gi, "d'amor"],
+      [/\bde\s+ela\b/gi, "dela"],
+      [/\bde\s+ele\b/gi, "dele"],
+      [/\bde\s+eu\b/gi, "d'eu"],
+      [/\bque\s+eu\b/gi, "qu'eu"],
+      [/\bse\s+eu\b/gi, "s'eu"],
+      [/\bme\s+deixa\b/gi, "m'deixa"],
+      [/\bte\s+amo\b/gi, "t'amo"],
+      [/\bna\s+hora\b/gi, "n'hora"],
+      [/\bpra\s+sempre\b/gi, "pr'sempre"],
+      [/\bde\s+repente\b/gi, "d'repente"],
+
+      // Expressões coloquiais
+      [/\btá\s+bom\b/gi, "tá bom"],
+      [/\btá\s+bem\b/gi, "tá bem"],
+      [/\bvou\s+embora\b/gi, "vô bora"],
+      [/\btenho\s+que\b/gi, "tenho que"],
+    ]
+
+    const currentLine = line
+    for (const [pattern, replacement] of contractions) {
+      const testLine = currentLine.replace(pattern, replacement)
+      const testSyllables = countPoeticSyllables(testLine)
+
+      if (testSyllables <= maxSyllables && testSyllables > 0 && !suggestions.includes(testLine.trim())) {
+        suggestions.push(testLine.trim())
+        if (suggestions.length >= 3) break
       }
     }
 
-    // Sugestão 2: Contrações comuns
-    const contractions: [string, string][] = [
-      [" para ", " pra "],
-      [" você ", " cê "],
-      [" está ", " tá "],
-      [" estou ", " tô "],
-      [" com ", " c/ "],
-      [" de ", " d"],
-      [" que ", " q"],
-      [" não ", " num "],
-      [" uma ", " "],
-      [" um ", " "],
-    ]
-
-    contractions.forEach(([from, to]) => {
-      if (line.includes(from)) {
-        const newLine = line.replace(new RegExp(from, "g"), to)
-        const syllables = countPoeticSyllables(newLine)
-        if (syllables <= maxSyllables && syllables > 0) {
-          suggestions.push(newLine.trim())
-        }
-      }
-    })
-
-    return suggestions.slice(0, 3) // Limitar a 3 sugestões
+    return suggestions.slice(0, 3)
   }
 
   // Analisa todas as linhas da letra
@@ -82,8 +116,8 @@ export function SyllableValidatorEditable({
       const syllables = countPoeticSyllables(line)
 
       if (syllables > maxSyllables) {
-        // Gerar sugestões básicas
-        const suggestions = generateBasicSuggestions(line, maxSyllables)
+        // Gerar sugestões inteligentes
+        const suggestions = generateSmartSuggestions(line, maxSyllables)
 
         validations.push({
           line: line.trim(),

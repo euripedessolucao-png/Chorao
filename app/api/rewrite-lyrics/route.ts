@@ -160,7 +160,16 @@ TEMA: ${theme || "Gratidão divina"}
 HUMOR: ${mood || "Reverente e alegre"}
 GÊNERO: ${genre}
 
-${additionalRequirements ? `REQUISITOS ADICIONAIS: ${additionalRequirements}` : ""}
+${
+  additionalRequirements
+    ? `
+🎯 REQUISITOS OBRIGATÓRIOS (DEVEM SER INCLUÍDOS):
+${additionalRequirements}
+
+IMPORTANTE: Os requisitos acima são OBRIGATÓRIOS. Se houver um refrão ou hook especificado, você DEVE incorporá-lo na letra reescrita. Construa os versos em torno desses elementos.
+`
+    : ""
+}
 
 📏 MÉTRICA MUSICAL:
 - Ideal: ${idealSyllables} sílabas por verso
@@ -195,9 +204,10 @@ ${
 }
 
 💡 PRIORIDADES (EM ORDEM):
-1. VERSOS COMPLETOS (mais importante)
-2. Dentro do limite de ${maxSyllables} sílabas
-3. Rimas naturais (bônus)
+1. INCLUIR REQUISITOS OBRIGATÓRIOS (refrão/hook especificados)
+2. VERSOS COMPLETOS (mais importante)
+3. Dentro do limite de ${maxSyllables} sílabas
+4. Rimas naturais (bônus)
 
 IMPORTANTE: Retorne APENAS as linhas da letra, SEM aspas, SEM explicações.
 
