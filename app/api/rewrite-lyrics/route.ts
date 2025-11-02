@@ -2,6 +2,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createOpenAI } from "@ai-sdk/openai"
 import { generateText } from "ai"
+import { formatToPerformanceStructure, addInstrumentalSolo } from "@/lib/formatters/performance-structure-formatter"
 
 function getModel() {
   if (process.env.OPENAI_API_KEY) {
@@ -13,8 +14,39 @@ function getModel() {
   return "openai/gpt-4o-mini"
 }
 
-// ✅ MELHORIA 1: Prompt mais inteligente para versos completos
-function createImprovedPrompt(originalLyrics: string, genre: string, theme: string, mood?: string, additionalRequirements?: string): string {
+// Prompt mais inteligente para versos completos
+function createImprovedPrompt(
+  originalLyrics: string,
+  genre: string,
+  theme: string,
+  mood?: string,
+  additionalRequirements?: string,
+  performanceMode?: string,
+): string {
+  const structureInstructions =
+    performanceMode === "performance"
+      ? `
+ESTRUTURA OBRIGATÓRIA (Sertanejo Moderno):
+- Use PART A para versos (PART A, PART A2, etc)
+- Use PART B para refrões (sempre PART B)
+- Use PART C para ponte (se houver)
+- Formato: [PART X - Label - Descrição instrumental]
+
+EXEMPLO DE FORMATO:
+[PART A - Verse 1 - Male vocal starts, light percussion]
+Linha 1 do verso
+Linha 2 do verso
+Linha 3 do verso
+Linha 4 do verso
+
+[PART B - Chorus - Full band enters, energetic beat]
+Linha 1 do refrão
+Linha 2 do refrão
+Linha 3 do refrão
+Linha 4 do refrão
+`
+      : ""
+
   return `Você é um compositor profissional de ${genre || "música brasileira"}.
 
 TAREFA: Reescreva a letra abaixo melhorando a qualidade poética e musical.
@@ -30,6 +62,7 @@ REGRAS IMPORTANTES:
 5. Mantenha o tema: ${theme || "o tema original"}
 ${mood ? `6. Tom emocional: ${mood}` : ""}
 ${additionalRequirements ? `7. Requisitos extras: ${additionalRequirements}` : ""}
+${structureInstructions}
 
 DICAS PARA VERSOS COMPLETOS:
 - Evite versos que terminem com: "e", "o", "a", "de", "que", "me", "te"
@@ -51,20 +84,20 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     console.log("[v1] Body recebido:", JSON.stringify(body, null, 2))
 
-    const { originalLyrics, genre, theme, title, mood, additionalRequirements } = body
+    const { originalLyrics, genre, theme, title, mood, additionalRequirements, performanceMode = "standard" } = body
 
     console.log("[v1] Letra original (primeiros 100 chars):", originalLyrics?.substring(0, 100))
     console.log("[v1] Gênero:", genre)
     console.log("[v1] Tema:", theme)
     console.log("[v1] Título:", title)
+    console.log("[v1] Modo performático:", performanceMode)
 
     if (!originalLyrics?.trim()) {
       console.log("[v1] ❌ ERRO: Letra original vazia")
       return NextResponse.json({ error: "Letra original é obrigatória" }, { status: 400 })
     }
 
-    // ✅ USANDO PROMPT MELHORADO
-    const prompt = createImprovedPrompt(originalLyrics, genre, theme, mood, additionalRequirements)
+    const prompt = createImprovedPrompt(originalLyrics, genre, theme, mood, additionalRequirements, performanceMode)
 
     console.log("[v1] Prompt melhorado criado")
     console.log("[v1] Chamando generateText...")
@@ -83,19 +116,29 @@ export async function POST(request: NextRequest) {
       throw new Error("IA retornou resposta vazia")
     }
 
-    // ✅ MELHORIA 2: Limpeza mais robusta
-    const cleanedLyrics = text
+    let cleanedLyrics = text
       .replace(/^"|"$/g, "")
-      .replace(/"\s*$/gm, "") 
+      .replace(/"\s*$/gm, "")
       .replace(/^\s*"/gm, "")
       .replace(/^(?:Explicação|Análise|Letra reescrita):/gi, "")
       .replace(/\n{3,}/g, "\n\n")
       .trim()
 
+    if (performanceMode === "performance") {
+      console.log("[v1] 🎭 Aplicando formatação performática PART A/B/C...")
+      cleanedLyrics = formatToPerformanceStructure(cleanedLyrics, genre, "performance")
+
+      // Adiciona solo instrumental se houver ponte
+      if (cleanedLyrics.includes("PART C")) {
+        cleanedLyrics = addInstrumentalSolo(cleanedLyrics, genre)
+      }
+
+      console.log("[v1] ✅ Formatação performática aplicada")
+    }
+
     console.log("[v1] Letra limpa (primeiros 200 chars):", cleanedLyrics.substring(0, 200))
-    
-    // ✅ MELHORIA 3: Log de qualidade básica
-    const lines = cleanedLyrics.split('\n').filter(line => line.trim().length > 0)
+
+    const lines = cleanedLyrics.split("\n").filter((line) => line.trim().length > 0)
     console.log(`[v1] 📊 Estatísticas: ${lines.length} linhas, ${cleanedLyrics.length} caracteres`)
 
     console.log("[v1] ========== FIM DA REESCRITA MELHORADA ==========")
@@ -112,7 +155,8 @@ export async function POST(request: NextRequest) {
         method: "REESCRITA_MELHORADA",
         polishingApplied: true,
         linesCount: lines.length,
-        version: "v1-improved"
+        performanceMode,
+        version: "v1-improved-with-structure",
       },
     })
   } catch (error) {

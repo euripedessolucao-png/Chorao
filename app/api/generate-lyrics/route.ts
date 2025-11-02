@@ -2,9 +2,9 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { openai } from "@ai-sdk/openai"
 import { generateText } from "ai"
-import { formatInstrumentationForAI } from "@/lib/normalized-genre"
 import { LineStacker } from "@/lib/utils/line-stacker"
 import { UnifiedSyllableManager } from "@/lib/syllable-management/unified-syllable-manager"
+import { formatToPerformanceStructure, addInstrumentalSolo } from "@/lib/formatters/performance-structure-formatter"
 
 // 🎵 TIPOS DE BLOCO MUSICAL
 interface MusicBlock {
@@ -44,23 +44,26 @@ Gere 3 opções de REFRÃO (apenas as linhas):`
 // 🧩 PROCESSAR REFRÕES GERADOS
 function processChorusOptions(text: string, genre: string): MusicBlock[] {
   const blocks: MusicBlock[] = []
-  
+
   // Limpeza agressiva
   const cleanText = text
-    .replace(/^(Opção|Refrão|\d+[.)])/gmi, '')
-    .replace(/\*\*.*?\*\*/g, '')
-    .replace(/".*?"/g, '')
-    .replace(/^.*exemplo.*$/gmi, '')
+    .replace(/^(Opção|Refrão|\d+[.)])/gim, "")
+    .replace(/\*\*.*?\*\*/g, "")
+    .replace(/".*?"/g, "")
+    .replace(/^.*exemplo.*$/gim, "")
     .trim()
 
-  const lines = cleanText.split("\n")
-    .map(line => line.trim())
-    .filter(line => {
-      return line && 
-             line.length > 5 && 
-             !line.match(/^(Opção|Refrão|\d+[.)])/i) &&
-             !line.includes('**') &&
-             !line.includes('Exemplo')
+  const lines = cleanText
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => {
+      return (
+        line &&
+        line.length > 5 &&
+        !line.match(/^(Opção|Refrão|\d+[.)])/i) &&
+        !line.includes("**") &&
+        !line.includes("Exemplo")
+      )
     })
 
   let currentChorus: string[] = []
@@ -91,13 +94,13 @@ function generateFallbackChoruses(genre: string, theme: string): MusicBlock[] {
   const fallbacks = [
     `Seu amor é minha direção\nNa escuridão da solidão\nCada olhar, cada emoção\nRenova meu coração`,
     `Te encontrei no caminho\nE tudo fez sentido\nSeu abraço é meu destino\nO amor que eu sempre quis`,
-    `Nessa vida de aventuras\nEncontrei razão pura\nSeu sorriso me assegura\nUm futuro de doçura`
+    `Nessa vida de aventuras\nEncontrei razão pura\nSeu sorriso me assegura\nUm futuro de doçura`,
   ]
 
-  return fallbacks.map(content => ({
+  return fallbacks.map((content) => ({
     type: "CHORUS",
     content,
-    score: 70
+    score: 70,
   }))
 }
 
@@ -108,7 +111,6 @@ async function generateOtherBlocks(
   genre: string,
   theme: string,
 ): Promise<MusicBlock[]> {
-  
   const prompts = {
     INTRO: `Crie INTRO (4 linhas) para ${genre} que prepare para este REFRÃO. APENAS 4 linhas:
 
@@ -155,33 +157,37 @@ LINHAS FINAIS APENAS:`,
 
 // 🧩 PROCESSAR BLOCOS GERADOS
 function processGeneratedBlocks(text: string, blockType: MusicBlock["type"]): MusicBlock[] {
-  
   // Limpeza agressiva
   const cleanText = text
-    .replace(/^(NOVO|VERSO|INTRO|PONTE|OUTRO).*?[\n:]/gi, '')
-    .replace(/\*\*.*?\*\*/g, '')
-    .replace(/".*?"/g, '')
-    .replace(/^.*APENAS.*$/gmi, '')
-    .replace(/^.*LINHAS.*$/gmi, '')
+    .replace(/^(NOVO|VERSO|INTRO|PONTE|OUTRO).*?[\n:]/gi, "")
+    .replace(/\*\*.*?\*\*/g, "")
+    .replace(/".*?"/g, "")
+    .replace(/^.*APENAS.*$/gim, "")
+    .replace(/^.*LINHAS.*$/gim, "")
     .trim()
 
-  const lines = cleanText.split("\n")
-    .map(line => line.trim())
-    .filter(line => {
-      return line && 
-             line.length >= 5 && 
-             !line.match(/^[\[\(]/) &&
-             !line.match(/^(NOVO|VERSO|INTRO|PONTE|OUTRO|APENAS|LINHAS)/i) &&
-             !line.includes('**')
+  const lines = cleanText
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => {
+      return (
+        line &&
+        line.length >= 5 &&
+        !line.match(/^[[(]/) &&
+        !line.match(/^(NOVO|VERSO|INTRO|PONTE|OUTRO|APENAS|LINHAS)/i) &&
+        !line.includes("**")
+      )
     })
     .slice(0, blockType === "OUTRO" ? 4 : 4)
 
   if (lines.length >= (blockType === "OUTRO" ? 2 : 3)) {
-    return [{
-      type: blockType,
-      content: lines.join("\n"),
-      score: calculateBlockScore(lines.join("\n")),
-    }]
+    return [
+      {
+        type: blockType,
+        content: lines.join("\n"),
+        score: calculateBlockScore(lines.join("\n")),
+      },
+    ]
   }
 
   return [generateFallbackBlock(blockType, "")]
@@ -195,43 +201,43 @@ function generateFallbackBlock(blockType: MusicBlock["type"], theme: string): Mu
       return {
         type: blockType,
         content: `Pensando em você\nNo silêncio da emoção\nUm sentimento que nasce\nDentro do coração`,
-        score: 65
+        score: 65,
       }
     case "VERSE":
       return {
         type: blockType,
         content: `A vida me mostrou\nCaminhos a seguir\nCom você ao meu lado\nSou capaz de sorrir`,
-        score: 65
+        score: 65,
       }
     case "PRE_CHORUS":
       return {
         type: blockType,
         content: `E agora o coração\nPrepara pra emoção\nDo que está por vir\nNesse novo amor`,
-        score: 65
+        score: 65,
       }
     case "BRIDGE":
       return {
         type: blockType,
         content: `E o tempo vai passando\nTrazendo aprendizado\nCada momento contigo\nÉ um sonho realizado`,
-        score: 65
+        score: 65,
       }
     case "OUTRO":
       return {
         type: blockType,
         content: `Até amanhã\nMeu amor sem fim`,
-        score: 65
+        score: 65,
       }
     case "CHORUS":
       return {
         type: blockType,
         content: `Seu amor me transforma\nMinha vida se reforma\nNesse sentimento puro\nQue no peito fica duro`,
-        score: 65
+        score: 65,
       }
     default:
       return {
         type: "VERSE",
         content: `A vida segue em frente\nCom novos aprendizados\nCada dia é diferente\nCheio de sentimentos`,
-        score: 65
+        score: 65,
       }
   }
 }
@@ -303,17 +309,14 @@ export async function POST(request: NextRequest) {
       title: requestTitle,
       mood = "neutro",
       additionalRequirements = "",
+      performanceMode = "standard",
     } = await request.json()
 
     genre = requestGenre || "Sertanejo"
     theme = requestTheme || "Música"
     title = requestTitle || `${theme} - ${genre}`
 
-    if (!genre) {
-      return NextResponse.json({ error: "Gênero é obrigatório" }, { status: 400 })
-    }
-
-    console.log(`[API] 🎵 Gerando música com refrão central: ${genre}`)
+    console.log(`[API] 🎵 Gerando música: ${genre} (Modo: ${performanceMode})`)
 
     // 🎶 Gerando refrões...
     console.log("[API] 🎶 Gerando refrões...")
@@ -342,6 +345,18 @@ export async function POST(request: NextRequest) {
     console.log("[API] 🏗️ Montando música completa...")
     let finalLyrics = await assembleCompleteSong(bestChorus, otherBlocks, genre)
 
+    if (performanceMode === "performance") {
+      console.log("[API] 🎭 Aplicando formatação performática PART A/B/C...")
+      finalLyrics = formatToPerformanceStructure(finalLyrics, genre, "performance")
+
+      // Adiciona solo instrumental se houver ponte
+      if (finalLyrics.includes("PART C")) {
+        finalLyrics = addInstrumentalSolo(finalLyrics, genre)
+      }
+
+      console.log("[API] ✅ Formatação performática aplicada")
+    }
+
     // ✨ Aplicando formatação...
     console.log("[API] ✨ Aplicando formatação...")
     try {
@@ -349,16 +364,6 @@ export async function POST(request: NextRequest) {
       finalLyrics = stackingResult.stackedLyrics
     } catch (error) {
       console.log("[API] ℹ️ LineStacker não disponível")
-    }
-
-    // 🎸 INSTRUMENTAÇÃO
-    try {
-      if (!finalLyrics.includes("(Instrumentation)")) {
-        const instrumentation = formatInstrumentationForAI(genre, finalLyrics)
-        finalLyrics = `${finalLyrics}\n\n${instrumentation}`
-      }
-    } catch (error) {
-      console.log("[API] ℹ️ Instrumentação não disponível")
     }
 
     const totalLines = finalLyrics.split("\n").filter((line) => line.trim()).length
@@ -374,6 +379,7 @@ export async function POST(request: NextRequest) {
         quality: "CHORUS_CENTERED",
         method: "CHORUS_FIRST",
         chorusScore: bestChorus.score,
+        performanceMode,
       },
     })
   } catch (error) {
@@ -425,8 +431,11 @@ Até a próxima canção
 }
 
 export async function GET() {
-  return NextResponse.json({ 
-    error: "Método não permitido",
-    message: "Use POST para gerar letras"
-  }, { status: 405 })
+  return NextResponse.json(
+    {
+      error: "Método não permitido",
+      message: "Use POST para gerar letras",
+    },
+    { status: 405 },
+  )
 }
