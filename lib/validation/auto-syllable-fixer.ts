@@ -23,16 +23,54 @@ export function autoFixLineToMaxSyllables(line: string, maxSyllables: number): C
 
   // ESTRATÉGIA 1: Contrações naturais (igual ao frontend)
   const contractions: [RegExp, string][] = [
-    [/\bpara\b/g, "pra"],
-    [/\bvocê\b/g, "cê"],
-    [/\bestá\b/g, "tá"],
-    [/\bestou\b/g, "tô"],
-    [/\bde\s+o\b/g, "do"],
-    [/\bde\s+a\b/g, "da"],
-    [/\bem\s+o\b/g, "no"],
-    [/\bem\s+a\b/g, "na"],
-    [/\bcom\s+o\b/g, "co"],
-    [/\bcom\s+a\b/g, "ca"],
+    // Pronomes e verbos comuns
+    [/\bvocê\b/gi, "cê"],
+    [/\bvocês\b/gi, "cês"],
+    [/\bestou\b/gi, "tô"],
+    [/\bestá\b/gi, "tá"],
+    [/\bestava\b/gi, "tava"],
+    [/\bestavam\b/gi, "tavam"],
+    [/\bestão\b/gi, "tão"],
+    [/\bvamos\b/gi, "vamo"],
+
+    // Preposições e artigos
+    [/\bpara\s+o\b/gi, "pro"],
+    [/\bpara\s+a\b/gi, "pra"],
+    [/\bpara\b/gi, "pra"],
+    [/\bpelo\b/gi, "pro"],
+    [/\bpela\b/gi, "pra"],
+    [/\bde\s+o\b/gi, "do"],
+    [/\bde\s+a\b/gi, "da"],
+    [/\bem\s+o\b/gi, "no"],
+    [/\bem\s+a\b/gi, "na"],
+    [/\bcom\s+o\b/gi, "co"],
+    [/\bcom\s+a\b/gi, "ca"],
+
+    // Conjunções e advérbios
+    [/\bporque\b/gi, "que"],
+    [/\bquando\b/gi, "quano"],
+    [/\bquanto\b/gi, "quanto"],
+    [/\bagora\b/gi, "gora"],
+    [/\bembora\b/gi, "bora"],
+
+    // Elisões naturais do canto (sinalefa)
+    [/\bde\s+amor\b/gi, "d'amor"],
+    [/\bde\s+ela\b/gi, "dela"],
+    [/\bde\s+ele\b/gi, "dele"],
+    [/\bde\s+eu\b/gi, "d'eu"],
+    [/\bque\s+eu\b/gi, "qu'eu"],
+    [/\bse\s+eu\b/gi, "s'eu"],
+    [/\bme\s+deixa\b/gi, "m'deixa"],
+    [/\bte\s+amo\b/gi, "t'amo"],
+    [/\bna\s+hora\b/gi, "n'hora"],
+    [/\bpra\s+sempre\b/gi, "pr'sempre"],
+    [/\bde\s+repente\b/gi, "d'repente"],
+
+    // Expressões coloquiais
+    [/\btá\s+bom\b/gi, "tá bom"],
+    [/\btá\s+bem\b/gi, "tá bem"],
+    [/\bvou\s+embora\b/gi, "vô bora"],
+    [/\btenho\s+que\b/gi, "tenho que"],
   ]
 
   let currentLine = line
