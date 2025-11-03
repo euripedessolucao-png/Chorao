@@ -31,22 +31,22 @@ import { getGenreMetrics } from "@/lib/metrics/brazilian-metrics"
 import { ProcessingStatus } from "@/components/processing-status"
 
 const GENRE_QUALITY_CONFIG = {
-  Sertanejo: { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
-  "Sertanejo Moderno": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
-  "Sertanejo Universitário": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
-  "Sertanejo Sofrência": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
-  "Sertanejo Raiz": { min: 9, max: 11, ideal: 10, rhymeQuality: 0.5 },
+  Sertanejo: { min: 9, max: 12, ideal: 10, rhymeQuality: 0.5 },
+  "Sertanejo Moderno": { min: 9, max: 12, ideal: 10, rhymeQuality: 0.5 },
+  "Sertanejo Universitário": { min: 9, max: 12, ideal: 10, rhymeQuality: 0.5 },
+  "Sertanejo Sofrência": { min: 9, max: 12, ideal: 10, rhymeQuality: 0.5 },
+  "Sertanejo Raiz": { min: 9, max: 12, ideal: 10, rhymeQuality: 0.5 },
   MPB: { min: 7, max: 12, ideal: 9, rhymeQuality: 0.6 },
   "Bossa Nova": { min: 7, max: 12, ideal: 9, rhymeQuality: 0.6 },
-  Funk: { min: 6, max: 10, ideal: 8, rhymeQuality: 0.3 },
-  Pagode: { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
-  Samba: { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
-  Forró: { min: 8, max: 11, ideal: 9, rhymeQuality: 0.4 },
-  Axé: { min: 6, max: 10, ideal: 8, rhymeQuality: 0.3 },
-  Rock: { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
-  Pop: { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
-  Gospel: { min: 8, max: 11, ideal: 9, rhymeQuality: 0.5 },
-  default: { min: 7, max: 11, ideal: 9, rhymeQuality: 0.4 },
+  Funk: { min: 6, max: 12, ideal: 8, rhymeQuality: 0.3 },
+  Pagode: { min: 7, max: 12, ideal: 9, rhymeQuality: 0.4 },
+  Samba: { min: 7, max: 12, ideal: 9, rhymeQuality: 0.4 },
+  Forró: { min: 8, max: 12, ideal: 9, rhymeQuality: 0.4 },
+  Axé: { min: 6, max: 12, ideal: 8, rhymeQuality: 0.3 },
+  Rock: { min: 7, max: 12, ideal: 9, rhymeQuality: 0.4 },
+  Pop: { min: 7, max: 12, ideal: 9, rhymeQuality: 0.4 },
+  Gospel: { min: 8, max: 12, ideal: 9, rhymeQuality: 0.5 },
+  default: { min: 7, max: 12, ideal: 9, rhymeQuality: 0.4 },
 }
 
 type ChorusVariation = {
@@ -753,7 +753,7 @@ export default function CriarPage() {
 
                   <SyllableValidator
                     lyrics={lyrics}
-                    maxSyllables={currentSyllableConfig?.max || 11}
+                    maxSyllables={currentSyllableConfig?.max || 12}
                     onValidate={(result) => {
                       if (!result.valid) {
                         console.log(`⚠️ ${result.linesWithIssues} versos com problemas:`)
@@ -762,7 +762,7 @@ export default function CriarPage() {
                         })
 
                         const minSyllables = currentSyllableConfig?.min || 7
-                        const maxSyllables = currentSyllableConfig?.max || 11
+                        const maxSyllables = currentSyllableConfig?.max || 12
 
                         toast.warning(`${result.linesWithIssues} versos fora do padrão ${genre}`, {
                           description: `Use ${minSyllables}-${maxSyllables} sílabas`,

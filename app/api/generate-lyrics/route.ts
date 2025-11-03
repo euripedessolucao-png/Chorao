@@ -238,10 +238,18 @@ Gere a letra agora:`
     })
 
     let finalLyrics = cleanLyricsFromAI(text)
+
     finalLyrics = capitalizeLines(finalLyrics)
 
     console.log("[API] 🔧 Aplicando correção super-efetiva de versos incompletos...")
     finalLyrics = superFixIncompleteLines(finalLyrics)
+
+    console.log("[API] 🔍 Revisão inicial: corrigindo palavras cortadas e versos longos...")
+    const initialFixResult = reviewAndFixAllLines(finalLyrics, maxSyllables)
+    if (initialFixResult.corrections.length > 0) {
+      console.log(`[API] ✅ ${initialFixResult.corrections.length} correção(ões) inicial(is) aplicada(s)`)
+      finalLyrics = initialFixResult.fixedLyrics
+    }
 
     finalLyrics = finalLyrics
       .split("\n")
@@ -272,13 +280,6 @@ Gere a letra agora:`
       console.log(`[API] ✅ ${stackResult.improvements.length} verso(s) empilhado(s)`)
     }
     finalLyrics = stackResult.stackedLyrics
-
-    console.log("[API] 🔍 Revisão final: corrigindo palavras cortadas e versos longos...")
-    const autoFixResult = reviewAndFixAllLines(finalLyrics, maxSyllables)
-    if (autoFixResult.corrections.length > 0) {
-      console.log(`[API] ✅ ${autoFixResult.corrections.length} correção(ões) automática(s) aplicada(s)`)
-      finalLyrics = autoFixResult.fixedLyrics
-    }
 
     if (genre.toLowerCase().includes("raiz")) {
       const forbiddenInstruments = ["electric guitar", "808", "synth", "drum machine", "bateria eletrônica"]

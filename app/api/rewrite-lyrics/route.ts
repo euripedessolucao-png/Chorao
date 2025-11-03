@@ -222,8 +222,16 @@ Gere a letra agora:`
     })
 
     let finalLyrics = cleanLyricsFromAI(text)
+
     finalLyrics = capitalizeLines(finalLyrics)
     console.log("[API] 📝 Resposta bruta recebida")
+
+    console.log("[API] 🔍 Revisão inicial: corrigindo palavras cortadas e versos longos...")
+    const initialFixResult = reviewAndFixAllLines(finalLyrics, maxSyllables)
+    if (initialFixResult.corrections.length > 0) {
+      console.log(`[API] ✅ ${initialFixResult.corrections.length} correção(ões) inicial(is) aplicada(s)`)
+      finalLyrics = initialFixResult.fixedLyrics
+    }
 
     console.log("[API] 🔧 Aplicando correção inteligente...")
     finalLyrics = smartFixIncompleteLines(finalLyrics)
@@ -260,13 +268,6 @@ Gere a letra agora:`
     console.log("[API] 📚 Aplicando empilhamento...")
     const stackingResult = LineStacker.stackLines(finalLyrics)
     finalLyrics = stackingResult.stackedLyrics
-
-    console.log("[API] 🔍 Revisão final: corrigindo palavras cortadas e versos longos...")
-    const autoFixResult = reviewAndFixAllLines(finalLyrics, maxSyllables)
-    if (autoFixResult.corrections.length > 0) {
-      console.log(`[API] ✅ ${autoFixResult.corrections.length} correção(ões) automática(s) aplicada(s)`)
-      finalLyrics = autoFixResult.fixedLyrics
-    }
 
     if (shouldUsePerformanceFormat(genre, performanceMode)) {
       finalLyrics = formatSertanejoPerformance(finalLyrics, genre)
