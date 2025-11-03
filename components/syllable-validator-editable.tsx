@@ -25,7 +25,7 @@ interface SyllableValidatorEditableProps {
 
 export function SyllableValidatorEditable({
   lyrics,
-  maxSyllables = 11,
+  maxSyllables = 12,
   onLyricsChange,
 }: SyllableValidatorEditableProps) {
   const [editingLines, setEditingLines] = useState<Set<number>>(new Set())
