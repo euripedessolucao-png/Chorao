@@ -12,6 +12,7 @@ export class LineStacker {
   /**
    * Formata letra no padrão profissional brasileiro: UM VERSO POR LINHA
    * QUEBRA VERSOS LONGOS (>12 sílabas) EM MÚLTIPLAS LINHAS
+   * MANTÉM VÍRGULAS COMO PONTOS DE RESPIRAÇÃO DENTRO DO MESMO VERSO
    */
   static stackLines(lyrics: string): StackingResult {
     const lines = lyrics.split("\n")
@@ -30,35 +31,23 @@ export class LineStacker {
       const syllables = countPoeticSyllables(trimmed)
 
       if (syllables > this.MAX_SYLLABLES) {
+        // Se tem vírgula, tenta quebrar nela primeiro
+        if (trimmed.includes(",")) {
+          const broken = this.breakAtComma(trimmed)
+          if (broken.length > 1) {
+            formattedLines.push(...broken)
+            improvements.push(`✓ Quebrado verso longo na vírgula (${syllables}s): "${trimmed.substring(0, 40)}..."`)
+            continue
+          }
+        }
+
+        // Senão, quebra por palavras
         const broken = this.breakLongLine(trimmed)
         formattedLines.push(...broken)
         improvements.push(`✓ Quebrado verso longo (${syllables}s): "${trimmed.substring(0, 40)}..."`)
         continue
       }
 
-      // Divide versos com vírgula em duas linhas (regra do empilhamento brasileiro)
-      if (trimmed.includes(",")) {
-        const parts = trimmed.split(",")
-        if (parts.length === 2) {
-          const cleanPart1 = parts[0].trim()
-          const cleanPart2 = parts[1].trim()
-
-          if (cleanPart1 && cleanPart2) {
-            const syllables1 = countPoeticSyllables(cleanPart1)
-            const syllables2 = countPoeticSyllables(cleanPart2)
-
-            // Só divide se ambas as partes ficarem dentro do limite
-            if (syllables1 <= this.MAX_SYLLABLES && syllables2 <= this.MAX_SYLLABLES) {
-              formattedLines.push(cleanPart1 + ",")
-              formattedLines.push(cleanPart2)
-              improvements.push(`✓ Dividido em duas linhas: "${cleanPart1}, / ${cleanPart2}"`)
-              continue
-            }
-          }
-        }
-      }
-
-      // Mantém verso inteiro
       formattedLines.push(trimmed)
     }
 
@@ -67,6 +56,29 @@ export class LineStacker {
       stackingScore: this.calculateStackingScore(formattedLines),
       improvements,
     }
+  }
+
+  /**
+   * Nova função: quebra na vírgula apenas se necessário
+   */
+  private static breakAtComma(line: string): string[] {
+    const parts = line.split(",")
+    if (parts.length !== 2) return [line]
+
+    const cleanPart1 = parts[0].trim()
+    const cleanPart2 = parts[1].trim()
+
+    if (!cleanPart1 || !cleanPart2) return [line]
+
+    const syllables1 = countPoeticSyllables(cleanPart1)
+    const syllables2 = countPoeticSyllables(cleanPart2)
+
+    // Só divide se ambas as partes ficarem dentro do limite
+    if (syllables1 <= this.MAX_SYLLABLES && syllables2 <= this.MAX_SYLLABLES) {
+      return [cleanPart1 + ",", cleanPart2]
+    }
+
+    return [line]
   }
 
   /**

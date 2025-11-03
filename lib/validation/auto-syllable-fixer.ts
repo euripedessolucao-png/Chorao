@@ -1,4 +1,5 @@
 import { countPoeticSyllables } from "./syllable-counter-brasileiro"
+import { getLastSignificantWord, hasRhyme } from "./rhyme-detector"
 
 export interface CorrectionResult {
   original: string
@@ -6,9 +7,14 @@ export interface CorrectionResult {
   syllablesBefore: number
   syllablesAfter: number
   method: "contraction" | "simplification" | "semantic" | "manual"
+  preservedRhyme: boolean
 }
 
-export function autoFixLineToMaxSyllables(line: string, maxSyllables: number): CorrectionResult {
+export function autoFixLineToMaxSyllables(
+  line: string,
+  maxSyllables: number,
+  allLines: string[] = [],
+): CorrectionResult {
   const originalSyllables = countPoeticSyllables(line)
 
   if (originalSyllables <= maxSyllables) {
@@ -18,8 +24,12 @@ export function autoFixLineToMaxSyllables(line: string, maxSyllables: number): C
       syllablesBefore: originalSyllables,
       syllablesAfter: originalSyllables,
       method: "manual",
+      preservedRhyme: true,
     }
   }
+
+  const hasRhymeToPreserve = hasRhyme(line, allLines)
+  const lastWord = getLastSignificantWord(line)
 
   // ESTRATÉGIA 1: Contrações naturais (igual ao frontend)
   const contractions: [RegExp, string][] = [
@@ -78,6 +88,14 @@ export function autoFixLineToMaxSyllables(line: string, maxSyllables: number): C
     const testLine = currentLine.replace(pattern, replacement)
     const testSyllables = countPoeticSyllables(testLine)
 
+    if (hasRhymeToPreserve) {
+      const testLastWord = getLastSignificantWord(testLine)
+      if (testLastWord !== lastWord) {
+        // Não aplica contração que muda a palavra que rima
+        continue
+      }
+    }
+
     if (testSyllables <= maxSyllables && testSyllables > 0) {
       return {
         original: line,
@@ -85,13 +103,14 @@ export function autoFixLineToMaxSyllables(line: string, maxSyllables: number): C
         syllablesBefore: originalSyllables,
         syllablesAfter: testSyllables,
         method: "contraction",
+        preservedRhyme: hasRhymeToPreserve,
       }
     }
     currentLine = testLine
   }
 
   // ESTRATÉGIA 2: Simplificação semântica
-  const simplified = simplifyLineSemantically(line, maxSyllables)
+  const simplified = simplifyLineSemantically(line, maxSyllables, hasRhymeToPreserve, lastWord)
   const simplifiedSyllables = countPoeticSyllables(simplified)
 
   if (simplifiedSyllables <= maxSyllables) {
@@ -101,11 +120,12 @@ export function autoFixLineToMaxSyllables(line: string, maxSyllables: number): C
       syllablesBefore: originalSyllables,
       syllablesAfter: simplifiedSyllables,
       method: "simplification",
+      preservedRhyme: hasRhymeToPreserve ? getLastSignificantWord(simplified) === lastWord : true,
     }
   }
 
-  // ESTRATÉGIA 3: Fallback - cortar palavras desnecessárias
-  const fallback = applyFallbackCorrection(line, maxSyllables)
+  // ESTRATÉGIA 3: Fallback - cortar palavras desnecessárias (preservando rima)
+  const fallback = applyFallbackCorrection(line, maxSyllables, hasRhymeToPreserve, lastWord)
 
   return {
     original: line,
@@ -113,10 +133,16 @@ export function autoFixLineToMaxSyllables(line: string, maxSyllables: number): C
     syllablesBefore: originalSyllables,
     syllablesAfter: countPoeticSyllables(fallback),
     method: "semantic",
+    preservedRhyme: hasRhymeToPreserve ? getLastSignificantWord(fallback) === lastWord : true,
   }
 }
 
-function simplifyLineSemantically(line: string, maxSyllables: number): string {
+function simplifyLineSemantically(
+  line: string,
+  maxSyllables: number,
+  preserveRhyme: boolean,
+  rhymeWord: string,
+): string {
   const simplifications: [RegExp, string][] = [
     [/\bsem\s+rumo\s+e\s+cansado\b/g, "coração cansado"],
     [/\blembranças\s+de\s+dor\b/g, "marcas de dor"],
@@ -130,7 +156,13 @@ function simplifyLineSemantically(line: string, maxSyllables: number): string {
 
   let result = line
   for (const [pattern, replacement] of simplifications) {
-    result = result.replace(pattern, replacement)
+    const testResult = result.replace(pattern, replacement)
+
+    if (preserveRhyme && getLastSignificantWord(testResult) !== rhymeWord) {
+      continue
+    }
+
+    result = testResult
     if (countPoeticSyllables(result) <= maxSyllables) {
       break
     }
@@ -139,21 +171,37 @@ function simplifyLineSemantically(line: string, maxSyllables: number): string {
   return result
 }
 
-function applyFallbackCorrection(line: string, maxSyllables: number): string {
+function applyFallbackCorrection(
+  line: string,
+  maxSyllables: number,
+  preserveRhyme: boolean,
+  rhymeWord: string,
+): string {
   const words = line.split(/\s+/)
   let result = line
 
-  // Remove palavras menos importantes progressivamente
   const removableWords = ["que", "um", "uma", "o", "a", "os", "as", "de", "da", "do", "em", "no", "na"]
 
   for (const word of removableWords) {
     const testLine = result.replace(new RegExp(`\\s+${word}\\s+`, "g"), " ")
     const testSyllables = countPoeticSyllables(testLine)
 
+    if (preserveRhyme && getLastSignificantWord(testLine) !== rhymeWord) {
+      continue
+    }
+
     if (testSyllables <= maxSyllables) {
       return testLine.trim()
     }
     result = testLine
+  }
+
+  if (preserveRhyme) {
+    const wordsArray = result.split(/\s+/)
+    while (wordsArray.length > 2 && countPoeticSyllables(wordsArray.join(" ")) > maxSyllables) {
+      wordsArray.shift() // Remove do início
+    }
+    return wordsArray.join(" ").trim()
   }
 
   return result.trim()
@@ -177,12 +225,12 @@ export function reviewAndFixAllLines(
       continue
     }
 
-    const result = autoFixLineToMaxSyllables(line, maxSyllables)
+    const result = autoFixLineToMaxSyllables(line, maxSyllables, lines)
 
     if (result.corrected !== result.original) {
       corrections.push(result)
       console.log(
-        `[AutoFixer] 🔧 ${result.original} → ${result.corrected} (${result.syllablesBefore}→${result.syllablesAfter} sílabas)`,
+        `[AutoFixer] 🔧 ${result.original} → ${result.corrected} (${result.syllablesBefore}→${result.syllablesAfter} sílabas, rima: ${result.preservedRhyme ? "✓" : "✗"})`,
       )
     }
 
