@@ -15,6 +15,7 @@ import { validateRhymesForGenre } from "@/lib/validation/rhyme-validator"
 import { GENRE_CONFIGS, getSyllableLimitsForGenre } from "@/lib/genre-config"
 import { cleanLyricsFromAI } from "@/lib/utils/remove-quotes-and-clean"
 import { reviewAndFixAllLines } from "@/lib/validation/auto-syllable-fixer"
+import { fixAllIncompleteVerses } from "@/lib/validation/verse-completer"
 
 function getMaxSyllables(genre: string): number {
   const genreConfig = (GENRE_CONFIGS as any)[genre]
@@ -26,83 +27,6 @@ function getMaxSyllables(genre: string): number {
     return withoutComma.acceptable_up_to || withoutComma.max || 12
   }
   return 12
-}
-
-function smartFixIncompleteLines(lyrics: string): string {
-  console.log("[SmartCorrector] 🔧 Aplicando correção inteligente")
-
-  const lines = lyrics.split("\n")
-  const fixedLines: string[] = []
-  let corrections = 0
-
-  for (let i = 0; i < lines.length; i++) {
-    let line = lines[i].trim()
-
-    if (!line || line.startsWith("### [") || line.startsWith("(Instrumentation)") || line.startsWith("(Genre)")) {
-      fixedLines.push(line)
-      continue
-    }
-
-    line = line.replace(/^"|"$/g, "").trim()
-
-    const cleanLine = line
-      .replace(/\[.*?\]/g, "")
-      .replace(/$$.*?$$/g, "")
-      .trim()
-    if (!cleanLine) {
-      fixedLines.push(line)
-      continue
-    }
-
-    const words = cleanLine.split(/\s+/).filter((w) => w.length > 0)
-
-    const isIncomplete =
-      words.length < 3 ||
-      /[,-]$/.test(cleanLine) ||
-      /\b(e|do|por|me|te|em|a|o|de|da|no|na|com|se|tão|que|um|uma|uns|umas)\s*$/i.test(cleanLine)
-
-    if (isIncomplete && words.length > 0) {
-      console.log(`[SmartCorrector] 📝 Ajustando verso: "${cleanLine}"`)
-
-      let fixedLine = line.replace(/[,-]\s*$/, "").trim()
-
-      const lastWord = words[words.length - 1].toLowerCase()
-
-      const completions: Record<string, string> = {
-        coração: "aberto e grato",
-        vida: "que recebo de Ti",
-        gratidão: "transbordando em mim",
-        amor: "que nunca falha",
-        fé: "que me sustenta",
-        alegria: "que inunda minha alma",
-        paz: "que acalma o coração",
-      }
-
-      if (completions[lastWord]) {
-        fixedLine += " " + completions[lastWord]
-      } else {
-        const genericCompletions = ["com muito amor", "e gratidão", "pra sempre vou lembrar", "nunca vou esquecer"]
-        fixedLine += " " + genericCompletions[Math.floor(Math.random() * genericCompletions.length)]
-      }
-
-      if (!/[.!?]$/.test(fixedLine)) {
-        fixedLine = fixedLine.replace(/[.,;:]$/, "") + "."
-      }
-
-      if (lines[i].trim().startsWith('"')) {
-        fixedLine = `"${fixedLine}"`
-      }
-
-      console.log(`[SmartCorrector] ✅ CORRIGIDO: "${fixedLine}"`)
-      fixedLines.push(fixedLine)
-      corrections++
-    } else {
-      fixedLines.push(line)
-    }
-  }
-
-  console.log(`[SmartCorrector] 🎉 CORREÇÃO CONCLUÍDA: ${corrections} versos corrigidos`)
-  return fixedLines.join("\n")
 }
 
 export async function POST(request: NextRequest) {
@@ -135,29 +59,27 @@ export async function POST(request: NextRequest) {
 
     const prompt = `COMPOSITOR PROFISSIONAL BRASILEIRO - ${genre.toUpperCase()}
 
-🎯 ESTRATÉGIA: VERSOS COMPLETOS PRIMEIRO, RIMAS DEPOIS
+🎯 MISSÃO: Reescrever a letra mantendo VERSOS COMPLETOS e RIMAS RICAS
 
-📝 REGRA DE OURO: 
-CADA VERSO = FRASE COMPLETA (sujeito + verbo + complemento)
-NUNCA use aspas nas linhas
+📝 EXEMPLOS DE VERSOS COMPLETOS (CORRETO):
+✅ "Hoje eu venho aqui de coração aberto"
+✅ "Com gratidão transbordando em meu peito"
+✅ "Teu amor me renova a cada amanhecer"
+✅ "Nos braços de Deus encontro meu abrigo"
+✅ "A vida é uma bênção que eu agradeço"
 
-✅ EXEMPLOS DE VERSOS COMPLETOS (SEM ASPAS):
-Hoje eu venho aqui de coração aberto
-Com gratidão transbordando em meu peito
-Teu amor me renova a cada amanhecer
-A vida é uma bênção que eu agradeço
-Nos braços de Deus encontro meu abrigo
-
-🚫 NUNCA FAÇA ISSO:
-"Coração aberto" ❌ (incompleto + aspas)
-"De gratidão" ❌ (incompleto + aspas)
-"Renovando a cada" ❌ (incompleto + aspas)
+🚫 NUNCA FAÇA VERSOS INCOMPLETOS (ERRADO):
+❌ "Se você chora, não sei se é" (incompleto - "se é" o quê?)
+❌ "Não quero mais viver com essa" (incompleto - "com essa" o quê?)
+❌ "Não quero ser consolo pro seu" (incompleto - "pro seu" o quê?)
+❌ "Do calor que você me" (incompleto - cortado)
+❌ "Com coração, implorando" (incompleto - "implorando" o quê?)
 
 LETRA ORIGINAL (inspiração):
 ${originalLyrics}
 
-TEMA: ${theme || "Gratidão divina"}
-HUMOR: ${mood || "Reverente e alegre"}
+TEMA: ${theme || "Amor e saudade"}
+HUMOR: ${mood || "Emotivo"}
 GÊNERO: ${genre}
 
 ${
@@ -166,7 +88,9 @@ ${
 🎯 REQUISITOS OBRIGATÓRIOS (DEVEM SER INCLUÍDOS):
 ${additionalRequirements}
 
-IMPORTANTE: Os requisitos acima são OBRIGATÓRIOS. Se houver um refrão ou hook especificado, você DEVE incorporá-lo na letra reescrita. Construa os versos em torno desses elementos.
+⚠️ ATENÇÃO: Os requisitos acima são OBRIGATÓRIOS e NÃO NEGOCIÁVEIS. 
+Se houver um refrão ou hook especificado, você DEVE incorporá-lo EXATAMENTE como está na letra reescrita. 
+Construa TODOS os versos em torno desses elementos obrigatórios.
 `
     : ""
 }
@@ -175,45 +99,52 @@ IMPORTANTE: Os requisitos acima são OBRIGATÓRIOS. Se houver um refrão ou hook
 - Ideal: ${idealSyllables} sílabas por verso
 - Máximo ABSOLUTO: ${maxSyllables} sílabas (NUNCA ultrapassar)
 - Mínimo: ${syllableLimits.min} sílabas
-- ${rhymeRules.requirePerfectRhymes ? "Rimas perfeitas quando possível" : "Rimas naturais (bônus, não obrigação)"}
-- Linguagem apropriada para ${genre}
-- Versos autocontidos e completos
+- ${rhymeRules.requirePerfectRhymes ? "Rimas RICAS e PERFEITAS obrigatórias" : "Rimas RICAS sempre que possível"}
 - NUNCA use aspas nas linhas
+- NUNCA deixe versos incompletos
 
 🎵 ESTRUTURA:
 ${
   performanceMode === "performance"
-    ? `### [INTRO] (4 linhas)
-### [VERSO 1] (6 linhas)  
-### [PRÉ-REFRAO] (4 linhas)
-### [REFRAO] (6 linhas)
-### [VERSO 2] (6 linhas)
-### [REFRAO] (6 linhas)
-### [PONTE] (6 linhas)
-### [REFRAO] (6 linhas)
-### [OUTRO] (4 linhas)`
-    : `### [Intro] (4 linhas)
-### [Verso 1] (6 linhas)
-### [Pré-Refrão] (4 linhas)
-### [Refrão] (6 linhas)
-### [Verso 2] (6 linhas)
-### [Refrão] (6 linhas)
-### [Ponte] (6 linhas)
-### [Refrão] (6 linhas)
-### [Outro] (4 linhas)`
+    ? `### [INTRO] (4 linhas completas)
+### [VERSO 1] (6 linhas completas)  
+### [PRÉ-REFRÃO] (4 linhas completas)
+### [REFRÃO] (6 linhas completas)
+### [VERSO 2] (6 linhas completas)
+### [REFRÃO] (6 linhas completas)
+### [PONTE] (6 linhas completas)
+### [REFRÃO] (6 linhas completas)
+### [OUTRO] (4 linhas completas)`
+    : `### [Intro] (4 linhas completas)
+### [Verso 1] (6 linhas completas)
+### [Pré-Refrão] (4 linhas completas)
+### [Refrão] (6 linhas completas)
+### [Verso 2] (6 linhas completas)
+### [Refrão] (6 linhas completas)
+### [Ponte] (6 linhas completas)
+### [Refrão] (6 linhas completas)
+### [Outro] (4 linhas completas)`
 }
 
 💡 PRIORIDADES (EM ORDEM):
-1. INCLUIR REQUISITOS OBRIGATÓRIOS (refrão/hook especificados)
-2. VERSOS COMPLETOS (mais importante)
-3. Dentro do limite de ${maxSyllables} sílabas
-4. Rimas naturais (bônus)
+1. INCLUIR REQUISITOS OBRIGATÓRIOS (refrão/hook especificados) - NÃO NEGOCIÁVEL
+2. VERSOS COMPLETOS (sujeito + verbo + complemento) - OBRIGATÓRIO
+3. RIMAS RICAS (amor/calor, coração/canção, vida/ferida) - MUITO IMPORTANTE
+4. Dentro do limite de ${maxSyllables} sílabas - OBRIGATÓRIO
+5. Linguagem natural e cantável - IMPORTANTE
+
+🎼 EXEMPLOS DE RIMAS RICAS:
+- amor → calor, dor, flor, sabor, valor
+- coração → canção, emoção, ilusão, paixão
+- vida → ferida, partida, esquecida, querida
+- noite → açoite, dezoito
+- dia → alegria, fantasia, harmonia, melodia
 
 IMPORTANTE: Retorne APENAS as linhas da letra, SEM aspas, SEM explicações.
 
-Gere a letra agora:`
+Gere a letra reescrita agora:`
 
-    console.log(`[API] 🔄 Solicitando geração da IA...`)
+    console.log(`[API] 🔄 Solicitando reescrita da IA...`)
 
     const { text } = await generateText({
       model: "openai/gpt-4o-mini",
@@ -222,47 +153,35 @@ Gere a letra agora:`
     })
 
     let finalLyrics = cleanLyricsFromAI(text)
-
     finalLyrics = capitalizeLines(finalLyrics)
     console.log("[API] 📝 Resposta bruta recebida")
 
-    console.log("[API] 🔍 Revisão inicial: corrigindo palavras cortadas e versos longos...")
-    const initialFixResult = reviewAndFixAllLines(finalLyrics, maxSyllables)
-    if (initialFixResult.corrections.length > 0) {
-      console.log(`[API] ✅ ${initialFixResult.corrections.length} correção(ões) inicial(is) aplicada(s)`)
-      finalLyrics = initialFixResult.fixedLyrics
+    console.log("[API] 🔍 Detectando e completando versos incompletos...")
+    const completionResult = await fixAllIncompleteVerses(finalLyrics, genre, maxSyllables)
+    if (completionResult.fixedCount > 0) {
+      console.log(`[API] ✅ ${completionResult.fixedCount} verso(s) incompleto(s) completado(s)`)
+      finalLyrics = completionResult.fixedLyrics
     }
 
-    console.log("[API] 🔧 Aplicando correção inteligente...")
-    finalLyrics = smartFixIncompleteLines(finalLyrics)
-
-    finalLyrics = finalLyrics
-      .split("\n")
-      .filter((line) => {
-        const trimmed = line.trim()
-        return (
-          !trimmed.startsWith("Retorne") &&
-          !trimmed.startsWith("REGRAS") &&
-          !trimmed.includes("Explicação") &&
-          !trimmed.includes("```") &&
-          trimmed.length > 0
-        )
-      })
-      .join("\n")
-      .trim()
+    console.log("[API] 🔍 Revisão: corrigindo palavras cortadas...")
+    const initialFixResult = reviewAndFixAllLines(finalLyrics, maxSyllables)
+    if (initialFixResult.corrections.length > 0) {
+      console.log(`[API] ✅ ${initialFixResult.corrections.length} correção(ões) aplicada(s)`)
+      finalLyrics = initialFixResult.fixedLyrics
+    }
 
     console.log("[API] 🎵 Validando qualidade das rimas...")
     const rhymeValidation = validateRhymesForGenre(finalLyrics, genre)
     if (!rhymeValidation.valid || rhymeValidation.warnings.length > 0) {
       console.log("[API] 🔧 Melhorando rimas automaticamente...")
-      const rhymeEnhancement = await enhanceLyricsRhymes(finalLyrics, genre, theme || "tema", 0.7)
+      const rhymeEnhancement = await enhanceLyricsRhymes(finalLyrics, genre, theme || "tema", 0.8)
       if (rhymeEnhancement.improvements.length > 0) {
-        console.log(`[API] ✅ ${rhymeEnhancement.improvements.length} rima(s) melhorada(s)`)
+        console.log(`[API] ✅ ${rhymeEnhancement.improvements.length} rima(s) melhorada(s) para RICA`)
         finalLyrics = rhymeEnhancement.enhancedLyrics
       }
     }
 
-    console.log("[API] 🎤 Aplicando reescrita inteligente com elisões para canto...")
+    console.log("[API] 🎤 Aplicando reescrita inteligente com elisões...")
     finalLyrics = await enforceSyllableLimitAll(finalLyrics, maxSyllables)
 
     console.log("[API] 📚 Aplicando empilhamento...")
@@ -290,7 +209,7 @@ Gere a letra agora:`
         maxSyllables,
         idealSyllables,
         totalLines,
-        quality: "COMPLETE_VERSES_FIRST",
+        quality: "COMPLETE_VERSES_RICH_RHYMES",
       },
     })
   } catch (error) {
