@@ -1,18 +1,9 @@
 // app/api/rewrite-lyrics/route.ts - MELHORIA SEGURA MANTENDO SUA ESTRUTURA
 import { type NextRequest, NextResponse } from "next/server"
-import { createOpenAI } from "@ai-sdk/openai"
 import { generateText } from "ai"
 import { formatToPerformanceStructure, addInstrumentalSolo } from "@/lib/formatters/performance-structure-formatter"
-
-function getModel() {
-  if (process.env.OPENAI_API_KEY) {
-    const openai = createOpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    })
-    return openai("gpt-4o-mini")
-  }
-  return "openai/gpt-4o-mini"
-}
+import { reviewAndFixAllLines } from "@/lib/validation/auto-syllable-fixer"
+import { countPoeticSyllables } from "@/lib/validation/syllable-counter-brasileiro"
 
 // Prompt mais inteligente para versos completos
 function createImprovedPrompt(
@@ -84,13 +75,23 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     console.log("[v1] Body recebido:", JSON.stringify(body, null, 2))
 
-    const { originalLyrics, genre, theme, title, mood, additionalRequirements, performanceMode = "standard" } = body
+    const {
+      originalLyrics,
+      genre,
+      theme,
+      title,
+      mood,
+      additionalRequirements,
+      performanceMode = "standard",
+      syllableTarget,
+    } = body
 
     console.log("[v1] Letra original (primeiros 100 chars):", originalLyrics?.substring(0, 100))
     console.log("[v1] Gênero:", genre)
     console.log("[v1] Tema:", theme)
     console.log("[v1] Título:", title)
     console.log("[v1] Modo performático:", performanceMode)
+    console.log("[v1] Limite de sílabas:", syllableTarget?.max || 12)
 
     if (!originalLyrics?.trim()) {
       console.log("[v1] ❌ ERRO: Letra original vazia")
@@ -100,10 +101,10 @@ export async function POST(request: NextRequest) {
     const prompt = createImprovedPrompt(originalLyrics, genre, theme, mood, additionalRequirements, performanceMode)
 
     console.log("[v1] Prompt melhorado criado")
-    console.log("[v1] Chamando generateText...")
+    console.log("[v1] Chamando generateText com Vercel AI Gateway...")
 
     const { text } = await generateText({
-      model: getModel(),
+      model: "openai/gpt-4o-mini",
       prompt,
       temperature: 0.7,
     })
@@ -124,6 +125,24 @@ export async function POST(request: NextRequest) {
       .replace(/\n{3,}/g, "\n\n")
       .trim()
 
+    const maxSyllables = syllableTarget?.max || 12
+    console.log(`[v1] 🔧 Aplicando correção automática de sílabas (máximo: ${maxSyllables})...`)
+
+    const fixResult = reviewAndFixAllLines(cleanedLyrics, maxSyllables)
+    cleanedLyrics = fixResult.correctedLyrics
+
+    console.log(`[v1] ✅ Correção de sílabas concluída:`)
+    console.log(`[v1]    - Linhas corrigidas: ${fixResult.corrections.length}`)
+    console.log(`[v1]    - Métodos usados: ${fixResult.corrections.map((c) => c.method).join(", ")}`)
+
+    if (fixResult.corrections.length > 0) {
+      console.log(`[v1] 📊 Exemplos de correções:`)
+      fixResult.corrections.slice(0, 3).forEach((correction) => {
+        console.log(`[v1]    - "${correction.original}" (${correction.syllablesBefore} sílabas)`)
+        console.log(`[v1]      → "${correction.corrected}" (${correction.syllablesAfter} sílabas)`)
+      })
+    }
+
     if (performanceMode === "performance") {
       console.log("[v1] 🎭 Aplicando formatação performática PART A/B/C...")
       cleanedLyrics = formatToPerformanceStructure(cleanedLyrics, genre, "performance")
@@ -141,6 +160,21 @@ export async function POST(request: NextRequest) {
     const lines = cleanedLyrics.split("\n").filter((line) => line.trim().length > 0)
     console.log(`[v1] 📊 Estatísticas: ${lines.length} linhas, ${cleanedLyrics.length} caracteres`)
 
+    const violatingLines = lines.filter((line) => {
+      const trimmed = line.trim()
+      if (!trimmed || trimmed.startsWith("[") || /^$$[^)]*$$$/.test(trimmed)) return false
+      return countPoeticSyllables(line) > maxSyllables
+    })
+
+    if (violatingLines.length > 0) {
+      console.log(`[v1] ⚠️ AVISO: ${violatingLines.length} linha(s) ainda excedem ${maxSyllables} sílabas após correção`)
+      violatingLines.slice(0, 3).forEach((line) => {
+        console.log(`[v1]    - "${line.substring(0, 50)}..." (${countPoeticSyllables(line)} sílabas)`)
+      })
+    } else {
+      console.log(`[v1] ✅ Todas as linhas respeitam o limite de ${maxSyllables} sílabas`)
+    }
+
     console.log("[v1] ========== FIM DA REESCRITA MELHORADA ==========")
 
     return NextResponse.json({
@@ -156,7 +190,8 @@ export async function POST(request: NextRequest) {
         polishingApplied: true,
         linesCount: lines.length,
         performanceMode,
-        version: "v1-improved-with-structure",
+        syllableCorrections: fixResult.corrections.length,
+        version: "v1-improved-with-syllable-fix",
       },
     })
   } catch (error) {

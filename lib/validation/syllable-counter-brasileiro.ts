@@ -207,6 +207,9 @@ export function countPoeticSyllables(line: string): number {
   }
 
   total = applyInterwordElision(line, total)
+
+  console.log(`[v0] Contagem de sílabas: "${line.substring(0, 50)}..." = ${total} sílabas`)
+
   return Math.max(1, total)
 }
 
