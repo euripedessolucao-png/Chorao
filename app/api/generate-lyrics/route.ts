@@ -5,6 +5,7 @@ import { buildGenreRulesPrompt } from "@/lib/validation/genre-rules-builder"
 import { getUniversalRhymeRules } from "@/lib/validation/universal-rhyme-rules"
 import { enforceSyllableLimitAll } from "@/lib/validation/intelligent-rewriter"
 import { reviewAndFixAllLines } from "@/lib/validation/auto-syllable-fixer"
+import { enforceSectionStructure } from "@/lib/validation/section-structure-enforcer"
 import {
   formatSertanejoPerformance,
   shouldUsePerformanceFormat,
@@ -240,6 +241,9 @@ Gere a letra agora:`
     let finalLyrics = cleanLyricsFromAI(text)
 
     finalLyrics = capitalizeLines(finalLyrics)
+
+    console.log("[API] 📐 Aplicando limites de linhas por seção...")
+    finalLyrics = enforceSectionStructure(finalLyrics, genre)
 
     console.log("[API] 🔧 Aplicando correção super-efetiva de versos incompletos...")
     finalLyrics = superFixIncompleteLines(finalLyrics)

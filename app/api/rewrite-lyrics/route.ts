@@ -16,6 +16,7 @@ import { GENRE_CONFIGS, getSyllableLimitsForGenre } from "@/lib/genre-config"
 import { cleanLyricsFromAI } from "@/lib/utils/remove-quotes-and-clean"
 import { reviewAndFixAllLines } from "@/lib/validation/auto-syllable-fixer"
 import { fixAllIncompleteVerses } from "@/lib/validation/verse-completer"
+import { enforceSectionStructure } from "@/lib/validation/section-structure-enforcer"
 
 function getMaxSyllables(genre: string): number {
   const genreConfig = (GENRE_CONFIGS as any)[genre]
@@ -155,6 +156,9 @@ Gere a letra reescrita agora:`
     let finalLyrics = cleanLyricsFromAI(text)
     finalLyrics = capitalizeLines(finalLyrics)
     console.log("[API] 📝 Resposta bruta recebida")
+
+    console.log("[API] 📐 Aplicando limites de linhas por seção...")
+    finalLyrics = enforceSectionStructure(finalLyrics, genre)
 
     console.log("[API] 🔍 Detectando e completando versos incompletos...")
     const completionResult = await fixAllIncompleteVerses(finalLyrics, genre, maxSyllables)
