@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
     console.log(`[v1] 🔧 Aplicando correção automática de sílabas (máximo: ${maxSyllables})...`)
 
     const fixResult = reviewAndFixAllLines(cleanedLyrics, maxSyllables)
-    cleanedLyrics = fixResult.correctedLyrics
+    cleanedLyrics = fixResult.fixedLyrics
 
     if (!cleanedLyrics || cleanedLyrics.trim().length === 0) {
       console.log("[v1] ❌ ERRO: Letra está vazia após correção de sílabas")
