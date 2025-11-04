@@ -125,11 +125,21 @@ export async function POST(request: NextRequest) {
       .replace(/\n{3,}/g, "\n\n")
       .trim()
 
+    if (!cleanedLyrics || cleanedLyrics.trim().length === 0) {
+      console.log("[v1] ❌ ERRO: Letra limpa está vazia após processamento")
+      throw new Error("Letra processada está vazia")
+    }
+
     const maxSyllables = syllableTarget?.max || 12
     console.log(`[v1] 🔧 Aplicando correção automática de sílabas (máximo: ${maxSyllables})...`)
 
     const fixResult = reviewAndFixAllLines(cleanedLyrics, maxSyllables)
     cleanedLyrics = fixResult.correctedLyrics
+
+    if (!cleanedLyrics || cleanedLyrics.trim().length === 0) {
+      console.log("[v1] ❌ ERRO: Letra está vazia após correção de sílabas")
+      throw new Error("Letra vazia após correção de sílabas")
+    }
 
     console.log(`[v1] ✅ Correção de sílabas concluída:`)
     console.log(`[v1]    - Linhas corrigidas: ${fixResult.corrections.length}`)
@@ -145,7 +155,17 @@ export async function POST(request: NextRequest) {
 
     if (performanceMode === "performance") {
       console.log("[v1] 🎭 Aplicando formatação performática PART A/B/C...")
+      console.log("[v1] Letra antes da formatação (primeiros 100 chars):", cleanedLyrics.substring(0, 100))
+      console.log("[v1] Tipo de cleanedLyrics:", typeof cleanedLyrics)
+      console.log("[v1] cleanedLyrics é undefined?", cleanedLyrics === undefined)
+      console.log("[v1] cleanedLyrics é null?", cleanedLyrics === null)
+
       cleanedLyrics = formatToPerformanceStructure(cleanedLyrics, genre, "performance")
+
+      if (!cleanedLyrics || cleanedLyrics.trim().length === 0) {
+        console.log("[v1] ❌ ERRO: Letra está vazia após formatação performática")
+        throw new Error("Letra vazia após formatação performática")
+      }
 
       // Adiciona solo instrumental se houver ponte
       if (cleanedLyrics.includes("PART C")) {

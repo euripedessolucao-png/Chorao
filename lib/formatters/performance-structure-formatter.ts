@@ -20,6 +20,11 @@ export function formatToPerformanceStructure(
   genre = "sertanejo",
   performanceMode: "standard" | "performance" = "performance",
 ): string {
+  if (!lyrics || typeof lyrics !== "string") {
+    console.error("[performance-formatter] ❌ ERRO: lyrics é undefined ou não é string:", lyrics)
+    return lyrics || "" // Return empty string if lyrics is falsy
+  }
+
   if (performanceMode === "standard") {
     return lyrics // Retorna sem formatação performática
   }
@@ -34,6 +39,11 @@ export function formatToPerformanceStructure(
  * Parseia letra em seções
  */
 function parseLyricsToSections(lyrics: string): PerformanceSection[] {
+  if (!lyrics || typeof lyrics !== "string") {
+    console.error("[performance-formatter] ❌ ERRO: lyrics inválido em parseLyricsToSections:", lyrics)
+    return []
+  }
+
   const sections: PerformanceSection[] = []
   const lines = lyrics.split("\n")
 
@@ -177,6 +187,11 @@ function formatSection(section: PerformanceSection, genre: string): string {
  * Adiciona solo instrumental entre ponte e refrão final
  */
 export function addInstrumentalSolo(lyrics: string, genre = "sertanejo"): string {
+  if (!lyrics || typeof lyrics !== "string") {
+    console.error("[performance-formatter] ❌ ERRO: lyrics é undefined em addInstrumentalSolo:", lyrics)
+    return lyrics || ""
+  }
+
   // Detecta posição entre PART C e último PART B
   const lines = lyrics.split("\n")
   const result: string[] = []
