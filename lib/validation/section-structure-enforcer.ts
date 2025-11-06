@@ -44,7 +44,7 @@ export function enforceSectionStructure(lyrics: string, genre: string): string {
         return 4 // Pre-chorus should be 2-4 lines
       case "chorus":
         // Get max from lines_options
-        const chorusOptions: number[] = config.structure_rules.chorus.lines_options
+        const chorusOptions: readonly number[] = config.structure_rules.chorus.lines_options
         return Math.max(...chorusOptions)
       case "bridge":
         // Get max from bridge config
@@ -167,7 +167,7 @@ export function validateSectionStructure(
           }
         }
       } else if (sectionType === "chorus") {
-        const chorusOptions: number[] = config.structure_rules.chorus.lines_options
+        const chorusOptions: readonly number[] = config.structure_rules.chorus.lines_options
         if (!chorusOptions.includes(contentLines.length)) {
           errors.push(`${currentSection}: tem ${contentLines.length} linhas (esperado ${chorusOptions.join(" ou ")})`)
         }
