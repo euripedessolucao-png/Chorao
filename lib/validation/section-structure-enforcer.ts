@@ -10,44 +10,42 @@ export function enforceSectionStructure(lyrics: string, genre: string): string {
 
   let currentSection: string | null = null
   let currentSectionLines: string[] = []
-  let currentSectionStart = 0
 
   const isHeading = (line: string) => {
-    return /^\s*\[(?:INTRO|PART\s+[ABC]\d*|VERSE|PRE-?CHORUS|PRÉ-REFRÃO|CHORUS|REFRÃO|FINAL\s+CHORUS|BRIDGE|SOLO|OUTRO|Instrumental)/i.test(
+    // Match both English and Portuguese section headers with or without ###
+    return /^\s*#{0,3}\s*\[(?:INTRO|PART\s+[ABC]\d*|VERSE|VERSO|PRE-?CHORUS|PRÉ-REFRÃO|CHORUS|REFRÃO|FINAL\s+CHORUS|BRIDGE|PONTE|SOLO|OUTRO|Instrumental)/i.test(
       line,
     )
   }
 
   const getSectionType = (heading: string): string => {
-    if (/INTRO/i.test(heading)) return "intro"
-    if (/VERSE|PART\s+A/i.test(heading)) return "verse"
-    if (/PRE-?CHORUS|PRÉ-REFRÃO/i.test(heading)) return "pre-chorus"
-    if (/CHORUS|REFRÃO/i.test(heading)) return "chorus"
-    if (/BRIDGE|PART\s+C/i.test(heading)) return "bridge"
-    if (/OUTRO/i.test(heading)) return "outro"
-    if (/SOLO|Instrumental/i.test(heading)) return "instrumental"
+    const upper = heading.toUpperCase()
+    if (upper.includes("INTRO")) return "intro"
+    if (upper.includes("VERSE") || upper.includes("VERSO") || upper.includes("PART A")) return "verse"
+    if (upper.includes("PRE") || upper.includes("PRÉ")) return "pre-chorus"
+    if (upper.includes("CHORUS") || upper.includes("REFRÃO") || upper.includes("PART B")) return "chorus"
+    if (upper.includes("BRIDGE") || upper.includes("PONTE") || upper.includes("PART C")) return "bridge"
+    if (upper.includes("OUTRO")) return "outro"
+    if (upper.includes("SOLO") || upper.includes("Instrumental")) return "instrumental"
     return "unknown"
   }
 
   const getMaxLines = (sectionType: string): number => {
     switch (sectionType) {
       case "intro":
-        return 4 // Intro should be short
+        return 4
       case "verse":
-        // Parse "4-5" or just "4"
         const verseLines = config.structure_rules.verse.lines
         if (typeof verseLines === "string" && verseLines.includes("-")) {
-          return Number.parseInt(verseLines.split("-")[1] || "5")
+          return Number.parseInt(verseLines.split("-")[1] || "4")
         }
-        return typeof verseLines === "number" ? verseLines : 5
+        return typeof verseLines === "number" ? verseLines : 4
       case "pre-chorus":
-        return 4 // Pre-chorus should be 2-4 lines
+        return 4
       case "chorus":
-        // Get max from lines_options
         const chorusOptions: readonly number[] = config.structure_rules.chorus.lines_options
         return Math.max(...chorusOptions)
       case "bridge":
-        // Get max from bridge config
         if ("bridge" in config.structure_rules) {
           const bridgeConfig = config.structure_rules.bridge as any
           return bridgeConfig.lines_max || bridgeConfig.lines_min || 4
@@ -56,9 +54,9 @@ export function enforceSectionStructure(lyrics: string, genre: string): string {
       case "outro":
         return 4
       case "instrumental":
-        return 1 // Just the description
+        return 1
       default:
-        return 5
+        return 4
     }
   }
 
@@ -73,7 +71,7 @@ export function enforceSectionStructure(lyrics: string, genre: string): string {
       // Enforce max lines
       let finalLines = contentLines
       if (contentLines.length > maxLines) {
-        console.log(`[v0] Section ${currentSection} has ${contentLines.length} lines, trimming to ${maxLines}`)
+        console.log(`[v0] ✂️ Section ${currentSection.trim()} has ${contentLines.length} lines, trimming to ${maxLines}`)
         finalLines = contentLines.slice(0, maxLines)
       }
 
@@ -96,20 +94,23 @@ export function enforceSectionStructure(lyrics: string, genre: string): string {
       // Start new section
       currentSection = line
       currentSectionLines = []
-      currentSectionStart = i
     } else if (currentSection) {
-      // Add line to current section
-      currentSectionLines.push(line)
+      // Add line to current section (skip empty lines at start)
+      if (line.trim() !== "" || currentSectionLines.length > 0) {
+        currentSectionLines.push(line)
+      }
     } else {
-      // Line before any section (shouldn't happen, but keep it)
-      result.push(line)
+      // Line before any section (keep it)
+      if (line.trim() !== "") {
+        result.push(line)
+      }
     }
   }
 
   // Process last section
   processSection()
 
-  return result.join("\n")
+  return result.join("\n").trim()
 }
 
 /**
@@ -132,18 +133,19 @@ export function validateSectionStructure(
   let currentSectionLines: string[] = []
 
   const isHeading = (line: string) => {
-    return /^\s*\[(?:INTRO|PART\s+[ABC]\d*|VERSE|PRE-?CHORUS|PRÉ-REFRÃO|CHORUS|REFRÃO|FINAL\s+CHORUS|BRIDGE|SOLO|OUTRO|Instrumental)/i.test(
+    return /^\s*#{0,3}\s*\[(?:INTRO|PART\s+[ABC]\d*|VERSE|VERSO|PRE-?CHORUS|PRÉ-REFRÃO|CHORUS|REFRÃO|FINAL\s+CHORUS|BRIDGE|PONTE|SOLO|OUTRO|Instrumental)/i.test(
       line,
     )
   }
 
   const getSectionType = (heading: string): string => {
-    if (/INTRO/i.test(heading)) return "intro"
-    if (/VERSE|PART\s+A/i.test(heading)) return "verse"
-    if (/PRE-?CHORUS|PRÉ-REFRÃO/i.test(heading)) return "pre-chorus"
-    if (/CHORUS|REFRÃO/i.test(heading)) return "chorus"
-    if (/BRIDGE|PART\s+C/i.test(heading)) return "bridge"
-    if (/OUTRO/i.test(heading)) return "outro"
+    const upper = heading.toUpperCase()
+    if (upper.includes("INTRO")) return "intro"
+    if (upper.includes("VERSE") || upper.includes("VERSO") || upper.includes("PART A")) return "verse"
+    if (upper.includes("PRE") || upper.includes("PRÉ")) return "pre-chorus"
+    if (upper.includes("CHORUS") || upper.includes("REFRÃO") || upper.includes("PART B")) return "chorus"
+    if (upper.includes("BRIDGE") || upper.includes("PONTE") || upper.includes("PART C")) return "bridge"
+    if (upper.includes("OUTRO")) return "outro"
     return "unknown"
   }
 

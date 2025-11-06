@@ -104,28 +104,33 @@ Construa TODOS os versos em torno desses elementos obrigatórios.
 - NUNCA use aspas nas linhas
 - NUNCA deixe versos incompletos
 
-🎵 ESTRUTURA:
+🎵 ESTRUTURA OBRIGATÓRIA (RESPEITE EXATAMENTE):
 ${
   performanceMode === "performance"
-    ? `### [INTRO] (4 linhas completas)
-### [VERSO 1] (6 linhas completas)  
-### [PRÉ-REFRÃO] (4 linhas completas)
-### [REFRÃO] (6 linhas completas)
-### [VERSO 2] (6 linhas completas)
-### [REFRÃO] (6 linhas completas)
-### [PONTE] (6 linhas completas)
-### [REFRÃO] (6 linhas completas)
-### [OUTRO] (4 linhas completas)`
-    : `### [Intro] (4 linhas completas)
-### [Verso 1] (6 linhas completas)
-### [Pré-Refrão] (4 linhas completas)
-### [Refrão] (6 linhas completas)
-### [Verso 2] (6 linhas completas)
-### [Refrão] (6 linhas completas)
-### [Ponte] (6 linhas completas)
-### [Refrão] (6 linhas completas)
-### [Outro] (4 linhas completas)`
+    ? `### [INTRO] (EXATAMENTE 4 linhas completas)
+### [VERSO 1] (EXATAMENTE 4 linhas completas)  
+### [PRÉ-REFRÃO] (EXATAMENTE 4 linhas completas)
+### [REFRÃO] (EXATAMENTE 4 linhas completas)
+### [VERSO 2] (EXATAMENTE 4 linhas completas)
+### [REFRÃO] (EXATAMENTE 4 linhas completas - REPETIR O MESMO)
+### [PONTE] (EXATAMENTE 4 linhas completas)
+### [REFRÃO] (EXATAMENTE 4 linhas completas - REPETIR O MESMO)
+### [OUTRO] (EXATAMENTE 4 linhas completas)`
+    : `### [Intro] (EXATAMENTE 4 linhas completas)
+### [Verso 1] (EXATAMENTE 4 linhas completas)
+### [Pré-Refrão] (EXATAMENTE 4 linhas completas)
+### [Refrão] (EXATAMENTE 4 linhas completas)
+### [Verso 2] (EXATAMENTE 4 linhas completas)
+### [Refrão] (EXATAMENTE 4 linhas completas - REPETIR O MESMO)
+### [Ponte] (EXATAMENTE 4 linhas completas)
+### [Refrão] (EXATAMENTE 4 linhas completas - REPETIR O MESMO)
+### [Outro] (EXATAMENTE 4 linhas completas)`
 }
+
+⚠️ IMPORTANTE: 
+- Cada seção deve ter EXATAMENTE 4 linhas (não mais, não menos)
+- O REFRÃO deve ser IDÊNTICO em todas as repetições
+- NUNCA adicione linhas extras ou repita versos fora das seções marcadas
 
 💡 PRIORIDADES (EM ORDEM):
 1. INCLUIR REQUISITOS OBRIGATÓRIOS (refrão/hook especificados) - NÃO NEGOCIÁVEL
