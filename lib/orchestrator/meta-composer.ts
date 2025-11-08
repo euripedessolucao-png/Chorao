@@ -7,12 +7,13 @@ export const GENRE_METRICS = {
     maxSyllables: 10,
     reason: "Balanço dançante e fácil de cantar",
     flexibility: "moderate",
+    allowPeaks: false,
   },
   Funk: {
     minSyllables: 6,
     maxSyllables: 10,
     reason: "Soa como conversa ritmada",
-    flexibility: "high", // permite picos
+    flexibility: "high",
     allowPeaks: true,
   },
   Piseiro: {
@@ -27,42 +28,49 @@ export const GENRE_METRICS = {
     maxSyllables: 14,
     reason: "Prioriza a poesia e complexidade",
     flexibility: "high",
+    allowPeaks: false,
   },
   "Pop Brasileiro": {
     minSyllables: 8,
     maxSyllables: 10,
     reason: "Maximiza o cantabilidade e memorização",
     flexibility: "low",
+    allowPeaks: false,
   },
   "Rock Brasileiro": {
     minSyllables: 8,
     maxSyllables: 12,
     reason: "Energia e atitude com clareza",
     flexibility: "moderate",
+    allowPeaks: false,
   },
   Samba: {
     minSyllables: 7,
     maxSyllables: 11,
     reason: "Swing natural e malícia",
     flexibility: "moderate",
+    allowPeaks: false,
   },
   Forró: {
     minSyllables: 7,
     maxSyllables: 10,
     reason: "Simplicidade e dançabilidade",
     flexibility: "moderate",
+    allowPeaks: false,
   },
   Gospel: {
     minSyllables: 8,
     maxSyllables: 12,
     reason: "Clareza da mensagem",
     flexibility: "moderate",
+    allowPeaks: false,
   },
   "Bachata Brasileira": {
     minSyllables: 8,
     maxSyllables: 11,
     reason: "Romantismo e sensualidade",
     flexibility: "moderate",
+    allowPeaks: false,
   },
 } as const
 
@@ -111,6 +119,7 @@ export class MetaComposer {
         maxSyllables: 12,
         reason: "Métrica padrão equilibrada",
         flexibility: "moderate",
+        allowPeaks: false,
       }
     )
   }
