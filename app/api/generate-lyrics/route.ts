@@ -198,33 +198,40 @@ ${additionalReqsSection}
 
 ${genreRules.fullPrompt}
 
-🎵 ESTRUTURA:
+🎵 ESTRUTURA OBRIGATÓRIA - RESPEITE EXATAMENTE AS QUANTIDADES:
 ${
   performanceMode === "performance"
-    ? `### [INTRO] (4 linhas)
-### [VERSO 1] (6 linhas)  
-### [PRÉ-REFRAO] (4 linhas)
-### [REFRAO] (6 linhas)
-### [VERSO 2] (6 linhas)
-### [REFRAO] (6 linhas)
-### [PONTE] (6 linhas)
-### [REFRAO] (6 linhas)
-### [OUTRO] (4 linhas)`
-    : `### [Intro] (4 linhas)
-### [Verso 1] (6 linhas)
-### [Pré-Refrão] (4 linhas)
-### [Refrão] (6 linhas)
-### [Verso 2] (6 linhas)
-### [Refrão] (6 linhas)
-### [Ponte] (6 linhas)
-### [Refrão] (6 linhas)
-### [Outro] (4 linhas)`
+    ? `### [INTRO] (EXATAMENTE 4 linhas completas)
+### [VERSO 1] (EXATAMENTE 4 linhas completas)  
+### [PRÉ-REFRÃO] (EXATAMENTE 4 linhas completas)
+### [REFRÃO] (EXATAMENTE 4 linhas completas)
+### [VERSO 2] (EXATAMENTE 4 linhas completas)
+### [REFRÃO] (EXATAMENTE 4 linhas completas - IDÊNTICO AO PRIMEIRO)
+### [PONTE] (EXATAMENTE 4 linhas completas)
+### [REFRÃO] (EXATAMENTE 4 linhas completas - IDÊNTICO AO PRIMEIRO)
+### [OUTRO] (EXATAMENTE 4 linhas completas)`
+    : `### [Intro] (EXATAMENTE 4 linhas completas)
+### [Verso 1] (EXATAMENTE 4 linhas completas)
+### [Pré-Refrão] (EXATAMENTE 4 linhas completas)
+### [Refrão] (EXATAMENTE 4 linhas completas)
+### [Verso 2] (EXATAMENTE 4 linhas completas)
+### [Refrão] (EXATAMENTE 4 linhas completas - IDÊNTICO AO PRIMEIRO)
+### [Ponte] (EXATAMENTE 4 linhas completas)
+### [Refrão] (EXATAMENTE 4 linhas completas - IDÊNTICO AO PRIMEIRO)
+### [Outro] (EXATAMENTE 4 linhas completas)`
 }
+
+⚠️ REGRAS CRÍTICAS:
+- Cada seção deve ter EXATAMENTE 4 linhas (não 3, não 5, não 6 - EXATAMENTE 4)
+- O REFRÃO deve ser IDÊNTICO em todas as 3 repetições
+- NUNCA adicione linhas extras fora das seções marcadas
+- NUNCA repita versos além da estrutura definida
 
 💡 PRIORIDADES (EM ORDEM):
 1. VERSOS COMPLETOS (mais importante)
-2. Dentro do limite de ${maxSyllables} sílabas
-3. Rimas naturais (bônus)
+2. EXATAMENTE 4 linhas por seção
+3. Dentro do limite de ${maxSyllables} sílabas
+4. Rimas naturais (bônus)
 
 IMPORTANTE: Retorne APENAS as linhas da letra, SEM aspas, SEM explicações.
 
@@ -242,7 +249,7 @@ Gere a letra agora:`
 
     finalLyrics = capitalizeLines(finalLyrics)
 
-    console.log("[API] 📐 Aplicando limites de linhas por seção...")
+    console.log("[API] 📐 Aplicando limites RIGOROSOS de 4 linhas por seção...")
     finalLyrics = enforceSectionStructure(finalLyrics, genre)
 
     console.log("[API] 🔧 Aplicando correção super-efetiva de versos incompletos...")

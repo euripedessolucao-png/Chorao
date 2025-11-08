@@ -104,7 +104,7 @@ Construa TODOS os versos em torno desses elementos obrigatórios.
 - NUNCA use aspas nas linhas
 - NUNCA deixe versos incompletos
 
-🎵 ESTRUTURA OBRIGATÓRIA (RESPEITE EXATAMENTE):
+🎵 ESTRUTURA OBRIGATÓRIA - RESPEITE EXATAMENTE AS QUANTIDADES:
 ${
   performanceMode === "performance"
     ? `### [INTRO] (EXATAMENTE 4 linhas completas)
@@ -112,32 +112,33 @@ ${
 ### [PRÉ-REFRÃO] (EXATAMENTE 4 linhas completas)
 ### [REFRÃO] (EXATAMENTE 4 linhas completas)
 ### [VERSO 2] (EXATAMENTE 4 linhas completas)
-### [REFRÃO] (EXATAMENTE 4 linhas completas - REPETIR O MESMO)
+### [REFRÃO] (EXATAMENTE 4 linhas completas - IDÊNTICO AO PRIMEIRO)
 ### [PONTE] (EXATAMENTE 4 linhas completas)
-### [REFRÃO] (EXATAMENTE 4 linhas completas - REPETIR O MESMO)
+### [REFRÃO] (EXATAMENTE 4 linhas completas - IDÊNTICO AO PRIMEIRO)
 ### [OUTRO] (EXATAMENTE 4 linhas completas)`
     : `### [Intro] (EXATAMENTE 4 linhas completas)
 ### [Verso 1] (EXATAMENTE 4 linhas completas)
 ### [Pré-Refrão] (EXATAMENTE 4 linhas completas)
 ### [Refrão] (EXATAMENTE 4 linhas completas)
 ### [Verso 2] (EXATAMENTE 4 linhas completas)
-### [Refrão] (EXATAMENTE 4 linhas completas - REPETIR O MESMO)
+### [Refrão] (EXATAMENTE 4 linhas completas - IDÊNTICO AO PRIMEIRO)
 ### [Ponte] (EXATAMENTE 4 linhas completas)
-### [Refrão] (EXATAMENTE 4 linhas completas - REPETIR O MESMO)
+### [Refrão] (EXATAMENTE 4 linhas completas - IDÊNTICO AO PRIMEIRO)
 ### [Outro] (EXATAMENTE 4 linhas completas)`
 }
 
-⚠️ IMPORTANTE: 
-- Cada seção deve ter EXATAMENTE 4 linhas (não mais, não menos)
-- O REFRÃO deve ser IDÊNTICO em todas as repetições
-- NUNCA adicione linhas extras ou repita versos fora das seções marcadas
+⚠️ REGRAS CRÍTICAS:
+- Cada seção deve ter EXATAMENTE 4 linhas (não 3, não 5, não 6 - EXATAMENTE 4)
+- O REFRÃO deve ser IDÊNTICO em todas as 3 repetições
+- NUNCA adicione linhas extras fora das seções marcadas
+- NUNCA repita versos além da estrutura definida
 
 💡 PRIORIDADES (EM ORDEM):
 1. INCLUIR REQUISITOS OBRIGATÓRIOS (refrão/hook especificados) - NÃO NEGOCIÁVEL
 2. VERSOS COMPLETOS (sujeito + verbo + complemento) - OBRIGATÓRIO
-3. RIMAS RICAS (amor/calor, coração/canção, vida/ferida) - MUITO IMPORTANTE
-4. Dentro do limite de ${maxSyllables} sílabas - OBRIGATÓRIO
-5. Linguagem natural e cantável - IMPORTANTE
+3. EXATAMENTE 4 linhas por seção - OBRIGATÓRIO
+4. RIMAS RICAS (amor/calor, coração/canção, vida/ferida) - MUITO IMPORTANTE
+5. Dentro do limite de ${maxSyllables} sílabas - OBRIGATÓRIO
 
 🎼 EXEMPLOS DE RIMAS RICAS:
 - amor → calor, dor, flor, sabor, valor
@@ -162,7 +163,7 @@ Gere a letra reescrita agora:`
     finalLyrics = capitalizeLines(finalLyrics)
     console.log("[API] 📝 Resposta bruta recebida")
 
-    console.log("[API] 📐 Aplicando limites de linhas por seção...")
+    console.log("[API] 📐 Aplicando limites RIGOROSOS de 4 linhas por seção...")
     finalLyrics = enforceSectionStructure(finalLyrics, genre)
 
     console.log("[API] 🔍 Detectando e completando versos incompletos...")
