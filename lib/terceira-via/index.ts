@@ -125,16 +125,15 @@ export function applyAutomaticCorrection(lyrics: string, config: TerceiraViaConf
     const syllablesBefore = countPoeticSyllables(line)
 
     if (syllablesBefore > config.maxSyllables) {
-      // Tenta corrigir linha longa
-      const fixed = autoFixLineToMaxSyllables(line, config.maxSyllables)
-      const syllablesAfter = countPoeticSyllables(fixed)
+      const fixResult = autoFixLineToMaxSyllables(line, config.maxSyllables)
+      const syllablesAfter = countPoeticSyllables(fixResult.corrected)
 
       if (syllablesAfter <= config.maxSyllables) {
-        correctedLines.push(fixed)
+        correctedLines.push(fixResult.corrected)
         corrections.push({
           lineNumber: index + 1,
           original: line,
-          corrected: fixed,
+          corrected: fixResult.corrected,
           syllablesBefore,
           syllablesAfter,
         })
