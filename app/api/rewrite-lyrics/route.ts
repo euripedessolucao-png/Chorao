@@ -58,25 +58,33 @@ export async function POST(request: NextRequest) {
     const rhymeRules = getUniversalRhymeRules(genre)
     const genreRules = buildGenreRulesPrompt(genre)
 
-    const prompt = `COMPOSITOR PROFISSIONAL BRASILEIRO - ${genre.toUpperCase()}
+    const prompt = `SISTEMA DE COMPOSIÇÃO PROFISSIONAL - ${genre.toUpperCase()}
 
-🎯 MISSÃO: Reescrever a letra mantendo VERSOS COMPLETOS e RIMAS RICAS
+🚨 REGRA NÚMERO 1 - VERSOS COMPLETOS (NÃO NEGOCIÁVEL):
+TODO verso deve ser uma frase completa com sentido próprio.
+NUNCA escreva frases incompletas ou cortadas.
 
-📝 EXEMPLOS DE VERSOS COMPLETOS (CORRETO):
-✅ "Hoje eu venho aqui de coração aberto"
-✅ "Com gratidão transbordando em meu peito"
-✅ "Teu amor me renova a cada amanhecer"
-✅ "Nos braços de Deus encontro meu abrigo"
-✅ "A vida é uma bênção que eu agradeço"
+❌ EXEMPLOS DE VERSOS PROIBIDOS (INCOMPLETOS):
+"ferido, eu sigo frente" → ERRADO! Quem está ferido?
+"é hora eu me, menina" → ERRADO! Cortado no meio
+"Teu amor me, não dá" → ERRADO! "me" o quê?
+"O mundo é teu, e eu nã" → ERRADO! Palavra cortada
+"com essa" → ERRADO! Com essa o quê?
+"pro seu" → ERRADO! Pro seu o quê?
+"partido, eu sigo frente" → ERRADO! Quem/O que está partido?
+"cada canto e esquina" → ERRADO! Falta verbo e sujeito
 
-🚫 NUNCA FAÇA VERSOS INCOMPLETOS (ERRADO):
-❌ "Se você chora, não sei se é" (incompleto - "se é" o quê?)
-❌ "Não quero mais viver com essa" (incompleto - "com essa" o quê?)
-❌ "Não quero ser consolo pro seu" (incompleto - "pro seu" o quê?)
-❌ "Do calor que você me" (incompleto - cortado)
-❌ "Com coração, implorando" (incompleto - "implorando" o quê?)
+✅ EXEMPLOS DE VERSOS CORRETOS (COMPLETOS):
+"Mesmo ferido, eu sigo em frente com coragem"
+"É hora de me libertar dessa tristeza, menina"
+"Teu amor não me completa mais, não dá"
+"O mundo é teu, e eu não faço mais parte"
+"Não quero viver com essa dor no peito"
+"Não sou mais consolo pro seu coração vazio"
+"De coração partido, eu sigo em frente sozinho"
+"Te procurei em cada canto e esquina da cidade"
 
-LETRA ORIGINAL (inspiração):
+LETRA ORIGINAL (base para reescrita):
 ${originalLyrics}
 
 TEMA: ${theme || "Amor e saudade"}
@@ -86,72 +94,75 @@ GÊNERO: ${genre}
 ${
   additionalRequirements
     ? `
-🎯 REQUISITOS OBRIGATÓRIOS (DEVEM SER INCLUÍDOS):
+🎯 ELEMENTOS OBRIGATÓRIOS (PRIORIDADE MÁXIMA):
 ${additionalRequirements}
 
-⚠️ ATENÇÃO: Os requisitos acima são OBRIGATÓRIOS e NÃO NEGOCIÁVEIS. 
-Se houver um refrão ou hook especificado, você DEVE incorporá-lo EXATAMENTE como está na letra reescrita. 
-Construa TODOS os versos em torno desses elementos obrigatórios.
+⚠️ ESTES ELEMENTOS SÃO OBRIGATÓRIOS E DEVEM SER INCLUÍDOS EXATAMENTE COMO ESTÃO.
+Se houver refrão ou hook especificado, use-o LITERALMENTE e construa os versos ao redor dele.
 `
     : ""
 }
 
-📏 MÉTRICA MUSICAL:
-- Ideal: ${idealSyllables} sílabas por verso
+📏 LIMITES DE MÉTRICA (RÍGIDOS):
+- Ideal: ${idealSyllables} sílabas poéticas por verso
 - Máximo ABSOLUTO: ${maxSyllables} sílabas (NUNCA ultrapassar)
 - Mínimo: ${syllableLimits.min} sílabas
-- ${rhymeRules.requirePerfectRhymes ? "Rimas RICAS e PERFEITAS obrigatórias" : "Rimas RICAS sempre que possível"}
-- NUNCA use aspas nas linhas
-- NUNCA deixe versos incompletos
+- ${rhymeRules.requirePerfectRhymes ? "Rimas RICAS e PERFEITAS são obrigatórias" : "Use rimas RICAS sempre que possível"}
 
-🎵 ESTRUTURA OBRIGATÓRIA - RESPEITE EXATAMENTE AS QUANTIDADES:
+🎵 ESTRUTURA EXATA (RESPEITE RIGOROSAMENTE):
 ${
   performanceMode === "performance"
-    ? `### [INTRO] (EXATAMENTE 4 linhas completas)
-### [VERSO 1] (EXATAMENTE 4 linhas completas)  
-### [PRÉ-REFRÃO] (EXATAMENTE 4 linhas completas)
-### [REFRÃO] (EXATAMENTE 4 linhas completas)
-### [VERSO 2] (EXATAMENTE 4 linhas completas)
-### [REFRÃO] (EXATAMENTE 4 linhas completas - IDÊNTICO AO PRIMEIRO)
-### [PONTE] (EXATAMENTE 4 linhas completas)
-### [REFRÃO] (EXATAMENTE 4 linhas completas - IDÊNTICO AO PRIMEIRO)
-### [OUTRO] (EXATAMENTE 4 linhas completas)`
-    : `### [Intro] (EXATAMENTE 4 linhas completas)
-### [Verso 1] (EXATAMENTE 4 linhas completas)
-### [Pré-Refrão] (EXATAMENTE 4 linhas completas)
-### [Refrão] (EXATAMENTE 4 linhas completas)
-### [Verso 2] (EXATAMENTE 4 linhas completas)
-### [Refrão] (EXATAMENTE 4 linhas completas - IDÊNTICO AO PRIMEIRO)
-### [Ponte] (EXATAMENTE 4 linhas completas)
-### [Refrão] (EXATAMENTE 4 linhas completas - IDÊNTICO AO PRIMEIRO)
-### [Outro] (EXATAMENTE 4 linhas completas)`
+    ? `### [INTRO] - 4 linhas completas
+### [VERSO 1] - 4 linhas completas
+### [PRÉ-REFRÃO] - 4 linhas completas
+### [REFRÃO] - 4 linhas completas
+### [VERSO 2] - 4 linhas completas
+### [REFRÃO] - 4 linhas completas (IDÊNTICO ao primeiro)
+### [PONTE] - 4 linhas completas
+### [REFRÃO] - 4 linhas completas (IDÊNTICO ao primeiro)
+### [OUTRO] - 4 linhas completas`
+    : `### [Intro] - 4 linhas completas
+### [Verso 1] - 4 linhas completas
+### [Pré-Refrão] - 4 linhas completas
+### [Refrão] - 4 linhas completas
+### [Verso 2] - 4 linhas completas
+### [Refrão] - 4 linhas completas (IDÊNTICO ao primeiro)
+### [Ponte] - 4 linhas completas
+### [Refrão] - 4 linhas completas (IDÊNTICO ao primeiro)
+### [Outro] - 4 linhas completas`
 }
 
-⚠️ REGRAS CRÍTICAS:
-- Cada seção deve ter EXATAMENTE 4 linhas (não 3, não 5, não 6 - EXATAMENTE 4)
-- O REFRÃO deve ser IDÊNTICO em todas as 3 repetições
-- NUNCA adicione linhas extras fora das seções marcadas
-- NUNCA repita versos além da estrutura definida
+⚠️ REGRAS ABSOLUTAS:
+1. Cada seção tem EXATAMENTE 4 linhas (não 3, não 5, não 10 - EXATAMENTE 4)
+2. O REFRÃO é IDÊNTICO nas 3 repetições (mesmas 4 linhas)
+3. NUNCA adicione linhas extras fora das seções
+4. TODO verso deve ter sujeito + verbo + complemento (frase completa)
+5. NUNCA termine verso com preposição solta (de, da, pro, pra, com, sem, que)
+6. NUNCA corte palavras no meio (nã, me,, frente sem sujeito)
 
-💡 PRIORIDADES (EM ORDEM):
-1. INCLUIR REQUISITOS OBRIGATÓRIOS (refrão/hook especificados) - NÃO NEGOCIÁVEL
-2. VERSOS COMPLETOS (sujeito + verbo + complemento) - OBRIGATÓRIO
-3. EXATAMENTE 4 linhas por seção - OBRIGATÓRIO
-4. RIMAS RICAS (amor/calor, coração/canção, vida/ferida) - MUITO IMPORTANTE
-5. Dentro do limite de ${maxSyllables} sílabas - OBRIGATÓRIO
+🎼 RIMAS RICAS (use estas terminações):
+- amor/calor/dor/flor/sabor/valor/fervor
+- coração/canção/emoção/ilusão/paixão/solidão
+- vida/ferida/partida/esquecida/querida/despedida
+- noite/açoite/dezoito
+- dia/alegria/fantasia/harmonia/melodia/agonia
 
-🎼 EXEMPLOS DE RIMAS RICAS:
-- amor → calor, dor, flor, sabor, valor
-- coração → canção, emoção, ilusão, paixão
-- vida → ferida, partida, esquecida, querida
-- noite → açoite, dezoito
-- dia → alegria, fantasia, harmonia, melodia
+💡 ORDEM DE PRIORIDADE:
+1º) INCLUIR requisitos obrigatórios (se houver refrão/hook especificado)
+2º) VERSOS COMPLETOS (frases com sentido próprio)
+3º) EXATAMENTE 4 linhas por seção
+4º) RIMAS RICAS entre versos
+5º) Dentro do limite de ${maxSyllables} sílabas
 
-IMPORTANTE: Retorne APENAS as linhas da letra, SEM aspas, SEM explicações.
+IMPORTANTE: 
+- Retorne APENAS a letra
+- SEM aspas nas linhas
+- SEM explicações
+- SEM notas
 
 Gere a letra reescrita agora:`
 
-    console.log(`[API] 🔄 Solicitando reescrita da IA...`)
+    console.log(`[API] 🤖 Solicitando reescrita à IA com prompt ultra-rigoroso...`)
 
     const { text } = await generateText({
       model: "openai/gpt-4o-mini",
@@ -160,45 +171,57 @@ Gere a letra reescrita agora:`
     })
 
     let finalLyrics = cleanLyricsFromAI(text)
-    finalLyrics = capitalizeLines(finalLyrics)
-    console.log("[API] 📝 Resposta bruta recebida")
+    console.log("[API] 📝 Letra bruta recebida da IA")
 
-    console.log("[API] 📐 Aplicando limites RIGOROSOS de 4 linhas por seção...")
+    finalLyrics = capitalizeLines(finalLyrics)
+    console.log("[API] ✅ Linhas capitalizadas")
+
+    console.log("[API] 📐 Aplicando estrutura rígida (4 linhas por seção)...")
     finalLyrics = enforceSectionStructure(finalLyrics, genre)
+    console.log("[API] ✅ Estrutura aplicada")
 
     console.log("[API] 🔍 Detectando e completando versos incompletos...")
     const completionResult = await fixAllIncompleteVerses(finalLyrics, genre, maxSyllables)
     if (completionResult.fixedCount > 0) {
-      console.log(`[API] ✅ ${completionResult.fixedCount} verso(s) incompleto(s) completado(s)`)
+      console.log(`[API] ✅ ${completionResult.fixedCount} verso(s) incompleto(s) foram completados`)
       finalLyrics = completionResult.fixedLyrics
+    } else {
+      console.log("[API] ✓ Nenhum verso incompleto detectado")
     }
 
-    console.log("[API] 🔍 Revisão: corrigindo palavras cortadas...")
-    const initialFixResult = reviewAndFixAllLines(finalLyrics, maxSyllables)
-    if (initialFixResult.corrections.length > 0) {
-      console.log(`[API] ✅ ${initialFixResult.corrections.length} correção(ões) aplicada(s)`)
-      finalLyrics = initialFixResult.fixedLyrics
+    console.log("[API] 🔧 Corrigindo palavras cortadas...")
+    const fixResult = reviewAndFixAllLines(finalLyrics, maxSyllables)
+    if (fixResult.corrections.length > 0) {
+      console.log(`[API] ✅ ${fixResult.corrections.length} palavra(s) cortada(s) corrigida(s)`)
+      finalLyrics = fixResult.fixedLyrics
+    } else {
+      console.log("[API] ✓ Nenhuma palavra cortada encontrada")
     }
 
-    console.log("[API] 🎵 Validando qualidade das rimas...")
+    console.log("[API] 🎵 Validando e melhorando rimas...")
     const rhymeValidation = validateRhymesForGenre(finalLyrics, genre)
     if (!rhymeValidation.valid || rhymeValidation.warnings.length > 0) {
-      console.log("[API] 🔧 Melhorando rimas automaticamente...")
+      console.log("[API] 🔧 Aplicando melhorias de rima...")
       const rhymeEnhancement = await enhanceLyricsRhymes(finalLyrics, genre, theme || "tema", 0.8)
       if (rhymeEnhancement.improvements.length > 0) {
-        console.log(`[API] ✅ ${rhymeEnhancement.improvements.length} rima(s) melhorada(s) para RICA`)
+        console.log(`[API] ✅ ${rhymeEnhancement.improvements.length} rima(s) melhorada(s)`)
         finalLyrics = rhymeEnhancement.enhancedLyrics
       }
+    } else {
+      console.log("[API] ✓ Rimas validadas com sucesso")
     }
 
-    console.log("[API] 🎤 Aplicando reescrita inteligente com elisões...")
+    console.log("[API] 🎤 Aplicando contrações naturais brasileiras...")
     finalLyrics = await enforceSyllableLimitAll(finalLyrics, maxSyllables)
+    console.log("[API] ✅ Contrações aplicadas")
 
-    console.log("[API] 📚 Aplicando empilhamento...")
+    console.log("[API] 📚 Aplicando empilhamento inteligente...")
     const stackingResult = LineStacker.stackLines(finalLyrics)
     finalLyrics = stackingResult.stackedLyrics
+    console.log("[API] ✅ Empilhamento concluído")
 
     if (shouldUsePerformanceFormat(genre, performanceMode)) {
+      console.log("[API] 🎭 Aplicando formato de performance...")
       finalLyrics = formatSertanejoPerformance(finalLyrics, genre)
     }
 
@@ -207,7 +230,7 @@ Gere a letra reescrita agora:`
     finalLyrics = `${finalLyrics}\n\n${instrumentation}`
 
     const totalLines = finalLyrics.split("\n").filter((line) => line.trim().length > 0).length
-    console.log(`[API] 🎉 PROCESSO CONCLUÍDO: ${totalLines} linhas`)
+    console.log(`[API] 🎉 REESCRITA CONCLUÍDA COM SUCESSO: ${totalLines} linhas totais`)
 
     return NextResponse.json({
       success: true,
@@ -219,15 +242,17 @@ Gere a letra reescrita agora:`
         maxSyllables,
         idealSyllables,
         totalLines,
-        quality: "COMPLETE_VERSES_RICH_RHYMES",
+        quality: "COMPLETE_VERSES_RICH_RHYMES_STRICT_STRUCTURE",
+        incompleteverses_fixed: completionResult.fixedCount,
+        syllable_corrections: fixResult.corrections.length,
       },
     })
   } catch (error) {
-    console.error("[API] ❌ Erro crítico:", error)
+    console.error("[API] ❌ Erro crítico na reescrita:", error)
     return NextResponse.json(
       {
-        error: "Falha na geração da letra",
-        details: process.env.NODE_ENV === "development" ? error : undefined,
+        error: "Falha na reescrita da letra",
+        details: process.env.NODE_ENV === "development" ? String(error) : undefined,
       },
       { status: 500 },
     )
