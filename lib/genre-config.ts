@@ -918,6 +918,11 @@ export const INSTRUMENTATION_RULES = {
     optional: ["keyboard", "harmonica", "backing vocals"],
     format: "Sempre entre parênteses, em inglês, após o nome da seção",
   },
+  "Sertanejo Raiz": {
+    required: "(Instrumental: viola caipira, acoustic guitar, sanfona)",
+    optional: ["percussion", "backing vocals"],
+    format: "Sempre entre parênteses, em inglês, após o nome da seção",
+  },
   "Forró Pé de Serra": {
     required: "(Instrumental: zabumba, triângulo, sanfona)",
     optional: ["percussion", "vocals"],
@@ -1050,29 +1055,54 @@ export function getGenreRhythm(genre: string): string {
 }
 
 export function getSyllableLimitsForGenre(genre: string) {
-  const config = GENRE_CONFIGS[genre as keyof typeof GENRE_CONFIGS]
-
-  if (!config) {
-    return { min: 4, max: 12, ideal: 10 }
+  // Sertanejo genres: 7-10 sílabas
+  if (
+    genre.toLowerCase().includes("sertanejo") ||
+    genre.toLowerCase().includes("modão") ||
+    genre.toLowerCase().includes("vanera")
+  ) {
+    return { min: 7, max: 10, ideal: 9 }
   }
 
-  const rules = config.prosody_rules.syllable_count
-
-  if ("absolute_max" in rules) {
-    return {
-      min: 4,
-      max: rules.absolute_max,
-      ideal: Math.min(10, rules.absolute_max - 2), // ideal is 2 less than max
-    }
+  // Funk/Piseiro: 6-10 sílabas (com picos)
+  if (genre.toLowerCase().includes("funk") || genre.toLowerCase().includes("piseiro")) {
+    return { min: 6, max: 10, ideal: 8 }
   }
 
-  if ("without_comma" in rules) {
-    return {
-      min: rules.without_comma.min,
-      max: rules.without_comma.acceptable_up_to,
-      ideal: Math.min(rules.without_comma.max, rules.without_comma.acceptable_up_to - 2),
-    }
+  // MPB: 8-14 sílabas (prioriza poesia e complexidade)
+  if (genre.toLowerCase().includes("mpb") || genre.toLowerCase().includes("bossa")) {
+    return { min: 8, max: 14, ideal: 11 }
   }
 
-  return { min: 4, max: 12, ideal: 10 }
+  // Pop: 8-10 sílabas (maximiza cantabilidade)
+  if (genre.toLowerCase().includes("pop")) {
+    return { min: 8, max: 10, ideal: 9 }
+  }
+
+  // Pagode/Samba: 7-10 sílabas
+  if (genre.toLowerCase().includes("pagode") || genre.toLowerCase().includes("samba")) {
+    return { min: 7, max: 10, ideal: 9 }
+  }
+
+  // Forró: 7-10 sílabas
+  if (
+    genre.toLowerCase().includes("forró") ||
+    genre.toLowerCase().includes("xote") ||
+    genre.toLowerCase().includes("baião")
+  ) {
+    return { min: 7, max: 10, ideal: 9 }
+  }
+
+  // Arrocha/Bachata: 7-10 sílabas
+  if (genre.toLowerCase().includes("arrocha") || genre.toLowerCase().includes("bachata")) {
+    return { min: 7, max: 10, ideal: 9 }
+  }
+
+  // Gospel: 8-10 sílabas
+  if (genre.toLowerCase().includes("gospel")) {
+    return { min: 8, max: 10, ideal: 9 }
+  }
+
+  // Default: 7-10 sílabas
+  return { min: 7, max: 10, ideal: 9 }
 }
