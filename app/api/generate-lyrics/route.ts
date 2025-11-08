@@ -16,6 +16,7 @@ import { enhanceLyricsRhymes } from "@/lib/validation/rhyme-enhancer"
 import { validateRhymesForGenre } from "@/lib/validation/rhyme-validator"
 import { GENRE_CONFIGS, getSyllableLimitsForGenre } from "@/lib/genre-config"
 import { cleanLyricsFromAI } from "@/lib/utils/remove-quotes-and-clean"
+import { validateAndFixWithAI } from "@/lib/validation/ai-verse-validator"
 
 function getMaxSyllables(genre: string): number {
   const genreConfig = (GENRE_CONFIGS as any)[genre]
@@ -252,8 +253,13 @@ Gere a letra agora:`
     console.log("[API] 📐 Aplicando limites RIGOROSOS de 4 linhas por seção...")
     finalLyrics = enforceSectionStructure(finalLyrics, genre)
 
-    console.log("[API] 🔧 Aplicando correção super-efetiva de versos incompletos...")
-    finalLyrics = superFixIncompleteLines(finalLyrics)
+    console.log("[API] 🤖 Validando versos com IA...")
+    const aiValidation = await validateAndFixWithAI(finalLyrics, genre, maxSyllables)
+
+    if (aiValidation.correctionsMade > 0) {
+      console.log(`[API] ✅ IA corrigiu ${aiValidation.correctionsMade} verso(s) incompleto(s)`)
+      finalLyrics = aiValidation.correctedLyrics
+    }
 
     console.log("[API] 🔍 Revisão inicial: corrigindo palavras cortadas e versos longos...")
     const initialFixResult = reviewAndFixAllLines(finalLyrics, maxSyllables)
@@ -323,7 +329,8 @@ Gere a letra agora:`
         maxSyllables,
         idealSyllables,
         totalLines,
-        quality: "COMPLETE_VERSES_FIRST",
+        quality: "AI_VALIDATED_COMPLETE_VERSES",
+        ai_corrections: aiValidation.correctionsMade,
       },
     })
   } catch (error) {

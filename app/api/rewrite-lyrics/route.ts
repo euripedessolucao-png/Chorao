@@ -15,8 +15,8 @@ import { validateRhymesForGenre } from "@/lib/validation/rhyme-validator"
 import { GENRE_CONFIGS, getSyllableLimitsForGenre } from "@/lib/genre-config"
 import { cleanLyricsFromAI } from "@/lib/utils/remove-quotes-and-clean"
 import { reviewAndFixAllLines } from "@/lib/validation/auto-syllable-fixer"
-import { fixAllIncompleteVerses } from "@/lib/validation/verse-completer"
 import { enforceSectionStructure } from "@/lib/validation/section-structure-enforcer"
+import { validateAndFixWithAI } from "@/lib/validation/ai-verse-validator"
 
 function getMaxSyllables(genre: string): number {
   const genreConfig = (GENRE_CONFIGS as any)[genre]
@@ -73,6 +73,12 @@ NUNCA escreva frases incompletas ou cortadas.
 "pro seu" → ERRADO! Pro seu o quê?
 "partido, eu sigo frente" → ERRADO! Quem/O que está partido?
 "cada canto e esquina" → ERRADO! Falta verbo e sujeito
+"doem, não me rendo," → ERRADO! O que dói? Quem não se rende?
+"Te procurei cada canto casa" → ERRADO! Falta "da"
+"mas você me" → ERRADO! Cortado
+"não deixei" → ERRADO! Não deixou o quê?
+"mas eu não me" → ERRADO! Cortado
+"livre e sem" → ERRADO! Sem o quê?
 
 ✅ EXEMPLOS DE VERSOS CORRETOS (COMPLETOS):
 "Mesmo ferido, eu sigo em frente com coragem"
@@ -83,6 +89,12 @@ NUNCA escreva frases incompletas ou cortadas.
 "Não sou mais consolo pro seu coração vazio"
 "De coração partido, eu sigo em frente sozinho"
 "Te procurei em cada canto e esquina da cidade"
+"Mesmo que as lembranças doem, não me rendo à dor"
+"Te procurei em cada canto da casa vazia"
+"Mas você me deixou aqui na solidão"
+"E não deixei você ver minhas lágrimas"
+"Mas eu não me rendo ao peso da saudade"
+"Agora sou livre e sem medo de amar"
 
 LETRA ORIGINAL (base para reescrita):
 ${originalLyrics}
@@ -110,49 +122,15 @@ Se houver refrão ou hook especificado, use-o LITERALMENTE e construa os versos 
 - ${rhymeRules.requirePerfectRhymes ? "Rimas RICAS e PERFEITAS são obrigatórias" : "Use rimas RICAS sempre que possível"}
 
 🎵 ESTRUTURA EXATA (RESPEITE RIGOROSAMENTE):
-${
-  performanceMode === "performance"
-    ? `### [INTRO] - 4 linhas completas
-### [VERSO 1] - 4 linhas completas
-### [PRÉ-REFRÃO] - 4 linhas completas
-### [REFRÃO] - 4 linhas completas
-### [VERSO 2] - 4 linhas completas
-### [REFRÃO] - 4 linhas completas (IDÊNTICO ao primeiro)
-### [PONTE] - 4 linhas completas
-### [REFRÃO] - 4 linhas completas (IDÊNTICO ao primeiro)
-### [OUTRO] - 4 linhas completas`
-    : `### [Intro] - 4 linhas completas
-### [Verso 1] - 4 linhas completas
-### [Pré-Refrão] - 4 linhas completas
-### [Refrão] - 4 linhas completas
-### [Verso 2] - 4 linhas completas
-### [Refrão] - 4 linhas completas (IDÊNTICO ao primeiro)
-### [Ponte] - 4 linhas completas
-### [Refrão] - 4 linhas completas (IDÊNTICO ao primeiro)
-### [Outro] - 4 linhas completas`
-}
+Cada seção deve ter EXATAMENTE 4 linhas completas
+O REFRÃO deve ser IDÊNTICO em todas as 3 repetições
 
 ⚠️ REGRAS ABSOLUTAS:
-1. Cada seção tem EXATAMENTE 4 linhas (não 3, não 5, não 10 - EXATAMENTE 4)
-2. O REFRÃO é IDÊNTICO nas 3 repetições (mesmas 4 linhas)
-3. NUNCA adicione linhas extras fora das seções
-4. TODO verso deve ter sujeito + verbo + complemento (frase completa)
-5. NUNCA termine verso com preposição solta (de, da, pro, pra, com, sem, que)
-6. NUNCA corte palavras no meio (nã, me,, frente sem sujeito)
-
-🎼 RIMAS RICAS (use estas terminações):
-- amor/calor/dor/flor/sabor/valor/fervor
-- coração/canção/emoção/ilusão/paixão/solidão
-- vida/ferida/partida/esquecida/querida/despedida
-- noite/açoite/dezoito
-- dia/alegria/fantasia/harmonia/melodia/agonia
-
-💡 ORDEM DE PRIORIDADE:
-1º) INCLUIR requisitos obrigatórios (se houver refrão/hook especificado)
-2º) VERSOS COMPLETOS (frases com sentido próprio)
-3º) EXATAMENTE 4 linhas por seção
-4º) RIMAS RICAS entre versos
-5º) Dentro do limite de ${maxSyllables} sílabas
+1. TODO verso deve ter sujeito + verbo + complemento (frase completa)
+2. NUNCA termine verso com preposição solta (de, da, pro, pra, com, sem, que, e, a, o)
+3. NUNCA corte palavras no meio (nã, me,, frente sem contexto)
+4. NUNCA deixe frases incompletas que terminam em vírgula ou preposição
+5. Cada verso deve fazer sentido sozinho
 
 IMPORTANTE: 
 - Retorne APENAS a letra
@@ -162,7 +140,7 @@ IMPORTANTE:
 
 Gere a letra reescrita agora:`
 
-    console.log(`[API] 🤖 Solicitando reescrita à IA com prompt ultra-rigoroso...`)
+    console.log(`[API] 🤖 Solicitando reescrita à IA...`)
 
     const { text } = await generateText({
       model: "openai/gpt-4o-mini",
@@ -180,22 +158,21 @@ Gere a letra reescrita agora:`
     finalLyrics = enforceSectionStructure(finalLyrics, genre)
     console.log("[API] ✅ Estrutura aplicada")
 
-    console.log("[API] 🔍 Detectando e completando versos incompletos...")
-    const completionResult = await fixAllIncompleteVerses(finalLyrics, genre, maxSyllables)
-    if (completionResult.fixedCount > 0) {
-      console.log(`[API] ✅ ${completionResult.fixedCount} verso(s) incompleto(s) foram completados`)
-      finalLyrics = completionResult.fixedLyrics
+    console.log("[API] 🤖 Validando versos com IA (passo crítico)...")
+    const aiValidation = await validateAndFixWithAI(finalLyrics, genre, maxSyllables)
+
+    if (aiValidation.correctionsMade > 0) {
+      console.log(`[API] ✅ IA corrigiu ${aiValidation.correctionsMade} verso(s) incompleto(s)`)
+      finalLyrics = aiValidation.correctedLyrics
     } else {
-      console.log("[API] ✓ Nenhum verso incompleto detectado")
+      console.log("[API] ✅ IA confirmou: todos os versos estão completos")
     }
 
-    console.log("[API] 🔧 Corrigindo palavras cortadas...")
+    console.log("[API] 🔧 Aplicando contrações e correções finais...")
     const fixResult = reviewAndFixAllLines(finalLyrics, maxSyllables)
     if (fixResult.corrections.length > 0) {
-      console.log(`[API] ✅ ${fixResult.corrections.length} palavra(s) cortada(s) corrigida(s)`)
+      console.log(`[API] ✅ ${fixResult.corrections.length} contração(ões) aplicada(s)`)
       finalLyrics = fixResult.fixedLyrics
-    } else {
-      console.log("[API] ✓ Nenhuma palavra cortada encontrada")
     }
 
     console.log("[API] 🎵 Validando e melhorando rimas...")
@@ -207,18 +184,14 @@ Gere a letra reescrita agora:`
         console.log(`[API] ✅ ${rhymeEnhancement.improvements.length} rima(s) melhorada(s)`)
         finalLyrics = rhymeEnhancement.enhancedLyrics
       }
-    } else {
-      console.log("[API] ✓ Rimas validadas com sucesso")
     }
 
-    console.log("[API] 🎤 Aplicando contrações naturais brasileiras...")
+    console.log("[API] 🎤 Aplicando limite de sílabas...")
     finalLyrics = await enforceSyllableLimitAll(finalLyrics, maxSyllables)
-    console.log("[API] ✅ Contrações aplicadas")
 
     console.log("[API] 📚 Aplicando empilhamento inteligente...")
     const stackingResult = LineStacker.stackLines(finalLyrics)
     finalLyrics = stackingResult.stackedLyrics
-    console.log("[API] ✅ Empilhamento concluído")
 
     if (shouldUsePerformanceFormat(genre, performanceMode)) {
       console.log("[API] 🎭 Aplicando formato de performance...")
@@ -230,7 +203,9 @@ Gere a letra reescrita agora:`
     finalLyrics = `${finalLyrics}\n\n${instrumentation}`
 
     const totalLines = finalLyrics.split("\n").filter((line) => line.trim().length > 0).length
-    console.log(`[API] 🎉 REESCRITA CONCLUÍDA COM SUCESSO: ${totalLines} linhas totais`)
+    console.log(
+      `[API] 🎉 REESCRITA CONCLUÍDA: ${totalLines} linhas | ${aiValidation.correctionsMade} versos corrigidos pela IA`,
+    )
 
     return NextResponse.json({
       success: true,
@@ -242,9 +217,9 @@ Gere a letra reescrita agora:`
         maxSyllables,
         idealSyllables,
         totalLines,
-        quality: "COMPLETE_VERSES_RICH_RHYMES_STRICT_STRUCTURE",
-        incompleteverses_fixed: completionResult.fixedCount,
-        syllable_corrections: fixResult.corrections.length,
+        quality: "AI_VALIDATED_COMPLETE_VERSES",
+        ai_corrections: aiValidation.correctionsMade,
+        incomplete_verses_detected: aiValidation.incompleteVerses.length,
       },
     })
   } catch (error) {
