@@ -168,111 +168,130 @@ export class MetaComposer {
 TEMA: ${this.config.theme}
 ${this.config.subgenre ? `SUBGÊNERO: ${this.config.subgenre}` : ""}
 
-MÉTRICA OBRIGATÓRIA PARA ${this.config.genre.toUpperCase()}:
-- Cada linha deve ter entre ${metrics.minSyllables} e ${metrics.maxSyllables} sílabas poéticas
-- Meta ideal: ${targetSyllables} sílabas por linha
-- Razão: ${metrics.reason}
-${metrics.allowPeaks ? "- Picos pontuais acima do limite são permitidos para ênfase" : ""}
+⚠️ MÉTRICA OBRIGATÓRIA: ${metrics.minSyllables}-${metrics.maxSyllables} SÍLABAS POÉTICAS POR LINHA
 
-⚠️ IMPORTANTE - COMO CONTAR SÍLABAS POÉTICAS EM PORTUGUÊS BRASILEIRO:
+COMO CONTAR SÍLABAS POÉTICAS:
+1. Conte ATÉ a última sílaba TÔNICA (não conte as átonas finais)
+2. Vírgulas são RESPIROS (não quebram linhas)
+3. Use sinalefa: "de amor" → "d'amor", "que eu" → "qu'eu"
+4. Contrações naturais: "para" → "pra", "você" → "cê", "está" → "tá"
 
-1. CONTE ATÉ A ÚLTIMA SÍLABA TÔNICA (não conte átonas finais):
-   - "Lembro do rancho amado" = Lem-bro-do-ran-cho-a-MA (7 sílabas, para em MA)
-   - "Fogão à lenha aceso" = Fo-gão-à-le-nha-a-CE (7 sílabas, para em CE)
-   
-2. VÍRGULAS SÃO APENAS RESPIROS (não afetam contagem):
-   - "Toda vez que ela me busca, encosta e se entrega" = continua sendo uma linha única
-   - A vírgula é só uma pausa interpretativa para o cantor
-   
-3. USE SINALEFA NATURAL (junte vogais entre palavras):
-   - "de amor" vira "d'amor" (reduz 1 sílaba)
-   - "que eu" vira "qu'eu" (reduz 1 sílaba)
-   - "se esvaiu" vira "s'esvaiu" (reduz 1 sílaba)
+🎯 ESCREVA SIMPLES E DIRETO COMO BRASILEIRO FALA:
 
-4. CONTRAÇÕES NATURAIS DO CANTO:
-   - "para" → "pra" (economiza 1 sílaba)
-   - "você" → "cê" (economiza 1 sílaba)
-   - "está" → "tá" (economiza 1 sílaba)
+✅ CERTO (simples e direto):
+"Olha pro retrovisor
+Vê se você me acha
+Eu fiquei lá atrás
+Naquela curva de casa"
 
-🎭 NARRATIVA HUMANA E EMPILHAMENTO DE VERSOS (FUNDAMENTAL):
+❌ ERRADO (muito rebuscado):
+"Contemple o espelho retrovisor deste automóvel
+Verifique se consegue avistar minha silhueta
+Permaneci na estrada anterior
+Naquela inflexão próxima à residência"
 
-A letra deve ter NARRATIVA PROGRESSIVA, não apenas rimas soltas. Veja este exemplo de como empilhar versos:
+REGRAS DE OURO PARA ESCREVER HUMANO:
 
-EXEMPLO DE EMPILHAMENTO CORRETO:
+1. USE FRASES CURTAS E SIMPLES:
+   - ✅ "Olha pro retrovisor"
+   - ❌ "Lembro do rancho velho, a fumaça a dançar"
+
+2. FALE COMO BRASILEIRO CONVERSA:
+   - Use: "cê", "tá", "pra", "né"
+   - Evite: "contemplar", "silhueta", "inflexão"
+
+3. SEJA DIRETO E CONCRETO:
+   - ✅ "Vê se você me acha" (ação clara)
+   - ❌ "Seu olhar tão distante, a voz a me guiar" (abstrato demais)
+
+4. EMPILHE VERSOS LOGICAMENTE:
+
+Veja este EXEMPLO PERFEITO de empilhamento:
+
 "Só tem louça pra lavar
 Quem tem comida no prato
 Só paga IPVA quem já conquistou um carro
 Só passa a noite ouvindo choro
 Quem teve a bênção de um filho"
 
-Veja como cada linha EMPILHA sobre a anterior, construindo uma LISTA LÓGICA que reforça a mensagem!
+Cada linha ADICIONA uma nova camada à mesma ideia. É uma LISTA PROGRESSIVA!
 
-TÉCNICAS DE EMPILHAMENTO:
+Outro EXEMPLO PERFEITO:
 
-1. LISTA PROGRESSIVA (como no exemplo):
-   - Crie uma sequência de situações/exemplos
-   - Cada linha adiciona uma nova camada à mesma ideia
-   - Use paralelismo sintático ("Só tem... Só paga... Só passa...")
+"Olha pro retrovisor
+Vê se você me acha
+Eu fiquei lá atrás
+Naquela curva de casa
+Onde a gente sempre parava
+Pra ver o pôr do sol"
 
-2. NARRATIVA CRONOLÓGICA:
-   - Conte uma história que avança no tempo
-   - Cada verso leva para o próximo momento
-   - "Começou assim... Depois virou... Agora é..."
+Viu? Cada verso EMPILHA sobre o anterior, contando uma história PASSO A PASSO.
 
-3. INTENSIFICAÇÃO EMOCIONAL:
-   - Comece com sentimento leve
-   - Aumente a intensidade gradualmente
-   - Culmine no refrão com a emoção máxima
+5. TÉCNICAS DE EMPILHAMENTO SIMPLES:
 
-4. CAUSA E CONSEQUÊNCIA:
-   - Apresente uma situação
-   - Mostre o que aconteceu por causa disso
-   - Revele a conclusão/aprendizado
+LISTA PROGRESSIVA:
+"Só [situação 1]
+Só [situação 2]  
+Só [situação 3]"
 
-5. CONTRASTE/INVERSÃO:
-   - "Antes eu pensava X... Mas descobri Y"
-   - "Você dizia uma coisa... Mas fazia outra"
-   - Crie tensão entre expectativa e realidade
+CRONOLOGIA SIMPLES:
+"Primeiro [ação]
+Depois [ação]
+Agora [ação]"
 
-LINGUAGEM COLOQUIAL BRASILEIRA:
-- Fale como brasileiro conversa: "cê", "tá", "pra", "né"
-- Use expressões do dia a dia: "Escuta aí!", "Cê já pensou nisso?"
-- Conecte-se com situações reais e reconhecíveis
-- Pareça uma conversa, não um poema formal
+INTENSIFICAÇÃO:
+"Um pouco [sentimento]
+Mais [sentimento]
+Demais [sentimento]"
 
-COESÃO TEMÁTICA:
-- TUDO na letra deve girar em torno do MESMO tema central
-- Cada verso deve fortalecer a mensagem principal
-- Evite divagações ou ideias desconexas
-- O refrão deve ser a síntese perfeita do tema
+CAUSA → CONSEQUÊNCIA:
+"[Situação aconteceu]
+[Por isso aconteceu isso]
+[E agora é assim]"
 
-TRANSIÇÕES NATURAIS:
-- Use conectores conversacionais: "e aí", "então", "mas"
-- Faça pontes entre versos e refrão suaves
-- Evite mudanças bruscas de assunto
-- Mantenha o fluxo da conversa
+6. REFRÃO = FRASE MARCANTE E SIMPLES:
+   - ✅ "Ai, que saudade da gente" (direto e emocional)
+   - ❌ "Ai, que nó no peito, a viola chora a dor" (complicado demais)
 
-ESTRUTURA:
-- Verso 1 (4 linhas) - APRESENTA a situação/sentimento
-- Verso 2 (4 linhas) - DESENVOLVE com exemplos empilhados
-- Refrão (4 linhas) - MENSAGEM CENTRAL memorável e repetível
-- Verso 3 (4 linhas) - APROFUNDA ou CONTRASTA
-- Ponte (2-4 linhas) - MOMENTO DE REFLEXÃO ou virada emocional
-- Refrão final (4 linhas) - REAFIRMA a mensagem com mais peso
+7. EVITE PALAVRAS "POÉTICAS" DEMAIS:
+   - ❌ Evite: "clamor", "ressoar", "dedilhar", "ecoar"
+   - ✅ Use: "gritar", "tocar", "lembrar", "sentir"
 
-REQUISITOS TÉCNICOS:
-1. Conte as sílabas poéticas (até a última tônica)
-2. Use linguagem natural e coloquial brasileira
-3. Rimas naturais (não forçadas)
-4. História clara com progressão emocional
-5. Refrão cativante e fácil de memorizar
-6. EMPILHE os versos logicamente (lista, cronologia, intensificação)
-7. COESÃO temática em toda a letra
-8. TRANSIÇÕES suaves entre seções
+ESTRUTURA DA LETRA:
+
+Verso 1 (4 linhas curtas):
+- Apresente a situação de forma SIMPLES e DIRETA
+- Como se estivesse conversando com um amigo
+
+Verso 2 (4 linhas curtas):
+- EMPILHE exemplos ou situações
+- Use paralelismo ("Só tem... Só paga... Só passa...")
+
+Refrão (4 linhas):
+- A mensagem principal em FRASE SIMPLES
+- Tem que ser fácil de cantar e memorizar
+
+Verso 3 (4 linhas curtas):
+- Continue a história ou aprofunde
+- Mantenha a linguagem SIMPLES
+
+Ponte (2-4 linhas):
+- Momento de reflexão DIRETA
+- Uma frase marcante que resume tudo
+
+Refrão final (4 linhas):
+- Repete com mais emoção
+
 ${this.config.additionalRequirements ? `\nREQUISITOS ADICIONAIS:\n${this.config.additionalRequirements}` : ""}
 
-Escreva a letra completa com NARRATIVA HUMANA E EMPILHAMENTO LÓGICO, respeitando RIGOROSAMENTE a métrica de ${metrics.minSyllables}-${metrics.maxSyllables} sílabas.
-Retorne apenas a letra, sem explicações ou títulos.`
+AGORA ESCREVA A LETRA:
+- Use LINGUAGEM SIMPLES como brasileiro fala
+- Versos CURTOS (${metrics.minSyllables}-${metrics.maxSyllables} sílabas)
+- EMPILHE as ideias logicamente
+- NARRATIVA CLARA e direta
+- SEM palavras rebuscadas ou abstratas
+
+Retorne apenas a letra, sem explicações.`
   }
 
   /**
@@ -357,55 +376,36 @@ Retorne apenas a letra, sem explicações ou títulos.`
   }
 
   private buildRefinePrompt(previousLyrics: string, metrics: any): string {
-    return `A letra anterior não atingiu a métrica ideal. Reescreva COMPLETAMENTE mantendo o tema e emoção, mas AJUSTANDO A MÉTRICA.
+    return `A letra anterior ficou muito COMPLEXA ou com métrica errada. Reescreva de forma MAIS SIMPLES E DIRETA.
 
-LETRA ANTERIOR (para referência de tema/emoção):
+LETRA ANTERIOR (para referência de tema):
 ${previousLyrics}
 
-MÉTRICA OBRIGATÓRIA:
-- Cada linha: ${metrics.minSyllables}-${metrics.maxSyllables} sílabas POÉTICAS
+⚠️ O PROBLEMA: A letra está REBUSCADA DEMAIS!
 
-⚠️ REGRAS DE CONTAGEM POÉTICA (FUNDAMENTAL):
+Você precisa escrever como BRASILEIRO FALA NO DIA A DIA, não como poeta do século XIX.
 
-1. PARE NA ÚLTIMA TÔNICA:
-   ❌ ERRADO: "Lembro do rancho amado" = 8 sílabas (contando tudo)
-   ✅ CERTO: "Lembro do rancho amado" = Lem-bro-do-ran-cho-a-MA-do → 7 sílabas (para em MA)
+✅ ESCREVA ASSIM (SIMPLES):
+"Olha pro retrovisor
+Vê se você me acha
+Eu fiquei lá atrás"
 
-2. VÍRGULAS = RESPIROS (NÃO quebram a linha):
-   - "Toda vez que ela me busca, encosta e se entrega" = UMA linha inteira
-   - Vírgula é só pausa para respirar ao cantar
+❌ NÃO ESCREVA ASSIM (COMPLICADO):
+"Lembro do rancho velho, a fumaça a dançar
+O fogão à lenha aceso, meu pai a dedilhar
+Rádio na cozinha, a toada a ecoar"
 
-3. SINALEFA (junte vogais entre palavras):
-   - "de amor" → "d'a-mor" (economiza 1)
-   - "que eu" → "qu'eu" (economiza 1)
-   - "meu amor" → "meu a-mor" (já se funde naturalmente)
+REGRAS SIMPLES:
 
-4. CONTRAÇÕES DO CANTO:
-   - para → pra (economiza 1)
-   - você → cê (economiza 1)  
-   - está → tá (economiza 1)
+1. FRASES CURTAS: 1 ideia por linha
+2. PALAVRAS DO DIA A DIA: fale como você falaria com um amigo
+3. SEM "poesia velha": nada de "clamor", "ressoar", "dedilhar"
+4. EMPILHE LÓGICO: cada verso adiciona uma camada simples
 
-🎭 NARRATIVA E EMPILHAMENTO:
+MÉTRICA: ${metrics.minSyllables}-${metrics.maxSyllables} sílabas (conte até a última TÔNICA)
 
-IMPORTANTE: Mantenha a NARRATIVA PROGRESSIVA e o EMPILHAMENTO LÓGICO dos versos!
-
-Exemplo de EMPILHAMENTO CORRETO:
-"Só tem louça pra lavar / Quem tem comida no prato
-Só paga IPVA / Quem já conquistou um carro
-Só passa a noite ouvindo choro / Quem teve a bênção de um filho"
-
-Cada linha EMPILHA sobre a anterior, construindo uma SEQUÊNCIA LÓGICA.
-
-Use técnicas:
-- LISTA PROGRESSIVA (paralelismo: "Só tem... Só paga... Só passa...")
-- CRONOLOGIA (começa → desenvolve → conclui)
-- INTENSIFICAÇÃO (leve → médio → forte)
-- CAUSA/CONSEQUÊNCIA (situação → resultado)
-- CONTRASTE (antes → depois, expectativa → realidade)
-
-REESCREVA a letra INTEIRA com NARRATIVA CLARA e versos EMPILHADOS LOGICAMENTE, respeitando RIGOROSAMENTE a métrica poética.
-Cada linha DEVE ter ${metrics.minSyllables}-${metrics.maxSyllables} sílabas contadas ATÉ A ÚLTIMA TÔNICA.
-Retorne apenas a letra, sem explicações.`
+REESCREVA a letra sendo SIMPLES, DIRETO e HUMANO. Como você contaria essa história para um amigo no bar.
+Retorne apenas a letra reescrita.`
   }
 
   /**
