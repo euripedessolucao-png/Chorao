@@ -270,7 +270,7 @@ export function countPoeticSyllables(line: string): number {
   if (words.length === 0) return 0
 
   let total = 0
-  for (const word of word) {
+  for (const word of words) {
     total += countWordSyllables(word)
   }
 
