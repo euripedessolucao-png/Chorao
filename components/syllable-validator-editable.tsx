@@ -84,8 +84,9 @@ export function SyllableValidatorEditable({
       trimmedLine.startsWith("---")
 
     if (!shouldSkip) {
-      // ✅ Arquitetura correta: countPoeticSyllables() do syllable-counter-brasileiro.ts
       const syllables = countPoeticSyllables(line)
+
+      console.log(`[v0] Validador: Linha "${line}" = ${syllables} sílabas poéticas`)
 
       // ✅ Validação usa absolute_max: 12 do genre-config.ts
       if (syllables > maxSyllables) {
