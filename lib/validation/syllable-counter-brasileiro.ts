@@ -130,33 +130,112 @@ function countSyllablesInWord(word: string): number {
 }
 
 /**
- * Conta sílabas poéticas em um verso (linha de letra)
+ * Identifica a última sílaba tônica em uma palavra
+ * Regras de acentuação do português:
+ * - Oxítonas: última sílaba (café, amor, você)
+ * - Paroxítonas: penúltima sílaba (casa, mesa, verso) [maioria]
+ * - Proparoxítonas: antepenúltima (música, pássaro)
  */
+function findLastTonicPosition(word: string): number {
+  const w = word.toLowerCase()
+  const syllables = splitIntoSyllables(w)
+
+  // Se tem acento explícito, encontra a posição
+  const accentPattern = /[áàâãéèêíìîóòôõúùû]/
+  for (let i = syllables.length - 1; i >= 0; i--) {
+    if (accentPattern.test(syllables[i])) {
+      return i
+    }
+  }
+
+  // Regras sem acento:
+  // Oxítona se termina em: a(s), e(s), o(s), em, ens
+  if (/[aeo]s?$|ens?$/.test(w)) {
+    return syllables.length - 1
+  }
+
+  // Proparoxítona: raro sem acento, mas algumas palavras
+  // Por padrão: paroxítona (penúltima sílaba)
+  return Math.max(0, syllables.length - 2)
+}
+
+function splitIntoSyllables(word: string): string[] {
+  // Implementação simplificada de separação silábica
+  const w = word.toLowerCase()
+  const syllables: string[] = []
+  let current = ""
+
+  for (let i = 0; i < w.length; i++) {
+    const char = w[i]
+    current += char
+
+    // Se é vogal e a próxima é consoante, fecha sílaba
+    if (/[aeiouáàâãéèêíìîóòôõúùû]/.test(char)) {
+      const next = w[i + 1]
+      if (!next || /[bcçdfghjklmnpqrstvwxyz]/.test(next)) {
+        syllables.push(current)
+        current = ""
+      }
+    }
+  }
+
+  if (current) syllables.push(current)
+  return syllables
+}
+
+/**
+ * Aplica SINALEFA/ELISÃO entre palavras
+ * Quando duas vogais se encontram entre palavras, elas se fundem
+ * Ex: "de amor" → "d'amor" (3 sílabas → 2 sílabas)
+ */
+function applySinalefa(words: string[]): number {
+  let totalSyllables = 0
+
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i]
+    const syllableCount = countSyllablesInWord(word)
+    const tonicPosition = findLastTonicPosition(word)
+
+    // Conta até a última tônica (+1 porque índice começa em 0)
+    const poeticCount = tonicPosition + 1
+
+    totalSyllables += poeticCount
+
+    // Aplica sinalefa com a próxima palavra se houver
+    if (i < words.length - 1) {
+      const currentEndsWithVowel = /[aeiouáàâãéèêíìîóòôõúùû]$/i.test(word)
+      const nextStartsWithVowel = /^[aeiouáàâãéèêíìîóòôõúùû]/i.test(words[i + 1])
+
+      // Se vogal + vogal, reduz 1 sílaba (fusão)
+      if (currentEndsWithVowel && nextStartsWithVowel) {
+        totalSyllables -= 1
+      }
+    }
+  }
+
+  return Math.max(1, totalSyllables)
+}
+
 export function countPoeticSyllables(line: string): number {
   if (!line || line.trim().length === 0) return 0
 
   const withoutParentheses = line.replace(/$$[^)]*$$/g, "").trim()
-
   if (!withoutParentheses) return 0
 
-  // Remove apenas caracteres especiais que não afetam pronúncia
+  // Remove pontuação mas mantém palavras
+  // IMPORTANTE: vírgula NÃO afeta contagem, é apenas respiro!
   const clean = withoutParentheses
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // remove acentos
-    .replace(/[^a-z\s',!?]/gi, " ") // mantém letras, espaços, vírgulas e pontuação básica
+    .replace(/[,!?.;:—–-]/g, " ") // Remove pontuação
     .replace(/\s+/g, " ")
     .trim()
     .toLowerCase()
 
   if (!clean) return 0
 
-  // Remove pontuação apenas para separar palavras, mas mantém estrutura
-  const words = clean
-    .replace(/[,!?]/g, " ") // substitui pontuação por espaço
-    .split(" ")
-    .filter((w) => w.length > 0)
+  const words = clean.split(" ").filter((w) => w.length > 0)
 
-  return words.reduce((total, word) => total + countSyllablesInWord(word), 0)
+  // Aplica sinalefa automática
+  return applySinalefa(words)
 }
 
 /**

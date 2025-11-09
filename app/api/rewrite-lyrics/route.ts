@@ -16,7 +16,7 @@ import { GENRE_CONFIGS, getSyllableLimitsForGenre } from "@/lib/genre-config"
 import { cleanLyricsFromAI } from "@/lib/utils/remove-quotes-and-clean"
 import { reviewAndFixAllLines } from "@/lib/validation/auto-syllable-fixer"
 import { enforceSectionStructure } from "@/lib/validation/section-structure-enforcer"
-import { validateAndFixWithAI } from "@/lib/validation/ai-verse-validator"
+import { rewriteUntilPerfect } from "@/lib/validation/ai-iterative-rewriter"
 
 function getMaxSyllables(genre: string): number {
   const genreConfig = (GENRE_CONFIGS as any)[genre]
@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
     const syllableLimits = getSyllableLimitsForGenre(genre)
     const maxSyllables = syllableLimits.max
     const idealSyllables = syllableLimits.ideal
+    const minSyllables = syllableLimits.min
 
     const rhymeRules = getUniversalRhymeRules(genre)
     const genreRules = buildGenreRulesPrompt(genre)
@@ -158,15 +159,23 @@ Gere a letra reescrita agora:`
     finalLyrics = enforceSectionStructure(finalLyrics, genre)
     console.log("[API] ✅ Estrutura aplicada")
 
-    console.log("[API] 🤖 Validando versos com IA (passo crítico)...")
-    const aiValidation = await validateAndFixWithAI(finalLyrics, genre, maxSyllables)
+    console.log("[API] 🔄 Iniciando sistema de reescrita iterativa até perfeição...")
+    const iterativeResult = await rewriteUntilPerfect(
+      finalLyrics,
+      genre,
+      minSyllables,
+      maxSyllables,
+      true, // Preserve chorus
+    )
 
-    if (aiValidation.correctionsMade > 0) {
-      console.log(`[API] ✅ IA corrigiu ${aiValidation.correctionsMade} verso(s) incompleto(s)`)
-      finalLyrics = aiValidation.correctedLyrics
+    if (iterativeResult.success) {
+      console.log(`[API] ✅ Letra perfeita após ${iterativeResult.iterations} iteração(ões)!`)
+      console.log(`[API] 🔧 ${iterativeResult.fixedVerses.length} verso(s) corrigido(s) no total`)
     } else {
-      console.log("[API] ✅ IA confirmou: todos os versos estão completos")
+      console.log(`[API] ⚠️ Sistema parou após ${iterativeResult.iterations} iterações (limite atingido)`)
     }
+
+    finalLyrics = iterativeResult.finalLyrics
 
     console.log("[API] 🔧 Aplicando contrações e correções finais...")
     const fixResult = reviewAndFixAllLines(finalLyrics, maxSyllables)
@@ -204,7 +213,7 @@ Gere a letra reescrita agora:`
 
     const totalLines = finalLyrics.split("\n").filter((line) => line.trim().length > 0).length
     console.log(
-      `[API] 🎉 REESCRITA CONCLUÍDA: ${totalLines} linhas | ${aiValidation.correctionsMade} versos corrigidos pela IA`,
+      `[API] 🎉 REESCRITA CONCLUÍDA: ${totalLines} linhas | ${iterativeResult.iterations} iterações | ${iterativeResult.fixedVerses.length} versos corrigidos`,
     )
 
     return NextResponse.json({
@@ -217,9 +226,9 @@ Gere a letra reescrita agora:`
         maxSyllables,
         idealSyllables,
         totalLines,
-        quality: "AI_VALIDATED_COMPLETE_VERSES",
-        ai_corrections: aiValidation.correctionsMade,
-        incomplete_verses_detected: aiValidation.incompleteVerses.length,
+        quality: "AI_ITERATIVE_PERFECT",
+        iterations: iterativeResult.iterations,
+        verses_fixed: iterativeResult.fixedVerses.length,
       },
     })
   } catch (error) {
