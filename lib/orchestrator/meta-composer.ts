@@ -174,6 +174,26 @@ MÉTRICA OBRIGATÓRIA PARA ${this.config.genre.toUpperCase()}:
 - Razão: ${metrics.reason}
 ${metrics.allowPeaks ? "- Picos pontuais acima do limite são permitidos para ênfase" : ""}
 
+⚠️ IMPORTANTE - COMO CONTAR SÍLABAS POÉTICAS EM PORTUGUÊS BRASILEIRO:
+
+1. CONTE ATÉ A ÚLTIMA SÍLABA TÔNICA (não conte átonas finais):
+   - "Lembro do rancho amado" = Lem-bro-do-ran-cho-a-MA (7 sílabas, para em MA)
+   - "Fogão à lenha aceso" = Fo-gão-à-le-nha-a-CE (7 sílabas, para em CE)
+   
+2. VÍRGULAS SÃO APENAS RESPIROS (não afetam contagem):
+   - "Toda vez que ela me busca, encosta e se entrega" = continua sendo uma linha única
+   - A vírgula é só uma pausa interpretativa para o cantor
+   
+3. USE SINALEFA NATURAL (junte vogais entre palavras):
+   - "de amor" vira "d'amor" (reduz 1 sílaba)
+   - "que eu" vira "qu'eu" (reduz 1 sílaba)
+   - "se esvaiu" vira "s'esvaiu" (reduz 1 sílaba)
+
+4. CONTRAÇÕES NATURAIS DO CANTO:
+   - "para" → "pra" (economiza 1 sílaba)
+   - "você" → "cê" (economiza 1 sílaba)
+   - "está" → "tá" (economiza 1 sílaba)
+
 ESTRUTURA:
 - Verso 1 (4 linhas)
 - Verso 2 (4 linhas)
@@ -282,12 +302,30 @@ LETRA ANTERIOR (para referência de tema/emoção):
 ${previousLyrics}
 
 MÉTRICA OBRIGATÓRIA:
-- Cada linha: ${metrics.minSyllables}-${metrics.maxSyllables} sílabas POÉTICAS (até a última tônica)
-- Vírgulas são apenas respiros - não quebram a contagem
-- Use sinalefa natural (de amor → d'amor, que eu → qu'eu)
-- NÃO force rimas - priorize a métrica e fluxo natural
+- Cada linha: ${metrics.minSyllables}-${metrics.maxSyllables} sílabas POÉTICAS
 
-REESCREVA a letra INTEIRA respeitando RIGOROSAMENTE a métrica.
+⚠️ REGRAS DE CONTAGEM POÉTICA (FUNDAMENTAL):
+
+1. PARE NA ÚLTIMA TÔNICA:
+   ❌ ERRADO: "Lembro do rancho amado" = 8 sílabas (contando tudo)
+   ✅ CERTO: "Lembro do rancho amado" = Lem-bro-do-ran-cho-a-MA-do → 7 sílabas (para em MA)
+
+2. VÍRGULAS = RESPIROS (NÃO quebram a linha):
+   - "Toda vez que ela me busca, encosta e se entrega" = UMA linha inteira
+   - Vírgula é só pausa para respirar ao cantar
+
+3. SINALEFA (junte vogais entre palavras):
+   - "de amor" → "d'a-mor" (economiza 1)
+   - "que eu" → "qu'eu" (economiza 1)
+   - "meu amor" → "meu a-mor" (já se funde naturalmente)
+
+4. CONTRAÇÕES DO CANTO:
+   - para → pra (economiza 1)
+   - você → cê (economiza 1)  
+   - está → tá (economiza 1)
+
+REESCREVA a letra INTEIRA respeitando RIGOROSAMENTE a métrica poética.
+Cada linha DEVE ter ${metrics.minSyllables}-${metrics.maxSyllables} sílabas contadas ATÉ A ÚLTIMA TÔNICA.
 Retorne apenas a letra, sem explicações.`
   }
 
@@ -347,19 +385,7 @@ Retorne APENAS o título, sem aspas ou explicações.`,
    * Conta sílabas poéticas de uma linha
    */
   private countSyllables(line: string): number {
-    // Implementação simplificada - o contador real está em syllable-counter-brasileiro.ts
-    const words = line.toLowerCase().split(/\s+/)
-    let count = 0
-
-    for (const word of words) {
-      // Remove pontuação
-      const clean = word.replace(/[.,!?;:]/g, "")
-      // Conta vogais como aproximação
-      const vowels = clean.match(/[aeiouáéíóúâêôãõü]/gi)
-      count += vowels ? vowels.length : 0
-    }
-
-    return Math.max(1, Math.floor(count * 0.7)) // Aproximação
+    return countPoeticSyllables(line)
   }
 }
 

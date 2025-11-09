@@ -259,6 +259,7 @@ function applySinalefa(line: string): string {
 export function countPoeticSyllables(line: string): number {
   if (!line?.trim()) return 0
 
+  // Remove tags performáticas
   const cleanLine = line.replace(/$$[^)]*$$/g, "").trim()
   if (!cleanLine) return 0
 
@@ -279,7 +280,9 @@ export function countPoeticSyllables(line: string): number {
   const adjustment = findLastStressedSyllablePosition(cleanLine)
   total = Math.max(1, total + adjustment)
 
-  console.log(`[v0] 📏 "${line.substring(0, 60)}..." → ${total} sílabas poéticas (com sinalefa)`)
+  if (process.env.NODE_ENV === "development") {
+    console.log(`[v0] 📏 "${line.substring(0, 60)}..." → ${total} sílabas poéticas`)
+  }
 
   return total
 }

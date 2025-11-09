@@ -22,7 +22,7 @@ export function formatToPerformanceStructure(
 ): string {
   if (!lyrics || typeof lyrics !== "string") {
     console.error("[performance-formatter] ❌ ERRO: lyrics é undefined ou não é string:", lyrics)
-    return lyrics || "" // Return empty string if lyrics is falsy
+    return lyrics || ""
   }
 
   if (performanceMode === "standard") {
@@ -32,7 +32,9 @@ export function formatToPerformanceStructure(
   const sections = parseLyricsToSections(lyrics)
   const formattedSections = sections.map((section) => formatSection(section, genre))
 
-  return formattedSections.join("\n\n")
+  const instrumentList = getInstrumentList(genre)
+
+  return `${formattedSections.join("\n\n")}\n\n${instrumentList}`
 }
 
 /**
@@ -220,6 +222,50 @@ export function addInstrumentalSolo(lyrics: string, genre = "sertanejo"): string
   }
 
   return result.join("\n")
+}
+
+/**
+ * Retorna lista de instrumentos usados por gênero
+ */
+function getInstrumentList(genre: string): string {
+  const instruments: Record<string, string[]> = {
+    sertanejo: [
+      "Violão (Acoustic Guitar)",
+      "Viola Caipira",
+      "Sanfona (Accordion)",
+      "Baixo (Bass)",
+      "Bateria (Drums)",
+      "Percussão (Percussion)",
+      "Piano/Teclado (Keyboard)",
+    ],
+    funk: [
+      "Bateria Eletrônica (Electronic Drums)",
+      "Baixo 808 (808 Bass)",
+      "Sintetizadores (Synthesizers)",
+      "Samples",
+      "Percussão (Percussion)",
+    ],
+    mpb: ["Violão (Acoustic Guitar)", "Baixo (Bass)", "Bateria (Drums)", "Piano", "Cordas (Strings)", "Sopros (Brass)"],
+    pop: [
+      "Guitarra (Guitar)",
+      "Baixo (Bass)",
+      "Bateria (Drums)",
+      "Sintetizadores (Synthesizers)",
+      "Piano/Teclado (Keyboard)",
+    ],
+    default: [
+      "Violão (Acoustic Guitar)",
+      "Baixo (Bass)",
+      "Bateria (Drums)",
+      "Teclado (Keyboard)",
+      "Percussão (Percussion)",
+    ],
+  }
+
+  const genreLower = genre.toLowerCase().replace(/\s+/g, "_")
+  const genreInstruments = instruments[genreLower] || instruments.default
+
+  return `---\n\nInstrumentos / Instruments:\n${genreInstruments.map((inst) => `- ${inst}`).join("\n")}`
 }
 
 export default {
