@@ -176,121 +176,105 @@ COMO CONTAR SÍLABAS POÉTICAS:
 3. Use sinalefa: "de amor" → "d'amor", "que eu" → "qu'eu"
 4. Contrações naturais: "para" → "pra", "você" → "cê", "está" → "tá"
 
-🎯 ESCREVA SIMPLES E DIRETO COMO BRASILEIRO FALA:
+🚫 CONSTRUÇÕES ESTRITAMENTE PROIBIDAS:
 
-✅ CERTO (simples e direto):
-"Olha pro retrovisor
-Vê se você me acha
-Eu fiquei lá atrás
-Naquela curva de casa"
+NUNCA use estas construções:
+❌ "a [verbo]" → "a flutuar", "a dançar", "a embalar", "a contar", "a lamentar"
+❌ "[substantivo] a [verbo]" → "fumaça a flutuar", "viola a lamentar", "toada a embalar"
+❌ Gerúndios desnecessários: "a brilhar", "a dedilhar", "a ressoar"
+❌ Verbos rebuscados: "contemplar", "dedilhar", "embalar", "ressoar", "ecoar", "ansiar", "lamentar"
+❌ Palavras poéticas antigas: "clamor", "alvorada", "saudade adormecida", "alma profunda"
+❌ Inversões sintáticas: "seu olhar tão profundo" → use "seu olhar é profundo"
 
-❌ ERRADO (muito rebuscado):
-"Contemple o espelho retrovisor deste automóvel
-Verifique se consegue avistar minha silhueta
-Permaneci na estrada anterior
-Naquela inflexão próxima à residência"
+✅ USE SEMPRE:
 
-REGRAS DE OURO PARA ESCREVER HUMANO:
+Verbos SIMPLES e DIRETOS:
+✅ "olhar", "ver", "sentir", "querer", "lembrar", "ficar", "deixar", "perder"
+✅ "tocar" (não "dedilhar"), "subir" (não "flutuar"), "tocar" (não "embalar")
 
-1. USE FRASES CURTAS E SIMPLES:
-   - ✅ "Olha pro retrovisor"
-   - ❌ "Lembro do rancho velho, a fumaça a dançar"
+Construções COLOQUIAIS:
+✅ "Olha pro..." (imperativo simples)
+✅ "Vê se..." (conversacional)
+✅ "Eu fico..." (presente simples)
+✅ "Cê não vê..." (contração natural)
 
-2. FALE COMO BRASILEIRO CONVERSA:
-   - Use: "cê", "tá", "pra", "né"
-   - Evite: "contemplar", "silhueta", "inflexão"
-
-3. SEJA DIRETO E CONCRETO:
-   - ✅ "Vê se você me acha" (ação clara)
-   - ❌ "Seu olhar tão distante, a voz a me guiar" (abstrato demais)
-
-4. EMPILHE VERSOS LOGICAMENTE:
-
-Veja este EXEMPLO PERFEITO de empilhamento:
+🎯 EXEMPLO PERFEITO (COPIE ESTE ESTILO):
 
 "Só tem louça pra lavar
 Quem tem comida no prato
-Só paga IPVA quem já conquistou um carro
+Só paga IPVA
+Quem já conquistou um carro
 Só passa a noite ouvindo choro
 Quem teve a bênção de um filho"
 
-Cada linha ADICIONA uma nova camada à mesma ideia. É uma LISTA PROGRESSIVA!
+Viu? NENHUM gerúndio, NENHUMA construção "a [verbo]", PALAVRAS SIMPLES!
 
 Outro EXEMPLO PERFEITO:
 
 "Olha pro retrovisor
 Vê se você me acha
 Eu fiquei lá atrás
-Naquela curva de casa
-Onde a gente sempre parava
-Pra ver o pôr do sol"
+Naquela curva de casa"
 
-Viu? Cada verso EMPILHA sobre o anterior, contando uma história PASSO A PASSO.
+SIMPLICIDADE MÁXIMA! Como você falaria no WhatsApp!
 
-5. TÉCNICAS DE EMPILHAMENTO SIMPLES:
+⚠️ TESTE RÁPIDO: Leia em voz alta. Se soar como "poesia do século XIX", REESCREVA!
 
-LISTA PROGRESSIVA:
-"Só [situação 1]
-Só [situação 2]  
-Só [situação 3]"
+REGRAS DE OURO:
 
-CRONOLOGIA SIMPLES:
-"Primeiro [ação]
-Depois [ação]
-Agora [ação]"
+1. UMA IDEIA POR LINHA (não duas)
+   - ✅ "Olha pro retrovisor" (1 ideia)
+   - ❌ "Lembro do rancho velho, a fumaça a dançar" (3 ideias misturadas)
 
-INTENSIFICAÇÃO:
-"Um pouco [sentimento]
-Mais [sentimento]
-Demais [sentimento]"
+2. VERBOS NO PRESENTE/IMPERATIVO (não gerúndios)
+   - ✅ "Vê", "Olha", "Fica", "Deixa"
+   - ❌ "a ver", "a olhar", "ficando", "deixando"
 
-CAUSA → CONSEQUÊNCIA:
-"[Situação aconteceu]
-[Por isso aconteceu isso]
-[E agora é assim]"
+3. EMPILHAMENTO PROGRESSIVO (lista lógica)
+   - Cada linha adiciona UMA informação nova
+   - Use paralelismo: "Só tem... Só paga... Só passa..."
 
-6. REFRÃO = FRASE MARCANTE E SIMPLES:
-   - ✅ "Ai, que saudade da gente" (direto e emocional)
-   - ❌ "Ai, que nó no peito, a viola chora a dor" (complicado demais)
+4. LINGUAGEM DE CONVERSA
+   - Como você falaria com um amigo tomando cerveja
+   - Não como você escreveria um poema para a escola
 
-7. EVITE PALAVRAS "POÉTICAS" DEMAIS:
-   - ❌ Evite: "clamor", "ressoar", "dedilhar", "ecoar"
-   - ✅ Use: "gritar", "tocar", "lembrar", "sentir"
+5. SEM ABSTRAÇÃO EXCESSIVA
+   - ✅ "Eu fiquei lá atrás" (concreto)
+   - ❌ "Saudade adormecida que eu fui desvendar" (abstrato demais)
 
 ESTRUTURA DA LETRA:
 
-Verso 1 (4 linhas curtas):
-- Apresente a situação de forma SIMPLES e DIRETA
-- Como se estivesse conversando com um amigo
+Verso 1 (4 linhas):
+- Situação inicial, SIMPLES
+- Linguagem coloquial
 
-Verso 2 (4 linhas curtas):
+Verso 2 (4 linhas):
 - EMPILHE exemplos ou situações
-- Use paralelismo ("Só tem... Só paga... Só passa...")
+- Use paralelismo se possível
 
 Refrão (4 linhas):
-- A mensagem principal em FRASE SIMPLES
-- Tem que ser fácil de cantar e memorizar
+- Mensagem principal
+- FRASES CURTAS e marcantes
 
-Verso 3 (4 linhas curtas):
-- Continue a história ou aprofunde
-- Mantenha a linguagem SIMPLES
+Verso 3 (4 linhas):
+- Continue a narrativa
+- Mantenha SIMPLICIDADE
 
 Ponte (2-4 linhas):
-- Momento de reflexão DIRETA
-- Uma frase marcante que resume tudo
+- Momento de reflexão
+- DIRETA, não abstrata
 
 Refrão final (4 linhas):
-- Repete com mais emoção
+- Repete com emoção
 
 ${this.config.additionalRequirements ? `\nREQUISITOS ADICIONAIS:\n${this.config.additionalRequirements}` : ""}
 
-AGORA ESCREVA A LETRA:
-- Use LINGUAGEM SIMPLES como brasileiro fala
-- Versos CURTOS (${metrics.minSyllables}-${metrics.maxSyllables} sílabas)
-- EMPILHE as ideias logicamente
-- NARRATIVA CLARA e direta
-- SEM palavras rebuscadas ou abstratas
+IMPORTANTE: A cada linha que escrever, pergunte-se:
+- "Eu diria isso conversando no bar?"
+- "Tem gerúndio 'a [verbo]'? Então REMOVA!"
+- "Está simples como 'Olha pro retrovisor'?"
 
+AGORA ESCREVA A LETRA COM MÁXIMA SIMPLICIDADE.
 Retorne apenas a letra, sem explicações.`
   }
 
@@ -376,35 +360,39 @@ Retorne apenas a letra, sem explicações.`
   }
 
   private buildRefinePrompt(previousLyrics: string, metrics: any): string {
-    return `A letra anterior ficou muito COMPLEXA ou com métrica errada. Reescreva de forma MAIS SIMPLES E DIRETA.
+    return `A letra anterior tem CONSTRUÇÕES PROIBIDAS. Reescreva ELIMINANDO:
 
-LETRA ANTERIOR (para referência de tema):
+LETRA ANTERIOR:
 ${previousLyrics}
 
-⚠️ O PROBLEMA: A letra está REBUSCADA DEMAIS!
+🚫 O QUE VOCÊ FEZ DE ERRADO:
 
-Você precisa escrever como BRASILEIRO FALA NO DIA A DIA, não como poeta do século XIX.
+1. Usou "a [verbo]": "fumaça a flutuar", "viola a lamentar"
+   → Mude para: "fumaça sobe", "viola chora"
 
-✅ ESCREVA ASSIM (SIMPLES):
-"Olha pro retrovisor
-Vê se você me acha
-Eu fiquei lá atrás"
+2. Usou palavras rebuscadas: "dedilhar", "embalar", "ressoar"
+   → Mude para: "tocar", "balançar", "soar"
 
-❌ NÃO ESCREVA ASSIM (COMPLICADO):
-"Lembro do rancho velho, a fumaça a dançar
-O fogão à lenha aceso, meu pai a dedilhar
-Rádio na cozinha, a toada a ecoar"
+3. Linhas longas com múltiplas ideias
+   → Separe em linhas curtas com 1 ideia cada
 
-REGRAS SIMPLES:
+4. Linguagem muito poética/abstrata
+   → Fale como brasileiro comum fala
 
-1. FRASES CURTAS: 1 ideia por linha
-2. PALAVRAS DO DIA A DIA: fale como você falaria com um amigo
-3. SEM "poesia velha": nada de "clamor", "ressoar", "dedilhar"
-4. EMPILHE LÓGICO: cada verso adiciona uma camada simples
+✅ EXEMPLO DO QUE FAZER:
 
-MÉTRICA: ${metrics.minSyllables}-${metrics.maxSyllables} sílabas (conte até a última TÔNICA)
+Ao invés de:
+"Lembro do rancho velho, a fumaça a dançar"
 
-REESCREVA a letra sendo SIMPLES, DIRETO e HUMANO. Como você contaria essa história para um amigo no bar.
+Escreva:
+"Lembro do rancho velho
+A fumaça subia
+O cheiro de café
+Meu pai tocava viola"
+
+MÉTRICA: ${metrics.minSyllables}-${metrics.maxSyllables} sílabas poéticas
+
+REESCREVA sendo SIMPLES como "Olha pro retrovisor". Sem gerúndios "a [verbo]", sem palavras rebuscadas.
 Retorne apenas a letra reescrita.`
   }
 
