@@ -11,7 +11,6 @@
  */
 
 import { countPoeticSyllables } from "../validation/syllable-counter-brasileiro"
-import { autoFixLineToMaxSyllables } from "../validation/auto-syllable-fixer"
 import { GENRE_METRICS, type GenreName } from "../orchestrator/meta-composer"
 
 export interface TerceiraViaConfig {
@@ -124,29 +123,17 @@ export function applyAutomaticCorrection(lyrics: string, config: TerceiraViaConf
   lines.forEach((line, index) => {
     const syllablesBefore = countPoeticSyllables(line)
 
-    if (syllablesBefore > config.maxSyllables) {
-      const fixResult = autoFixLineToMaxSyllables(line, config.maxSyllables)
-      const syllablesAfter = countPoeticSyllables(fixResult.corrected)
-
-      if (syllablesAfter <= config.maxSyllables) {
-        correctedLines.push(fixResult.corrected)
-        corrections.push({
-          lineNumber: index + 1,
-          original: line,
-          corrected: fixResult.corrected,
-          syllablesBefore,
-          syllablesAfter,
-        })
-      } else {
-        correctedLines.push(line) // Não conseguiu corrigir
-      }
-    } else if (syllablesBefore < config.minSyllables) {
-      // Linha muito curta - mantém como está (requer regeneração)
-      correctedLines.push(line)
-    } else {
-      // Linha OK
-      correctedLines.push(line)
+    if (syllablesBefore < config.minSyllables || syllablesBefore > config.maxSyllables) {
+      corrections.push({
+        lineNumber: index + 1,
+        original: line,
+        corrected: line, // Mantém original - precisa de reescrita
+        syllablesBefore,
+        syllablesAfter: syllablesBefore,
+      })
     }
+
+    correctedLines.push(line)
   })
 
   const correctedLyrics = correctedLines.join("\n")
@@ -154,7 +141,7 @@ export function applyAutomaticCorrection(lyrics: string, config: TerceiraViaConf
 
   return {
     originalLyrics: lyrics,
-    correctedLyrics,
+    correctedLyrics: lyrics, // Não muda nada - só valida
     corrections,
     success: validation.isValid,
   }

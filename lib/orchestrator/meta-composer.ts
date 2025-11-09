@@ -1,4 +1,6 @@
 import { generateText } from "ai"
+import { countPoeticSyllables } from "../validation/syllable-counter-brasileiro"
+import { applyTerceiraVia } from "../terceira-via/index"
 
 // Configuração de métricas por gênero musical
 export const GENRE_METRICS = {
@@ -193,50 +195,100 @@ Retorne apenas a letra, sem explicações ou títulos.`
   }
 
   /**
-   * Compõe a letra usando o sistema de terceira via
+   * Compõe a letra usando o sistema de terceira via com REESCRITA ITERATIVA
    */
-  async compose(): Promise<CompositionResult> {
+  async compose(maxAttempts = 3): Promise<CompositionResult> {
     const prompt = this.buildPrompt()
     const metrics = this.getGenreMetrics()
 
-    console.log("[MetaComposer] Iniciando composição")
+    console.log("[MetaComposer] 🎵 Iniciando composição com reescrita iterativa")
     console.log("[MetaComposer] Gênero:", this.config.genre)
     console.log("[MetaComposer] Métrica:", `${metrics.minSyllables}-${metrics.maxSyllables} sílabas`)
 
-    try {
-      const { text } = await generateText({
-        model: "openai/gpt-4o-mini",
-        prompt,
-        temperature: 0.8,
-      })
+    let attempt = 0
+    let bestLyrics = ""
+    let bestScore = 0
 
-      // Processa a letra gerada
-      const cleanedLyrics = this.cleanLyrics(text)
+    while (attempt < maxAttempts) {
+      attempt++
+      console.log(`[MetaComposer] 📝 Tentativa ${attempt}/${maxAttempts}`)
 
-      // Gera título baseado no tema e primeira linha
-      const title = await this.generateTitle(cleanedLyrics)
+      try {
+        const { text } = await generateText({
+          model: "openai/gpt-4o-mini",
+          prompt: attempt === 1 ? prompt : this.buildRefinePrompt(bestLyrics, metrics),
+          temperature: 0.8 - attempt * 0.1, // Fica mais focado a cada tentativa
+        })
 
-      // Calcula estatísticas
-      const stats = this.calculateStats(cleanedLyrics)
+        const cleanedLyrics = this.cleanLyrics(text)
 
-      console.log("[MetaComposer] Composição concluída")
-      console.log("[MetaComposer] Média de sílabas:", stats.averageSyllables)
+        const validation = applyTerceiraVia(cleanedLyrics, this.config.genre)
 
-      return {
-        lyrics: cleanedLyrics,
-        title,
-        metadata: {
-          genre: this.config.genre,
-          theme: this.config.theme,
-          syllableRange: { min: metrics.minSyllables, max: metrics.maxSyllables },
-          averageSyllables: stats.averageSyllables,
-          totalLines: stats.totalLines,
-        },
+        if (validation.success) {
+          console.log("[MetaComposer] ✅ Métrica perfeita alcançada!")
+          bestLyrics = cleanedLyrics
+          break
+        }
+
+        // Calcula score (% de linhas corretas)
+        const lines = cleanedLyrics.split("\n").filter((l) => l.trim())
+        const correctLines = lines.filter((l) => {
+          const syl = countPoeticSyllables(l)
+          return syl >= metrics.minSyllables && syl <= metrics.maxSyllables
+        }).length
+        const score = correctLines / lines.length
+
+        if (score > bestScore) {
+          bestScore = score
+          bestLyrics = cleanedLyrics
+        }
+
+        console.log(`[MetaComposer] 📊 Score: ${Math.round(score * 100)}% de linhas corretas`)
+
+        // Se chegou perto (>90%), aceita
+        if (score >= 0.9) {
+          console.log("[MetaComposer] ✓ Score aceitável (>90%)")
+          break
+        }
+      } catch (error) {
+        console.error(`[MetaComposer] ❌ Erro na tentativa ${attempt}:`, error)
+        if (attempt === maxAttempts) throw error
       }
-    } catch (error) {
-      console.error("[MetaComposer] Erro na composição:", error)
-      throw error
     }
+
+    const title = await this.generateTitle(bestLyrics)
+    const stats = this.calculateStats(bestLyrics)
+
+    console.log("[MetaComposer] ✅ Composição concluída após", attempt, "tentativas")
+    console.log("[MetaComposer] Média de sílabas:", stats.averageSyllables)
+
+    return {
+      lyrics: bestLyrics,
+      title,
+      metadata: {
+        genre: this.config.genre,
+        theme: this.config.theme,
+        syllableRange: { min: metrics.minSyllables, max: metrics.maxSyllables },
+        averageSyllables: stats.averageSyllables,
+        totalLines: stats.totalLines,
+      },
+    }
+  }
+
+  private buildRefinePrompt(previousLyrics: string, metrics: any): string {
+    return `A letra anterior não atingiu a métrica ideal. Reescreva COMPLETAMENTE mantendo o tema e emoção, mas AJUSTANDO A MÉTRICA.
+
+LETRA ANTERIOR (para referência de tema/emoção):
+${previousLyrics}
+
+MÉTRICA OBRIGATÓRIA:
+- Cada linha: ${metrics.minSyllables}-${metrics.maxSyllables} sílabas POÉTICAS (até a última tônica)
+- Vírgulas são apenas respiros - não quebram a contagem
+- Use sinalefa natural (de amor → d'amor, que eu → qu'eu)
+- NÃO force rimas - priorize a métrica e fluxo natural
+
+REESCREVA a letra INTEIRA respeitando RIGOROSAMENTE a métrica.
+Retorne apenas a letra, sem explicações.`
   }
 
   /**

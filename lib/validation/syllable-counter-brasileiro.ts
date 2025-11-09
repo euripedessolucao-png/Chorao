@@ -180,37 +180,108 @@ function applyInterwordElision(originalLine: string, baseCount: number): number 
   return Math.max(1, baseCount - reduction)
 }
 
-export function countPoeticSyllables(line: string): number {
-  if (!line?.trim()) return 0
-
-  const cleanLine = line.replace(/$$[^)]*$$/g, "").trim()
-
-  if (!cleanLine) return 0
-
-  let clean = cleanLine
+function findLastStressedSyllablePosition(line: string): number {
+  const words = line
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z\s']/g, " ")
     .replace(/\s+/g, " ")
     .trim()
+    .split(/\s+/)
+    .filter(Boolean)
 
-  if (!clean) return 0
+  if (words.length === 0) return 0
 
-  clean = applyLexicalContractions(clean)
-  const words = clean.split(/\s+/).filter(Boolean)
+  // A última palavra contém a última tônica
+  const lastWord = words[words.length - 1]
+
+  // Palavras oxítonas (última sílaba é tônica): amor, cantar, etc
+  // Palavras paroxítonas (penúltima é tônica): casa, momento, etc
+  // Palavras proparoxítonas (antepenúltima é tônica): música, época, etc
+
+  // Para simplificar: a maioria das palavras em PT-BR são paroxítonas
+  // Contar todas as sílabas até a penúltima da última palavra
+  const syllables = countWordSyllables(lastWord)
+
+  // Se termina em vogal ou vogal+s/m/ns, é paroxítona (penúltima tônica)
+  if (/[aeiou]s?$/i.test(lastWord) || /[aeiou][mn]s?$/i.test(lastWord)) {
+    return syllables > 1 ? -1 : 0 // Desconta a última sílaba átona
+  }
+
+  // Se termina em consoante (exceto s/m/n), é oxítona (última tônica)
+  return 0 // Conta todas
+}
+
+function applySinalefa(line: string): string {
+  let processed = line.toLowerCase()
+
+  // Sinalefa: fusão de vogais entre palavras
+  const sinalefePatterns = [
+    // Preposição + artigo/vogal
+    [/\bde\s+a\b/g, "da"],
+    [/\bde\s+o\b/g, "do"],
+    [/\bde\s+e/g, "d'e"],
+    [/\bde\s+a/g, "d'a"],
+    [/\bde\s+i/g, "d'i"],
+    [/\bde\s+o/g, "d'o"],
+    [/\bde\s+u/g, "d'u"],
+    [/\bem\s+a\b/g, "na"],
+    [/\bem\s+o\b/g, "no"],
+    [/\bpara\s+o\b/g, "pro"],
+    [/\bpara\s+a\b/g, "pra"],
+
+    // Pronome + verbo
+    [/\bque\s+eu\b/g, "qu'eu"],
+    [/\bque\s+é\b/g, "qu'é"],
+    [/\bse\s+eu\b/g, "s'eu"],
+    [/\bme\s+a/g, "m'a"],
+    [/\bme\s+e/g, "m'e"],
+    [/\bte\s+a/g, "t'a"],
+    [/\bte\s+e/g, "t'e"],
+    [/\bte\s+o/g, "t'o"],
+
+    // Encontros vocálicos comuns
+    [/\bmeu\s+amor\b/g, "meu amor"], // Já se funde naturalmente
+    [/\bseu\s+amor\b/g, "seu amor"],
+    [/\bnão\s+é\b/g, "não é"],
+    [/\bjá\s+é\b/g, "já é"],
+    [/\bvai\s+e\b/g, "vai e"],
+  ]
+
+  for (const [pattern, replacement] of sinalefePatterns) {
+    processed = processed.replace(pattern as RegExp, replacement as string)
+  }
+
+  return processed
+}
+
+export function countPoeticSyllables(line: string): number {
+  if (!line?.trim()) return 0
+
+  const cleanLine = line.replace(/$$[^)]*$$/g, "").trim()
+  if (!cleanLine) return 0
+
+  const withSinalefa = applySinalefa(cleanLine)
+
+  const contracted = applyLexicalContractions(withSinalefa)
+
+  const words = contracted.split(/\s+/).filter(Boolean)
   if (words.length === 0) return 0
 
   let total = 0
-  for (const word of words) {
+  for (const word of word) {
     total += countWordSyllables(word)
   }
 
-  total = applyInterwordElision(line, total)
+  total = applyInterwordElision(cleanLine, total)
 
-  console.log(`[v0] Contagem de sílabas: "${line.substring(0, 50)}..." = ${total} sílabas`)
+  const adjustment = findLastStressedSyllablePosition(cleanLine)
+  total = Math.max(1, total + adjustment)
 
-  return Math.max(1, total)
+  console.log(`[v0] 📏 "${line.substring(0, 60)}..." → ${total} sílabas poéticas (com sinalefa)`)
+
+  return total
 }
 
 export const countPortugueseSyllables = countPoeticSyllables
