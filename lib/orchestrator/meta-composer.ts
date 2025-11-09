@@ -194,13 +194,71 @@ ${metrics.allowPeaks ? "- Picos pontuais acima do limite são permitidos para ê
    - "você" → "cê" (economiza 1 sílaba)
    - "está" → "tá" (economiza 1 sílaba)
 
+🎭 NARRATIVA HUMANA E EMPILHAMENTO DE VERSOS (FUNDAMENTAL):
+
+A letra deve ter NARRATIVA PROGRESSIVA, não apenas rimas soltas. Veja este exemplo de como empilhar versos:
+
+EXEMPLO DE EMPILHAMENTO CORRETO:
+"Só tem louça pra lavar
+Quem tem comida no prato
+Só paga IPVA quem já conquistou um carro
+Só passa a noite ouvindo choro
+Quem teve a bênção de um filho"
+
+Veja como cada linha EMPILHA sobre a anterior, construindo uma LISTA LÓGICA que reforça a mensagem!
+
+TÉCNICAS DE EMPILHAMENTO:
+
+1. LISTA PROGRESSIVA (como no exemplo):
+   - Crie uma sequência de situações/exemplos
+   - Cada linha adiciona uma nova camada à mesma ideia
+   - Use paralelismo sintático ("Só tem... Só paga... Só passa...")
+
+2. NARRATIVA CRONOLÓGICA:
+   - Conte uma história que avança no tempo
+   - Cada verso leva para o próximo momento
+   - "Começou assim... Depois virou... Agora é..."
+
+3. INTENSIFICAÇÃO EMOCIONAL:
+   - Comece com sentimento leve
+   - Aumente a intensidade gradualmente
+   - Culmine no refrão com a emoção máxima
+
+4. CAUSA E CONSEQUÊNCIA:
+   - Apresente uma situação
+   - Mostre o que aconteceu por causa disso
+   - Revele a conclusão/aprendizado
+
+5. CONTRASTE/INVERSÃO:
+   - "Antes eu pensava X... Mas descobri Y"
+   - "Você dizia uma coisa... Mas fazia outra"
+   - Crie tensão entre expectativa e realidade
+
+LINGUAGEM COLOQUIAL BRASILEIRA:
+- Fale como brasileiro conversa: "cê", "tá", "pra", "né"
+- Use expressões do dia a dia: "Escuta aí!", "Cê já pensou nisso?"
+- Conecte-se com situações reais e reconhecíveis
+- Pareça uma conversa, não um poema formal
+
+COESÃO TEMÁTICA:
+- TUDO na letra deve girar em torno do MESMO tema central
+- Cada verso deve fortalecer a mensagem principal
+- Evite divagações ou ideias desconexas
+- O refrão deve ser a síntese perfeita do tema
+
+TRANSIÇÕES NATURAIS:
+- Use conectores conversacionais: "e aí", "então", "mas"
+- Faça pontes entre versos e refrão suaves
+- Evite mudanças bruscas de assunto
+- Mantenha o fluxo da conversa
+
 ESTRUTURA:
-- Verso 1 (4 linhas)
-- Verso 2 (4 linhas)
-- Refrão (4 linhas) - deve ser memorável e repetível
-- Verso 3 (4 linhas)
-- Ponte (2-4 linhas) - contraste emocional
-- Refrão final (4 linhas)
+- Verso 1 (4 linhas) - APRESENTA a situação/sentimento
+- Verso 2 (4 linhas) - DESENVOLVE com exemplos empilhados
+- Refrão (4 linhas) - MENSAGEM CENTRAL memorável e repetível
+- Verso 3 (4 linhas) - APROFUNDA ou CONTRASTA
+- Ponte (2-4 linhas) - MOMENTO DE REFLEXÃO ou virada emocional
+- Refrão final (4 linhas) - REAFIRMA a mensagem com mais peso
 
 REQUISITOS TÉCNICOS:
 1. Conte as sílabas poéticas (até a última tônica)
@@ -208,9 +266,12 @@ REQUISITOS TÉCNICOS:
 3. Rimas naturais (não forçadas)
 4. História clara com progressão emocional
 5. Refrão cativante e fácil de memorizar
+6. EMPILHE os versos logicamente (lista, cronologia, intensificação)
+7. COESÃO temática em toda a letra
+8. TRANSIÇÕES suaves entre seções
 ${this.config.additionalRequirements ? `\nREQUISITOS ADICIONAIS:\n${this.config.additionalRequirements}` : ""}
 
-Escreva a letra completa respeitando RIGOROSAMENTE a métrica de ${metrics.minSyllables}-${metrics.maxSyllables} sílabas.
+Escreva a letra completa com NARRATIVA HUMANA E EMPILHAMENTO LÓGICO, respeitando RIGOROSAMENTE a métrica de ${metrics.minSyllables}-${metrics.maxSyllables} sílabas.
 Retorne apenas a letra, sem explicações ou títulos.`
   }
 
@@ -324,7 +385,25 @@ MÉTRICA OBRIGATÓRIA:
    - você → cê (economiza 1)  
    - está → tá (economiza 1)
 
-REESCREVA a letra INTEIRA respeitando RIGOROSAMENTE a métrica poética.
+🎭 NARRATIVA E EMPILHAMENTO:
+
+IMPORTANTE: Mantenha a NARRATIVA PROGRESSIVA e o EMPILHAMENTO LÓGICO dos versos!
+
+Exemplo de EMPILHAMENTO CORRETO:
+"Só tem louça pra lavar / Quem tem comida no prato
+Só paga IPVA / Quem já conquistou um carro
+Só passa a noite ouvindo choro / Quem teve a bênção de um filho"
+
+Cada linha EMPILHA sobre a anterior, construindo uma SEQUÊNCIA LÓGICA.
+
+Use técnicas:
+- LISTA PROGRESSIVA (paralelismo: "Só tem... Só paga... Só passa...")
+- CRONOLOGIA (começa → desenvolve → conclui)
+- INTENSIFICAÇÃO (leve → médio → forte)
+- CAUSA/CONSEQUÊNCIA (situação → resultado)
+- CONTRASTE (antes → depois, expectativa → realidade)
+
+REESCREVA a letra INTEIRA com NARRATIVA CLARA e versos EMPILHADOS LOGICAMENTE, respeitando RIGOROSAMENTE a métrica poética.
 Cada linha DEVE ter ${metrics.minSyllables}-${metrics.maxSyllables} sílabas contadas ATÉ A ÚLTIMA TÔNICA.
 Retorne apenas a letra, sem explicações.`
   }
