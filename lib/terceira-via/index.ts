@@ -12,6 +12,7 @@
 
 import { countPoeticSyllables } from "../validation/syllable-counter-brasileiro"
 import { GENRE_METRICS, type GenreName } from "../orchestrator/meta-composer"
+import { validateSimplicity } from "../validation/simplicity-validator"
 
 export interface TerceiraViaConfig {
   genre: string
@@ -210,12 +211,19 @@ export function applyTerceiraVia(lyrics: string, genre: string): CorrectionResul
   console.log("[Terceira Via] Gênero:", genre)
   console.log("[Terceira Via] Métrica:", `${config.minSyllables}-${config.maxSyllables} sílabas`)
 
+  const simplicityValidation = validateSimplicity(lyrics)
+  console.log("[Terceira Via] Simplicidade:", `${simplicityValidation.score}%`)
+
+  if (!simplicityValidation.isSimple) {
+    console.log("[Terceira Via] ⚠️ Letra usa linguagem rebuscada")
+  }
+
   // Primeira Via: Valida
   const validation = validateMetrics(lyrics, config)
   console.log("[Terceira Via] Validação inicial:", validation.statistics)
 
-  if (validation.isValid) {
-    console.log("[Terceira Via] ✓ Letra válida, nenhuma correção necessária")
+  if (validation.isValid && simplicityValidation.isSimple) {
+    console.log("[Terceira Via] ✓ Letra válida e simples!")
     return {
       originalLyrics: lyrics,
       correctedLyrics: lyrics,

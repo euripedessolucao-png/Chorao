@@ -1,6 +1,7 @@
 import { generateText } from "ai"
 import { countPoeticSyllables } from "../validation/syllable-counter-brasileiro"
 import { applyTerceiraVia } from "../terceira-via/index"
+import { validateSimplicity, generateSimplicityReport } from "../validation/simplicity-validator"
 
 // Configuração de métricas por gênero musical
 export const GENRE_METRICS = {
@@ -301,37 +302,48 @@ Retorne apenas a letra, sem explicações.`
         const { text } = await generateText({
           model: "openai/gpt-4o-mini",
           prompt: attempt === 1 ? prompt : this.buildRefinePrompt(bestLyrics, metrics),
-          temperature: 0.8 - attempt * 0.1, // Fica mais focado a cada tentativa
+          temperature: 0.8 - attempt * 0.1,
         })
 
         const cleanedLyrics = this.cleanLyrics(text)
 
+        const simplicityValidation = validateSimplicity(cleanedLyrics)
+        console.log(generateSimplicityReport(simplicityValidation))
+
+        if (!simplicityValidation.isSimple && simplicityValidation.score < 80) {
+          console.log(`[MetaComposer] ❌ Letra rebuscada (${simplicityValidation.score}%), regenerando...`)
+          continue
+        }
+
         const validation = applyTerceiraVia(cleanedLyrics, this.config.genre)
 
-        if (validation.success) {
-          console.log("[MetaComposer] ✅ Métrica perfeita alcançada!")
+        if (validation.success && simplicityValidation.isSimple) {
+          console.log("[MetaComposer] ✅ Métrica perfeita E simplicidade alcançadas!")
           bestLyrics = cleanedLyrics
           break
         }
 
-        // Calcula score (% de linhas corretas)
+        // Calcula score combinado (métrica + simplicidade)
         const lines = cleanedLyrics.split("\n").filter((l) => l.trim())
         const correctLines = lines.filter((l) => {
           const syl = countPoeticSyllables(l)
           return syl >= metrics.minSyllables && syl <= metrics.maxSyllables
         }).length
-        const score = correctLines / lines.length
+        const metricScore = correctLines / lines.length
+        const combinedScore = (metricScore + simplicityValidation.score / 100) / 2
 
-        if (score > bestScore) {
-          bestScore = score
+        if (combinedScore > bestScore) {
+          bestScore = combinedScore
           bestLyrics = cleanedLyrics
         }
 
-        console.log(`[MetaComposer] 📊 Score: ${Math.round(score * 100)}% de linhas corretas`)
+        console.log(
+          `[MetaComposer] 📊 Score métrica: ${Math.round(metricScore * 100)}%, simplicidade: ${simplicityValidation.score}%`,
+        )
 
-        // Se chegou perto (>90%), aceita
-        if (score >= 0.9) {
-          console.log("[MetaComposer] ✓ Score aceitável (>90%)")
+        // Se chegou perto (>85% combinado), aceita
+        if (combinedScore >= 0.85) {
+          console.log("[MetaComposer] ✓ Score combinado aceitável (>85%)")
           break
         }
       } catch (error) {
@@ -360,40 +372,45 @@ Retorne apenas a letra, sem explicações.`
   }
 
   private buildRefinePrompt(previousLyrics: string, metrics: any): string {
-    return `A letra anterior tem CONSTRUÇÕES PROIBIDAS. Reescreva ELIMINANDO:
+    const simplicityValidation = validateSimplicity(previousLyrics)
+    const report = generateSimplicityReport(simplicityValidation)
 
-LETRA ANTERIOR:
+    return `⚠️ A LETRA ANTERIOR TEM CONSTRUÇÕES PROIBIDAS! ⚠️
+
+${report}
+
+LETRA ANTERIOR (ERRADA):
 ${previousLyrics}
 
-🚫 O QUE VOCÊ FEZ DE ERRADO:
+🚫 VOCÊ ESTÁ USANDO ESTAS CONSTRUÇÕES PROIBIDAS:
 
-1. Usou "a [verbo]": "fumaça a flutuar", "viola a lamentar"
-   → Mude para: "fumaça sobe", "viola chora"
+${simplicityValidation.forbiddenConstructions
+  .map((fc) => `❌ Linha ${fc.lineNumber}: "${fc.line}"\n   Problema: ${fc.issue}\n   ${fc.example}`)
+  .join("\n\n")}
 
-2. Usou palavras rebuscadas: "dedilhar", "embalar", "ressoar"
-   → Mude para: "tocar", "balançar", "soar"
+✅ REESCREVA ASSIM:
 
-3. Linhas longas com múltiplas ideias
-   → Separe em linhas curtas com 1 ideia cada
+1. ELIMINE TODOS os gerúndios "a [verbo]"
+   - "fumaça a flutuar" → "fumaça sobe"
+   - "viola a lamentar" → "viola chora"
 
-4. Linguagem muito poética/abstrata
-   → Fale como brasileiro comum fala
+2. USE VERBOS SIMPLES
+   - "dedilhar" → "tocar"
+   - "embalar" → "balançar"
+   - "ressoar" → "soar"
 
-✅ EXEMPLO DO QUE FAZER:
+3. UMA IDEIA POR LINHA
+   - Não: "Lembro do rancho velho, a fumaça a dançar"
+   - Sim: "Lembro do rancho velho / A fumaça subia"
 
-Ao invés de:
-"Lembro do rancho velho, a fumaça a dançar"
-
-Escreva:
-"Lembro do rancho velho
-A fumaça subia
-O cheiro de café
-Meu pai tocava viola"
+4. LINGUAGEM COLOQUIAL
+   - Como você fala no WhatsApp
+   - Sem poesia rebuscada
 
 MÉTRICA: ${metrics.minSyllables}-${metrics.maxSyllables} sílabas poéticas
 
-REESCREVA sendo SIMPLES como "Olha pro retrovisor". Sem gerúndios "a [verbo]", sem palavras rebuscadas.
-Retorne apenas a letra reescrita.`
+AGORA REESCREVA sendo MÁXIMO SIMPLES como "Olha pro retrovisor".
+Retorne apenas a letra reescrita, SEM construções proibidas.`
   }
 
   /**
